@@ -16,9 +16,9 @@ const UpgradeSection = () => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-bold text-white mb-2">Unlock Premium Features</h3>
-            <div className="text-sm text-white/90 space-y-1">
-              <div>• Unlimited queries</div>
-              <div>• 20 photos/month</div>
+            <div className="text-sm space-y-1">
+              <div className="text-orange-200 font-semibold">• Unlimited queries</div>
+              <div className="text-orange-200 font-semibold">• 20 photos/month</div>
             </div>
           </div>
           <Button 

@@ -81,6 +81,7 @@ const Dashboard = () => {
   ];
 
   const isModuleAccessible = (requiredTier: string) => {
+    if (subscriptionTier === "free") return false;
     if (subscriptionTier === "premium") return true;
     if (subscriptionTier === "basic" && requiredTier === "basic") return true;
     return false;

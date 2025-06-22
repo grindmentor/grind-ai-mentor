@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,30 +5,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     weight: "",
-    age: "",
+    birthday: "",
     height: "",
     experienceLevel: "",
     activityLevel: "",
     goal: ""
   });
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1) {
       setStep(2);
     } else {
-      // Save data and navigate to dashboard
-      console.log("User data:", formData);
+      // Save data to profiles table
+      if (user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            weight: parseInt(formData.weight),
+            birthday: formData.birthday,
+            height: parseInt(formData.height),
+            experience: formData.experienceLevel,
+            activity: formData.activityLevel,
+            goal: formData.goal
+          })
+          .eq('id', user.id);
+
+        if (error) {
+          console.error('Error saving profile:', error);
+        }
+      }
       navigate("/app");
     }
   };
 
-  const canProceedStep1 = formData.weight && formData.age && formData.height;
+  const canProceedStep1 = formData.weight && formData.birthday && formData.height;
   const canProceedStep2 = formData.experienceLevel && formData.activityLevel && formData.goal;
 
   return (
@@ -59,7 +77,7 @@ const Onboarding = () => {
             {step === 1 ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="weight" className="text-white">Weight (kg)</Label>
+                  <Label htmlFor="weight" className="text-white">Weight (lbs)</Label>
                   <Input
                     id="weight"
                     type="number"
@@ -70,18 +88,17 @@ const Onboarding = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="age" className="text-white">Age</Label>
+                  <Label htmlFor="birthday" className="text-white">Birthday</Label>
                   <Input
-                    id="age"
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData({...formData, age: e.target.value})}
-                    placeholder="Enter your age"
+                    id="birthday"
+                    type="date"
+                    value={formData.birthday}
+                    onChange={(e) => setFormData({...formData, birthday: e.target.value})}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="height" className="text-white">Height (cm)</Label>
+                  <Label htmlFor="height" className="text-white">Height (inches)</Label>
                   <Input
                     id="height"
                     type="number"

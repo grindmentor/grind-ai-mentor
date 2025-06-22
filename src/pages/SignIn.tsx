@@ -3,23 +3,46 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { signIn, signUp, user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // For now, just navigate to onboarding for new users or app for existing users
-    console.log("Authentication:", { email, password, isSignUp });
-    if (isSignUp) {
-      navigate("/onboarding");
-    } else {
+  useEffect(() => {
+    if (user) {
       navigate("/app");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      if (isSignUp) {
+        const { error } = await signUp(email, password);
+        if (error) {
+          setError(error.message);
+        } else {
+          navigate("/onboarding");
+        }
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) {
+          setError(error.message);
+        } else {
+          navigate("/app");
+        }
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
     }
   };
 
@@ -48,6 +71,11 @@ const SignIn = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="text-red-400 text-sm text-center bg-red-500/10 p-2 rounded">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white">Email</Label>
                 <Input

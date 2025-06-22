@@ -9,13 +9,114 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          payment_method: string
+          status: string
+          stripe_customer_id: string | null
+          subscription_tier: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_method: string
+          status?: string
+          stripe_customer_id?: string | null
+          subscription_tier?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_method?: string
+          status?: string
+          stripe_customer_id?: string | null
+          subscription_tier?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activity: string | null
+          birthday: string | null
+          created_at: string
+          email: string
+          experience: string | null
+          goal: string | null
+          height: number | null
+          id: string
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          activity?: string | null
+          birthday?: string | null
+          created_at?: string
+          email: string
+          experience?: string | null
+          goal?: string | null
+          height?: number | null
+          id: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          activity?: string | null
+          birthday?: string | null
+          created_at?: string
+          email?: string
+          experience?: string | null
+          goal?: string | null
+          height?: number | null
+          id?: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          email: string
+          id: string
+          subscribed: boolean
+          subscribed_at: string
+          user_id: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          subscribed?: boolean
+          subscribed_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          subscribed?: boolean
+          subscribed_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_age: {
+        Args: { birthday: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

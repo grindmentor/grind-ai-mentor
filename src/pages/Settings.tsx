@@ -6,29 +6,88 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Settings as SettingsIcon, ArrowLeft, Save } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   
-  // Load from localStorage or use defaults
   const [profile, setProfile] = useState({
-    weight: localStorage.getItem('userWeight') || '',
-    age: localStorage.getItem('userAge') || '',
-    height: localStorage.getItem('userHeight') || '',
-    experience: localStorage.getItem('userExperience') || '',
-    activity: localStorage.getItem('userActivity') || '',
-    goal: localStorage.getItem('userGoal') || ''
+    weight: '',
+    birthday: '',
+    height: '',
+    experience: '',
+    activity: '',
+    goal: ''
   });
 
-  const handleSave = () => {
-    // Save to localStorage
-    Object.entries(profile).forEach(([key, value]) => {
-      localStorage.setItem(`user${key.charAt(0).toUpperCase() + key.slice(1)}`, value);
-    });
-    
-    alert('Settings saved successfully!');
+  const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (profile.birthday) {
+      const today = new Date();
+      const birthDate = new Date(profile.birthday);
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        setCalculatedAge(age - 1);
+      } else {
+        setCalculatedAge(age);
+      }
+    }
+  }, [profile.birthday]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (data && !error) {
+      setProfile({
+        weight: data.weight?.toString() || '',
+        birthday: data.birthday || '',
+        height: data.height?.toString() || '',
+        experience: data.experience || '',
+        activity: data.activity || '',
+        goal: data.goal || ''
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        weight: profile.weight ? parseInt(profile.weight) : null,
+        birthday: profile.birthday || null,
+        height: profile.height ? parseInt(profile.height) : null,
+        experience: profile.experience || null,
+        activity: profile.activity || null,
+        goal: profile.goal || null
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('Error saving profile:', error);
+      alert('Error saving settings. Please try again.');
+    } else {
+      alert('Settings saved successfully!');
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -38,23 +97,33 @@ const Settings = () => {
     }));
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={() => navigate('/app')} className="text-white hover:bg-gray-800">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center">
-              <SettingsIcon className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Settings</h1>
-              <p className="text-gray-400">Update your profile and preferences</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={() => navigate('/app')} className="text-white hover:bg-gray-800">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center">
+                <SettingsIcon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Settings</h1>
+                <p className="text-gray-400">Update your profile and preferences</p>
+              </div>
             </div>
           </div>
+          <Button variant="outline" onClick={handleSignOut} className="text-white border-gray-700 hover:bg-gray-800">
+            Sign Out
+          </Button>
         </div>
 
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
@@ -83,15 +152,17 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="age" className="text-white">Age (years)</Label>
+                <Label htmlFor="birthday" className="text-white">Birthday</Label>
                 <Input
-                  id="age"
-                  type="number"
-                  placeholder="25"
-                  value={profile.age}
-                  onChange={(e) => handleInputChange('age', e.target.value)}
+                  id="birthday"
+                  type="date"
+                  value={profile.birthday}
+                  onChange={(e) => handleInputChange('birthday', e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
+                {calculatedAge !== null && (
+                  <p className="text-sm text-gray-400">Current age: {calculatedAge} years</p>
+                )}
               </div>
               
               <div className="space-y-2">

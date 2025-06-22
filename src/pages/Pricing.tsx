@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import PaymentMethods from "@/components/PaymentMethods";
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
 
   const plans = [
     {
       name: "Basic",
-      price: "$10",
+      price: 10,
       period: "/month",
       description: "Essential AI coaching tools",
       features: [
@@ -27,7 +30,7 @@ const Pricing = () => {
     },
     {
       name: "Premium",
-      price: "$15",
+      price: 15,
       period: "/month",
       description: "Complete fitness transformation suite",
       features: [
@@ -44,10 +47,36 @@ const Pricing = () => {
     }
   ];
 
-  const handleUpgrade = (planName: string) => {
-    // For demo purposes, simulate upgrade process
-    alert(`Upgrading to ${planName} plan... This would redirect to Stripe checkout in a real implementation.`);
+  const handleSelectPlan = (plan: typeof plans[0]) => {
+    setSelectedPlan({ name: plan.name, price: plan.price });
   };
+
+  const handlePaymentSuccess = () => {
+    setSelectedPlan(null);
+    alert('Welcome to your new plan! You now have access to all features.');
+  };
+
+  if (selectedPlan) {
+    return (
+      <div className="min-h-screen bg-black text-white p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center space-x-4 mb-8">
+            <Button variant="ghost" onClick={() => setSelectedPlan(null)} className="text-white hover:bg-gray-800">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Plans
+            </Button>
+            <h1 className="text-3xl font-bold text-white">Complete Your Purchase</h1>
+          </div>
+
+          <PaymentMethods
+            planName={selectedPlan.name}
+            amount={selectedPlan.price}
+            onSuccess={handlePaymentSuccess}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -85,7 +114,7 @@ const Pricing = () => {
               <CardHeader className="text-center pb-6">
                 <CardTitle className="text-2xl text-white">{plan.name}</CardTitle>
                 <div className="flex items-baseline justify-center space-x-1">
-                  <span className="text-4xl font-bold text-white">{plan.price}</span>
+                  <span className="text-4xl font-bold text-white">${plan.price}</span>
                   <span className="text-gray-400">{plan.period}</span>
                 </div>
                 <CardDescription className="text-gray-400 mt-2">
@@ -108,7 +137,7 @@ const Pricing = () => {
                 </ul>
                 
                 <Button 
-                  onClick={() => handleUpgrade(plan.name)}
+                  onClick={() => handleSelectPlan(plan)}
                   className={`w-full ${
                     plan.popular 
                       ? 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700' 

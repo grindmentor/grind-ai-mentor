@@ -128,7 +128,7 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency = 400;
+      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
       oscillator.frequency.setValueAtTime(350, ctx.currentTime + 0.1);
       
       gainNode.gain.setValueAtTime(0.08, ctx.currentTime);

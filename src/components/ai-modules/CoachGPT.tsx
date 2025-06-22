@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, ArrowLeft, Send } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useUsage } from "@/contexts/UsageContext";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { useToast } from "@/hooks/use-toast";
 
 interface CoachGPTProps {
   onBack: () => void;
@@ -18,7 +19,8 @@ interface Message {
 }
 
 const CoachGPT = ({ onBack }: CoachGPTProps) => {
-  const { coachGptQueries, incrementUsage } = useUsage();
+  const { canUseFeature, incrementUsage, getRemainingUsage } = useUsageTracking();
+  const { toast } = useToast();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -44,11 +46,13 @@ What would you like to know?`
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const maxPrompts = 5;
+
+  const remainingUsage = getRemainingUsage('coach_gpt_queries');
+  const canUse = canUseFeature('coach_gpt_queries');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || coachGptQueries >= maxPrompts) return;
+    if (!input.trim() || !canUse || isLoading) return;
 
     const userMessage = input;
     setInput("");
@@ -63,17 +67,40 @@ What would you like to know?`
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (!data || !data.response) {
+        throw new Error('No response received from AI service');
+      }
       
       // Only increment usage on successful response
-      incrementUsage('coachGptQueries');
+      const success = await incrementUsage('coach_gpt_queries');
+      if (!success) {
+        toast({
+          title: "Usage Limit Reached",
+          description: "You've reached your monthly limit for this feature.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      
     } catch (error) {
       console.error('Error getting coaching advice:', error);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: 'Sorry, I encountered an error. Please try asking your question again. This attempt did not count towards your usage limit.' 
       }]);
+      
+      toast({
+        title: "Error",
+        description: "Failed to get response. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -101,15 +128,15 @@ What would you like to know?`
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           Every response includes scientific citations and peer-reviewed research
         </Badge>
-        <Badge className={`${coachGptQueries >= maxPrompts ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
-          {coachGptQueries}/{maxPrompts} prompts used
+        <Badge className={`${!canUse ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
+          {remainingUsage === -1 ? 'Unlimited' : `${remainingUsage} prompts left`}
         </Badge>
       </div>
 
-      {coachGptQueries >= maxPrompts && (
+      {!canUse && (
         <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
           <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Prompt Limit Reached</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Usage Limit Reached</h3>
             <p className="text-gray-300 mb-4">
               Upgrade to get unlimited prompts and access to all AI features
             </p>
@@ -161,11 +188,11 @@ What would you like to know?`
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="bg-gray-800 border-gray-700 text-white flex-1 focus:ring-2 focus:ring-blue-500"
-              disabled={coachGptQueries >= maxPrompts}
+              disabled={!canUse || isLoading}
             />
             <Button 
               type="submit" 
-              disabled={!input.trim() || isLoading || coachGptQueries >= maxPrompts}
+              disabled={!input.trim() || isLoading || !canUse}
               className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:opacity-50"
             >
               <Send className="w-4 h-4" />

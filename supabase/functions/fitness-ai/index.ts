@@ -18,24 +18,42 @@ serve(async (req) => {
     console.log('Received request to fitness-ai function');
     
     if (!openAIApiKey) {
-      console.error('OpenAI API key not found');
-      throw new Error('OpenAI API key not configured');
+      console.error('OpenAI API key not found in environment variables');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured. Please add your API key in the Supabase Edge Function secrets.',
+        details: 'Missing OPENAI_API_KEY environment variable'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     let requestBody;
     try {
       requestBody = await req.json();
-      console.log('Request body:', requestBody);
+      console.log('Request body received:', { type: requestBody.type, hasUserInput: !!requestBody.userInput });
     } catch (error) {
       console.error('Error parsing request body:', error);
-      throw new Error('Invalid JSON in request body');
+      return new Response(JSON.stringify({ 
+        error: 'Invalid JSON in request body',
+        details: error.message
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const { prompt, type, userInput } = requestBody;
 
     if (!userInput && !prompt) {
       console.error('No user input provided');
-      throw new Error('User input is required');
+      return new Response(JSON.stringify({ 
+        error: 'User input is required',
+        details: 'Please provide either userInput or prompt in the request body'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     let systemPrompt = '';
@@ -254,7 +272,7 @@ Provide actionable insights that help users optimize their nutrition based on sc
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userInput || prompt }
@@ -268,8 +286,33 @@ Provide actionable insights that help users optimize their nutrition based on sc
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+      console.error('OpenAI API error response:', errorData);
+      
+      // Parse error for better user feedback
+      let parsedError;
+      try {
+        parsedError = JSON.parse(errorData);
+      } catch {
+        parsedError = { error: { message: errorData } };
+      }
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'API quota exceeded. Please check your OpenAI billing and usage limits.',
+          details: parsedError.error?.message || 'Rate limit or quota exceeded'
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: `OpenAI API error: ${response.status}`,
+        details: parsedError.error?.message || errorData
+      }), {
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
@@ -277,7 +320,13 @@ Provide actionable insights that help users optimize their nutrition based on sc
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Invalid OpenAI response structure:', data);
-      throw new Error('Invalid response from OpenAI API');
+      return new Response(JSON.stringify({ 
+        error: 'Invalid response from OpenAI API',
+        details: 'Response did not contain expected message structure'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const aiResponse = data.choices[0].message.content;
@@ -288,8 +337,8 @@ Provide actionable insights that help users optimize their nutrition based on sc
   } catch (error) {
     console.error('Error in fitness-ai function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'An unexpected error occurred',
-      details: error.toString()
+      error: 'Internal server error',
+      details: error.message || 'An unexpected error occurred'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

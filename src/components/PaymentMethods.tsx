@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Smartphone, Building, Clock } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface PaymentMethodsProps {
   planName: string;
@@ -13,22 +15,43 @@ interface PaymentMethodsProps {
 
 const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
 
   const handleStripePayment = async () => {
     setIsProcessing(true);
-    // This would integrate with your Stripe payment processing
-    console.log(`Processing ${planName} payment of $${amount} via Stripe`);
     
-    // Simulate processing
-    setTimeout(() => {
+    try {
+      const tier = planName.toLowerCase().includes('basic') ? 'basic' : 'premium';
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: { tier }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        // Call onSuccess after a short delay to allow for processing
+        setTimeout(() => {
+          onSuccess();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Error",
+        description: "Unable to process payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsProcessing(false);
-      onSuccess();
-    }, 2000);
+    }
   };
 
   const comingSoonMethods = [
     { name: "Vipps", icon: Smartphone, description: "Popular Norwegian mobile payment" },
-    { name: "Bank Transfer", icon: Building, description: "Direct bank transfer" }
+    { name: "Bank Transfer", icon: Building, description: "Direct bank transfer" },
+    { name: "PayPal", icon: CreditCard, description: "PayPal payments" },
+    { name: "Apple Pay", icon: Smartphone, description: "Apple Pay integration" }
   ];
 
   return (
@@ -88,7 +111,7 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
 
       <div className="text-center text-sm text-gray-400">
         <p>Secure payments powered by Stripe</p>
-        <p className="mt-1">More payment methods coming soon for Norwegian users</p>
+        <p className="mt-1">More payment methods coming soon</p>
       </div>
     </div>
   );

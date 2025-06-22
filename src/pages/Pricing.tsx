@@ -7,52 +7,46 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import SubscriptionCard from "@/components/SubscriptionCard";
-import PaymentMethods from "@/components/PaymentMethods";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Pricing = () => {
   const navigate = useNavigate();
-  const { currentTier } = useSubscription();
-  const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number, period: string} | null>(null);
+  const { currentTier, refreshSubscription } = useSubscription();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
 
-  const handleSelectPlan = (tierKey: string) => {
-    const tier = SUBSCRIPTION_TIERS[tierKey];
+  const handleSelectPlan = async (tierKey: string) => {
     if (tierKey === 'free' || tierKey === currentTier) return;
     
-    const annualPrice = Math.round(tier.price * 10);
-    const price = billingPeriod === 'monthly' ? tier.price : annualPrice;
-    const period = billingPeriod === 'monthly' ? '/month' : '/year';
+    setIsProcessing(true);
     
-    setSelectedPlan({ name: tier.name, price, period });
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: { tier: tierKey }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        // Refresh subscription status after payment
+        setTimeout(() => {
+          refreshSubscription();
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Error",
+        description: "Unable to process payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
-
-  const handlePaymentSuccess = () => {
-    setSelectedPlan(null);
-    alert('Welcome to your new plan! You now have access to all features.');
-    navigate('/app');
-  };
-
-  if (selectedPlan) {
-    return (
-      <div className="min-h-screen bg-black text-white p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center space-x-4 mb-8">
-            <Button variant="ghost" onClick={() => setSelectedPlan(null)} className="text-white hover:bg-gray-800">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Plans
-            </Button>
-            <h1 className="text-3xl font-bold text-white">Complete Your Purchase</h1>
-          </div>
-
-          <PaymentMethods
-            planName={`${selectedPlan.name} ${selectedPlan.period === '/year' ? 'Annual' : 'Monthly'}`}
-            amount={selectedPlan.price}
-            onSuccess={handlePaymentSuccess}
-          />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -114,6 +108,7 @@ const Pricing = () => {
               isPopular={key === 'premium'}
               onSelect={() => handleSelectPlan(key)}
               billingPeriod={billingPeriod}
+              isProcessing={isProcessing}
             />
           ))}
         </div>

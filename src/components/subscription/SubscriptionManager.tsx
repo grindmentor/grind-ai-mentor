@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
 const SubscriptionManager = () => {
-  const { currentTier, currentTierData, isSubscribed } = useSubscription();
+  const { currentTier, currentTierData, isSubscribed, refreshSubscription } = useSubscription();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -24,6 +24,10 @@ const SubscriptionManager = () => {
 
       if (data?.url) {
         window.open(data.url, '_blank');
+        // Refresh subscription after a delay to check for updates
+        setTimeout(() => {
+          refreshSubscription();
+        }, 3000);
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -82,7 +86,7 @@ const SubscriptionManager = () => {
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
               <Zap className="w-4 h-4 mr-2" />
-              Upgrade to Basic - $10/month
+              {isProcessing ? 'Processing...' : 'Upgrade to Basic - $10/month'}
             </Button>
             <Button 
               onClick={() => handleUpgrade('premium')}
@@ -90,7 +94,7 @@ const SubscriptionManager = () => {
               className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
             >
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade to Premium - $15/month
+              {isProcessing ? 'Processing...' : 'Upgrade to Premium - $15/month'}
             </Button>
           </div>
         )}
@@ -100,6 +104,14 @@ const SubscriptionManager = () => {
             <p className="text-sm text-muted-foreground">
               You have an active {currentTier} subscription
             </p>
+            <Button 
+              onClick={refreshSubscription}
+              variant="outline"
+              size="sm"
+              className="mt-2"
+            >
+              Refresh Status
+            </Button>
           </div>
         )}
       </CardContent>

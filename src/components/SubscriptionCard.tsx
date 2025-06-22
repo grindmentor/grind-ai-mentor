@@ -11,6 +11,7 @@ interface SubscriptionCardProps {
   isPopular?: boolean;
   onSelect: () => void;
   billingPeriod: 'monthly' | 'annual';
+  isProcessing?: boolean;
 }
 
 const SubscriptionCard = ({ 
@@ -18,7 +19,8 @@ const SubscriptionCard = ({
   isCurrentTier, 
   isPopular = false, 
   onSelect,
-  billingPeriod 
+  billingPeriod,
+  isProcessing = false
 }: SubscriptionCardProps) => {
   const annualPrice = Math.round(tier.price * 10); // ~2 months free
   const currentPrice = billingPeriod === 'monthly' ? tier.price : annualPrice;
@@ -75,7 +77,7 @@ const SubscriptionCard = ({
         
         <Button 
           onClick={onSelect}
-          disabled={isCurrentTier}
+          disabled={isCurrentTier || isProcessing}
           className={`w-full ${
             isCurrentTier 
               ? 'bg-gray-600 cursor-not-allowed' 
@@ -84,7 +86,7 @@ const SubscriptionCard = ({
                 : 'bg-gray-700 hover:bg-gray-600 text-white'
           }`}
         >
-          {isCurrentTier ? 'Current Plan' : `Choose ${tier.name}`}
+          {isProcessing ? 'Processing...' : isCurrentTier ? 'Current Plan' : `Choose ${tier.name}`}
         </Button>
       </CardContent>
     </Card>

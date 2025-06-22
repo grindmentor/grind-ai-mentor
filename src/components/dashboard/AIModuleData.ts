@@ -11,6 +11,7 @@ import WorkoutTimer from "../ai-modules/WorkoutTimer";
 import SmartFoodLog from "../ai-modules/SmartFoodLog";
 import HabitTracker from "../ai-modules/HabitTracker";
 import RecoveryCoach from "../ai-modules/RecoveryCoach";
+import ProgressiveOverloadAI from "../ai-modules/ProgressiveOverloadAI";
 
 export const aiModules = [
   {
@@ -22,6 +23,17 @@ export const aiModules = [
     component: CoachGPT,
     tier: 'free',
     buttonText: 'Get Coaching'
+  },
+  {
+    id: 'progressive-overload',
+    name: 'Progressive Overload AI',
+    description: 'Track strength progress with intelligent suggestions',
+    icon: TrendingUp,
+    color: 'bg-gradient-to-r from-blue-500 to-purple-600',
+    component: ProgressiveOverloadAI,
+    tier: 'free',
+    trending: true,
+    buttonText: 'Track Progress'
   },
   {
     id: 'recovery-coach',

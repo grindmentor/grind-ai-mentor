@@ -1,22 +1,11 @@
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import PaymentSetup from "@/components/PaymentSetup";
+import Dashboard from "@/components/Dashboard";
 
 const App = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission logic here
-    console.log("Form submitted", { name, email, message });
-  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -36,10 +25,13 @@ const App = () => {
             Dashboard
           </Button>
           <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
-            Meal Plans
+            MealPlanAI
           </Button>
           <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
-            Workouts
+            CoachGPT
+          </Button>
+          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
+            Smart Training
           </Button>
           <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
             Progress
@@ -57,50 +49,7 @@ const App = () => {
 
       {/* Main Content */}
       <div className="ml-64 p-6">
-        <Card className="bg-gray-900 border-gray-800">
-          <CardHeader>
-            <CardTitle>Contact Us</CardTitle>
-            <CardDescription>Send us a message, and we'll get back to you as soon as possible.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Your email"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Your message"
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
-                Send Message
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <Dashboard />
       </div>
 
       {/* Payment Modal */}

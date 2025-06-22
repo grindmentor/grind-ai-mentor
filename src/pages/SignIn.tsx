@@ -14,10 +14,13 @@ const SignIn = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, just navigate to the app
-    // In a real implementation, this would handle authentication
+    // For now, just navigate to onboarding for new users or app for existing users
     console.log("Authentication:", { email, password, isSignUp });
-    navigate("/app");
+    if (isSignUp) {
+      navigate("/onboarding");
+    } else {
+      navigate("/app");
+    }
   };
 
   return (
@@ -38,7 +41,7 @@ const SignIn = () => {
             </CardTitle>
             <CardDescription className="text-gray-400">
               {isSignUp 
-                ? "Start your fitness journey today" 
+                ? "Start your science-backed fitness journey" 
                 : "Sign in to continue your progress"
               }
             </CardDescription>
@@ -102,4 +105,3 @@ const SignIn = () => {
 };
 
 export default SignIn;
-

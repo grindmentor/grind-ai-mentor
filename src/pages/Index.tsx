@@ -1,7 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Dumbbell, Target, TrendingUp, Clock, Users, Star, Check, MessageCircle } from "lucide-react";
+import { ArrowRight, Dumbbell, Target, TrendingUp, Clock, Users, Star, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { SoundButton } from "@/components/SoundButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,142 +29,146 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
-      <section className="relative py-24 md:py-32 lg:py-40">
-        <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+      {/* Hero Section - Removed background image for minimalistic look */}
+      <section className="relative py-24 md:py-32 lg:py-40 bg-gradient-to-b from-gray-900/50 to-black">
+        <div className="container mx-auto text-center px-6">
+          {/* Logo */}
+          <div className="flex items-center justify-center space-x-3 mb-8">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+              <Dumbbell className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-3xl font-bold">GrindMentor</span>
+          </div>
+          
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
             Science-Based AI Fitness Coach
           </h1>
-          <p className="text-lg md:text-xl text-gray-400 mb-8">
-            Personalized meal plans & training programs to transform your physique.
+          <p className="text-lg md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+            Personalized meal plans & training programs to transform your physique using proven scientific methods.
           </p>
-          <div className="flex justify-center space-x-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
             <SoundButton 
               onClick={() => navigate("/signin")}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-medium rounded-md py-3 px-6 transition-all hover:scale-105"
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold rounded-lg py-4 px-8 transition-all hover:scale-105 shadow-xl"
             >
               Start Your Transformation
+              <ArrowRight className="ml-2 w-5 h-5" />
             </SoundButton>
-            <Link to="/pricing" className="text-white hover:text-gray-300 transition-colors">
+            <Link 
+              to="/pricing" 
+              className="text-gray-300 hover:text-white transition-colors font-medium border border-gray-700 hover:border-gray-500 rounded-lg py-4 px-8"
+            >
               View Pricing
             </Link>
           </div>
         </div>
-        {/* Hero Image */}
-        <div className="absolute inset-0 mt-16 pointer-events-none">
-          <img
-            src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2878&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Fitness Training"
-            className="absolute inset-0 w-full h-full object-cover opacity-20"
-          />
-        </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-16">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Unlock Your Potential with AI-Powered Coaching
-          </h2>
+      <section className="py-20 bg-gray-950/50">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Unlock Your Potential with AI-Powered Coaching
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Every recommendation is backed by scientific research and tailored to your unique goals
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature Card 1 */}
-            <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center text-white">
                     <Dumbbell className="w-6 h-6" />
                   </div>
-                  <CardTitle className="text-white">Personalized Workouts</CardTitle>
+                  <CardTitle className="text-white text-xl">Personalized Workouts</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-400">
-                  AI-driven workout plans tailored to your goals, experience level, and available equipment.
+                <CardDescription className="text-gray-400 text-base">
+                  AI-driven workout plans tailored to your goals, experience level, and available equipment. Every exercise is optimized for maximum results.
                 </CardDescription>
               </CardContent>
             </Card>
 
-            {/* Feature Card 2 */}
-            <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-pink-600 rounded-lg flex items-center justify-center text-white">
                     <Target className="w-6 h-6" />
                   </div>
-                  <CardTitle className="text-white">Custom Meal Plans</CardTitle>
+                  <CardTitle className="text-white text-xl">Custom Meal Plans</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-400">
-                  Delicious and effective meal plans designed to optimize your nutrition and support muscle growth or fat loss.
+                <CardDescription className="text-gray-400 text-base">
+                  Science-backed nutrition plans designed to optimize your metabolism and support muscle growth or fat loss goals.
                 </CardDescription>
               </CardContent>
             </Card>
 
-            {/* Feature Card 3 */}
-            <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white">
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <CardTitle className="text-white">Progress Tracking</CardTitle>
+                  <CardTitle className="text-white text-xl">Progress Tracking</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-400">
-                  Monitor your progress with detailed analytics and insights to stay motivated and achieve your targets.
+                <CardDescription className="text-gray-400 text-base">
+                  Detailed analytics and insights to monitor your progress and stay motivated on your fitness journey.
                 </CardDescription>
               </CardContent>
             </Card>
 
-            {/* Feature Card 4 */}
-            <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white">
                     <Clock className="w-6 h-6" />
                   </div>
-                  <CardTitle className="text-white">Time-Efficient Training</CardTitle>
+                  <CardTitle className="text-white text-xl">Time-Efficient Training</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-400">
-                  Maximize your results in minimal time with optimized workout routines and efficient meal prep strategies.
+                <CardDescription className="text-gray-400 text-base">
+                  Maximize results in minimal time with scientifically optimized workout routines and efficient meal strategies.
                 </CardDescription>
               </CardContent>
             </Card>
 
-            {/* Feature Card 5 */}
-            <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white">
                     <Users className="w-6 h-6" />
                   </div>
-                  <CardTitle className="text-white">Community Support</CardTitle>
+                  <CardTitle className="text-white text-xl">Community Support</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-400">
-                  Connect with like-minded individuals, share your journey, and get support from our community.
+                <CardDescription className="text-gray-400 text-base">
+                  Connect with like-minded individuals, share your journey, and get motivation from our supportive community.
                 </CardDescription>
               </CardContent>
             </Card>
 
-            {/* Feature Card 6 */}
-            <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center text-white">
+                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center text-white">
                     <Star className="w-6 h-6" />
                   </div>
-                  <CardTitle className="text-white">Expert Guidance</CardTitle>
+                  <CardTitle className="text-white text-xl">Expert Guidance</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-gray-400">
-                  Access expert tips, advice, and resources to help you achieve your fitness goals faster.
+                <CardDescription className="text-gray-400 text-base">
+                  Access expert tips, research-backed advice, and proven strategies to accelerate your fitness transformation.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -173,52 +177,56 @@ const Index = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 bg-gray-900">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center text-white mb-12">
-            Real Results, Real People
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Testimonial Card 1 */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white font-bold">
-                    JD
+      <section className="py-20 bg-black">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Real Results, Real People
+            </h2>
+            <p className="text-gray-400 text-lg">
+              See what our community has achieved with science-based training
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="bg-gray-900/80 border-gray-800">
+              <CardContent className="p-8">
+                <div className="flex items-start space-x-4 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg">
+                    M
                   </div>
                   <div>
-                    <p className="text-white font-medium">John Doe</p>
-                    <p className="text-gray-400 text-sm">Fitness Enthusiast</p>
+                    <p className="text-white font-semibold text-lg">Mike Chen</p>
+                    <p className="text-gray-400">Software Engineer</p>
                   </div>
                 </div>
-                <p className="text-gray-300">
-                  "GrindMentor has completely transformed my approach to fitness. The AI-powered meal plans and workouts are spot-on, and I've seen incredible results in just a few weeks!"
+                <p className="text-gray-300 text-lg leading-relaxed mb-4">
+                  "Lost 25 pounds in 12 weeks while gaining muscle. The AI recommendations are incredibly accurate and the science behind every suggestion builds real confidence."
                 </p>
-                <div className="flex items-center space-x-2 mt-4">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span className="text-green-400 text-sm">Verified User</span>
+                <div className="flex items-center space-x-2">
+                  <Check className="w-5 h-5 text-green-400" />
+                  <span className="text-green-400 font-medium">Verified Transformation</span>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Testimonial Card 2 */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white font-bold">
-                    AS
+            <Card className="bg-gray-900/80 border-gray-800">
+              <CardContent className="p-8">
+                <div className="flex items-start space-x-4 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg">
+                    S
                   </div>
                   <div>
-                    <p className="text-white font-medium">Alice Smith</p>
-                    <p className="text-gray-400 text-sm">Busy Professional</p>
+                    <p className="text-white font-semibold text-lg">Sarah Johnson</p>
+                    <p className="text-gray-400">Marketing Director</p>
                   </div>
                 </div>
-                <p className="text-gray-300">
-                  "As a busy professional, I struggled to find time for fitness. GrindMentor's AI coach has made it easy to fit effective workouts and healthy meals into my hectic schedule."
+                <p className="text-gray-300 text-lg leading-relaxed mb-4">
+                  "Finally found a system that fits my busy schedule. The efficiency of the workouts and meal plans is unmatched. Best investment I've made in my health."
                 </p>
-                <div className="flex items-center space-x-2 mt-4">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span className="text-green-400 text-sm">Verified User</span>
+                <div className="flex items-center space-x-2">
+                  <Check className="w-5 h-5 text-green-400" />
+                  <span className="text-green-400 font-medium">Verified Transformation</span>
                 </div>
               </CardContent>
             </Card>
@@ -227,34 +235,42 @@ const Index = () => {
       </section>
 
       {/* Call to Action Section */}
-      <section className="py-24">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-8">
-            Ready to Start Your Fitness Journey?
+      <section className="py-24 bg-gradient-to-t from-gray-900 to-black">
+        <div className="container mx-auto text-center px-6">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Ready to Start Your Transformation?
           </h2>
-          <p className="text-lg md:text-xl text-gray-400 mb-12">
-            Join GrindMentor today and experience the future of personalized fitness coaching.
+          <p className="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+            Join thousands who have already transformed their lives with science-based fitness coaching.
           </p>
           <SoundButton 
             onClick={() => navigate("/signin")}
-            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-medium rounded-md py-3 px-6 transition-all hover:scale-105"
+            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold rounded-lg py-4 px-8 transition-all hover:scale-105 shadow-xl text-lg"
           >
-            Get Started Now <ArrowRight className="ml-2 w-5 h-5" />
+            Get Started Now <ArrowRight className="ml-2 w-6 h-6" />
           </SoundButton>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 bg-gray-900 border-t border-gray-800 text-center text-gray-500">
-        <div className="container mx-auto">
-          <p className="text-sm">
-            &copy; {new Date().getFullYear()} GrindMentor. All rights reserved.
-          </p>
-          <div className="mt-4 space-x-4">
-            <Link to="/about" className="hover:text-white transition-colors">About</Link>
-            <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
-            <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-            <Link to="/support" className="hover:text-white transition-colors">Support</Link>
+      <footer className="py-12 bg-black border-t border-gray-800">
+        <div className="container mx-auto px-6">
+          <div className="text-center">
+            <div className="flex items-center justify-center space-x-3 mb-6">
+              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                <Dumbbell className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white">GrindMentor</span>
+            </div>
+            <p className="text-gray-500 text-sm mb-6">
+              &copy; {new Date().getFullYear()} GrindMentor. All rights reserved.
+            </p>
+            <div className="flex justify-center space-x-8 text-sm">
+              <Link to="/about" className="text-gray-400 hover:text-white transition-colors">About</Link>
+              <Link to="/terms" className="text-gray-400 hover:text-white transition-colors">Terms</Link>
+              <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link>
+              <Link to="/support" className="text-gray-400 hover:text-white transition-colors">Support</Link>
+            </div>
           </div>
         </div>
       </footer>

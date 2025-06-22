@@ -38,18 +38,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check if this is a new user signup
-        if (event === 'SIGNED_UP') {
-          setIsNewUser(true);
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          // Check if user has completed onboarding by checking created_at
+        // Check if this is a new user signup - fix the type comparison
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Check if user was just created (within last few minutes)
           const userCreatedAt = new Date(session.user.created_at);
           const now = new Date();
           const timeDiff = now.getTime() - userCreatedAt.getTime();
-          const daysDiff = timeDiff / (1000 * 3600 * 24);
+          const minutesDiff = timeDiff / (1000 * 60);
           
-          // If user was created more than 1 day ago, they're a returning user
-          setIsNewUser(daysDiff < 1);
+          // If user was created less than 5 minutes ago, they're a new user
+          setIsNewUser(minutesDiff < 5);
+        } else if (event === 'SIGNED_OUT') {
+          setIsNewUser(false);
         }
         
         setLoading(false);

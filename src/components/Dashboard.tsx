@@ -6,6 +6,7 @@ import DashboardHeader from "./dashboard/DashboardHeader";
 import AIModuleCard from "./dashboard/AIModuleCard";
 import UpgradeSection from "./dashboard/UpgradeSection";
 import { aiModules } from "./dashboard/AIModuleData";
+import { ArrowLeft } from "lucide-react";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
@@ -26,7 +27,8 @@ const Dashboard = () => {
 
   const handlePaymentSuccess = () => {
     setSelectedPlan(null);
-    alert('Payment successful! You now have access to all premium features.');
+    // Show success toast or modal
+    console.log('Payment successful! Premium features unlocked.');
   };
 
   if (selectedPlan) {
@@ -34,8 +36,13 @@ const Dashboard = () => {
       <div className="min-h-screen bg-black text-white p-6">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center space-x-4 mb-8">
-            <Button variant="ghost" onClick={handleBack} className="text-white hover:bg-gray-800">
-              ← Back to Dashboard
+            <Button 
+              variant="ghost" 
+              onClick={handleBack} 
+              className="text-white hover:bg-gray-800 hover:text-orange-400 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back to Dashboard
             </Button>
             <h1 className="text-3xl font-bold text-white">Complete Your Purchase</h1>
           </div>
@@ -63,7 +70,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto">
         <DashboardHeader />
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
           {aiModules.map((module) => (
             <AIModuleCard
               key={module.id}

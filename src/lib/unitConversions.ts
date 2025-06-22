@@ -54,3 +54,30 @@ export const formatHeight = (value: number, unit: 'cm' | 'in' | 'ft-in'): string
   }
   return `${Math.round(value)} ${unit}`;
 };
+
+// Additional convenience functions that other components expect
+export const convertKgToLbs = (kg: number): number => {
+  return kg * 2.20462;
+};
+
+export const convertLbsToKg = (lbs: number): number => {
+  return lbs / 2.20462;
+};
+
+export const convertCmToInches = (cm: number): number => {
+  return cm / 2.54;
+};
+
+export const convertInchesToCm = (inches: number): number => {
+  return inches * 2.54;
+};
+
+export const convertFeetAndInchesToInches = (feet: number, inches: number): number => {
+  return (feet * 12) + inches;
+};
+
+export const convertInchesToFeetAndInches = (totalInches: number): { feet: number; inches: number } => {
+  const feet = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches % 12);
+  return { feet, inches };
+};

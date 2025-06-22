@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,7 +118,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     }, 2000);
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -158,7 +157,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-white">Weight Unit</Label>
-                  <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => handleInputChange('weightUnit', value)}>
+                  <Select value={formData.weightUnit} onValueChange={(value) => handleInputChange('weightUnit', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -170,7 +169,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white">Height Unit</Label>
-                  <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => handleInputChange('heightUnit', value)}>
+                  <Select value={formData.heightUnit} onValueChange={(value) => handleInputChange('heightUnit', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                       <SelectValue />
                     </SelectTrigger>

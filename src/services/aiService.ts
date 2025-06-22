@@ -8,18 +8,21 @@ export interface AIServiceResponse {
 
 class AIService {
   private formatResponse(response: string): string {
-    // Add markdown formatting for better readability
+    // Remove markdown formatting symbols that don't render properly
     let formatted = response
-      // Bold important terms
-      .replace(/\b(sets?|reps?|pounds?|kilograms?|calories?|protein|carbs|fat|fiber)\b/gi, '**$1**')
-      // Format numbers with units
-      .replace(/(\d+)\s*(g|grams?|lbs?|kg|calories?|kcal)\b/gi, '**$1 $2**')
-      // Convert lists to bullet points
+      // Remove bold markdown symbols
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      // Remove italic symbols
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/_(.*?)_/g, '$1')
+      // Convert numbered lists to bullet points
       .replace(/^\d+\.\s*/gm, '• ')
-      .replace(/^-\s*/gm, '• ')
       // Ensure proper spacing around bullet points
       .replace(/\n\n•/g, '\n\n• ')
-      .replace(/\n•/g, '\n• ');
+      .replace(/\n•/g, '\n• ')
+      // Clean up extra whitespace
+      .replace(/\n{3,}/g, '\n\n');
 
     return formatted;
   }
@@ -30,7 +33,7 @@ class AIService {
         body: { 
           type: 'training',
           userInput: userInput,
-          formatting: 'Use bullet points, bold key terms with **, keep responses concise and factual. No motivational content unless requested.'
+          formatting: 'Provide clear, structured responses without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed plans. Focus on scientific, evidence-based recommendations.'
         }
       });
 
@@ -56,7 +59,7 @@ class AIService {
         body: { 
           type: 'nutrition',
           userInput: userInput,
-          formatting: 'Use bullet points, bold key terms with **, keep responses concise and factual. No motivational content unless requested.'
+          formatting: 'Provide clear, structured meal plans without markdown formatting. Use bullet points with • symbol. Ask clarifying questions about dietary preferences, goals, and restrictions before providing detailed plans. Present meal plans in a grid format when possible.'
         }
       });
 
@@ -82,7 +85,7 @@ class AIService {
         body: { 
           type: 'cardio',
           userInput: userInput,
-          formatting: 'Use bullet points, bold key terms with **, keep responses concise and factual. No motivational content unless requested.'
+          formatting: 'Provide clear, structured cardio programs without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed programs.'
         }
       });
 
@@ -108,7 +111,7 @@ class AIService {
         body: { 
           type: 'coaching',
           userInput: userInput,
-          formatting: 'Use bullet points, bold key terms with **, keep responses concise and factual. Provide scientific citations when relevant. No motivational content unless requested.'
+          formatting: 'Provide clear, structured advice without markdown formatting. Use bullet points with • symbol. Ask clarifying questions to better understand the user needs before providing detailed recommendations. Provide scientific citations when relevant.'
         }
       });
 
@@ -134,7 +137,7 @@ class AIService {
         body: { 
           type: 'recovery',
           userInput: userInput,
-          formatting: 'Use bullet points, bold key terms with **, keep responses concise and factual. No motivational content unless requested.'
+          formatting: 'Provide clear, structured recovery advice without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed recommendations.'
         }
       });
 
@@ -160,7 +163,7 @@ class AIService {
         body: { 
           type: 'food_log',
           userInput: userInput,
-          formatting: 'Use bullet points, bold key terms with **, keep responses concise and factual. No motivational content unless requested.'
+          formatting: 'Provide clear, structured food analysis without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed analysis.'
         }
       });
 

@@ -49,6 +49,8 @@ const BasicInformation = ({
           <Input
             id="weight"
             type="number"
+            min="0"
+            step="0.1"
             placeholder={preferences.weight_unit === 'kg' ? '80' : '180'}
             value={getWeightDisplay()}
             onChange={(e) => onWeightChange(e.target.value)}
@@ -77,6 +79,9 @@ const BasicInformation = ({
               <div className="flex-1">
                 <Input
                   type="number"
+                  min="0"
+                  max="8"
+                  step="1"
                   placeholder="5"
                   value={profile.heightFeet}
                   onChange={(e) => onInputChange('heightFeet', e.target.value)}
@@ -87,6 +92,9 @@ const BasicInformation = ({
               <div className="flex-1">
                 <Input
                   type="number"
+                  min="0"
+                  max="11"
+                  step="1"
                   placeholder="10"
                   value={profile.heightInches}
                   onChange={(e) => onInputChange('heightInches', e.target.value)}
@@ -104,6 +112,8 @@ const BasicInformation = ({
             <Input
               id="height"
               type="number"
+              min="0"
+              step="0.1"
               placeholder={preferences.height_unit === 'cm' ? '175' : '70'}
               value={getHeightDisplay()}
               onChange={(e) => onHeightChange(e.target.value)}

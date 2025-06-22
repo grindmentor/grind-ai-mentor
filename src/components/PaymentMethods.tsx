@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Smartphone, Building, DollarSign } from "lucide-react";
+import { CreditCard, Smartphone, Building, DollarSign, Banknote } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,13 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
       name: "Google Pay",
       description: "Pay with your Google account",
       icon: <Smartphone className="w-6 h-6" />,
+      available: true
+    },
+    {
+      id: "klarna",
+      name: "Klarna",
+      description: "Buy now, pay later in installments",
+      icon: <Banknote className="w-6 h-6" />,
       available: true
     },
     {
@@ -118,6 +125,11 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
                         Available
                       </Badge>
                     )}
+                    {method.id === 'klarna' && (
+                      <Badge className="bg-pink-500/20 text-pink-400 border-pink-500/30 text-xs">
+                        Pay Later
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-gray-400 text-sm">{method.description}</p>
                 </div>
@@ -143,6 +155,9 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
           <p>✓ Secure payment processing</p>
           <p>✓ Cancel anytime</p>
           <p>✓ 30-day money-back guarantee</p>
+          {selectedMethod === 'klarna' && (
+            <p className="text-pink-400">✓ Split into 4 interest-free payments</p>
+          )}
         </div>
       </CardContent>
     </Card>

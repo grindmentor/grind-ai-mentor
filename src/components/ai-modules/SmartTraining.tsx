@@ -3,8 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, ArrowLeft } from "lucide-react";
+import { Dumbbell, ArrowLeft, Download, Play } from "lucide-react";
 import { useState } from "react";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
+import UsageIndicator from "@/components/UsageIndicator";
 
 interface SmartTrainingProps {
   onBack: () => void;
@@ -14,15 +16,16 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [promptsUsed, setPromptsUsed] = useState(0);
-  const maxPrompts = 3; // Basic tier limit
+  const { canUseFeature, incrementUsage } = useUsageTracking();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || promptsUsed >= maxPrompts) return;
+    if (!input.trim() || !canUseFeature('training_programs')) return;
+    
+    const success = await incrementUsage('training_programs');
+    if (!success) return;
     
     setIsLoading(true);
-    setPromptsUsed(prev => prev + 1);
     
     // Simulate AI response with science-backed training programs
     setTimeout(() => {
@@ -94,27 +97,8 @@ Week 5: Deload (65% 1RM)
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           All programs based on peer-reviewed exercise science research
         </Badge>
-        <Badge className={`${promptsUsed >= maxPrompts ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'}`}>
-          {promptsUsed}/{maxPrompts} programs used
-        </Badge>
+        <UsageIndicator featureKey="training_programs" featureName="Training Programs" compact />
       </div>
-
-      {promptsUsed >= maxPrompts && (
-        <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Program Limit Reached</h3>
-            <p className="text-gray-300 mb-4">
-              Upgrade to get unlimited training programs and advanced features
-            </p>
-            <Button 
-              onClick={() => window.open('/pricing', '_blank')}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              Upgrade Now
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-gray-900 border-gray-800">
@@ -131,12 +115,12 @@ Week 5: Deload (65% 1RM)
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white min-h-32"
-                disabled={promptsUsed >= maxPrompts}
+                disabled={!canUseFeature('training_programs')}
               />
               <Button 
                 type="submit" 
-                disabled={!input.trim() || isLoading || promptsUsed >= maxPrompts}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                disabled={!input.trim() || isLoading || !canUseFeature('training_programs')}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
               >
                 {isLoading ? "Creating Program..." : "Generate Training Program"}
               </Button>
@@ -153,8 +137,33 @@ Week 5: Deload (65% 1RM)
           </CardHeader>
           <CardContent>
             {response ? (
-              <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-sm">{response}</pre>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    <Play className="w-3 h-3 mr-1" />
+                    Program Ready
+                  </Badge>
+                  <Button 
+                    onClick={() => {
+                      const element = document.createElement('a');
+                      const file = new Blob([response], { type: 'text/plain' });
+                      element.href = URL.createObjectURL(file);
+                      element.download = 'training-program.txt';
+                      document.body.appendChild(element);
+                      element.click();
+                      document.body.removeChild(element);
+                    }}
+                    variant="outline" 
+                    size="sm"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+                <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-sm">{response}</pre>
+                </div>
               </div>
             ) : (
               <div className="text-gray-500 text-center py-8">

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Zap, Crown } from "lucide-react";
+import { CreditCard, Zap } from "lucide-react";
 
 interface PaymentSetupProps {
   onUpgrade?: () => void;
@@ -28,9 +28,9 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
         <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-4">
           <Zap className="w-6 h-6 text-white" />
         </div>
-        <CardTitle className="text-white text-xl">Upgrade Your Plan</CardTitle>
+        <CardTitle className="text-white text-xl">Increase Your Usage Limits</CardTitle>
         <CardDescription className="text-gray-400">
-          Get more usage or unlimited access to all AI features
+          Get higher monthly usage limits for all AI fitness features
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -38,7 +38,7 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
           <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
             <div>
               <h3 className="text-white font-medium">Basic Plan</h3>
-              <p className="text-sm text-gray-400">Limited monthly usage</p>
+              <p className="text-sm text-gray-400">Higher monthly usage limits</p>
             </div>
             <div className="text-right">
               <div className="text-lg font-bold text-white">$10</div>
@@ -50,9 +50,9 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="text-white font-medium">Premium Plan</h3>
-                <Crown className="w-4 h-4 text-yellow-500" />
+                <Zap className="w-4 h-4 text-yellow-500" />
               </div>
-              <p className="text-sm text-gray-400">Unlimited everything</p>
+              <p className="text-sm text-gray-400">Unlimited usage</p>
             </div>
             <div className="text-right">
               <div className="text-lg font-bold text-white">$15</div>
@@ -76,7 +76,11 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-            Advanced training programs
+            Training & cardio programs
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+            Progress photo analysis
           </div>
         </div>
 
@@ -90,7 +94,7 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
         </Button>
         
         <Badge className="w-full justify-center bg-blue-500/20 text-blue-400 border-blue-500/30">
-          Free tier runs out in a couple days
+          Higher usage limits available with paid plans
         </Badge>
       </CardContent>
     </Card>

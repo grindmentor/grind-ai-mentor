@@ -3,13 +3,14 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Calculator, TrendingUp, Camera, Utensils, Dumbbell, Timer, FileImage, CreditCard, Target } from "lucide-react";
+import { Brain, Calculator, TrendingUp, Camera, Utensils, Dumbbell, Timer, FileImage, CreditCard, Target, Heart } from "lucide-react";
 import CoachGPT from "./ai-modules/CoachGPT";
 import TDEECalculator from "./ai-modules/TDEECalculator";
 import CutCalcPro from "./ai-modules/CutCalcPro";
 import ProgressAI from "./ai-modules/ProgressAI";
 import MealPlanAI from "./ai-modules/MealPlanAI";
 import SmartTraining from "./ai-modules/SmartTraining";
+import CardioAI from "./ai-modules/CardioAI";
 import WorkoutTimer from "./ai-modules/WorkoutTimer";
 import SmartFoodLog from "./ai-modules/SmartFoodLog";
 import HabitTracker from "./ai-modules/HabitTracker";
@@ -27,7 +28,7 @@ const Dashboard = () => {
       icon: <Brain className="w-6 h-6" />,
       color: 'bg-blue-500',
       component: CoachGPT,
-      tier: 'basic'
+      tier: 'free'
     },
     {
       id: 'meal-plan-ai',
@@ -36,7 +37,7 @@ const Dashboard = () => {
       icon: <Utensils className="w-6 h-6" />,
       color: 'bg-green-500',
       component: MealPlanAI,
-      tier: 'basic'
+      tier: 'free'
     },
     {
       id: 'smart-food-log',
@@ -45,7 +46,7 @@ const Dashboard = () => {
       icon: <FileImage className="w-6 h-6" />,
       color: 'bg-yellow-500',
       component: SmartFoodLog,
-      tier: 'basic'
+      tier: 'free'
     },
     {
       id: 'tdee-calculator',
@@ -54,7 +55,7 @@ const Dashboard = () => {
       icon: <Calculator className="w-6 h-6" />,
       color: 'bg-indigo-500',
       component: TDEECalculator,
-      tier: 'basic'
+      tier: 'free'
     },
     {
       id: 'habit-tracker',
@@ -63,17 +64,27 @@ const Dashboard = () => {
       icon: <Target className="w-6 h-6" />,
       color: 'bg-gradient-to-r from-green-500 to-blue-500',
       component: HabitTracker,
-      tier: 'basic',
+      tier: 'free',
       trending: true
     },
     {
       id: 'smart-training',
       name: 'Smart Training',
-      description: 'AI-generated personalized training programs',
+      description: 'AI-generated personalized weight training programs',
       icon: <Dumbbell className="w-6 h-6" />,
       color: 'bg-red-500',
       component: SmartTraining,
-      tier: 'premium'
+      tier: 'free'
+    },
+    {
+      id: 'cardio-ai',
+      name: 'CardioAI',
+      description: 'Science-based cardiovascular training programs',
+      icon: <Heart className="w-6 h-6" />,
+      color: 'bg-red-600',
+      component: CardioAI,
+      tier: 'free',
+      trending: true
     },
     {
       id: 'progress-ai',
@@ -82,7 +93,7 @@ const Dashboard = () => {
       icon: <Camera className="w-6 h-6" />,
       color: 'bg-purple-500',
       component: ProgressAI,
-      tier: 'premium',
+      tier: 'free',
       trending: true
     },
     {
@@ -92,7 +103,7 @@ const Dashboard = () => {
       icon: <TrendingUp className="w-6 h-6" />,
       color: 'bg-pink-500',
       component: CutCalcPro,
-      tier: 'premium'
+      tier: 'free'
     },
     {
       id: 'workout-timer',
@@ -101,7 +112,7 @@ const Dashboard = () => {
       icon: <Timer className="w-6 h-6" />,
       color: 'bg-teal-500',
       component: WorkoutTimer,
-      tier: 'premium'
+      tier: 'free'
     }
   ];
 
@@ -185,12 +196,8 @@ const Dashboard = () => {
                   <div className="flex-1">
                     <CardTitle className="text-white text-lg">{module.name}</CardTitle>
                     <div className="flex items-center space-x-2 mt-1">
-                      <Badge className={`text-xs ${
-                        module.tier === 'basic' 
-                          ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                          : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-                      }`}>
-                        {module.tier === 'basic' ? 'Basic' : 'Premium'}
+                      <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                        Free Access
                       </Badge>
                     </div>
                   </div>
@@ -200,36 +207,24 @@ const Dashboard = () => {
                 <CardDescription className="text-gray-400 text-sm mb-4">
                   {module.description}
                 </CardDescription>
-                {module.tier === 'premium' ? (
-                  <div className="space-y-2">
-                    <Button 
-                      onClick={() => handleUpgrade('Premium', 15)}
-                      className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-sm"
-                    >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Upgrade for $15/mo
-                    </Button>
-                  </div>
-                ) : (
-                  <Button 
-                    onClick={() => handleModuleClick(module.id)}
-                    className="w-full bg-gray-700 hover:bg-gray-600 text-white"
-                  >
-                    Open Module
-                  </Button>
-                )}
+                <Button 
+                  onClick={() => handleModuleClick(module.id)}
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white"
+                >
+                  Open Module
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Quick upgrade section */}
+        {/* Upgrade section */}
         <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
           <CardContent className="pt-6">
             <div className="text-center">
-              <h3 className="text-2xl font-bold text-white mb-2">Unlock All Premium Features</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">Unlock Higher Usage Limits</h3>
               <p className="text-gray-300 mb-6">
-                Get unlimited access to all AI modules, advanced analytics, and priority support
+                Get more usage per month and support the development of new AI features
               </p>
               <div className="flex justify-center space-x-4">
                 <Button 

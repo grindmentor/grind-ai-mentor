@@ -3,8 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Camera, ArrowLeft, Upload, Zap, TrendingUp } from "lucide-react";
+import { Camera, ArrowLeft, Upload, Zap, TrendingUp, FileText, Download } from "lucide-react";
 import { useState } from "react";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
+import UsageIndicator from "@/components/UsageIndicator";
 
 interface ProgressAIProps {
   onBack: () => void;
@@ -14,6 +16,8 @@ interface ProgressPhoto {
   id: string;
   url: string;
   date: string;
+  type: 'image' | 'file';
+  fileName?: string;
   analysis?: string;
 }
 
@@ -21,8 +25,7 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [analysisUsed, setAnalysisUsed] = useState(0);
-  const maxAnalysis = 3;
+  const { canUseFeature, incrementUsage } = useUsageTracking();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -32,17 +35,20 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
   };
 
   const handleAnalyze = async () => {
-    if (!selectedFile || analysisUsed >= maxAnalysis) return;
+    if (!selectedFile || !canUseFeature('progress_analyses')) return;
+    
+    const success = await incrementUsage('progress_analyses');
+    if (!success) return;
     
     setIsAnalyzing(true);
-    setAnalysisUsed(prev => prev + 1);
     
-    // Create photo URL
     const photoUrl = URL.createObjectURL(selectedFile);
+    const isImage = selectedFile.type.startsWith('image/');
     
     // Simulate AI analysis
     setTimeout(() => {
-      const analysis = `🔥 **Progress Analysis Results**
+      const analysis = isImage ? 
+        `🔥 **Progress Photo Analysis Results**
 
 **Body Composition Assessment:**
 • **Muscle Definition:** Visible improvements in shoulder and arm definition
@@ -82,12 +88,49 @@ Take your next progress photo in 2-4 weeks under similar:
 **Estimated Timeline for Next Milestone:**
 Based on current progress rate: 6-8 weeks for next significant visual change.
 
-*Analysis based on computer vision and validated body composition research*`;
+*Analysis based on computer vision and validated body composition research*` :
+        `📋 **Workout Program Analysis Results**
+
+**Program Structure Assessment:**
+• **Exercise Selection:** Well-balanced compound and isolation movements
+• **Volume Distribution:** Appropriate weekly sets per muscle group
+• **Progressive Overload:** Clear progression scheme identified
+• **Recovery Protocols:** Adequate rest periods between sessions
+
+**Key Strengths:**
+• **Compound Focus:** Excellent use of multi-joint movements
+• **Periodization:** Evidence of structured progression
+• **Balance:** Equal attention to all muscle groups
+• **Recovery:** Proper rest day implementation
+
+**Science-Based Optimization Suggestions:**
+
+1. **Exercise Order Enhancement:**
+   - Prioritize compound movements early in sessions
+   - Place isolation work after main lifts
+   - Consider pre-exhaustion for lagging muscle groups
+
+2. **Volume Periodization:**
+   - Week 1-2: Accumulation phase (moderate volume)
+   - Week 3: Intensification (reduced volume, higher intensity)
+   - Week 4: Deload (50% volume reduction)
+
+3. **Recovery Enhancement:**
+   - Implement contrast showers post-workout
+   - Consider massage or soft tissue work 2x/week
+   - Track HRV for autonomic recovery monitoring
+
+**Program Adherence Score:** 8.5/10
+**Estimated Results Timeline:** 8-12 weeks for significant strength gains
+
+*Analysis based on exercise science research and periodization principles*`;
 
       const newPhoto: ProgressPhoto = {
         id: Date.now().toString(),
         url: photoUrl,
         date: new Date().toLocaleDateString(),
+        type: isImage ? 'image' : 'file',
+        fileName: selectedFile.name,
         analysis
       };
 
@@ -110,7 +153,7 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white">ProgressAI</h1>
-            <p className="text-gray-400">AI-powered progress photo analysis & body composition tracking</p>
+            <p className="text-gray-400">AI-powered progress photo & workout program analysis</p>
           </div>
         </div>
       </div>
@@ -118,81 +161,67 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
       <div className="flex items-center space-x-4">
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           <TrendingUp className="w-3 h-3 mr-1" />
-          Trending Feature - Computer Vision Analysis
+          Computer Vision & Program Analysis
         </Badge>
-        <Badge className={`${analysisUsed >= maxAnalysis ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'}`}>
-          {analysisUsed}/{maxAnalysis} analyses used
-        </Badge>
+        <UsageIndicator featureKey="progress_analyses" featureName="Progress Analysis" compact />
       </div>
-
-      {analysisUsed >= maxAnalysis && (
-        <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Analysis Limit Reached</h3>
-            <p className="text-gray-300 mb-4">
-              Upgrade to get unlimited photo analysis and detailed body composition tracking
-            </p>
-            <Button 
-              onClick={() => window.open('/pricing', '_blank')}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Upgrade Now
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Upload Progress Photo</CardTitle>
+            <CardTitle className="text-white">Upload Progress Content</CardTitle>
             <CardDescription className="text-gray-400">
-              Upload your progress photo for AI-powered body composition analysis
+              Upload photos for body composition analysis or workout programs for optimization
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.pdf,.docx,.txt"
                 onChange={handleFileSelect}
                 className="hidden"
-                id="photo-upload"
+                id="file-upload"
               />
-              <label htmlFor="photo-upload" className="cursor-pointer">
+              <label htmlFor="file-upload" className="cursor-pointer">
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-white font-medium mb-2">Click to upload photo</p>
-                <p className="text-gray-400 text-sm">PNG, JPG up to 10MB</p>
+                <p className="text-white font-medium mb-2">Click to upload file</p>
+                <p className="text-gray-400 text-sm">Images, PDFs, or text files up to 10MB</p>
               </label>
             </div>
 
             {selectedFile && (
               <div className="bg-gray-800 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white font-medium">{selectedFile.name}</p>
-                    <p className="text-gray-400 text-sm">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <div className="flex items-center space-x-3">
+                    {selectedFile.type.startsWith('image/') ? (
+                      <Camera className="w-5 h-5 text-purple-400" />
+                    ) : (
+                      <FileText className="w-5 h-5 text-blue-400" />
+                    )}
+                    <div>
+                      <p className="text-white font-medium">{selectedFile.name}</p>
+                      <p className="text-gray-400 text-sm">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
                   </div>
                   <Button
                     onClick={handleAnalyze}
-                    disabled={isAnalyzing || analysisUsed >= maxAnalysis}
+                    disabled={isAnalyzing || !canUseFeature('progress_analyses')}
                     className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
                   >
-                    {isAnalyzing ? "Analyzing..." : "Analyze Photo"}
+                    {isAnalyzing ? "Analyzing..." : "Analyze Content"}
                   </Button>
                 </div>
               </div>
             )}
 
             <div className="bg-gray-800 p-4 rounded-lg">
-              <h4 className="text-white font-medium mb-2">📸 Photo Tips for Best Results:</h4>
+              <h4 className="text-white font-medium mb-2">📸 Upload Tips for Best Results:</h4>
               <ul className="text-gray-300 text-sm space-y-1">
-                <li>• Well-lit environment (natural light preferred)</li>
-                <li>• Minimal clothing to show muscle definition</li>
-                <li>• Consistent poses (front, side, back views)</li>
-                <li>• Same time of day for consistent comparison</li>
-                <li>• Relaxed, natural stance</li>
+                <li>• <strong>Photos:</strong> Well-lit, minimal clothing, consistent poses</li>
+                <li>• <strong>Programs:</strong> Clear exercise names, sets, reps, and progression</li>
+                <li>• <strong>Format:</strong> PDF, Word docs, or clear images work best</li>
+                <li>• <strong>Detail:</strong> Include goals, experience level, available equipment</li>
               </ul>
             </div>
           </CardContent>
@@ -200,9 +229,9 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
 
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Progress Timeline</CardTitle>
+            <CardTitle className="text-white">Analysis History</CardTitle>
             <CardDescription className="text-gray-400">
-              Your photo analysis history and progress tracking
+              Your uploaded content and AI analysis results
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -211,8 +240,8 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
                 <div className="flex items-center space-x-3">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
                   <div>
-                    <p className="text-white font-medium">Analyzing your progress photo...</p>
-                    <p className="text-gray-400 text-sm">Using computer vision and body composition algorithms</p>
+                    <p className="text-white font-medium">Analyzing your content...</p>
+                    <p className="text-gray-400 text-sm">Using AI algorithms for detailed analysis</p>
                   </div>
                 </div>
               </div>
@@ -223,14 +252,27 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
                 {photos.map((photo) => (
                   <div key={photo.id} className="bg-gray-800 p-4 rounded-lg">
                     <div className="flex items-start space-x-4">
-                      <img 
-                        src={photo.url} 
-                        alt="Progress photo"
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
+                      {photo.type === 'image' ? (
+                        <img 
+                          src={photo.url} 
+                          alt="Progress content"
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                          <FileText className="w-8 h-8 text-blue-400" />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-white font-medium">Analysis - {photo.date}</p>
+                          <div>
+                            <p className="text-white font-medium">
+                              {photo.type === 'image' ? 'Photo Analysis' : 'Program Analysis'} - {photo.date}
+                            </p>
+                            {photo.fileName && (
+                              <p className="text-gray-400 text-sm">{photo.fileName}</p>
+                            )}
+                          </div>
                           <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                             Completed
                           </Badge>
@@ -247,9 +289,9 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
               </div>
             ) : (
               <div className="text-center py-8">
-                <Camera className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-500">No progress photos uploaded yet</p>
-                <p className="text-gray-600 text-sm">Upload your first photo to start tracking!</p>
+                <Upload className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-500">No content uploaded yet</p>
+                <p className="text-gray-600 text-sm">Upload photos or workout programs to start analyzing!</p>
               </div>
             )}
           </CardContent>

@@ -71,8 +71,8 @@ const Settings = () => {
   // Update height display when unit changes
   useEffect(() => {
     if (profile.height && preferences.height_unit === 'ft-in') {
-      const heightInInches = parseInt(profile.height);
-      if (!isNaN(heightInInches)) {
+      const heightInInches = parseFloat(profile.height);
+      if (!isNaN(heightInInches) && heightInInches > 0) {
         const { feet, inches } = convertInchesToFeetAndInches(heightInInches);
         setProfile(prev => ({
           ...prev,
@@ -81,7 +81,7 @@ const Settings = () => {
         }));
       }
     }
-  }, [preferences.height_unit]);
+  }, [preferences.height_unit, profile.height]);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -122,7 +122,6 @@ const Settings = () => {
     if (!user) return;
 
     try {
-      // Use any type to bypass TypeScript errors until types are regenerated
       const { error } = await (supabase as any)
         .from('user_preferences')
         .upsert({
@@ -157,16 +156,26 @@ const Settings = () => {
         finalHeight = convertFeetAndInchesToInches(feet, inches).toString();
       }
 
-      // Prepare profile data with proper validation
+      // Prepare profile data with proper validation - ensure numbers are valid
       const profileData: any = {
-        weight: profile.weight && !isNaN(parseFloat(profile.weight)) ? parseFloat(profile.weight) : null,
+        weight: null,
         birthday: profile.birthday || null,
-        height: finalHeight && !isNaN(parseFloat(finalHeight)) ? parseFloat(finalHeight) : null,
+        height: null,
         experience: profile.experience || null,
         activity: profile.activity || null,
         goal: profile.goal || null,
         display_name: profile.displayName || null
       };
+
+      // Only set weight if it's a valid number
+      if (profile.weight && !isNaN(parseFloat(profile.weight)) && parseFloat(profile.weight) > 0) {
+        profileData.weight = parseFloat(profile.weight);
+      }
+
+      // Only set height if it's a valid number
+      if (finalHeight && !isNaN(parseFloat(finalHeight)) && parseFloat(finalHeight) > 0) {
+        profileData.height = parseFloat(finalHeight);
+      }
 
       console.log('Saving profile data:', profileData);
 
@@ -235,7 +244,7 @@ const Settings = () => {
   const getWeightDisplay = () => {
     if (!profile.weight) return '';
     const weightInLbs = parseFloat(profile.weight);
-    if (isNaN(weightInLbs)) return '';
+    if (isNaN(weightInLbs) || weightInLbs <= 0) return '';
     return preferences.weight_unit === 'kg' 
       ? Math.round(convertLbsToKg(weightInLbs)).toString()
       : weightInLbs.toString();
@@ -244,7 +253,7 @@ const Settings = () => {
   const getHeightDisplay = () => {
     if (!profile.height) return '';
     const heightInInches = parseFloat(profile.height);
-    if (isNaN(heightInInches)) return '';
+    if (isNaN(heightInInches) || heightInInches <= 0) return '';
     if (preferences.height_unit === 'cm') {
       return Math.round(convertInchesToCm(heightInInches)).toString();
     }
@@ -258,7 +267,7 @@ const Settings = () => {
     }
     
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return;
+    if (isNaN(numValue) || numValue <= 0) return;
     
     const weightInLbs = preferences.weight_unit === 'kg' 
       ? convertKgToLbs(numValue)
@@ -274,7 +283,7 @@ const Settings = () => {
     }
     
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return;
+    if (isNaN(numValue) || numValue <= 0) return;
     
     const heightInInches = preferences.height_unit === 'cm' 
       ? convertCmToInches(numValue)

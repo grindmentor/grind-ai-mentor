@@ -30,7 +30,7 @@ interface CurrentUsage {
 
 export const useUsageTracking = () => {
   const { user } = useAuth();
-  const { currentTierData } = useSubscription();
+  const { currentTierData, currentTier } = useSubscription();
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -156,6 +156,7 @@ export const useUsageTracking = () => {
     getRemainingUsage,
     getUsagePercentage,
     limits: currentTierData?.limits,
+    userTier: currentTier,
     refreshUsage: fetchUsageData
   };
 };

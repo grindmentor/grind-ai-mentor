@@ -73,7 +73,7 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <UpgradeSection onUpgrade={handleUpgrade} />
+        <UpgradeSection />
       </div>
     </div>
   );

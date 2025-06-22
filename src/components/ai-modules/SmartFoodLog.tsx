@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,30 +72,47 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
     setIsAnalyzing(true);
     
     try {
-      const analysisPrompt = `Analyze this food item and provide detailed nutritional information: "${foodName}" (${portionSize || 'standard serving'}). Provide:
-      1. Estimated calories
-      2. Protein content (grams)
-      3. Carbohydrates (grams)
-      4. Fat content (grams)
-      5. Fiber content (grams)
-      6. Any relevant nutritional notes
-      
-      Please be as accurate as possible based on standard nutritional databases and typical serving sizes.`;
+      const analysisPrompt = `Analyze this food item and provide detailed nutritional information: "${foodName}" (${portionSize || 'standard serving'}). 
 
+Please provide EXACT numbers in this format:
+Calories: [number]
+Protein: [number]g
+Carbs: [number]g
+Fat: [number]g
+Fiber: [number]g
+
+Example response format:
+Calories: 250
+Protein: 25g
+Carbs: 30g
+Fat: 8g
+Fiber: 5g
+
+Additional notes about the food item and nutritional benefits.`;
+
+      console.log('Analyzing food:', foodName, portionSize);
       const analysis = await aiService.getCoachingAdvice(analysisPrompt);
+      console.log('AI Analysis result:', analysis);
       
       const success = await incrementUsage('food_log_analyses');
       if (!success) {
+        toast({
+          title: "Usage limit reached",
+          description: "You've reached your limit for food analysis this month.",
+          variant: "destructive",
+        });
         setIsAnalyzing(false);
         return;
       }
 
-      // Parse the analysis to extract nutritional values
+      // Enhanced parsing with better patterns
       const calories = extractNutrientValue(analysis, 'calories') || 0;
       const protein = extractNutrientValue(analysis, 'protein') || 0;
       const carbs = extractNutrientValue(analysis, 'carbs') || extractNutrientValue(analysis, 'carbohydrates') || 0;
       const fat = extractNutrientValue(analysis, 'fat') || 0;
       const fiber = extractNutrientValue(analysis, 'fiber') || 0;
+
+      console.log('Parsed nutrition values:', { calories, protein, carbs, fat, fiber });
 
       // Save to database
       const { error } = await supabase
@@ -118,7 +134,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
       toast({
         title: "Food logged successfully!",
-        description: "Nutritional information has been analyzed and saved.",
+        description: `${foodName} analyzed: ${Math.round(calories)} cal, ${Math.round(protein)}g protein, ${Math.round(carbs)}g carbs, ${Math.round(fat)}g fat`,
       });
 
       // Reset form and reload entries
@@ -139,20 +155,30 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
     }
   };
 
-  // Simple function to extract nutrient values from AI response
+  // Enhanced function to extract nutrient values from AI response
   const extractNutrientValue = (text: string, nutrient: string): number | null => {
+    console.log('Extracting', nutrient, 'from:', text.substring(0, 200));
+    
     const patterns = [
+      // Primary patterns for the specific format we request
       new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)`, 'i'),
       new RegExp(`([0-9]+(?:\\.[0-9]+)?)\\s*g?\\s*${nutrient}`, 'i'),
-      new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)\\s*g`, 'i')
+      new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)\\s*g`, 'i'),
+      // Additional flexible patterns
+      new RegExp(`${nutrient}[^0-9]*([0-9]+(?:\\.[0-9]+)?)`, 'i'),
+      new RegExp(`([0-9]+(?:\\.[0-9]+)?)[^a-zA-Z]*${nutrient}`, 'i')
     ];
 
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
-        return parseFloat(match[1]);
+        const value = parseFloat(match[1]);
+        console.log(`Found ${nutrient}: ${value} using pattern:`, pattern.source);
+        return value;
       }
     }
+    
+    console.log(`Could not find ${nutrient} in text`);
     return null;
   };
 
@@ -195,7 +221,6 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
         <UsageIndicator featureKey="food_photo_analyses" featureName="Photo Analysis" compact />
       </div>
 
-      {/* Date Selector and Daily Summary */}
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
@@ -267,12 +292,10 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
         </Card>
       </div>
 
-      {/* Photo Logger */}
       {showPhotoLogger && (
         <FoodPhotoLogger onFoodLogged={loadFoodEntries} />
       )}
 
-      {/* Add Food Form */}
       {showAddForm && (
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
@@ -337,7 +360,6 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
         </Card>
       )}
 
-      {/* Food Entries List */}
       <Card className="bg-gray-900 border-gray-800">
         <CardHeader>
           <CardTitle className="text-white">Today's Food Log</CardTitle>

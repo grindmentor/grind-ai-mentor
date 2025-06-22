@@ -16,12 +16,12 @@ const Index = () => {
           <span className="text-xl font-bold">GrindMentor</span>
         </div>
         <div className="flex items-center space-x-4">
-          <Link to="/app">
+          <Link to="/signin">
             <Button variant="ghost" className="text-white hover:bg-gray-800">
               Sign In
             </Button>
           </Link>
-          <Link to="/app">
+          <Link to="/signin">
             <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
               Get Started
             </Button>
@@ -42,36 +42,36 @@ const Index = () => {
           </span>
         </h1>
         <p className="text-lg md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-          Transform your body with AI-powered meal planning, coaching, and progress tracking designed for serious lifters.
+          Transform your body with AI-powered meal planning, coaching, and progress tracking designed for serious lifters. All responses backed by scientific research and peer-reviewed studies.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <Link to="/app">
+          <Link to="/signin">
             <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-4 text-lg">
-              Start Free Trial
+              Get Started
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </Link>
-          <Link to="/app">
-            <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800 px-8 py-4 text-lg">
+          <Link to="/signin">
+            <Button variant="outline" className="border-gray-600 text-black bg-white hover:bg-gray-100 px-8 py-4 text-lg">
               Learn More
             </Button>
           </Link>
         </div>
 
-        {/* Social Proof */}
+        {/* Updated Social Proof */}
         <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-gray-400">
           <div className="flex items-center space-x-2">
-            <Users className="w-5 h-5" />
-            <span>10,000+ Active Users</span>
+            <Brain className="w-5 h-5" />
+            <span>Science-Backed AI Responses</span>
           </div>
           <div className="flex items-center space-x-2">
             <Target className="w-5 h-5" />
-            <span>95% Goal Achievement Rate</span>
+            <span>Personalized Training Programs</span>
           </div>
           <div className="flex items-center space-x-2">
             <BarChart3 className="w-5 h-5" />
-            <span>2M+ Meals Planned</span>
+            <span>Advanced Progress Tracking</span>
           </div>
         </div>
       </section>
@@ -84,7 +84,7 @@ const Index = () => {
             <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent"> Succeed</span>
           </h2>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Comprehensive tools that work together to accelerate your fitness journey
+            Comprehensive tools backed by scientific research and peer-reviewed studies
           </p>
         </div>
 
@@ -97,18 +97,18 @@ const Index = () => {
               </div>
               <CardTitle className="text-white text-xl">MealPlanAI</CardTitle>
               <CardDescription className="text-gray-400">
-                Personalized nutrition plans that fit your goals and budget
+                Personalized nutrition plans based on metabolic research
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Custom macro calculations
+                  Evidence-based macro calculations
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Budget-conscious meal planning
+                  Budget-optimized meal planning
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
@@ -126,22 +126,22 @@ const Index = () => {
               </div>
               <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
               <CardDescription className="text-gray-400">
-                24/7 AI coaching for all your fitness questions
+                24/7 AI coaching with scientific citations
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Instant expert advice
+                  Research-backed advice
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Form corrections & tips
+                  Study citations included
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Recovery guidance
+                  Evidence-based recommendations
                 </li>
               </ul>
             </CardContent>
@@ -155,22 +155,22 @@ const Index = () => {
               </div>
               <CardTitle className="text-white text-xl">Smart Training</CardTitle>
               <CardDescription className="text-gray-400">
-                Adaptive workout programs that evolve with you
+                Programs based on exercise science principles
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Goal-specific programs
+                  Periodization principles
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Auto progression tracking
+                  Progressive overload tracking
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Deload week planning
+                  Recovery optimization
                 </li>
               </ul>
             </CardContent>
@@ -184,22 +184,22 @@ const Index = () => {
               </div>
               <CardTitle className="text-white text-xl">CutCalc Pro</CardTitle>
               <CardDescription className="text-gray-400">
-                AI-powered progress tracking with body fat analysis
+                Body composition analysis using validated methods
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Photo progress analysis
+                  Visual progress tracking
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Body fat estimates
+                  Body fat estimation
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Cut/bulk recommendations
+                  Phase recommendations
                 </li>
               </ul>
             </CardContent>
@@ -213,22 +213,22 @@ const Index = () => {
               </div>
               <CardTitle className="text-white text-xl">Smart Food Log</CardTitle>
               <CardDescription className="text-gray-400">
-                Effortless food tracking with photo recognition
+                Accurate nutrition tracking with database validation
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Snap & auto-log meals
+                  Photo recognition
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Portion size adjustments
+                  Portion accuracy
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Custom food database
+                  Comprehensive database
                 </li>
               </ul>
             </CardContent>
@@ -242,7 +242,7 @@ const Index = () => {
               </div>
               <CardTitle className="text-white text-xl">Premium AI</CardTitle>
               <CardDescription className="text-gray-400">
-                Advanced automation and unlimited access
+                Advanced features with unlimited access
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -253,7 +253,7 @@ const Index = () => {
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Priority AI responses
+                  Priority responses
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
@@ -306,9 +306,9 @@ const Index = () => {
                   Basic workout tracking
                 </li>
               </ul>
-              <Link to="/app">
+              <Link to="/signin">
                 <Button className="w-full bg-gray-700 hover:bg-gray-600 text-white">
-                  Start Free
+                  Get Started
                 </Button>
               </Link>
             </CardContent>
@@ -344,7 +344,7 @@ const Index = () => {
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-3" />
-                  Body fat analysis & recommendations
+                  Body composition analysis
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-3" />
@@ -355,9 +355,9 @@ const Index = () => {
                   Priority support
                 </li>
               </ul>
-              <Link to="/app">
+              <Link to="/signin">
                 <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
-                  Start Premium Trial
+                  Get Started Premium
                 </Button>
               </Link>
             </CardContent>
@@ -373,12 +373,12 @@ const Index = () => {
             <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent"> Transform?</span>
           </h2>
           <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            Join thousands of lifters who've already transformed their physiques with AI-powered coaching.
+            Start your fitness journey with science-backed AI coaching and personalized training programs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/app">
+            <Link to="/signin">
               <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-4 text-lg">
-                Start Your Journey
+                Get Started Now
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
@@ -403,7 +403,7 @@ const Index = () => {
             </div>
           </div>
           <div className="text-center text-gray-400 mt-8 pt-8 border-t border-gray-800">
-            <p>&copy; 2024 GrindMentor. Built for lifters, by lifters.</p>
+            <p>&copy; 2024 GrindMentor. Science-backed fitness coaching.</p>
           </div>
         </div>
       </footer>

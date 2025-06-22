@@ -15,9 +15,8 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
   const handleUpgrade = async () => {
     setIsLoading(true);
     
-    // TODO: Integrate with Stripe or other payment provider
-    // Example: await supabase.functions.invoke('create-checkout')
-    // For now, just simulate loading
+    // Simulate payment processing
+    // In production, integrate with Stripe or your preferred payment provider
     setTimeout(() => {
       setIsLoading(false);
       if (onUpgrade) onUpgrade();
@@ -52,6 +51,10 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+            Science-backed recommendations
+          </div>
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
             Advanced progress tracking
           </div>
           <div className="flex items-center">
@@ -70,7 +73,7 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
         </Button>
         
         <p className="text-xs text-gray-500 text-center mt-2">
-          Secure payment powered by Stripe
+          Ready for Stripe integration
         </p>
       </CardContent>
     </Card>
@@ -78,3 +81,4 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
 };
 
 export default PaymentSetup;
+

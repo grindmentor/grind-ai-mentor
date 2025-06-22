@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Zap } from "lucide-react";
+import { CreditCard, Zap, Crown } from "lucide-react";
 
 interface PaymentSetupProps {
   onUpgrade?: () => void;
@@ -28,19 +28,37 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
         <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-4">
           <Zap className="w-6 h-6 text-white" />
         </div>
-        <CardTitle className="text-white text-xl">Upgrade to Premium</CardTitle>
+        <CardTitle className="text-white text-xl">Upgrade Your Plan</CardTitle>
         <CardDescription className="text-gray-400">
-          Unlock unlimited access to all AI features
+          Get more usage or unlimited access to all AI features
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-white">
-            Starting at $10<span className="text-sm text-gray-400">/month</span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+            <div>
+              <h3 className="text-white font-medium">Basic Plan</h3>
+              <p className="text-sm text-gray-400">Limited monthly usage</p>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold text-white">$10</div>
+              <div className="text-xs text-gray-400">/month</div>
+            </div>
           </div>
-          <Badge className="mt-2 bg-orange-500/20 text-orange-400 border-orange-500/30">
-            Two plans available
-          </Badge>
+          
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-500/10 to-red-600/10 border border-orange-500/30 rounded-lg">
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-white font-medium">Premium Plan</h3>
+                <Crown className="w-4 h-4 text-yellow-500" />
+              </div>
+              <p className="text-sm text-gray-400">Unlimited everything</p>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold text-white">$15</div>
+              <div className="text-xs text-gray-400">/month</div>
+            </div>
+          </div>
         </div>
         
         <div className="space-y-2 text-sm text-gray-300">
@@ -68,12 +86,12 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
           className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
         >
           <CreditCard className="w-4 h-4 mr-2" />
-          {isLoading ? "Loading..." : "View Plans"}
+          {isLoading ? "Loading..." : "Choose Your Plan"}
         </Button>
         
-        <p className="text-xs text-gray-500 text-center mt-2">
-          Choose between Basic ($10) and Premium ($20)
-        </p>
+        <Badge className="w-full justify-center bg-blue-500/20 text-blue-400 border-blue-500/30">
+          Free tier runs out in a couple days
+        </Badge>
       </CardContent>
     </Card>
   );

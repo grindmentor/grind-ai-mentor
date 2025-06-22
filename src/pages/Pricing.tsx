@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import PaymentMethods from "@/components/PaymentMethods";
@@ -16,15 +16,18 @@ const Pricing = () => {
       name: "Basic",
       price: 10,
       period: "/month",
-      description: "Essential AI coaching tools",
+      description: "Limited access to all AI features",
       features: [
-        "CoachGPT - 24/7 AI coaching",
-        "MealPlanAI - Personalized nutrition",
-        "Smart Food Log - Photo recognition",
-        "TDEE & FFMI Calculator",
-        "Science-backed recommendations",
-        "Basic progress tracking"
+        "50 CoachGPT queries per month",
+        "15 MealPlanAI generations",
+        "100 Smart Food Log analyses",
+        "20 TDEE calculations",
+        "8 Smart Training programs",
+        "25 Progress analyses",
+        "200 Habit checks",
+        "Science-backed recommendations"
       ],
+      note: "Designed to last most of the month for typical users",
       buttonText: "Get Basic",
       popular: false
     },
@@ -32,17 +35,20 @@ const Pricing = () => {
       name: "Premium",
       price: 15,
       period: "/month",
-      description: "Complete fitness transformation suite",
+      description: "Unlimited access to everything",
       features: [
-        "Everything in Basic, plus:",
-        "Smart Training - Advanced programs",
-        "CutCalc Pro - Body composition analysis",
-        "Advanced progress tracking",
+        "Unlimited CoachGPT queries",
+        "Unlimited MealPlanAI generations",
+        "Unlimited Smart Food Log analyses",
+        "Unlimited TDEE calculations",
+        "Unlimited Smart Training programs",
+        "Unlimited Progress analyses",
+        "Unlimited Habit tracking",
         "Priority support",
-        "Unlimited AI interactions",
-        "Custom meal plans & training"
+        "All future features included"
       ],
-      buttonText: "Get Premium",
+      note: "No limits, use as much as you want",
+      buttonText: "Go Unlimited",
       popular: true
     }
   ];
@@ -93,9 +99,14 @@ const Pricing = () => {
           <p className="text-gray-400 text-lg">
             All plans include science-backed AI recommendations with peer-reviewed research citations
           </p>
-          <Badge className="mt-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
-            Cancel anytime • No hidden fees
-          </Badge>
+          <div className="mt-6 space-y-2">
+            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+              Free tier: Very limited usage (few days)
+            </Badge>
+            <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+              Cancel anytime • No hidden fees
+            </Badge>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -106,6 +117,7 @@ const Pricing = () => {
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white">
+                    <Crown className="w-3 h-3 mr-1" />
                     Most Popular
                   </Badge>
                 </div>
@@ -120,6 +132,13 @@ const Pricing = () => {
                 <CardDescription className="text-gray-400 mt-2">
                   {plan.description}
                 </CardDescription>
+                <Badge className={`mt-2 ${
+                  plan.name === 'Premium' 
+                    ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                    : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                }`}>
+                  {plan.note}
+                </Badge>
               </CardHeader>
               
               <CardContent className="space-y-6">
@@ -127,9 +146,7 @@ const Pricing = () => {
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start space-x-3">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className={`text-sm ${
-                        feature.startsWith('Everything in') ? 'text-orange-400 font-medium' : 'text-gray-300'
-                      }`}>
+                      <span className="text-sm text-gray-300">
                         {feature}
                       </span>
                     </li>
@@ -153,7 +170,7 @@ const Pricing = () => {
 
         <div className="text-center mt-12 space-y-4">
           <p className="text-gray-400">
-            Both plans include access to our science-backed AI with research citations
+            Free tier includes very limited usage designed to last only a couple of days
           </p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
             <span>✓ 30-day money-back guarantee</span>

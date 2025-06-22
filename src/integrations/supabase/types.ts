@@ -108,6 +108,57 @@ export type Database = {
         }
         Relationships: []
       }
+      user_usage: {
+        Row: {
+          coach_gpt_queries: number | null
+          created_at: string
+          cut_calc_uses: number | null
+          food_log_analyses: number | null
+          habit_checks: number | null
+          id: string
+          meal_plan_generations: number | null
+          month_year: string
+          progress_analyses: number | null
+          tdee_calculations: number | null
+          training_programs: number | null
+          updated_at: string
+          user_id: string
+          workout_timer_sessions: number | null
+        }
+        Insert: {
+          coach_gpt_queries?: number | null
+          created_at?: string
+          cut_calc_uses?: number | null
+          food_log_analyses?: number | null
+          habit_checks?: number | null
+          id?: string
+          meal_plan_generations?: number | null
+          month_year: string
+          progress_analyses?: number | null
+          tdee_calculations?: number | null
+          training_programs?: number | null
+          updated_at?: string
+          user_id: string
+          workout_timer_sessions?: number | null
+        }
+        Update: {
+          coach_gpt_queries?: number | null
+          created_at?: string
+          cut_calc_uses?: number | null
+          food_log_analyses?: number | null
+          habit_checks?: number | null
+          id?: string
+          meal_plan_generations?: number | null
+          month_year?: string
+          progress_analyses?: number | null
+          tdee_calculations?: number | null
+          training_programs?: number | null
+          updated_at?: string
+          user_id?: string
+          workout_timer_sessions?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -116,6 +167,20 @@ export type Database = {
       calculate_age: {
         Args: { birthday: string }
         Returns: number
+      }
+      get_current_usage: {
+        Args: { p_user_id: string }
+        Returns: {
+          coach_gpt_queries: number
+          meal_plan_generations: number
+          food_log_analyses: number
+          tdee_calculations: number
+          habit_checks: number
+          training_programs: number
+          progress_analyses: number
+          cut_calc_uses: number
+          workout_timer_sessions: number
+        }[]
       }
     }
     Enums: {

@@ -70,7 +70,7 @@ const SubscriptionManager = () => {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <p className="font-medium">{currentTierData?.name} Plan</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground break-words">
             {currentTier === 'free' 
               ? 'Limited usage - upgrade for more features'
               : `$${currentTierData?.price}/month - ${currentTierData?.features[0]}`
@@ -83,7 +83,7 @@ const SubscriptionManager = () => {
             <Button 
               onClick={() => handleUpgrade('basic')}
               disabled={isProcessing}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-sm"
             >
               <Zap className="w-4 h-4 mr-2" />
               {isProcessing ? 'Processing...' : 'Upgrade to Basic - $10/month'}
@@ -91,7 +91,7 @@ const SubscriptionManager = () => {
             <Button 
               onClick={() => handleUpgrade('premium')}
               disabled={isProcessing}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-sm"
             >
               <Crown className="w-4 h-4 mr-2" />
               {isProcessing ? 'Processing...' : 'Upgrade to Premium - $15/month'}

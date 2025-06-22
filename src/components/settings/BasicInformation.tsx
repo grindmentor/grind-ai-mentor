@@ -33,6 +33,34 @@ const BasicInformation = ({
   getWeightDisplay,
   getHeightDisplay
 }: BasicInformationProps) => {
+  const handleHeightFeetChange = (value: string) => {
+    const numValue = parseInt(value);
+    if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 8)) {
+      onInputChange('heightFeet', value);
+    }
+  };
+
+  const handleHeightInchesChange = (value: string) => {
+    const numValue = parseInt(value);
+    if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 11)) {
+      onInputChange('heightInches', value);
+    }
+  };
+
+  const handleHeightChange = (value: string) => {
+    const numValue = parseFloat(value);
+    if (value === '' || (!isNaN(numValue) && numValue >= 0)) {
+      onHeightChange(value);
+    }
+  };
+
+  const handleWeightChange = (value: string) => {
+    const numValue = parseFloat(value);
+    if (value === '' || (!isNaN(numValue) && numValue >= 0)) {
+      onWeightChange(value);
+    }
+  };
+
   return (
     <Card className="bg-card border-border">
       <CardHeader>
@@ -53,7 +81,7 @@ const BasicInformation = ({
             step="0.1"
             placeholder={preferences.weight_unit === 'kg' ? '80' : '180'}
             value={getWeightDisplay()}
-            onChange={(e) => onWeightChange(e.target.value)}
+            onChange={(e) => handleWeightChange(e.target.value)}
             className="bg-background border-border text-foreground"
           />
         </div>
@@ -84,7 +112,7 @@ const BasicInformation = ({
                   step="1"
                   placeholder="5"
                   value={profile.heightFeet}
-                  onChange={(e) => onInputChange('heightFeet', e.target.value)}
+                  onChange={(e) => handleHeightFeetChange(e.target.value)}
                   className="bg-background border-border text-foreground"
                 />
                 <Label className="text-xs text-muted-foreground">feet</Label>
@@ -97,7 +125,7 @@ const BasicInformation = ({
                   step="1"
                   placeholder="10"
                   value={profile.heightInches}
-                  onChange={(e) => onInputChange('heightInches', e.target.value)}
+                  onChange={(e) => handleHeightInchesChange(e.target.value)}
                   className="bg-background border-border text-foreground"
                 />
                 <Label className="text-xs text-muted-foreground">inches</Label>
@@ -116,7 +144,7 @@ const BasicInformation = ({
               step="0.1"
               placeholder={preferences.height_unit === 'cm' ? '175' : '70'}
               value={getHeightDisplay()}
-              onChange={(e) => onHeightChange(e.target.value)}
+              onChange={(e) => handleHeightChange(e.target.value)}
               className="bg-background border-border text-foreground"
             />
           </div>

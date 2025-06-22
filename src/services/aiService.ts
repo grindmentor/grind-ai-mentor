@@ -8,21 +8,21 @@ export interface AIServiceResponse {
 
 class AIService {
   private formatResponse(response: string): string {
-    // Remove markdown formatting symbols that don't render properly
+    // Clean up AI formatting symbols
     let formatted = response
-      // Remove bold markdown symbols
+      // Remove markdown bold/italic symbols
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/__(.*?)__/g, '$1')
-      // Remove italic symbols
       .replace(/\*(.*?)\*/g, '$1')
       .replace(/_(.*?)_/g, '$1')
       // Convert numbered lists to bullet points
       .replace(/^\d+\.\s*/gm, '• ')
-      // Ensure proper spacing around bullet points
+      // Ensure proper spacing
       .replace(/\n\n•/g, '\n\n• ')
       .replace(/\n•/g, '\n• ')
       // Clean up extra whitespace
-      .replace(/\n{3,}/g, '\n\n');
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
 
     return formatted;
   }
@@ -33,7 +33,13 @@ class AIService {
         body: { 
           type: 'training',
           userInput: userInput,
-          formatting: 'Provide clear, structured responses without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed plans. Focus on scientific, evidence-based recommendations.'
+          formatting: `Please follow these guidelines:
+          1. Ask 3-4 clarifying questions about experience level, available equipment, time commitment, and specific goals before providing a detailed plan
+          2. Present workout plans in a clear grid format with exercises, sets, reps, and rest periods
+          3. Provide a brief summary at the end highlighting key points
+          4. Use plain text only - no bold, italic, or markdown formatting
+          5. Use bullet points with • symbol for lists
+          6. Focus on scientific, evidence-based recommendations`
         }
       });
 
@@ -59,7 +65,13 @@ class AIService {
         body: { 
           type: 'nutrition',
           userInput: userInput,
-          formatting: 'Provide clear, structured meal plans without markdown formatting. Use bullet points with • symbol. Ask clarifying questions about dietary preferences, goals, and restrictions before providing detailed plans. Present meal plans in a grid format when possible.'
+          formatting: `Please follow these guidelines:
+          1. Ask 3-4 clarifying questions about dietary preferences, restrictions, budget, and goals before providing a detailed plan
+          2. Present meal plans in a structured grid format with meals, portions, and nutritional highlights
+          3. Provide a brief summary with key nutritional points
+          4. Use plain text only - no bold, italic, or markdown formatting
+          5. Use bullet points with • symbol for lists
+          6. Make recommendations easy to copy and save`
         }
       });
 
@@ -85,7 +97,12 @@ class AIService {
         body: { 
           type: 'cardio',
           userInput: userInput,
-          formatting: 'Provide clear, structured cardio programs without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed programs.'
+          formatting: `Please follow these guidelines:
+          1. Ask clarifying questions about current fitness level, preferred activities, and time availability
+          2. Present cardio programs in a structured format with duration, intensity, and progression
+          3. Use plain text only - no formatting symbols
+          4. Use bullet points with • symbol
+          5. Provide a summary with key benefits`
         }
       });
 
@@ -111,7 +128,13 @@ class AIService {
         body: { 
           type: 'coaching',
           userInput: userInput,
-          formatting: 'Provide clear, structured advice without markdown formatting. Use bullet points with • symbol. Ask clarifying questions to better understand the user needs before providing detailed recommendations. Provide scientific citations when relevant.'
+          formatting: `Please follow these guidelines:
+          1. Ask clarifying questions to better understand the user's specific situation
+          2. Provide structured advice with actionable steps
+          3. Use plain text only - no formatting symbols
+          4. Use bullet points with • symbol
+          5. Include scientific citations when relevant
+          6. End with a brief summary of key recommendations`
         }
       });
 
@@ -137,7 +160,12 @@ class AIService {
         body: { 
           type: 'recovery',
           userInput: userInput,
-          formatting: 'Provide clear, structured recovery advice without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed recommendations.'
+          formatting: `Please follow these guidelines:
+          1. Ask clarifying questions about current recovery practices and concerns
+          2. Provide structured recovery recommendations
+          3. Use plain text only - no formatting symbols
+          4. Use bullet points with • symbol
+          5. Provide evidence-based suggestions`
         }
       });
 
@@ -163,7 +191,13 @@ class AIService {
         body: { 
           type: 'food_log',
           userInput: userInput,
-          formatting: 'Provide clear, structured food analysis without markdown formatting. Use bullet points with • symbol. Ask clarifying questions before providing detailed analysis.'
+          formatting: `Please follow these guidelines:
+          1. Ask clarifying questions about portion sizes, preparation methods, and goals
+          2. Provide detailed nutritional analysis in a structured format
+          3. Use plain text only - no formatting symbols
+          4. Use bullet points with • symbol
+          5. Include specific recommendations for improvement
+          6. Provide a summary with key insights`
         }
       });
 

@@ -65,8 +65,12 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
                   {isPremium ? 'Premium' : 'Free'}
                 </Badge>
                 {usageKey && (
-                  <Badge variant="outline" className="text-xs">
-                    {isUnlimited ? 'Unlimited' : `${currentCount}/${limit} left`}
+                  <Badge variant="outline" className="text-xs text-white border-gray-600">
+                    {isUnlimited ? (
+                      <span className="text-orange-400 font-semibold">Unlimited</span>
+                    ) : (
+                      `${currentCount}/${limit} left`
+                    )}
                   </Badge>
                 )}
               </div>
@@ -86,7 +90,7 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <CardDescription className="text-gray-400 text-sm mb-4">
+        <CardDescription className="text-gray-400 text-sm mb-4 line-clamp-2">
           {module.description}
         </CardDescription>
         <Button 

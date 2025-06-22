@@ -34,7 +34,7 @@ const DashboardHeader = () => {
         <div className="hidden md:flex items-center space-x-4">
           <Button
             variant="ghost"
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/notifications')}
             className="text-white hover:bg-gray-800"
           >
             <Bell className="w-5 h-5 mr-2" />
@@ -46,7 +46,7 @@ const DashboardHeader = () => {
             className="text-white hover:bg-gray-800"
           >
             <User className="w-5 h-5 mr-2" />
-            Profile
+            Account
           </Button>
           <Button
             variant="ghost"
@@ -77,7 +77,7 @@ const DashboardHeader = () => {
             <Button
               variant="ghost"
               onClick={() => {
-                navigate('/settings');
+                navigate('/notifications');
                 setShowMobileMenu(false);
               }}
               className="text-white hover:bg-gray-800 justify-start"
@@ -94,7 +94,7 @@ const DashboardHeader = () => {
               className="text-white hover:bg-gray-800 justify-start"
             >
               <User className="w-5 h-5 mr-2" />
-              Profile
+              Account
             </Button>
             <Button
               variant="ghost"

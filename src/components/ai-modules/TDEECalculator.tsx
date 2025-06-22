@@ -86,7 +86,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
       const heightNum = parseFloat(height);
       const ageNum = parseInt(age);
 
-      // Calculate BMI correctly
+      // Calculate BMI and BMR
       const bmi = calculateBMI(weightNum, heightNum);
       const bmr = calculateBMR(weightNum, heightNum, ageNum, gender);
       const tdee = bmr * getActivityMultiplier(activityLevel);

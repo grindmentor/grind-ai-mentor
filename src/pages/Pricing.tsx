@@ -16,18 +16,18 @@ const Pricing = () => {
       name: "Basic",
       price: 10,
       period: "/month",
-      description: "Limited access to all AI features",
+      description: "Perfect for regular fitness enthusiasts",
       features: [
-        "50 CoachGPT queries per month",
-        "15 MealPlanAI generations",
-        "100 Smart Food Log analyses",
-        "20 TDEE calculations",
-        "8 Smart Training programs",
-        "25 Progress analyses",
-        "200 Habit checks",
+        "30 CoachGPT queries per month",
+        "8 MealPlanAI generations",
+        "25 Smart Food Log analyses",
+        "10 TDEE calculations",
+        "5 Smart Training programs",
+        "5 Progress photo analyses",
+        "100 Habit checks",
         "Science-backed recommendations"
       ],
-      note: "Designed to last most of the month for typical users",
+      note: "Designed for consistent monthly usage",
       buttonText: "Get Basic",
       popular: false
     },
@@ -35,20 +35,20 @@ const Pricing = () => {
       name: "Premium",
       price: 15,
       period: "/month",
-      description: "Unlimited access to everything",
+      description: "Unlimited access with smart limits",
       features: [
         "Unlimited CoachGPT queries",
         "Unlimited MealPlanAI generations",
         "Unlimited Smart Food Log analyses",
         "Unlimited TDEE calculations",
         "Unlimited Smart Training programs",
-        "Unlimited Progress analyses",
+        "15 Progress photo analyses",
         "Unlimited Habit tracking",
         "Priority support",
         "All future features included"
       ],
-      note: "No limits, use as much as you want",
-      buttonText: "Go Unlimited",
+      note: "Unlimited with reasonable photo analysis limits",
+      buttonText: "Go Premium",
       popular: true
     }
   ];
@@ -101,7 +101,7 @@ const Pricing = () => {
           </p>
           <div className="mt-6 space-y-2">
             <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-              Free tier: Very limited usage (few days)
+              Free tier: Very limited usage (testing only)
             </Badge>
             <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
               Cancel anytime • No hidden fees
@@ -135,7 +135,7 @@ const Pricing = () => {
                 <Badge className={`mt-2 ${
                   plan.name === 'Premium' 
                     ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                    : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
                 }`}>
                   {plan.note}
                 </Badge>
@@ -170,7 +170,7 @@ const Pricing = () => {
 
         <div className="text-center mt-12 space-y-4">
           <p className="text-gray-400">
-            Free tier includes very limited usage designed to last only a couple of days
+            Free tier includes very limited usage designed for testing only
           </p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
             <span>✓ 30-day money-back guarantee</span>

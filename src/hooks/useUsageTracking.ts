@@ -30,25 +30,25 @@ interface CurrentUsage {
 export const TIER_LIMITS: Record<string, UsageLimits> = {
   free: {
     coach_gpt_queries: 3,
-    meal_plan_generations: 2,
+    meal_plan_generations: 1,
     food_log_analyses: 5,
     tdee_calculations: 2,
     habit_checks: 10,
     training_programs: 1,
-    progress_analyses: 2,
+    progress_analyses: 1,
     cut_calc_uses: 2,
     workout_timer_sessions: 3
   },
   basic: {
-    coach_gpt_queries: 50,
-    meal_plan_generations: 15,
-    food_log_analyses: 100,
-    tdee_calculations: 20,
-    habit_checks: 200,
-    training_programs: 8,
-    progress_analyses: 25,
-    cut_calc_uses: 20,
-    workout_timer_sessions: 50
+    coach_gpt_queries: 30,
+    meal_plan_generations: 8,
+    food_log_analyses: 25,
+    tdee_calculations: 10,
+    habit_checks: 100,
+    training_programs: 5,
+    progress_analyses: 5,
+    cut_calc_uses: 10,
+    workout_timer_sessions: 25
   },
   premium: {
     coach_gpt_queries: -1, // -1 means unlimited
@@ -57,7 +57,7 @@ export const TIER_LIMITS: Record<string, UsageLimits> = {
     tdee_calculations: -1,
     habit_checks: -1,
     training_programs: -1,
-    progress_analyses: -1,
+    progress_analyses: 15, // Even premium has a reasonable limit for expensive photo analysis
     cut_calc_uses: -1,
     workout_timer_sessions: -1
   }

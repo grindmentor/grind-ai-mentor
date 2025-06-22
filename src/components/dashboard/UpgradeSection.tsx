@@ -18,8 +18,7 @@ const UpgradeSection = () => {
             <h3 className="text-xl font-bold text-white mb-1">Unlock Premium Features</h3>
             <div className="text-sm text-gray-300">
               <span className="inline-block mr-4">• Unlimited queries</span>
-              <span className="inline-block mr-4">• 20 photos/month</span>
-              <span className="inline-block">• Priority support</span>
+              <span className="inline-block">• 20 photos/month</span>
             </div>
           </div>
           <Button 

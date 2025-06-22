@@ -6,6 +6,7 @@ import { Heart, ArrowLeft, Download, Play, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CardioAIProps {
   onBack: () => void;

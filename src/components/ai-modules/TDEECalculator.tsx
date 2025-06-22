@@ -86,7 +86,12 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
       const heightNum = parseFloat(height);
       const ageNum = parseInt(age);
 
-      // Calculate BMI and BMR
+      // Validate inputs
+      if (weightNum <= 0 || heightNum <= 0 || ageNum <= 0) {
+        throw new Error("Please enter valid positive numbers for all fields");
+      }
+
+      // Calculate BMI and BMR - BMI uses weight in kg and height in cm
       const bmi = calculateBMI(weightNum, heightNum);
       const bmr = calculateBMR(weightNum, heightNum, ageNum, gender);
       const tdee = bmr * getActivityMultiplier(activityLevel);
@@ -128,7 +133,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
       console.error('Error calculating TDEE:', error);
       toast({
         title: "Calculation error",
-        description: "There was an error calculating your TDEE. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error calculating your TDEE. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -150,7 +155,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold">TDEE Calculator</h1>
-              <p className="text-gray-400">Calculate your daily calorie needs</p>
+              <p className="text-gray-400">Calculate your daily calorie needs with scientific precision</p>
             </div>
           </div>
         </div>
@@ -164,10 +169,12 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-white">Age</Label>
+                  <Label className="text-white">Age (years)</Label>
                   <Input
                     type="number"
                     placeholder="25"
+                    min="15"
+                    max="100"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
@@ -193,6 +200,9 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                   <Input
                     type="number"
                     placeholder="70"
+                    min="30"
+                    max="300"
+                    step="0.1"
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
@@ -203,6 +213,9 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                   <Input
                     type="number"
                     placeholder="175"
+                    min="100"
+                    max="250"
+                    step="0.1"
                     value={height}
                     onChange={(e) => setHeight(e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
@@ -240,7 +253,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
                 <CardTitle className="text-white">Your Results</CardTitle>
-                <CardDescription>Your personalized calorie recommendations</CardDescription>
+                <CardDescription>Your personalized calorie recommendations based on scientific formulas</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -264,7 +277,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
-                    <span className="text-white">Weight Loss</span>
+                    <span className="text-white">Weight Loss (-500 cal)</span>
                     <span className="font-bold text-green-400">{results.weightLoss} cal/day</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
@@ -272,9 +285,15 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                     <span className="font-bold text-yellow-400">{results.maintenance} cal/day</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
-                    <span className="text-white">Weight Gain</span>
+                    <span className="text-white">Weight Gain (+500 cal)</span>
                     <span className="font-bold text-blue-400">{results.weightGain} cal/day</span>
                   </div>
+                </div>
+
+                <div className="mt-4 p-3 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                  <p className="text-sm text-blue-200">
+                    <strong>Note:</strong> These calculations use the Mifflin-St Jeor equation, validated by extensive research as the most accurate predictor of metabolic rate.
+                  </p>
                 </div>
               </CardContent>
             </Card>

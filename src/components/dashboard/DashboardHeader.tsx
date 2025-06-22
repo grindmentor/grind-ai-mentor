@@ -22,7 +22,7 @@ const DashboardHeader = () => {
           </h1>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <Badge className={`w-fit ${isSubscribed ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}`}>
-              {currentTier === 'free' ? 'Free Plan' : `${currentTier} Plan`}
+              {currentTier === 'free' ? 'Free Plan' : `${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Plan`}
             </Badge>
             <p className="text-gray-400 text-sm md:text-base">
               Choose an AI module to get started with your fitness journey.
@@ -42,7 +42,7 @@ const DashboardHeader = () => {
           </Button>
           <Button
             variant="ghost"
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/account')}
             className="text-white hover:bg-gray-800"
           >
             <User className="w-5 h-5 mr-2" />
@@ -88,7 +88,7 @@ const DashboardHeader = () => {
             <Button
               variant="ghost"
               onClick={() => {
-                navigate('/settings');
+                navigate('/account');
                 setShowMobileMenu(false);
               }}
               className="text-white hover:bg-gray-800 justify-start"

@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import AppPage from "./pages/App";
 import Settings from "./pages/Settings";
+import Account from "./pages/Account";
 import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
 import About from "./pages/About";
@@ -39,6 +40,7 @@ const App = () => (
                   <Route path="/signin" element={<SignIn />} />
                   <Route path="/app" element={<AppPage />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/account" element={<Account />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/onboarding" element={<Onboarding />} />
                   <Route path="/about" element={<About />} />

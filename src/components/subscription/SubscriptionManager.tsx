@@ -24,7 +24,6 @@ const SubscriptionManager = () => {
 
       if (data?.url) {
         window.open(data.url, '_blank');
-        // Refresh subscription after a delay to check for updates
         setTimeout(() => {
           refreshSubscription();
         }, 3000);
@@ -59,9 +58,9 @@ const SubscriptionManager = () => {
             <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
               <CreditCard className="w-5 h-5" />
             </div>
-            <div>
-              <CardTitle>Subscription</CardTitle>
-              <CardDescription>Manage your plan and billing</CardDescription>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="truncate">Subscription</CardTitle>
+              <CardDescription className="truncate">Manage your plan</CardDescription>
             </div>
           </div>
           {getTierBadge()}
@@ -69,11 +68,11 @@ const SubscriptionManager = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <p className="font-medium">{currentTierData?.name} Plan</p>
-          <p className="text-sm text-muted-foreground break-words">
+          <p className="font-medium truncate">{currentTierData?.name} Plan</p>
+          <p className="text-sm text-muted-foreground">
             {currentTier === 'free' 
               ? 'Limited usage - upgrade for more features'
-              : `$${currentTierData?.price}/month - ${currentTierData?.features[0]}`
+              : `$${currentTierData?.price}/month`
             }
           </p>
         </div>
@@ -86,7 +85,7 @@ const SubscriptionManager = () => {
               className="w-full bg-blue-600 hover:bg-blue-700 text-sm"
             >
               <Zap className="w-4 h-4 mr-2" />
-              {isProcessing ? 'Processing...' : 'Upgrade to Basic - $10/month'}
+              {isProcessing ? 'Processing...' : 'Basic - $10/month'}
             </Button>
             <Button 
               onClick={() => handleUpgrade('premium')}
@@ -94,7 +93,7 @@ const SubscriptionManager = () => {
               className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-sm"
             >
               <Crown className="w-4 h-4 mr-2" />
-              {isProcessing ? 'Processing...' : 'Upgrade to Premium - $15/month'}
+              {isProcessing ? 'Processing...' : 'Premium - $15/month'}
             </Button>
           </div>
         )}
@@ -102,7 +101,7 @@ const SubscriptionManager = () => {
         {isSubscribed && (
           <div className="text-center p-4 bg-muted/50 rounded">
             <p className="text-sm text-muted-foreground">
-              You have an active {currentTier} subscription
+              Active {currentTier} subscription
             </p>
             <Button 
               onClick={refreshSubscription}

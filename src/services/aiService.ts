@@ -8,20 +8,20 @@ export interface AIServiceResponse {
 
 class AIService {
   private formatResponse(response: string): string {
-    // Clean up AI formatting symbols
+    // Clean up AI formatting symbols completely
     let formatted = response
-      // Remove markdown bold/italic symbols
+      // Remove ALL markdown formatting symbols
       .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/__(.*?)__/g, '$1')
+      .replace(/__(.*?)__/g, '$1') 
       .replace(/\*(.*?)\*/g, '$1')
       .replace(/_(.*?)_/g, '$1')
+      .replace(/`(.*?)`/g, '$1')
+      .replace(/#{1,6}\s*/g, '')
       // Convert numbered lists to bullet points
       .replace(/^\d+\.\s*/gm, '• ')
-      // Ensure proper spacing
-      .replace(/\n\n•/g, '\n\n• ')
-      .replace(/\n•/g, '\n• ')
-      // Clean up extra whitespace
+      // Clean up extra whitespace and formatting
       .replace(/\n{3,}/g, '\n\n')
+      .replace(/\s{2,}/g, ' ')
       .trim();
 
     return formatted;
@@ -33,13 +33,40 @@ class AIService {
         body: { 
           type: 'training',
           userInput: userInput,
-          formatting: `Please follow these guidelines:
-          1. Ask 3-4 clarifying questions about experience level, available equipment, time commitment, and specific goals before providing a detailed plan
-          2. Present workout plans in a clear grid format with exercises, sets, reps, and rest periods
-          3. Provide a brief summary at the end highlighting key points
-          4. Use plain text only - no bold, italic, or markdown formatting
-          5. Use bullet points with • symbol for lists
-          6. Focus on scientific, evidence-based recommendations`
+          formatting: `CRITICAL INSTRUCTIONS - Follow these exactly:
+
+1. FIRST, ask 3-4 specific questions about:
+   - Current experience level and training history
+   - Available equipment and gym access
+   - Time commitment per session and weekly frequency
+   - Specific goals (strength, muscle gain, fat loss, etc.)
+   - Any injuries or limitations
+
+2. ONLY after receiving answers, provide a detailed program using this EXACT format:
+
+TRAINING PROGRAM GRID:
+Week 1-2: Foundation Phase
+Day 1: Upper Body
+• Exercise 1: Sets x Reps - Rest period
+• Exercise 2: Sets x Reps - Rest period
+[Continue for all exercises]
+
+Day 2: Lower Body
+• Exercise 1: Sets x Reps - Rest period
+[Continue pattern]
+
+3. END with a clear SUMMARY section highlighting:
+• Key program principles
+• Expected progression timeline
+• Important safety notes
+
+FORMATTING RULES:
+- Use NO bold, italic, or markdown symbols whatsoever
+- Use bullet points with • symbol only
+- Present programs in clear grid format
+- Make content easy to copy and save
+- Ask questions BEFORE giving detailed plans
+- Base all recommendations on scientific evidence`
         }
       });
 
@@ -65,13 +92,40 @@ class AIService {
         body: { 
           type: 'nutrition',
           userInput: userInput,
-          formatting: `Please follow these guidelines:
-          1. Ask 3-4 clarifying questions about dietary preferences, restrictions, budget, and goals before providing a detailed plan
-          2. Present meal plans in a structured grid format with meals, portions, and nutritional highlights
-          3. Provide a brief summary with key nutritional points
-          4. Use plain text only - no bold, italic, or markdown formatting
-          5. Use bullet points with • symbol for lists
-          6. Make recommendations easy to copy and save`
+          formatting: `CRITICAL INSTRUCTIONS - Follow these exactly:
+
+1. FIRST, ask 3-4 specific questions about:
+   - Dietary preferences and restrictions
+   - Daily calorie target and macronutrient goals
+   - Cooking skills and meal prep time available
+   - Budget considerations and food availability
+   - Current eating patterns and schedule
+
+2. ONLY after receiving answers, provide a detailed meal plan using this EXACT format:
+
+MEAL PLAN GRID:
+Day 1:
+Breakfast:
+• Food item: Portion size - Calories, Protein, Carbs, Fat
+• Food item: Portion size - Calories, Protein, Carbs,
+
+Lunch:
+• Food item: Portion size - Calories, Protein, Carbs, Fat
+[Continue pattern for all meals]
+
+3. END with a NUTRITION SUMMARY:
+• Total daily calories
+• Macronutrient breakdown
+• Key nutritional highlights
+• Meal prep tips
+
+FORMATTING RULES:
+- Use NO bold, italic, or markdown symbols
+- Use bullet points with • symbol only
+- Present plans in structured grid format
+- Make recommendations easy to copy and save
+- Ask questions BEFORE providing detailed plans
+- Include scientific nutritional reasoning`
         }
       });
 
@@ -128,13 +182,16 @@ class AIService {
         body: { 
           type: 'coaching',
           userInput: userInput,
-          formatting: `Please follow these guidelines:
-          1. Ask clarifying questions to better understand the user's specific situation
-          2. Provide structured advice with actionable steps
-          3. Use plain text only - no formatting symbols
-          4. Use bullet points with • symbol
-          5. Include scientific citations when relevant
-          6. End with a brief summary of key recommendations`
+          formatting: `CRITICAL INSTRUCTIONS:
+
+1. FIRST, ask clarifying questions to understand the specific situation
+2. Provide structured advice with actionable steps
+3. Use NO formatting symbols - no bold, italic, or markdown
+4. Use bullet points with • symbol only
+5. Include scientific citations when relevant
+6. End with a brief summary of key recommendations
+7. Make advice easy to copy and implement
+8. Ask questions BEFORE giving detailed advice`
         }
       });
 
@@ -160,12 +217,14 @@ class AIService {
         body: { 
           type: 'recovery',
           userInput: userInput,
-          formatting: `Please follow these guidelines:
-          1. Ask clarifying questions about current recovery practices and concerns
-          2. Provide structured recovery recommendations
-          3. Use plain text only - no formatting symbols
-          4. Use bullet points with • symbol
-          5. Provide evidence-based suggestions`
+          formatting: `CRITICAL INSTRUCTIONS:
+
+1. Ask clarifying questions about current recovery practices and concerns
+2. Provide structured recovery recommendations
+3. Use NO formatting symbols - no bold, italic, or markdown  
+4. Use bullet points with • symbol only
+5. Provide evidence-based suggestions
+6. Ask questions BEFORE giving detailed advice`
         }
       });
 
@@ -191,13 +250,15 @@ class AIService {
         body: { 
           type: 'food_log',
           userInput: userInput,
-          formatting: `Please follow these guidelines:
-          1. Ask clarifying questions about portion sizes, preparation methods, and goals
-          2. Provide detailed nutritional analysis in a structured format
-          3. Use plain text only - no formatting symbols
-          4. Use bullet points with • symbol
-          5. Include specific recommendations for improvement
-          6. Provide a summary with key insights`
+          formatting: `CRITICAL INSTRUCTIONS:
+
+1. Ask clarifying questions about portion sizes, preparation methods, and goals
+2. Provide detailed nutritional analysis in structured format
+3. Use NO formatting symbols - no bold, italic, or markdown
+4. Use bullet points with • symbol only  
+5. Include specific recommendations for improvement
+6. Provide a summary with key insights
+7. Ask questions BEFORE providing detailed analysis`
         }
       });
 

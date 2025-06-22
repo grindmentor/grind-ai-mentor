@@ -34,30 +34,38 @@ const BasicInformation = ({
   getHeightDisplay
 }: BasicInformationProps) => {
   const handleHeightFeetChange = (value: string) => {
-    const numValue = parseInt(value);
-    if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 8)) {
-      onInputChange('heightFeet', value);
+    if (value === '' || /^\d*$/.test(value)) {
+      const numValue = parseInt(value);
+      if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 9)) {
+        onInputChange('heightFeet', value);
+      }
     }
   };
 
   const handleHeightInchesChange = (value: string) => {
-    const numValue = parseInt(value);
-    if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 11)) {
-      onInputChange('heightInches', value);
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      const numValue = parseFloat(value);
+      if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 11.99)) {
+        onInputChange('heightInches', value);
+      }
     }
   };
 
   const handleHeightChange = (value: string) => {
-    const numValue = parseFloat(value);
-    if (value === '' || (!isNaN(numValue) && numValue >= 0)) {
-      onHeightChange(value);
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      const numValue = parseFloat(value);
+      if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 300)) {
+        onHeightChange(value);
+      }
     }
   };
 
   const handleWeightChange = (value: string) => {
-    const numValue = parseFloat(value);
-    if (value === '' || (!isNaN(numValue) && numValue >= 0)) {
-      onWeightChange(value);
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      const numValue = parseFloat(value);
+      if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 1000)) {
+        onWeightChange(value);
+      }
     }
   };
 
@@ -76,9 +84,7 @@ const BasicInformation = ({
           </Label>
           <Input
             id="weight"
-            type="number"
-            min="0"
-            step="0.1"
+            type="text"
             placeholder={preferences.weight_unit === 'kg' ? '80' : '180'}
             value={getWeightDisplay()}
             onChange={(e) => handleWeightChange(e.target.value)}
@@ -106,10 +112,7 @@ const BasicInformation = ({
             <div className="flex space-x-2">
               <div className="flex-1">
                 <Input
-                  type="number"
-                  min="0"
-                  max="8"
-                  step="1"
+                  type="text"
                   placeholder="5"
                   value={profile.heightFeet}
                   onChange={(e) => handleHeightFeetChange(e.target.value)}
@@ -119,10 +122,7 @@ const BasicInformation = ({
               </div>
               <div className="flex-1">
                 <Input
-                  type="number"
-                  min="0"
-                  max="11"
-                  step="1"
+                  type="text"
                   placeholder="10"
                   value={profile.heightInches}
                   onChange={(e) => handleHeightInchesChange(e.target.value)}
@@ -139,9 +139,7 @@ const BasicInformation = ({
             </Label>
             <Input
               id="height"
-              type="number"
-              min="0"
-              step="0.1"
+              type="text"
               placeholder={preferences.height_unit === 'cm' ? '175' : '70'}
               value={getHeightDisplay()}
               onChange={(e) => handleHeightChange(e.target.value)}

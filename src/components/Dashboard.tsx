@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Utensils, Dumbbell, Camera, TrendingUp, Calculator } from "lucide-react";
+import { Brain, Utensils, Dumbbell, Camera, TrendingUp, Calculator, Timer } from "lucide-react";
 import { useState } from "react";
 import MealPlanAI from "./ai-modules/MealPlanAI";
 import CoachGPT from "./ai-modules/CoachGPT";
@@ -10,6 +10,7 @@ import SmartTraining from "./ai-modules/SmartTraining";
 import CutCalcPro from "./ai-modules/CutCalcPro";
 import SmartFoodLog from "./ai-modules/SmartFoodLog";
 import TDEECalculator from "./ai-modules/TDEECalculator";
+import WorkoutTimer from "./ai-modules/WorkoutTimer";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
@@ -18,6 +19,16 @@ const Dashboard = () => {
   const subscriptionTier = "free"; // "free", "basic", "premium"
 
   const modules = [
+    {
+      id: "workout-timer",
+      title: "Workout Timer",
+      description: "Basic interval and rest timer for workouts",
+      icon: Timer,
+      color: "bg-blue-500",
+      features: ["Customizable intervals", "Rest timer", "Workout logging"],
+      component: WorkoutTimer,
+      requiredTier: "free"
+    },
     {
       id: "coach-gpt",
       title: "CoachGPT",
@@ -81,6 +92,7 @@ const Dashboard = () => {
   ];
 
   const isModuleAccessible = (requiredTier: string) => {
+    if (requiredTier === "free") return true;
     if (subscriptionTier === "free") return false;
     if (subscriptionTier === "premium") return true;
     if (subscriptionTier === "basic" && requiredTier === "basic") return true;

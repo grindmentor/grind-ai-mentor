@@ -27,7 +27,7 @@ const Pricing = () => {
     },
     {
       name: "Premium",
-      price: "$20",
+      price: "$15",
       period: "/month",
       description: "Complete fitness transformation suite",
       features: [

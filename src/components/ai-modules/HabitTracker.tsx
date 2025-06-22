@@ -1,10 +1,13 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ArrowLeft, Plus, Flame, Target, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
 
 interface HabitTrackerProps {
   onBack: () => void;
@@ -13,82 +16,193 @@ interface HabitTrackerProps {
 interface Habit {
   id: string;
   name: string;
-  streak: number;
-  completedToday: boolean;
   category: 'fitness' | 'nutrition' | 'recovery' | 'mindset';
   color: string;
+  completed_today: boolean;
+  streak: number;
 }
 
 const HabitTracker = ({ onBack }: HabitTrackerProps) => {
-  const [habits, setHabits] = useState<Habit[]>([
-    {
-      id: '1',
-      name: 'Drink 3L Water',
-      streak: 12,
-      completedToday: true,
-      category: 'nutrition',
-      color: 'bg-blue-500'
-    },
-    {
-      id: '2',
-      name: '10k Steps Daily',
-      streak: 8,
-      completedToday: false,
-      category: 'fitness',
-      color: 'bg-green-500'
-    },
-    {
-      id: '3',
-      name: 'Sleep 8 Hours',
-      streak: 5,
-      completedToday: true,
-      category: 'recovery',
-      color: 'bg-purple-500'
-    },
-    {
-      id: '4',
-      name: 'Protein with Every Meal',
-      streak: 15,
-      completedToday: false,
-      category: 'nutrition',
-      color: 'bg-orange-500'
-    }
-  ]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { canUseFeature, incrementUsage } = useUsageTracking();
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [newHabit, setNewHabit] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const toggleHabit = (habitId: string) => {
-    setHabits(habits.map(habit => {
-      if (habit.id === habitId) {
-        const newCompleted = !habit.completedToday;
-        return {
-          ...habit,
-          completedToday: newCompleted,
-          streak: newCompleted ? habit.streak + 1 : Math.max(0, habit.streak - 1)
-        };
-      }
-      return habit;
-    }));
+  useEffect(() => {
+    if (user) {
+      loadHabits();
+    }
+  }, [user]);
+
+  const loadHabits = async () => {
+    if (!user) return;
+
+    try {
+      // Load habits
+      const { data: habitsData, error: habitsError } = await supabase
+        .from('habits')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (habitsError) throw habitsError;
+
+      // Load today's completions
+      const today = new Date().toISOString().split('T')[0];
+      const { data: completionsData, error: completionsError } = await supabase
+        .from('habit_completions')
+        .select('habit_id')
+        .eq('user_id', user.id)
+        .eq('completed_date', today);
+
+      if (completionsError) throw completionsError;
+
+      const completedHabitIds = new Set(completionsData?.map(c => c.habit_id) || []);
+
+      // Calculate streaks for each habit
+      const habitsWithStreaks = await Promise.all(
+        (habitsData || []).map(async (habit) => {
+          const streak = await calculateStreak(habit.id);
+          return {
+            ...habit,
+            completed_today: completedHabitIds.has(habit.id),
+            streak
+          };
+        })
+      );
+
+      setHabits(habitsWithStreaks);
+    } catch (error) {
+      console.error('Error loading habits:', error);
+      toast({
+        title: "Error loading habits",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const addHabit = () => {
-    if (!newHabit.trim()) return;
+  const calculateStreak = async (habitId: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase
+        .from('habit_completions')
+        .select('completed_date')
+        .eq('habit_id', habitId)
+        .order('completed_date', { ascending: false })
+        .limit(100);
+
+      if (error || !data) return 0;
+
+      let streak = 0;
+      const today = new Date();
+      let currentDate = new Date(today);
+
+      for (const completion of data) {
+        const completionDate = new Date(completion.completed_date);
+        const dateString = currentDate.toISOString().split('T')[0];
+        const completionString = completionDate.toISOString().split('T')[0];
+
+        if (dateString === completionString) {
+          streak++;
+          currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+
+      return streak;
+    } catch (error) {
+      console.error('Error calculating streak:', error);
+      return 0;
+    }
+  };
+
+  const toggleHabit = async (habitId: string) => {
+    if (!user || !canUseFeature('habit_checks')) return;
+
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      if (habit.completed_today) {
+        // Remove completion
+        const { error } = await supabase
+          .from('habit_completions')
+          .delete()
+          .eq('habit_id', habitId)
+          .eq('user_id', user.id)
+          .eq('completed_date', today);
+
+        if (error) throw error;
+      } else {
+        // Add completion
+        const { error } = await supabase
+          .from('habit_completions')
+          .insert({
+            habit_id: habitId,
+            user_id: user.id,
+            completed_date: today
+          });
+
+        if (error) throw error;
+        
+        // Track usage
+        await incrementUsage('habit_checks');
+      }
+
+      // Reload habits to update streaks
+      await loadHabits();
+    } catch (error) {
+      console.error('Error toggling habit:', error);
+      toast({
+        title: "Error updating habit",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addHabit = async () => {
+    if (!newHabit.trim() || !user) return;
     
-    const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'];
-    const categories: ('fitness' | 'nutrition' | 'recovery' | 'mindset')[] = ['fitness', 'nutrition', 'recovery', 'mindset'];
-    
-    const newHabitObj: Habit = {
-      id: Date.now().toString(),
-      name: newHabit,
-      streak: 0,
-      completedToday: false,
-      category: categories[Math.floor(Math.random() * categories.length)],
-      color: colors[Math.floor(Math.random() * colors.length)]
-    };
-    
-    setHabits([...habits, newHabitObj]);
-    setNewHabit('');
-    setShowAddForm(false);
+    try {
+      const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500'];
+      const categories: ('fitness' | 'nutrition' | 'recovery' | 'mindset')[] = ['fitness', 'nutrition', 'recovery', 'mindset'];
+      
+      const { error } = await supabase
+        .from('habits')
+        .insert({
+          user_id: user.id,
+          name: newHabit,
+          category: categories[Math.floor(Math.random() * categories.length)],
+          color: colors[Math.floor(Math.random() * colors.length)]
+        });
+
+      if (error) throw error;
+
+      setNewHabit('');
+      setShowAddForm(false);
+      await loadHabits();
+
+      toast({
+        title: "Habit added!",
+        description: "Your new habit has been created.",
+      });
+    } catch (error) {
+      console.error('Error adding habit:', error);
+      toast({
+        title: "Error adding habit",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStreakEmoji = (streak: number) => {
@@ -99,9 +213,25 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
     return '🌱';
   };
 
-  const completedToday = habits.filter(h => h.completedToday).length;
+  const completedToday = habits.filter(h => h.completed_today).length;
   const totalHabits = habits.length;
-  const completionRate = Math.round((completedToday / totalHabits) * 100);
+  const completionRate = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -124,7 +254,7 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
       <div className="flex items-center space-x-4">
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           <Flame className="w-3 h-3 mr-1" />
-          Trending on Social Media
+          All data saved to your profile
         </Badge>
         <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
           {completedToday}/{totalHabits} completed today ({completionRate}%)
@@ -174,7 +304,7 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
                   <div
                     key={habit.id}
                     className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                      habit.completedToday 
+                      habit.completed_today 
                         ? 'border-green-500 bg-green-500/10' 
                         : 'border-gray-700 hover:border-gray-600'
                     }`}
@@ -182,11 +312,11 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
                   >
                     <div className="flex items-center space-x-4">
                       <div className={`w-6 h-6 rounded-full ${habit.color} flex items-center justify-center`}>
-                        {habit.completedToday && <CheckCircle className="w-4 h-4 text-white" />}
+                        {habit.completed_today && <CheckCircle className="w-4 h-4 text-white" />}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h3 className={`font-medium ${habit.completedToday ? 'text-green-400' : 'text-white'}`}>
+                          <h3 className={`font-medium ${habit.completed_today ? 'text-green-400' : 'text-white'}`}>
                             {habit.name}
                           </h3>
                           <div className="flex items-center space-x-2">
@@ -205,6 +335,14 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
                     </div>
                   </div>
                 ))}
+                
+                {habits.length === 0 && (
+                  <div className="text-center py-8">
+                    <Target className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-500">No habits yet</p>
+                    <p className="text-gray-600 text-sm">Add your first habit to start tracking!</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -232,7 +370,7 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
                       className="text-green-500"
                       strokeWidth="6"
                       strokeDasharray={`${2 * Math.PI * 36}`}
-                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - completedToday / totalHabits)}`}
+                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - completedToday / Math.max(totalHabits, 1))}`}
                       strokeLinecap="round"
                       stroke="currentColor"
                       fill="transparent"

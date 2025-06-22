@@ -2,23 +2,107 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Utensils, ArrowLeft, MessageCircle, Download } from "lucide-react";
-import { useState } from "react";
+import { Utensils, ArrowLeft, MessageCircle, Download, Save, History } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface MealPlanAIProps {
   onBack: () => void;
 }
 
+interface MealPlan {
+  id: string;
+  title: string;
+  content: string;
+  user_requirements: string;
+  created_at: string;
+}
+
 const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState("");
+  const [title, setTitle] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [savedPlans, setSavedPlans] = useState<MealPlan[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const { canUseFeature, incrementUsage, userTier } = useUsageTracking();
 
   const canGenerate = canUseFeature('meal_plan_generations');
+
+  useEffect(() => {
+    if (user) {
+      loadSavedPlans();
+    }
+  }, [user]);
+
+  const loadSavedPlans = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('meal_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSavedPlans(data || []);
+    } catch (error) {
+      console.error('Error loading meal plans:', error);
+    }
+  };
+
+  const saveMealPlan = async () => {
+    if (!user || !response || !title.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please add a title for your meal plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('meal_plans')
+        .insert({
+          user_id: user.id,
+          title: title.trim(),
+          content: response,
+          user_requirements: input
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Meal plan saved!",
+        description: "Your meal plan has been saved to your profile.",
+      });
+
+      setTitle("");
+      await loadSavedPlans();
+    } catch (error) {
+      console.error('Error saving meal plan:', error);
+      toast({
+        title: "Error saving meal plan",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadMealPlan = (plan: MealPlan) => {
+    setInput(plan.user_requirements || "");
+    setResponse(plan.content);
+    setTitle(plan.title);
+    setShowHistory(false);
+  };
 
   const examplePrompts = [
     "I'm 25 years old, 180lbs, want to build muscle while staying lean, vegetarian",
@@ -29,26 +113,6 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
 
   const handleExampleClick = (prompt: string) => {
     setInput(prompt);
-  };
-
-  const normalizeInput = (text: string) => {
-    const corrections: { [key: string]: string } = {
-      'protien': 'protein',
-      'waight': 'weight',
-      'loose': 'lose',
-      'mussel': 'muscle',
-      'vegeterian': 'vegetarian',
-      'vegan': 'plant-based',
-      'glutten': 'gluten',
-      'dairy': 'lactose'
-    };
-
-    let normalized = text.toLowerCase();
-    Object.entries(corrections).forEach(([wrong, correct]) => {
-      normalized = normalized.replace(new RegExp(wrong, 'g'), correct);
-    });
-    
-    return normalized;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,6 +137,10 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
 
       if (error) throw error;
       setResponse(data.response);
+      
+      // Generate a default title based on input
+      const words = input.split(' ').slice(0, 4);
+      setTitle(`Meal Plan - ${words.join(' ')}`);
     } catch (error) {
       console.error('Error generating meal plan:', error);
       setResponse('Sorry, there was an error generating your meal plan. Please try again.');
@@ -82,7 +150,7 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -108,7 +176,51 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
           featureName="Meal Plans" 
           compact={true} 
         />
+        <Button
+          variant="outline"
+          onClick={() => setShowHistory(!showHistory)}
+          className="border-gray-600 text-gray-300 hover:bg-gray-800"
+        >
+          <History className="w-4 h-4 mr-2" />
+          History ({savedPlans.length})
+        </Button>
       </div>
+
+      {showHistory && (
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">Saved Meal Plans</CardTitle>
+            <CardDescription className="text-gray-400">
+              Your previously generated meal plans
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+              {savedPlans.map((plan) => (
+                <div key={plan.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                  <div>
+                    <p className="text-white font-medium">{plan.title}</p>
+                    <p className="text-gray-400 text-sm">
+                      {new Date(plan.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => loadMealPlan(plan)}
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  >
+                    Load
+                  </Button>
+                </div>
+              ))}
+              {savedPlans.length === 0 && (
+                <p className="text-gray-500 text-center py-4">No saved meal plans yet</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-gray-900 border-gray-800">
@@ -175,24 +287,48 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                     Plan Ready
                   </Badge>
-                  <Button 
-                    onClick={() => {
-                      const element = document.createElement('a');
-                      const file = new Blob([response], { type: 'text/plain' });
-                      element.href = URL.createObjectURL(file);
-                      element.download = 'meal-plan.txt';
-                      document.body.appendChild(element);
-                      element.click();
-                      document.body.removeChild(element);
-                    }}
-                    variant="outline" 
-                    size="sm"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => {
+                        const element = document.createElement('a');
+                        const file = new Blob([response], { type: 'text/plain' });
+                        element.href = URL.createObjectURL(file);
+                        element.download = `${title || 'meal-plan'}.txt`;
+                        document.body.appendChild(element);
+                        element.click();
+                        document.body.removeChild(element);
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button 
+                      onClick={saveMealPlan}
+                      variant="outline" 
+                      size="sm"
+                      className="border-green-600 text-green-300 hover:bg-green-800"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
                 </div>
+                
+                {response && (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Enter a title for this meal plan..."
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full p-2 bg-gray-800 border border-gray-700 text-white rounded"
+                    />
+                  </div>
+                )}
+
                 <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
                   <pre className="whitespace-pre-wrap text-sm">{response}</pre>
                 </div>

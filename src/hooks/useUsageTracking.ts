@@ -73,6 +73,8 @@ export const useUsageTracking = () => {
     if (user) {
       fetchUsageData();
       fetchUserTier();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
@@ -91,6 +93,19 @@ export const useUsageTracking = () => {
 
       if (data && data.length > 0) {
         setCurrentUsage(data[0]);
+      } else {
+        // Initialize usage if not found
+        setCurrentUsage({
+          coach_gpt_queries: 0,
+          meal_plan_generations: 0,
+          food_log_analyses: 0,
+          tdee_calculations: 0,
+          habit_checks: 0,
+          training_programs: 0,
+          progress_analyses: 0,
+          cut_calc_uses: 0,
+          workout_timer_sessions: 0
+        });
       }
     } catch (error) {
       console.error('Error fetching usage:', error);
@@ -192,7 +207,7 @@ export const useUsageTracking = () => {
   };
 
   const getUsagePercentage = (featureKey: keyof UsageLimits): number => {
-    if (!currentUsage)   return 0;
+    if (!currentUsage) return 0;
     
     const limits = TIER_LIMITS[userTier];
     const limit = limits[featureKey];

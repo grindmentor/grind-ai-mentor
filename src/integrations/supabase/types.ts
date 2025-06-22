@@ -9,6 +9,209 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      coach_conversations: {
+        Row: {
+          conversation_session: string
+          created_at: string
+          id: string
+          message_content: string
+          message_role: string
+          user_id: string
+        }
+        Insert: {
+          conversation_session: string
+          created_at?: string
+          id?: string
+          message_content: string
+          message_role: string
+          user_id: string
+        }
+        Update: {
+          conversation_session?: string
+          created_at?: string
+          id?: string
+          message_content?: string
+          message_role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cut_calculations: {
+        Row: {
+          created_at: string
+          current_bf_percentage: number | null
+          current_weight: number
+          estimated_duration_weeks: number
+          id: string
+          recommended_calories: number
+          target_bf_percentage: number | null
+          target_weight: number
+          user_id: string
+          weekly_deficit: number
+        }
+        Insert: {
+          created_at?: string
+          current_bf_percentage?: number | null
+          current_weight: number
+          estimated_duration_weeks: number
+          id?: string
+          recommended_calories: number
+          target_bf_percentage?: number | null
+          target_weight: number
+          user_id: string
+          weekly_deficit: number
+        }
+        Update: {
+          created_at?: string
+          current_bf_percentage?: number | null
+          current_weight?: number
+          estimated_duration_weeks?: number
+          id?: string
+          recommended_calories?: number
+          target_bf_percentage?: number | null
+          target_weight?: number
+          user_id?: string
+          weekly_deficit?: number
+        }
+        Relationships: []
+      }
+      food_log_entries: {
+        Row: {
+          calories: number | null
+          carbs: number | null
+          created_at: string
+          fat: number | null
+          fiber: number | null
+          food_name: string
+          id: string
+          logged_date: string
+          meal_type: string
+          portion_size: string | null
+          protein: number | null
+          user_id: string
+        }
+        Insert: {
+          calories?: number | null
+          carbs?: number | null
+          created_at?: string
+          fat?: number | null
+          fiber?: number | null
+          food_name: string
+          id?: string
+          logged_date?: string
+          meal_type: string
+          portion_size?: string | null
+          protein?: number | null
+          user_id: string
+        }
+        Update: {
+          calories?: number | null
+          carbs?: number | null
+          created_at?: string
+          fat?: number | null
+          fiber?: number | null
+          food_name?: string
+          id?: string
+          logged_date?: string
+          meal_type?: string
+          portion_size?: string | null
+          protein?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habit_completions: {
+        Row: {
+          completed_date: string
+          created_at: string
+          habit_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_date?: string
+          created_at?: string
+          habit_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_date?: string
+          created_at?: string
+          habit_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meal_plans: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+          user_requirements: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          user_requirements?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          user_requirements?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -84,6 +287,84 @@ export type Database = {
         }
         Relationships: []
       }
+      progress_photos: {
+        Row: {
+          analysis_result: string | null
+          created_at: string
+          file_name: string
+          file_url: string | null
+          id: string
+          notes: string | null
+          photo_type: string | null
+          taken_date: string
+          user_id: string
+          weight_at_time: number | null
+        }
+        Insert: {
+          analysis_result?: string | null
+          created_at?: string
+          file_name: string
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          photo_type?: string | null
+          taken_date?: string
+          user_id: string
+          weight_at_time?: number | null
+        }
+        Update: {
+          analysis_result?: string | null
+          created_at?: string
+          file_name?: string
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          photo_type?: string | null
+          taken_date?: string
+          user_id?: string
+          weight_at_time?: number | null
+        }
+        Relationships: []
+      }
+      recovery_data: {
+        Row: {
+          created_at: string
+          energy_level: number | null
+          id: string
+          notes: string | null
+          recorded_date: string
+          sleep_hours: number | null
+          sleep_quality: number | null
+          soreness_level: number | null
+          stress_level: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          notes?: string | null
+          recorded_date?: string
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          soreness_level?: number | null
+          stress_level?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          notes?: string | null
+          recorded_date?: string
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          soreness_level?: number | null
+          stress_level?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           email: string
@@ -105,6 +386,87 @@ export type Database = {
           subscribed?: boolean
           subscribed_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      tdee_calculations: {
+        Row: {
+          activity_level: string
+          age: number
+          bmr: number
+          created_at: string
+          gender: string
+          goal: string | null
+          height: number
+          id: string
+          recommended_calories: number | null
+          tdee: number
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          activity_level: string
+          age: number
+          bmr: number
+          created_at?: string
+          gender: string
+          goal?: string | null
+          height: number
+          id?: string
+          recommended_calories?: number | null
+          tdee: number
+          user_id: string
+          weight: number
+        }
+        Update: {
+          activity_level?: string
+          age?: number
+          bmr?: number
+          created_at?: string
+          gender?: string
+          goal?: string | null
+          height?: number
+          id?: string
+          recommended_calories?: number | null
+          tdee?: number
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      training_programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty_level: string | null
+          duration_weeks: number | null
+          id: string
+          name: string
+          program_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          duration_weeks?: number | null
+          id?: string
+          name: string
+          program_data: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          duration_weeks?: number | null
+          id?: string
+          name?: string
+          program_data?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -156,6 +518,45 @@ export type Database = {
           updated_at?: string
           user_id?: string
           workout_timer_sessions?: number | null
+        }
+        Relationships: []
+      }
+      workout_sessions: {
+        Row: {
+          calories_burned: number | null
+          created_at: string
+          duration_minutes: number
+          exercises_data: Json | null
+          id: string
+          notes: string | null
+          session_date: string
+          user_id: string
+          workout_name: string
+          workout_type: string | null
+        }
+        Insert: {
+          calories_burned?: number | null
+          created_at?: string
+          duration_minutes: number
+          exercises_data?: Json | null
+          id?: string
+          notes?: string | null
+          session_date?: string
+          user_id: string
+          workout_name: string
+          workout_type?: string | null
+        }
+        Update: {
+          calories_burned?: number | null
+          created_at?: string
+          duration_minutes?: number
+          exercises_data?: Json | null
+          id?: string
+          notes?: string | null
+          session_date?: string
+          user_id?: string
+          workout_name?: string
+          workout_type?: string | null
         }
         Relationships: []
       }

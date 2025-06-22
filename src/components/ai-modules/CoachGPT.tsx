@@ -1,13 +1,13 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Brain, ArrowLeft, Send } from "lucide-react";
-import { useState } from "react";
+import { Brain, ArrowLeft, Send, History, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CoachGPTProps {
   onBack: () => void;
@@ -16,11 +16,13 @@ interface CoachGPTProps {
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  id?: string;
 }
 
 const CoachGPT = ({ onBack }: CoachGPTProps) => {
-  const { canUseFeature, incrementUsage, getRemainingUsage } = useUsageTracking();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const { canUseFeature, incrementUsage, getRemainingUsage } = useUsageTracking();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -46,9 +48,92 @@ What would you like to know?`
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionId] = useState(() => crypto.randomUUID());
 
   const remainingUsage = getRemainingUsage('coach_gpt_queries');
   const canUse = canUseFeature('coach_gpt_queries');
+
+  useEffect(() => {
+    if (user) {
+      loadConversationHistory();
+    }
+  }, [user]);
+
+  const loadConversationHistory = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('coach_conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('conversation_session', currentSessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const loadedMessages = data.map(msg => ({
+          role: msg.message_role as 'user' | 'assistant',
+          content: msg.message_content,
+          id: msg.id
+        }));
+        setMessages(prev => [...prev.filter(m => m.role === 'assistant' && !m.id), ...loadedMessages]);
+      }
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+    }
+  };
+
+  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('coach_conversations')
+        .insert({
+          user_id: user.id,
+          message_role: role,
+          message_content: content,
+          conversation_session: currentSessionId
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+  };
+
+  const clearConversation = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('coach_conversations')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('conversation_session', currentSessionId);
+
+      if (error) throw error;
+
+      setMessages([{
+        role: 'assistant',
+        content: messages[0].content // Keep the initial message
+      }]);
+
+      toast({
+        title: "Conversation cleared",
+        description: "Chat history has been cleared.",
+      });
+    } catch (error) {
+      console.error('Error clearing conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear conversation.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +141,13 @@ What would you like to know?`
 
     const userMessage = input;
     setInput("");
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    
+    const newUserMessage = { role: 'user' as const, content: userMessage };
+    setMessages(prev => [...prev, newUserMessage]);
+    
+    // Save user message
+    await saveMessage('user', userMessage);
+    
     setIsLoading(true);
 
     try {
@@ -87,14 +178,19 @@ What would you like to know?`
         return;
       }
 
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      const assistantMessage = { role: 'assistant' as const, content: data.response };
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      // Save assistant message
+      await saveMessage('assistant', data.response);
       
     } catch (error) {
       console.error('Error getting coaching advice:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
+      const errorMessage = { 
+        role: 'assistant' as const, 
         content: 'Sorry, I encountered an error. Please try asking your question again. This attempt did not count towards your usage limit.' 
-      }]);
+      };
+      setMessages(prev => [...prev, errorMessage]);
       
       toast({
         title: "Error",
@@ -131,6 +227,17 @@ What would you like to know?`
         <Badge className={`${!canUse ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
           {remainingUsage === -1 ? 'Unlimited' : `${remainingUsage} prompts left`}
         </Badge>
+        {messages.length > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearConversation}
+            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Clear Chat
+          </Button>
+        )}
       </div>
 
       {!canUse && (
@@ -154,7 +261,7 @@ What would you like to know?`
         <CardHeader>
           <CardTitle className="text-white">Chat with CoachGPT</CardTitle>
           <CardDescription className="text-gray-400">
-            Ask any fitness question and get science-backed answers (excludes specific training programs & meal plans)
+            Ask any fitness question and get science-backed answers (excludes specific training programs & meal plans) - All conversations are saved
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

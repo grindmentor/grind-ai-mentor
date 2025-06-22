@@ -12,6 +12,8 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { signIn, signUp, user } = useAuth();
 
@@ -24,25 +26,41 @@ const SignIn = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setMessage("");
+    setIsLoading(true);
 
     try {
       if (isSignUp) {
         const { error } = await signUp(email, password);
         if (error) {
-          setError(error.message);
+          if (error.message.includes("User already registered")) {
+            setError("An account with this email already exists. Try signing in instead.");
+            setIsSignUp(false);
+          } else {
+            setError(error.message);
+          }
         } else {
-          navigate("/onboarding");
+          setMessage("Please check your email and click the confirmation link before signing in.");
+          setIsSignUp(false);
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          setError(error.message);
+          if (error.message.includes("Invalid login credentials")) {
+            setError("Invalid email or password. Please check your credentials or confirm your email if you just signed up.");
+          } else if (error.message.includes("Email not confirmed")) {
+            setError("Please check your email and click the confirmation link before signing in.");
+          } else {
+            setError(error.message);
+          }
         } else {
           navigate("/app");
         }
       }
     } catch (err) {
       setError("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,8 +90,13 @@ const SignIn = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="text-red-400 text-sm text-center bg-red-500/10 p-2 rounded">
+                <div className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded border border-red-500/20">
                   {error}
+                </div>
+              )}
+              {message && (
+                <div className="text-green-400 text-sm text-center bg-green-500/10 p-3 rounded border border-green-500/20">
+                  {message}
                 </div>
               )}
               <div className="space-y-2">
@@ -86,6 +109,7 @@ const SignIn = () => {
                   placeholder="Enter your email"
                   required
                   className="bg-gray-800 border-gray-700 text-white"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -98,20 +122,27 @@ const SignIn = () => {
                   placeholder="Enter your password"
                   required
                   className="bg-gray-800 border-gray-700 text-white"
+                  disabled={isLoading}
                 />
               </div>
               <Button 
                 type="submit" 
                 className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                disabled={isLoading}
               >
-                {isSignUp ? "Create Account" : "Sign In"}
+                {isLoading ? "Please wait..." : (isSignUp ? "Create Account" : "Sign In")}
               </Button>
             </form>
             
             <div className="mt-6 text-center">
               <button
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError("");
+                  setMessage("");
+                }}
                 className="text-orange-400 hover:text-orange-300 text-sm"
+                disabled={isLoading}
               >
                 {isSignUp 
                   ? "Already have an account? Sign in" 
@@ -125,6 +156,14 @@ const SignIn = () => {
                 ← Back to home
               </Link>
             </div>
+
+            {!isSignUp && (
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-500">
+                  If you just signed up, please check your email for a confirmation link before signing in.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

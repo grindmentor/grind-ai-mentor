@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    // Use the auth callback route for email confirmations
+    // Use the current window origin for redirect, which should be the correct port
     const redirectUrl = `${window.location.origin}/auth/callback`;
     
     console.log('Sign up attempt with redirect URL:', redirectUrl);
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const resetPassword = async (email: string) => {
-    // Use the auth callback route for password resets
+    // Use the current window origin for redirect
     const redirectUrl = `${window.location.origin}/auth/callback`;
     console.log('Password reset for:', email, 'with redirect:', redirectUrl);
     

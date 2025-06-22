@@ -1,41 +1,53 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
-import Index from './pages/Index'
-import About from './pages/About'
-import Privacy from './pages/Privacy'
-import Terms from './pages/Terms'
-import Support from './pages/Support'
-import SignIn from './pages/SignIn'
-import AuthCallback from './pages/AuthCallback'
-import App from './pages/App'
-import Settings from './pages/Settings'
-import Pricing from './pages/Pricing'
-import Onboarding from './pages/Onboarding'
-import NotFound from './pages/NotFound'
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { PreferencesProvider } from "./contexts/PreferencesContext";
+import Index from "./pages/Index";
+import SignIn from "./pages/SignIn";
+import App as AppPage from "./pages/App";
+import Settings from "./pages/Settings";
+import Onboarding from "./pages/Onboarding";
+import About from "./pages/About";
+import Pricing from "./pages/Pricing";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Support from "./pages/Support";
+import AuthCallback from "./pages/AuthCallback";
+import NotFound from "./pages/NotFound";
 
-function AppRouter() {
-  return (
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/app" element={<App />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/404" element={<NotFound />} />
-          <Route path="*" element={<Navigate to="/404" replace />} />
-        </Routes>
-      </Router>
+      <PreferencesProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/app" element={<AppPage />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </PreferencesProvider>
     </AuthProvider>
-  )
-}
+  </QueryClientProvider>
+);
 
-export default AppRouter
+export default App;

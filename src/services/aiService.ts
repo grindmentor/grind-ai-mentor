@@ -16,7 +16,15 @@ class AIService {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!data || !data.response) {
+        throw new Error('No response received from AI service');
+      }
+      
       return data.response;
     } catch (error) {
       console.error('Error generating training program:', error);
@@ -33,7 +41,15 @@ class AIService {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!data || !data.response) {
+        throw new Error('No response received from AI service');
+      }
+      
       return data.response;
     } catch (error) {
       console.error('Error generating meal plan:', error);
@@ -50,7 +66,15 @@ class AIService {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!data || !data.response) {
+        throw new Error('No response received from AI service');
+      }
+      
       return data.response;
     } catch (error) {
       console.error('Error generating cardio program:', error);
@@ -67,7 +91,15 @@ class AIService {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!data || !data.response) {
+        throw new Error('No response received from AI service');
+      }
+      
       return data.response;
     } catch (error) {
       console.error('Error getting coaching advice:', error);
@@ -84,11 +116,44 @@ class AIService {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!data || !data.response) {
+        throw new Error('No response received from AI service');
+      }
+      
       return data.response;
     } catch (error) {
       console.error('Error getting recovery advice:', error);
       throw new Error('Failed to get recovery advice. Please try again.');
+    }
+  }
+
+  async analyzeFoodLog(userInput: string): Promise<string> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'food_log',
+          userInput: userInput
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!data || !data.response) {
+        throw new Error('No response received from AI service');
+      }
+      
+      return data.response;
+    } catch (error) {
+      console.error('Error analyzing food log:', error);
+      throw new Error('Failed to analyze food log. Please try again.');
     }
   }
 }

@@ -15,7 +15,28 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, type, userInput } = await req.json();
+    console.log('Received request to fitness-ai function');
+    
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not found');
+      throw new Error('OpenAI API key not configured');
+    }
+
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Request body:', requestBody);
+    } catch (error) {
+      console.error('Error parsing request body:', error);
+      throw new Error('Invalid JSON in request body');
+    }
+
+    const { prompt, type, userInput } = requestBody;
+
+    if (!userInput && !prompt) {
+      console.error('No user input provided');
+      throw new Error('User input is required');
+    }
 
     let systemPrompt = '';
     
@@ -224,6 +245,8 @@ Provide actionable insights that help users optimize their nutrition based on sc
         systemPrompt = `You are a fitness expert specializing in evidence-based training and nutrition. Provide helpful, science-backed advice based on current research from peer-reviewed journals. Always include 2-3 research citations at the end of your response.`;
     }
 
+    console.log('Making request to OpenAI with type:', type);
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -241,10 +264,20 @@ Provide actionable insights that help users optimize their nutrition based on sc
       }),
     });
 
-    const data = await response.json();
-    
+    console.log('OpenAI response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(data.error?.message || 'OpenAI API error');
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+    }
+
+    const data = await response.json();
+    console.log('OpenAI response received successfully');
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response from OpenAI API');
     }
 
     const aiResponse = data.choices[0].message.content;
@@ -254,7 +287,10 @@ Provide actionable insights that help users optimize their nutrition based on sc
     });
   } catch (error) {
     console.error('Error in fitness-ai function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message || 'An unexpected error occurred',
+      details: error.toString()
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

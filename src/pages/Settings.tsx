@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,14 +9,15 @@ import { Settings as SettingsIcon, ArrowLeft, Save } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { supabase } from "@/integrations/supabase/client";
 import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertInchesToFeetAndInches, convertFeetAndInchesToInches } from "@/lib/unitConversions";
 import { useToast } from "@/hooks/use-toast";
-import { UserPreferences } from "@/types/userPreferences";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { preferences, updatePreferences } = usePreferences();
   const { toast } = useToast();
   
   const [profile, setProfile] = useState({
@@ -31,21 +31,12 @@ const Settings = () => {
     heightInches: ''
   });
 
-  const [preferences, setPreferences] = useState<Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
-    weight_unit: 'lbs',
-    height_unit: 'ft-in',
-    notifications: true,
-    email_updates: true,
-    dark_mode: true
-  });
-
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadProfile();
-      loadPreferences();
     }
   }, [user]);
 
@@ -107,31 +98,6 @@ const Settings = () => {
         heightFeet: '',
         heightInches: ''
       });
-    }
-  };
-
-  const loadPreferences = async () => {
-    if (!user) return;
-
-    try {
-      // Use type assertion to work around missing type definitions
-      const { data, error } = await (supabase as any)
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (data && !error) {
-        setPreferences({
-          weight_unit: data.weight_unit || 'lbs',
-          height_unit: data.height_unit || 'ft-in',
-          notifications: data.notifications ?? true,
-          email_updates: data.email_updates ?? true,
-          dark_mode: data.dark_mode ?? true
-        });
-      }
-    } catch (error) {
-      console.error('Error loading preferences:', error);
     }
   };
 
@@ -208,18 +174,8 @@ const Settings = () => {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfile(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   const handlePreferenceChange = (field: keyof typeof preferences, value: any) => {
-    setPreferences(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    updatePreferences({ [field]: value });
   };
 
   const handleSignOut = async () => {

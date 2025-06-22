@@ -76,24 +76,30 @@ const AuthCallback = () => {
             setMessage('Invalid confirmation link.');
           }
         } else {
-          // Fallback: try to get session from URL
-          const { data, error } = await supabase.auth.getSessionFromUrl();
-          
-          if (error) {
-            console.error('Auth callback error:', error);
-            setStatus('error');
-            setMessage('Authentication failed. The link may have expired or is invalid.');
-          } else if (data.session) {
-            setStatus('success');
-            setMessage('Authentication successful!');
+          // Fallback: try to exchange the code for a session
+          const code = searchParams.get('code');
+          if (code) {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
             
-            // Redirect to app
-            setTimeout(() => {
-              navigate('/onboarding');
-            }, 2000);
+            if (error) {
+              console.error('Auth callback error:', error);
+              setStatus('error');
+              setMessage('Authentication failed. The link may have expired or is invalid.');
+            } else if (data.session) {
+              setStatus('success');
+              setMessage('Authentication successful!');
+              
+              // Redirect to app
+              setTimeout(() => {
+                navigate('/onboarding');
+              }, 2000);
+            } else {
+              setStatus('error');
+              setMessage('No valid authentication found.');
+            }
           } else {
             setStatus('error');
-            setMessage('No valid authentication found.');
+            setMessage('No authentication code found.');
           }
         }
       } catch (error) {
@@ -104,7 +110,7 @@ const AuthCallback = () => {
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handleContinue = () => {
     if (isPasswordReset && status === 'success') {

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface RecoveryCoachProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { canUseFeature, incrementUsage } = useUsageTracking();
+  const { toast } = useToast();
 
   const examplePrompts = [
     "I sleep 5-6 hours per night and feel constantly tired, help optimize my recovery",
@@ -49,12 +51,41 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
 
       if (error) throw error;
       setResponse(data.response);
+      
+      // Show success toast
+      toast({
+        title: "Recovery Plan Generated!",
+        description: "Your personalized recovery protocol is ready with research citations.",
+      });
     } catch (error) {
       console.error('Error getting recovery advice:', error);
       setResponse('Sorry, there was an error generating your recovery plan. Please try again.');
+      
+      // Show error toast
+      toast({
+        title: "Error generating recovery plan",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDownload = () => {
+    const element = document.createElement('a');
+    const file = new Blob([response], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'recovery-plan.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    // Show download toast
+    toast({
+      title: "Recovery Plan Downloaded!",
+      description: "Your plan has been saved to your device.",
+    });
   };
 
   return (
@@ -120,7 +151,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
               <Button 
                 type="submit" 
                 disabled={!input.trim() || isLoading || !canUseFeature('coach_gpt_queries')}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
               >
                 <Moon className="w-4 h-4 mr-2" />
                 {isLoading ? "Analyzing Recovery..." : "Get Recovery Plan"}
@@ -144,15 +175,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
                     Recovery Plan Ready
                   </Badge>
                   <Button 
-                    onClick={() => {
-                      const element = document.createElement('a');
-                      const file = new Blob([response], { type: 'text/plain' });
-                      element.href = URL.createObjectURL(file);
-                      element.download = 'recovery-plan.txt';
-                      document.body.appendChild(element);
-                      element.click();
-                      document.body.removeChild(element);
-                    }}
+                    onClick={handleDownload}
                     variant="outline" 
                     size="sm"
                     className="border-gray-600 text-gray-300 hover:bg-gray-800"

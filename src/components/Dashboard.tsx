@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,8 @@ const Dashboard = () => {
       icon: <Brain className="w-6 h-6" />,
       color: 'bg-blue-500',
       component: CoachGPT,
-      tier: 'free'
+      tier: 'free',
+      buttonText: 'Get Coaching'
     },
     {
       id: 'recovery-coach',
@@ -38,7 +40,8 @@ const Dashboard = () => {
       color: 'bg-indigo-500',
       component: RecoveryCoach,
       tier: 'free',
-      trending: true
+      trending: true,
+      buttonText: 'Optimize Recovery'
     },
     {
       id: 'meal-plan-ai',
@@ -47,7 +50,8 @@ const Dashboard = () => {
       icon: <Utensils className="w-6 h-6" />,
       color: 'bg-green-500',
       component: MealPlanAI,
-      tier: 'free'
+      tier: 'free',
+      buttonText: 'Create Meal Plan'
     },
     {
       id: 'smart-food-log',
@@ -56,7 +60,8 @@ const Dashboard = () => {
       icon: <FileImage className="w-6 h-6" />,
       color: 'bg-yellow-500',
       component: SmartFoodLog,
-      tier: 'free'
+      tier: 'free',
+      buttonText: 'Track Food'
     },
     {
       id: 'tdee-calculator',
@@ -65,7 +70,8 @@ const Dashboard = () => {
       icon: <Calculator className="w-6 h-6" />,
       color: 'bg-indigo-500',
       component: TDEECalculator,
-      tier: 'free'
+      tier: 'free',
+      buttonText: 'Calculate TDEE'
     },
     {
       id: 'habit-tracker',
@@ -75,7 +81,8 @@ const Dashboard = () => {
       color: 'bg-gradient-to-r from-green-500 to-blue-500',
       component: HabitTracker,
       tier: 'free',
-      trending: true
+      trending: true,
+      buttonText: 'Track Habits'
     },
     {
       id: 'smart-training',
@@ -84,7 +91,8 @@ const Dashboard = () => {
       icon: <Dumbbell className="w-6 h-6" />,
       color: 'bg-red-500',
       component: SmartTraining,
-      tier: 'free'
+      tier: 'free',
+      buttonText: 'Build Workout'
     },
     {
       id: 'cardio-ai',
@@ -94,7 +102,8 @@ const Dashboard = () => {
       color: 'bg-red-600',
       component: CardioAI,
       tier: 'free',
-      trending: true
+      trending: true,
+      buttonText: 'Plan Cardio'
     },
     {
       id: 'progress-ai',
@@ -104,7 +113,8 @@ const Dashboard = () => {
       color: 'bg-purple-500',
       component: ProgressAI,
       tier: 'free',
-      trending: true
+      trending: true,
+      buttonText: 'Track Progress'
     },
     {
       id: 'cut-calc-pro',
@@ -113,7 +123,8 @@ const Dashboard = () => {
       icon: <TrendingUp className="w-6 h-6" />,
       color: 'bg-pink-500',
       component: CutCalcPro,
-      tier: 'free'
+      tier: 'free',
+      buttonText: 'Calculate Cut'
     },
     {
       id: 'workout-timer',
@@ -122,7 +133,8 @@ const Dashboard = () => {
       icon: <Timer className="w-6 h-6" />,
       color: 'bg-teal-500',
       component: WorkoutTimer,
-      tier: 'free'
+      tier: 'free',
+      buttonText: 'Start Timer'
     }
   ];
 
@@ -219,9 +231,9 @@ const Dashboard = () => {
                 </CardDescription>
                 <Button 
                   onClick={() => handleModuleClick(module.id)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white"
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
                 >
-                  Open Module
+                  {module.buttonText}
                 </Button>
               </CardContent>
             </Card>
@@ -232,7 +244,7 @@ const Dashboard = () => {
         <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
           <CardContent className="pt-6">
             <div className="text-center">
-              <h3 className="text-2xl font-bold text-white mb-2">Unlock Higher Usage Limits</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">Boost Your Limits</h3>
               <p className="text-gray-300 mb-6">
                 Get more usage per month and support the development of new AI features
               </p>

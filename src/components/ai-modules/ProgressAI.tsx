@@ -7,6 +7,7 @@ import { Camera, ArrowLeft, Upload, Zap, TrendingUp, FileText, Download } from "
 import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
+import { aiService } from "@/services/aiService";
 
 interface ProgressAIProps {
   onBack: () => void;
@@ -37,93 +38,25 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
   const handleAnalyze = async () => {
     if (!selectedFile || !canUseFeature('progress_analyses')) return;
     
-    const success = await incrementUsage('progress_analyses');
-    if (!success) return;
-    
     setIsAnalyzing(true);
     
     const photoUrl = URL.createObjectURL(selectedFile);
     const isImage = selectedFile.type.startsWith('image/');
     
-    // Simulate AI analysis
-    setTimeout(() => {
-      const analysis = isImage ? 
-        `🔥 **Progress Photo Analysis Results**
+    try {
+      // Create analysis prompt based on file type
+      const analysisPrompt = isImage ? 
+        `Analyze this progress photo for body composition, muscle definition, and provide science-based recommendations for training and nutrition. Include specific observations about muscle development, body fat percentage estimates, posture, and actionable next steps.` :
+        `Analyze this workout program or fitness document. Provide detailed feedback on exercise selection, volume, progression, and optimization recommendations based on exercise science research.`;
 
-**Body Composition Assessment:**
-• **Muscle Definition:** Visible improvements in shoulder and arm definition
-• **Body Fat Estimate:** Approximately 12-15% (estimated from visual markers)
-• **Posture Analysis:** Good overall posture, slight forward head position detected
-
-**Key Observations:**
-• **Deltoids:** Well-developed, showing separation between anterior/posterior heads
-• **Arms:** Increased vascularity indicating lower body fat percentage
-• **Core:** Developing ab definition, recommend continued focus on core work
-• **Symmetry:** Good left-right balance
-
-**Science-Based Recommendations:**
-Based on visual markers and current physique development:
-
-1. **Training Focus:** Continue current program with emphasis on:
-   - Posterior chain strengthening (rows, pull-ups)
-   - Core stability work (planks, dead bugs)
-   - Progressive overload on compound movements
-
-2. **Nutrition Timing:** 
-   - Consider slight caloric surplus (+200-300 cal) for lean gains
-   - Maintain protein at 0.8-1g per lb bodyweight
-   - Time carbs around workouts for performance
-
-3. **Recovery Metrics:**
-   - Current muscle definition suggests good recovery
-   - Consider tracking sleep quality (aim for 7-9 hours)
-   - Monitor stress levels as they affect cortisol/muscle retention
-
-**Next Photo Comparison:**
-Take your next progress photo in 2-4 weeks under similar:
-- Lighting conditions (natural light preferred)
-- Time of day (morning, fasted state)
-- Camera angle and distance
-
-**Estimated Timeline for Next Milestone:**
-Based on current progress rate: 6-8 weeks for next significant visual change.
-
-*Analysis based on computer vision and validated body composition research*` :
-        `📋 **Workout Program Analysis Results**
-
-**Program Structure Assessment:**
-• **Exercise Selection:** Well-balanced compound and isolation movements
-• **Volume Distribution:** Appropriate weekly sets per muscle group
-• **Progressive Overload:** Clear progression scheme identified
-• **Recovery Protocols:** Adequate rest periods between sessions
-
-**Key Strengths:**
-• **Compound Focus:** Excellent use of multi-joint movements
-• **Periodization:** Evidence of structured progression
-• **Balance:** Equal attention to all muscle groups
-• **Recovery:** Proper rest day implementation
-
-**Science-Based Optimization Suggestions:**
-
-1. **Exercise Order Enhancement:**
-   - Prioritize compound movements early in sessions
-   - Place isolation work after main lifts
-   - Consider pre-exhaustion for lagging muscle groups
-
-2. **Volume Periodization:**
-   - Week 1-2: Accumulation phase (moderate volume)
-   - Week 3: Intensification (reduced volume, higher intensity)
-   - Week 4: Deload (50% volume reduction)
-
-3. **Recovery Enhancement:**
-   - Implement contrast showers post-workout
-   - Consider massage or soft tissue work 2x/week
-   - Track HRV for autonomic recovery monitoring
-
-**Program Adherence Score:** 8.5/10
-**Estimated Results Timeline:** 8-12 weeks for significant strength gains
-
-*Analysis based on exercise science research and periodization principles*`;
+      // Get AI analysis
+      const analysis = await aiService.getCoachingAdvice(`${analysisPrompt}\n\nFile: ${selectedFile.name}\nType: ${isImage ? 'Progress Photo' : 'Workout Program'}`);
+      
+      const success = await incrementUsage('progress_analyses');
+      if (!success) {
+        setIsAnalyzing(false);
+        return;
+      }
 
       const newPhoto: ProgressPhoto = {
         id: Date.now().toString(),
@@ -136,8 +69,12 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
 
       setPhotos(prev => [newPhoto, ...prev]);
       setSelectedFile(null);
+    } catch (error) {
+      console.error('Analysis error:', error);
+      // Don't increment usage on error
+    } finally {
       setIsAnalyzing(false);
-    }, 3000);
+    }
   };
 
   return (
@@ -175,7 +112,7 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-gray-600 transition-colors">
               <input
                 type="file"
                 accept="image/*,.pdf,.docx,.txt"
@@ -191,7 +128,7 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
             </div>
 
             {selectedFile && (
-              <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     {selectedFile.type.startsWith('image/') ? (
@@ -207,7 +144,7 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
                   <Button
                     onClick={handleAnalyze}
                     disabled={isAnalyzing || !canUseFeature('progress_analyses')}
-                    className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                    className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 disabled:opacity-50"
                   >
                     {isAnalyzing ? "Analyzing..." : "Analyze Content"}
                   </Button>
@@ -215,7 +152,7 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
               </div>
             )}
 
-            <div className="bg-gray-800 p-4 rounded-lg">
+            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
               <h4 className="text-white font-medium mb-2">📸 Upload Tips for Best Results:</h4>
               <ul className="text-gray-300 text-sm space-y-1">
                 <li>• <strong>Photos:</strong> Well-lit, minimal clothing, consistent poses</li>
@@ -229,14 +166,14 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
 
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Analysis History</CardTitle>
+            <CardTitle className="text-white">Analysis Results</CardTitle>
             <CardDescription className="text-gray-400">
               Your uploaded content and AI analysis results
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isAnalyzing && (
-              <div className="bg-gray-800 p-4 rounded-lg mb-4">
+              <div className="bg-gray-800 p-4 rounded-lg mb-4 border border-gray-700">
                 <div className="flex items-center space-x-3">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
                   <div>
@@ -250,16 +187,16 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
             {photos.length > 0 ? (
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {photos.map((photo) => (
-                  <div key={photo.id} className="bg-gray-800 p-4 rounded-lg">
+                  <div key={photo.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                     <div className="flex items-start space-x-4">
                       {photo.type === 'image' ? (
                         <img 
                           src={photo.url} 
                           alt="Progress content"
-                          className="w-20 h-20 object-cover rounded-lg"
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-600"
                         />
                       ) : (
-                        <div className="w-20 h-20 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <div className="w-20 h-20 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
                           <FileText className="w-8 h-8 text-blue-400" />
                         </div>
                       )}
@@ -279,7 +216,7 @@ Based on current progress rate: 6-8 weeks for next significant visual change.
                         </div>
                         {photo.analysis && (
                           <div className="text-gray-300 text-sm">
-                            <pre className="whitespace-pre-wrap">{photo.analysis}</pre>
+                            <pre className="whitespace-pre-wrap font-sans">{photo.analysis}</pre>
                           </div>
                         )}
                       </div>

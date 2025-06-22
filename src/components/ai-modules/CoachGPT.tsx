@@ -34,6 +34,12 @@ I can help you with:
 
 ⚠️ **Note**: I cannot provide specific training programs (use Smart Training for that) or detailed meal plans (use MealPlanAI for nutrition).
 
+**Example questions to get started:**
+• "What's the best way to improve my squat form?"
+• "How much sleep do I need for optimal recovery?"
+• "What are the signs of overtraining?"
+• "How can I prevent lower back pain during deadlifts?"
+
 What would you like to know?`
     }
   ]);
@@ -48,7 +54,6 @@ What would you like to know?`
     setInput("");
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
-    incrementUsage('coachGptQueries');
 
     try {
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
@@ -60,12 +65,14 @@ What would you like to know?`
 
       if (error) throw error;
       
+      // Only increment usage on successful response
+      incrementUsage('coachGptQueries');
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
       console.error('Error getting coaching advice:', error);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'Sorry, I encountered an error. Please try asking your question again.' 
+        content: 'Sorry, I encountered an error. Please try asking your question again. This attempt did not count towards your usage limit.' 
       }]);
     } finally {
       setIsLoading(false);
@@ -124,22 +131,23 @@ What would you like to know?`
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="h-96 overflow-y-auto space-y-4 p-4 bg-gray-800 rounded-lg">
+          <div className="h-96 overflow-y-auto space-y-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
             {messages.map((message, index) => (
               <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] p-3 rounded-lg ${
                   message.role === 'user' 
                     ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' 
-                    : 'bg-gray-700 text-gray-100'
+                    : 'bg-gray-700 text-gray-100 border border-gray-600'
                 }`}>
-                  <pre className="whitespace-pre-wrap text-sm">{message.content}</pre>
+                  <pre className="whitespace-pre-wrap text-sm font-sans">{message.content}</pre>
                 </div>
               </div>
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-700 text-gray-100 p-3 rounded-lg">
+                <div className="bg-gray-700 text-gray-100 p-3 rounded-lg border border-gray-600">
                   <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                     <div className="animate-pulse">Researching scientific literature...</div>
                   </div>
                 </div>
@@ -152,13 +160,13 @@ What would you like to know?`
               placeholder="Ask about fitness advice, exercise form, recovery... (No training programs or meal plans)"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white flex-1"
+              className="bg-gray-800 border-gray-700 text-white flex-1 focus:ring-2 focus:ring-blue-500"
               disabled={coachGptQueries >= maxPrompts}
             />
             <Button 
               type="submit" 
               disabled={!input.trim() || isLoading || coachGptQueries >= maxPrompts}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
             </Button>

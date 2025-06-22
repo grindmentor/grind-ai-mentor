@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -165,7 +166,7 @@ export const useUsageTracking = () => {
         return false;
       }
 
-      // Update local state
+      // Update local state only after successful database update
       setCurrentUsage(prev => prev ? {
         ...prev,
         [featureKey]: prev[featureKey] + 1
@@ -191,7 +192,7 @@ export const useUsageTracking = () => {
   };
 
   const getUsagePercentage = (featureKey: keyof UsageLimits): number => {
-    if (!currentUsage) return 0;
+    if (!currentUsage)   return 0;
     
     const limits = TIER_LIMITS[userTier];
     const limit = limits[featureKey];

@@ -34,8 +34,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     age: '',
     gender: 'male',
     activityLevel: 'moderate',
-    weightUnit: 'lbs' as 'kg' | 'lbs',
-    heightUnit: 'ft-in' as 'cm' | 'ft-in' | 'in'
+    weightUnit: 'lbs',
+    heightUnit: 'ft-in'
   });
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);

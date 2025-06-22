@@ -36,8 +36,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     gender: 'male',
     activityLevel: 'moderate',
     bodyFat: '',
-    weightUnit: 'lbs' as 'kg' | 'lbs',
-    heightUnit: 'ft-in' as 'cm' | 'ft-in' | 'in'
+    weightUnit: 'lbs',
+    heightUnit: 'ft-in'
   });
   const [results, setResults] = useState<any>(null);
   const [calculationsUsed, setCalculationsUsed] = useState(0);

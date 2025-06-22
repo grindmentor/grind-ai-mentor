@@ -12,10 +12,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertInchesToFeetAndInches, convertFeetAndInchesToInches } from "@/lib/unitConversions";
+import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   
   const [profile, setProfile] = useState({
     weight: '',
@@ -37,10 +39,12 @@ const Settings = () => {
   });
 
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadProfile();
+      loadPreferences();
     }
   }, [user]);
 
@@ -58,11 +62,20 @@ const Settings = () => {
     }
   }, [profile.birthday]);
 
+  // Apply dark mode
+  useEffect(() => {
+    if (preferences.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [preferences.darkMode]);
+
   // Update height display when unit changes
   useEffect(() => {
-    if (profile.height) {
+    if (profile.height && preferences.heightUnit === 'ft-in') {
       const heightInInches = parseInt(profile.height);
-      if (preferences.heightUnit === 'ft-in') {
+      if (!isNaN(heightInInches)) {
         const { feet, inches } = convertInchesToFeetAndInches(heightInInches);
         setProfile(prev => ({
           ...prev,
@@ -71,7 +84,7 @@ const Settings = () => {
         }));
       }
     }
-  }, [preferences.heightUnit, profile.height]);
+  }, [preferences.heightUnit]);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -96,35 +109,90 @@ const Settings = () => {
     }
   };
 
-  const handleSave = async () => {
+  const loadPreferences = async () => {
     if (!user) return;
 
-    // Convert height to inches if using feet+inches
-    let finalHeight = profile.height;
-    if (preferences.heightUnit === 'ft-in' && profile.heightFeet && profile.heightInches) {
-      finalHeight = convertFeetAndInchesToInches(
-        parseInt(profile.heightFeet), 
-        parseInt(profile.heightInches)
-      ).toString();
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (data && !error) {
+      setPreferences({
+        weightUnit: data.weight_unit || 'lbs',
+        heightUnit: data.height_unit || 'ft-in',
+        notifications: data.notifications ?? true,
+        emailUpdates: data.email_updates ?? true,
+        darkMode: data.dark_mode ?? true
+      });
     }
+  };
+
+  const savePreferences = async () => {
+    if (!user) return;
 
     const { error } = await supabase
-      .from('profiles')
-      .update({
-        weight: profile.weight ? parseInt(profile.weight) : null,
-        birthday: profile.birthday || null,
-        height: finalHeight ? parseInt(finalHeight) : null,
-        experience: profile.experience || null,
-        activity: profile.activity || null,
-        goal: profile.goal || null
-      })
-      .eq('id', user.id);
+      .from('user_preferences')
+      .upsert({
+        user_id: user.id,
+        weight_unit: preferences.weightUnit,
+        height_unit: preferences.heightUnit,
+        notifications: preferences.notifications,
+        email_updates: preferences.emailUpdates,
+        dark_mode: preferences.darkMode
+      });
 
     if (error) {
-      console.error('Error saving profile:', error);
-      alert('Error saving settings. Please try again.');
-    } else {
-      alert('Settings saved successfully!');
+      console.error('Error saving preferences:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    setIsLoading(true);
+
+    try {
+      // Convert height to inches if using feet+inches
+      let finalHeight = profile.height;
+      if (preferences.heightUnit === 'ft-in' && profile.heightFeet && profile.heightInches) {
+        finalHeight = convertFeetAndInchesToInches(
+          parseInt(profile.heightFeet), 
+          parseInt(profile.heightInches)
+        ).toString();
+      }
+
+      // Save profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          weight: profile.weight ? parseInt(profile.weight) : null,
+          birthday: profile.birthday || null,
+          height: finalHeight ? parseInt(finalHeight) : null,
+          experience: profile.experience || null,
+          activity: profile.activity || null,
+          goal: profile.goal || null
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // Save preferences
+      await savePreferences();
+
+      toast({
+        title: "Settings saved successfully!",
+        description: "Your profile and preferences have been updated.",
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Error saving settings",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -171,6 +239,8 @@ const Settings = () => {
     }
     
     const numValue = parseInt(value);
+    if (isNaN(numValue)) return;
+    
     const weightInLbs = preferences.weightUnit === 'kg' 
       ? Math.round(convertKgToLbs(numValue))
       : numValue;
@@ -185,6 +255,8 @@ const Settings = () => {
     }
     
     const numValue = parseInt(value);
+    if (isNaN(numValue)) return;
+    
     const heightInInches = preferences.heightUnit === 'cm' 
       ? Math.round(convertCmToInches(numValue))
       : numValue;
@@ -193,25 +265,25 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate('/app')} className="text-white hover:bg-gray-800">
+            <Button variant="ghost" onClick={() => navigate('/app')} className="hover:bg-accent">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center">
-                <SettingsIcon className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
+                <SettingsIcon className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Settings</h1>
-                <p className="text-gray-400">Update your profile and preferences</p>
+                <h1 className="text-3xl font-bold">Settings</h1>
+                <p className="text-muted-foreground">Update your profile and preferences</p>
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="text-white border-gray-700 hover:bg-gray-800">
+          <Button variant="outline" onClick={handleSignOut} className="border-border hover:bg-accent">
             Sign Out
           </Button>
         </div>
@@ -222,21 +294,21 @@ const Settings = () => {
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Unit Preferences */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">Unit Preferences</CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardTitle>Unit Preferences</CardTitle>
+              <CardDescription>
                 Choose your preferred units for measurements
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-white">Weight Unit</Label>
+                <Label>Weight Unit</Label>
                 <Select value={preferences.weightUnit} onValueChange={(value: 'kg' | 'lbs') => handlePreferenceChange('weightUnit', value)}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-popover border-border">
                     <SelectItem value="lbs">Pounds (lbs)</SelectItem>
                     <SelectItem value="kg">Kilograms (kg)</SelectItem>
                   </SelectContent>
@@ -244,12 +316,12 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-white">Height Unit</Label>
+                <Label>Height Unit</Label>
                 <Select value={preferences.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => handlePreferenceChange('heightUnit', value)}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-popover border-border">
                     <SelectItem value="ft-in">Feet & Inches (5'10")</SelectItem>
                     <SelectItem value="in">Inches only</SelectItem>
                     <SelectItem value="cm">Centimeters (cm)</SelectItem>
@@ -260,18 +332,18 @@ const Settings = () => {
           </Card>
 
           {/* App Preferences */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">App Preferences</CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardTitle>App Preferences</CardTitle>
+              <CardDescription>
                 Customize your app experience
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-white">Push Notifications</Label>
-                  <p className="text-sm text-gray-400">Receive workout reminders</p>
+                  <Label>Push Notifications</Label>
+                  <p className="text-sm text-muted-foreground">Receive workout reminders</p>
                 </div>
                 <Switch 
                   checked={preferences.notifications}
@@ -281,8 +353,8 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-white">Email Updates</Label>
-                  <p className="text-sm text-gray-400">Newsletter & progress reports</p>
+                  <Label>Email Updates</Label>
+                  <p className="text-sm text-muted-foreground">Newsletter & progress reports</p>
                 </div>
                 <Switch 
                   checked={preferences.emailUpdates}
@@ -292,8 +364,8 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-white">Dark Mode</Label>
-                  <p className="text-sm text-gray-400">App theme preference</p>
+                  <Label>Dark Mode</Label>
+                  <p className="text-sm text-muted-foreground">App theme preference</p>
                 </div>
                 <Switch 
                   checked={preferences.darkMode}
@@ -304,16 +376,16 @@ const Settings = () => {
           </Card>
 
           {/* Basic Information */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">Basic Information</CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardTitle>Basic Information</CardTitle>
+              <CardDescription>
                 Your physical stats for accurate calculations
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="weight" className="text-white">
+                <Label htmlFor="weight">
                   Weight ({preferences.weightUnit})
                 </Label>
                 <Input
@@ -322,27 +394,27 @@ const Settings = () => {
                   placeholder={preferences.weightUnit === 'kg' ? '80' : '180'}
                   value={getWeightDisplay()}
                   onChange={(e) => handleWeightChange(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-background border-border"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="birthday" className="text-white">Birthday</Label>
+                <Label htmlFor="birthday">Birthday</Label>
                 <Input
                   id="birthday"
                   type="date"
                   value={profile.birthday}
                   onChange={(e) => handleInputChange('birthday', e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-background border-border"
                 />
                 {calculatedAge !== null && (
-                  <p className="text-sm text-gray-400">Current age: {calculatedAge} years</p>
+                  <p className="text-sm text-muted-foreground">Current age: {calculatedAge} years</p>
                 )}
               </div>
               
               {preferences.heightUnit === 'ft-in' ? (
                 <div className="space-y-2">
-                  <Label className="text-white">Height</Label>
+                  <Label>Height</Label>
                   <div className="flex space-x-2">
                     <div className="flex-1">
                       <Input
@@ -350,9 +422,9 @@ const Settings = () => {
                         placeholder="5"
                         value={profile.heightFeet}
                         onChange={(e) => handleInputChange('heightFeet', e.target.value)}
-                        className="bg-gray-800 border-gray-700 text-white"
+                        className="bg-background border-border"
                       />
-                      <Label className="text-xs text-gray-400">feet</Label>
+                      <Label className="text-xs text-muted-foreground">feet</Label>
                     </div>
                     <div className="flex-1">
                       <Input
@@ -360,15 +432,15 @@ const Settings = () => {
                         placeholder="10"
                         value={profile.heightInches}
                         onChange={(e) => handleInputChange('heightInches', e.target.value)}
-                        className="bg-gray-800 border-gray-700 text-white"
+                        className="bg-background border-border"
                       />
-                      <Label className="text-xs text-gray-400">inches</Label>
+                      <Label className="text-xs text-muted-foreground">inches</Label>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="height" className="text-white">
+                  <Label htmlFor="height">
                     Height ({preferences.heightUnit})
                   </Label>
                   <Input
@@ -377,7 +449,7 @@ const Settings = () => {
                     placeholder={preferences.heightUnit === 'cm' ? '175' : '70'}
                     value={getHeightDisplay()}
                     onChange={(e) => handleHeightChange(e.target.value)}
-                    className="bg-gray-800 border-gray-700 text-white"
+                    className="bg-background border-border"
                   />
                 </div>
               )}
@@ -385,21 +457,21 @@ const Settings = () => {
           </Card>
 
           {/* Fitness Profile */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">Fitness Profile</CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardTitle>Fitness Profile</CardTitle>
+              <CardDescription>
                 Your experience and goals for personalized recommendations
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-white">Experience Level</Label>
+                <Label>Experience Level</Label>
                 <Select value={profile.experience} onValueChange={(value) => handleInputChange('experience', value)}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="Select experience level" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border-border">
                     <SelectItem value="beginner">Beginner (0-1 years)</SelectItem>
                     <SelectItem value="intermediate">Intermediate (2-4 years)</SelectItem>
                     <SelectItem value="advanced">Advanced (5+ years)</SelectItem>
@@ -408,12 +480,12 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-white">Activity Level</Label>
+                <Label>Activity Level</Label>
                 <Select value={profile.activity} onValueChange={(value) => handleInputChange('activity', value)}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="Select activity level" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border-border">
                     <SelectItem value="sedentary">Sedentary (little/no exercise)</SelectItem>
                     <SelectItem value="light">Lightly active (1-3 days/week)</SelectItem>
                     <SelectItem value="moderate">Moderately active (3-5 days/week)</SelectItem>
@@ -424,12 +496,12 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-white">Primary Goal</Label>
+                <Label>Primary Goal</Label>
                 <Select value={profile.goal} onValueChange={(value) => handleInputChange('goal', value)}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="Select your goal" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover border-border">
                     <SelectItem value="maintain">Maintain Weight</SelectItem>
                     <SelectItem value="bulk">Bulk (Gain Muscle)</SelectItem>
                     <SelectItem value="cut">Cut (Lose Fat)</SelectItem>
@@ -440,14 +512,15 @@ const Settings = () => {
           </Card>
         </div>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <Button 
               onClick={handleSave}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
             >
               <Save className="w-4 h-4 mr-2" />
-              Save Settings
+              {isLoading ? 'Saving...' : 'Save Settings'}
             </Button>
           </CardContent>
         </Card>

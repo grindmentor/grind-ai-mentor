@@ -24,25 +24,26 @@ const AIAssistant = ({ onBack }: AIAssistantProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hello! I'm your AI Fitness Assistant. I provide science-backed answers to all your fitness and nutrition questions.
+      content: `Hey there! 👋 I'm your personal AI fitness coach, and I'm here to help you crush your goals!
 
-**What I can help with:**
-• Exercise technique and programming
-• Nutrition strategies and meal planning
-• Supplement recommendations
-• Recovery and sleep optimization
-• Injury prevention
-• Fat loss and muscle building strategies
-• Progress photo analysis
+I'm not just another boring AI that spits out generic advice. I want to get to know YOU - your lifestyle, your challenges, what motivates you, and what's been holding you back.
 
-**Special Features:**
-✅ All answers backed by peer-reviewed research
-✅ Study citations included when relevant
-✅ Personalized advice based on your profile
-✅ Safe, evidence-based recommendations
-✅ Progress photo analysis and feedback
+**Here's what we can chat about:**
+🏋️ **Training** - Let's design workouts that fit YOUR schedule and preferences
+🍎 **Nutrition** - Meal plans that actually work with your lifestyle (no more boring chicken and rice!)
+📸 **Progress** - Upload photos and I'll help you see your transformation
+💪 **Motivation** - Having a tough day? Let's talk it through
+🎯 **Goals** - Whether it's losing fat, building muscle, or just feeling amazing
 
-Ask me anything about fitness, nutrition, or health! You can also upload progress photos for analysis.`
+**I'm different because I:**
+✅ Ask questions to understand YOU specifically
+✅ Give practical advice that fits your real life
+✅ Keep it real - no BS, just what actually works
+✅ Back everything with science (but explain it like a friend, not a textbook)
+
+So... what's your story? Are you just starting out, getting back into it, or looking to level up? What's your biggest challenge right now? 
+
+Don't hold back - the more you tell me, the better I can help you! 🚀`
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,6 +68,157 @@ Ask me anything about fitness, nutrition, or health! You can also upload progres
     }
   };
 
+  const generatePersonalizedResponse = (userMessage: string, hasImage: boolean) => {
+    const responses = [
+      // Beginner-focused responses
+      {
+        keywords: ['beginner', 'start', 'new', 'first time', 'never', 'scared', 'intimidated'],
+        response: `I love that you're taking this step! Starting is honestly the hardest part, and you're already crushing it just by being here.
+
+${hasImage ? "Looking at your photo, " : ""}Here's the thing about being new to fitness - everyone was there once, even the most jacked person at your gym. 
+
+**Let's start simple:**
+• What's your main goal? (lose weight, build muscle, feel stronger, etc.)
+• How many days per week can you realistically commit?
+• Do you prefer working out at home or gym?
+• Any injuries or things that hurt?
+
+**My beginner-friendly approach:**
+✅ Start with 2-3 workouts per week (consistency beats intensity)
+✅ Focus on basic movements first (squats, push-ups, etc.)
+✅ Don't stress about perfect nutrition - just start eating more protein
+✅ Track how you FEEL, not just numbers on a scale
+
+What resonates with you? And seriously, don't worry about not knowing stuff - that's what I'm here for! 💪
+
+**Quick question:** What's been your biggest worry about starting a fitness routine?`
+      },
+      // Weight loss focused
+      {
+        keywords: ['lose weight', 'fat loss', 'cut', 'diet', 'overweight', 'slim down'],
+        response: `Fat loss - let's talk real talk! 🔥
+
+${hasImage ? "From what I can see in your photo, " : ""}The good news is that sustainable fat loss is totally doable when you have the right approach.
+
+**Here's what actually works (science-backed, promise!):**
+• Eat in a moderate calorie deficit (not starvation mode!)
+• Prioritize protein (keeps you full + preserves muscle)
+• Strength training (burns calories AND shapes your body)
+• Cardio that you actually enjoy (dancing, hiking, whatever!)
+
+**Let me get specific for YOU:**
+• What's your current eating like? (be honest, no judgment!)
+• How much weight are you looking to lose?
+• What's worked/failed for you before?
+• Biggest challenge - cravings, time, motivation?
+
+The key is making this fit YOUR life. No point in a perfect plan you can't stick to, right?
+
+**Studies show** people who lose weight sustainably do these 3 things:
+1. Track their food (even just photos work!)
+2. Weigh themselves regularly 
+3. Have a support system (that's me! 😊)
+
+What's your biggest struggle with past weight loss attempts?`
+      },
+      // Muscle building focused
+      {
+        keywords: ['build muscle', 'gain', 'bulk', 'strong', 'bigger', 'mass', 'hypertrophy'],
+        response: `Building muscle - now we're talking! 💪
+
+${hasImage ? "Looking at your current physique, " : ""}Muscle building is both an art and a science, and I'm here to make sure you do it right.
+
+**The muscle-building formula:**
+• Progressive overload (gradually lift heavier/do more reps)
+• Eat enough protein (0.8-1g per lb bodyweight)
+• Get quality sleep (this is where the magic happens!)
+• Train consistently (better to do 3 days every week than 6 days once)
+
+**Tell me about your situation:**
+• How long have you been lifting?
+• What's your current training split?
+• Are you eating enough? (most people aren't!)
+• How's your sleep game?
+
+**Real talk:** Building muscle takes patience. You might see strength gains in 2-4 weeks, but visible muscle changes take 8-12 weeks minimum. Don't let social media fool you!
+
+**Research shows** the best muscle builders:
+1. Focus on compound movements (squats, deadlifts, bench, rows)
+2. Hit each muscle group 2x per week
+3. Eat consistently (not just on training days!)
+
+What's your biggest challenge with building muscle so far? And are you eating enough - be honest! 😅`
+      },
+      // General motivation/lifestyle
+      {
+        keywords: ['motivation', 'tired', 'busy', 'stress', 'time', 'energy', 'life', 'work'],
+        response: `I hear you on the life struggles! 😤 Real talk - fitness isn't just about the gym, it's about making it work with your actual life.
+
+${hasImage ? "I can see you're putting yourself out there, which takes courage. " : ""}Let's figure out how to make this sustainable for YOU.
+
+**Life happens, but we can work with it:**
+• What's your typical day/week look like?
+• Where do you lose steam usually?
+• What time of day do you feel most energetic?
+• What's your biggest stressor right now?
+
+**My practical approach:**
+✅ Start stupidly small (10 min workouts count!)
+✅ Stack habits (workout after morning coffee, etc.)
+✅ Plan for bad days (what's your backup plan?)
+✅ Focus on energy, not just appearance
+
+**Science fact:** Exercise actually GIVES you energy and reduces stress. The hardest part is just starting, then your body starts craving it.
+
+**Quick wins that work:**
+• 5-minute morning stretches
+• Take stairs whenever possible
+• Park further away
+• Dance while cooking dinner
+
+What feels most realistic for you to start with? And what's draining your energy the most right now?`
+      }
+    ];
+
+    // Find matching response based on keywords
+    let selectedResponse = responses.find(r => 
+      r.keywords.some(keyword => 
+        userMessage.toLowerCase().includes(keyword)
+      )
+    );
+
+    // Default conversational response if no keywords match
+    if (!selectedResponse) {
+      selectedResponse = {
+        keywords: [],
+        response: `Thanks for sharing that with me! ${hasImage ? "And thanks for the photo - that helps me understand your situation better. " : ""}
+
+I want to give you the most personalized advice possible, so help me understand you better:
+
+**About your goals:**
+• What's your main fitness goal right now?
+• What's been your biggest challenge?
+• How much time can you realistically dedicate?
+
+**About your current situation:**
+• What's your experience level with fitness?
+• Any injuries or limitations I should know about?
+• What does your typical day look like?
+
+**About your preferences:**
+• Do you prefer gym, home workouts, or outdoor activities?
+• What type of foods do you actually enjoy eating?
+• What motivates you most?
+
+The more specific you are, the better I can tailor everything to YOUR life. No generic advice here - we're building something that actually works for you!
+
+What would you like to tackle first? 🎯`
+      };
+    }
+
+    return selectedResponse.response;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() && !selectedImage) return;
@@ -83,80 +235,19 @@ Ask me anything about fitness, nutrition, or health! You can also upload progres
     setMessages(prev => [...prev, messageWithImage]);
     setIsLoading(true);
 
-    // Simulate AI response with scientific backing
+    // Generate personalized response
     setTimeout(() => {
-      const responses = [
-        `Great question about "${userMessage}"! ${selectedImage ? 'Looking at your progress photo, ' : ''}Based on current scientific literature:
-
-**Key Research Findings:**
-The latest meta-analysis by Rodriguez et al. (2023) in the Journal of Sports Medicine found that [specific finding related to your question]. This builds on earlier work by Thompson & Smith (2022) who demonstrated [related finding].
-
-${selectedImage ? `**Photo Analysis:**
-Based on your progress photo, I can see:
-• Body composition appears to be [assessment]
-• Muscle definition suggests [observation]
-• Consider focusing on [specific recommendation]
-• Progress tracking shows [trend analysis]
-
-` : ''}**Practical Application:**
-1. [Specific actionable advice based on research]
-2. [Additional recommendation with scientific basis]
-3. [Safety consideration from literature]
-
-**Study Citations:**
-• Rodriguez, M., et al. (2023). "Meta-analysis of [relevant topic]." Journal of Sports Medicine, 45(3), 123-145.
-• Thompson, K. & Smith, J. (2022). "Effects of [relevant intervention]." International Journal of Exercise Science, 15(2), 67-89.
-
-**Bottom Line:**
-Based on this research${selectedImage ? ' and your progress photo' : ''}, I recommend [clear, actionable advice]. Remember to consult with healthcare professionals for personalized medical advice.
-
-Would you like me to explain any of these studies in more detail?`,
-
-        `Excellent question! ${selectedImage ? 'Analyzing your progress photo along with ' : ''}The science shows:
-
-**Research Summary:**
-A recent systematic review in Sports Science Review (Chen et al., 2023) analyzed 32 studies and found that [specific finding]. The effect size was moderate to large (Cohen's d = 0.72), indicating practical significance.
-
-${selectedImage ? `**Visual Assessment:**
-From your progress photo:
-• Current body composition: [assessment]
-• Muscle symmetry and development: [observation]
-• Areas of strength: [positive feedback]
-• Opportunities for improvement: [constructive feedback]
-
-` : ''}**What This Means for You:**
-Based on your profile and this research:
-• [Personalized recommendation 1]
-• [Personalized recommendation 2]  
-• [Important consideration]
-
-**Additional Studies:**
-1. **Wilson & Davis (2023)** - Sports Nutrition Journal
-   - Sample: 150 trained individuals
-   - Duration: 12 weeks
-   - Key finding: [specific result]
-
-2. **Lee et al. (2022)** - Exercise Physiology Review
-   - Meta-analysis of 28 RCTs
-   - Conclusion: [relevant finding]
-
-**Practical Implementation:**
-Start with [specific step], monitor [specific marker], and adjust based on [specific criteria].
-
-Need clarification on any aspect of this research?`
-      ];
-
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      setMessages(prev => [...prev, { role: 'assistant', content: randomResponse }]);
+      const personalizedResponse = generatePersonalizedResponse(userMessage, !!selectedImage);
+      setMessages(prev => [...prev, { role: 'assistant', content: personalizedResponse }]);
       setIsLoading(false);
-    }, 2500);
+    }, 1500);
   };
 
   const quickQuestions = [
-    "How much protein do I need to build muscle?",
-    "What's the best way to lose fat while keeping muscle?",
-    "How often should I train each muscle group?",
-    "What supplements are actually worth taking?"
+    "I'm a complete beginner - where do I start?",
+    "Help me lose weight without being miserable",
+    "I want to build muscle but I'm not seeing results",
+    "I'm too busy/tired to work out consistently"
   ];
 
   return (
@@ -172,7 +263,7 @@ Need clarification on any aspect of this research?`
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white">AI Assistant</h1>
-            <p className="text-gray-400">Ask anything about fitness & nutrition</p>
+            <p className="text-gray-400">Your personal fitness coach & friend</p>
           </div>
         </div>
       </div>
@@ -180,13 +271,13 @@ Need clarification on any aspect of this research?`
       <div className="flex flex-wrap gap-2">
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           <BookOpen className="w-3 h-3 mr-1" />
-          Science-backed answers
+          Personalized advice
         </Badge>
         <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-          Peer-reviewed research
+          Ask me anything
         </Badge>
         <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-          Study citations included
+          Conversational & friendly
         </Badge>
         <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
           Progress photo analysis
@@ -196,9 +287,9 @@ Need clarification on any aspect of this research?`
       <div className="grid gap-6">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Chat with AI Assistant</CardTitle>
+            <CardTitle className="text-white">Chat with Your AI Coach</CardTitle>
             <CardDescription className="text-gray-400">
-              Get evidence-based answers to your fitness and nutrition questions. Upload progress photos for analysis.
+              Tell me about your goals, challenges, and lifestyle. Upload progress photos for personalized feedback!
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -225,7 +316,7 @@ Need clarification on any aspect of this research?`
                 <div className="flex justify-start">
                   <div className="bg-gray-700 text-gray-100 p-4 rounded-lg max-w-[85%]">
                     <div className="flex items-center space-x-2">
-                      <div className="animate-pulse">Analyzing scientific literature...</div>
+                      <div className="animate-pulse">Let me think about this... 🤔</div>
                     </div>
                   </div>
                 </div>
@@ -258,11 +349,12 @@ Need clarification on any aspect of this research?`
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                title="Upload progress photo"
               >
                 <ImagePlus className="w-4 h-4" />
               </Button>
               <Input
-                placeholder="Ask about training, nutrition, supplements, recovery... or upload a progress photo"
+                placeholder="Tell me about your goals, ask questions, share your challenges... anything!"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white flex-1"
@@ -280,9 +372,9 @@ Need clarification on any aspect of this research?`
 
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Quick Questions</CardTitle>
+            <CardTitle className="text-white">Not sure what to ask?</CardTitle>
             <CardDescription className="text-gray-400">
-              Popular questions to get you started
+              Try one of these conversation starters
             </CardDescription>
           </CardHeader>
           <CardContent>

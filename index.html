@@ -4,22 +4,65 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GrindMentor - AI-Powered Fitness Coach for Powerlifters & Aesthetic Athletes</title>
-    <meta name="description" content="Transform your physique with GrindMentor's AI-driven fitness platform. Get personalized meal plans, 24/7 AI coaching, and intelligent progress tracking designed for serious lifters." />
+    <title>Gr{indMentor - Science-Based AI Fitness Coach | Meal Plans & Training Programs</title>
+    <meta name="description" content="Transform your physique with GrindMentor's AI-powered fitness coaching. Get personalized meal plans, 24/7 coaching, and science-backed training programs. Free to start." />
     <meta name="author" content="GrindMentor" />
-
-    <meta property="og:title" content="GrindMentor - AI-Powered Fitness Coach for Powerlifters & Aesthetic Athletes" />
-    <meta property="og:description" content="Transform your physique with GrindMentor's AI-driven fitness platform. Get personalized meal plans, 24/7 AI coaching, and intelligent progress tracking designed for serious lifters." />
+    <meta name="keywords" content="AI fitness coach, meal planning, workout programs, nutrition tracking, fitness app, bodybuilding, powerlifting" />
+    
+    <!-- Legal & Compliance -->
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://grindmentor.com/" />
+    <meta property="og:title" content="GrindMentor - Science-Based AI Fitness Coach" />
+    <meta property="og:description" content="Transform your physique with AI-powered fitness coaching. Get personalized meal plans, 24/7 coaching, and science-backed training programs." />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
+    <meta property="og:site_name" content="GrindMentor" />
+    
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@GrindMentor" />
+    <meta name="twitter:url" content="https://grindmentor.com/" />
+    <meta name="twitter:title" content="GrindMentor - Science-Based AI Fitness Coach" />
+    <meta name="twitter:description" content="Transform your physique with AI-powered fitness coaching. Get personalized meal plans and science-backed training programs." />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='16' y='22' text-anchor='middle' fill='white' font-family='Arial' font-size='16' font-weight='bold'>GM</text></svg>" />
+    
+    <!-- Legal compliance meta tags -->
+    <meta name="rating" content="general" />
+    <meta name="copyright" content="GrindMentor 2024" />
+    
+    <!-- Norwegian compliance -->
+    <meta name="geo.region" content="NO" />
+    <meta name="geo.placename" content="Norway" />
+    
+    <!-- Medical disclaimer in meta -->
+    <meta name="medical-disclaimer" content="Not intended as medical advice. Consult healthcare professionals before starting any fitness program." />
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Accessibility enhancement -->
+    <script>
+      // Enable keyboard navigation improvements
+      document.addEventListener('DOMContentLoaded', function() {
+        // Focus visible outline for keyboard users
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Tab') {
+            document.body.classList.add('keyboard-user');
+          }
+        });
+        
+        document.addEventListener('mousedown', function() {
+          document.body.classList.remove('keyboard-user');
+        });
+      });
+    </script>
   </body>
 </html>

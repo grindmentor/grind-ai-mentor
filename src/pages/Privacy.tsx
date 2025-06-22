@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield, Eye, Lock, Database, UserCheck, Mail } from "lucide-react";
+import { ArrowLeft, Shield, Eye, Lock, Database, UserCheck, Mail, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Privacy = () => {
@@ -39,6 +39,30 @@ const Privacy = () => {
           <Card className="bg-gray-900 border-gray-800">
             <CardHeader>
               <div className="flex items-center space-x-3">
+                <Globe className="w-6 h-6 text-blue-500" />
+                <CardTitle className="text-white">GDPR & Norwegian Data Protection Compliance</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="text-gray-300 space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="font-semibold text-blue-400 mb-2">YOUR RIGHTS UNDER GDPR & NORWEGIAN LAW:</p>
+                <ul className="space-y-2 text-sm">
+                  <li>• <strong>Right to Access:</strong> Request copies of your personal data</li>
+                  <li>• <strong>Right to Rectification:</strong> Correct inaccurate personal data</li>
+                  <li>• <strong>Right to Erasure:</strong> Request deletion of your personal data</li>
+                  <li>• <strong>Right to Restrict Processing:</strong> Limit how we use your data</li>
+                  <li>• <strong>Right to Data Portability:</strong> Transfer your data to another service</li>
+                  <li>• <strong>Right to Object:</strong> Object to processing of your personal data</li>
+                  <li>• <strong>Right to Withdraw Consent:</strong> Withdraw consent at any time</li>
+                </ul>
+              </div>
+              <p>We process your data lawfully under GDPR Article 6 (legitimate interests and consent) and comply with Norwegian Personal Data Act.</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
                 <Eye className="w-6 h-6 text-orange-500" />
                 <CardTitle className="text-white">Information We Collect</CardTitle>
               </div>
@@ -60,6 +84,10 @@ const Privacy = () => {
                 <h4 className="font-semibold text-white mb-2">Usage Data</h4>
                 <p>We collect information about how you use our app to improve our services and user experience.</p>
               </div>
+              <div>
+                <h4 className="font-semibold text-white mb-2">Payment Information</h4>
+                <p>Payment processing is handled by Stripe. We do not store your payment card details.</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -67,17 +95,15 @@ const Privacy = () => {
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <Database className="w-6 h-6 text-blue-500" />
-                <CardTitle className="text-white">How We Use Your Data</CardTitle>
+                <CardTitle className="text-white">Legal Basis for Processing</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
               <ul className="space-y-2">
-                <li>• Provide personalized AI coaching and fitness recommendations</li>
-                <li>• Generate custom meal plans and training programs</li>
-                <li>• Track your progress and provide analytics</li>
-                <li>• Improve our AI models and scientific accuracy</li>
-                <li>• Send important account and service updates</li>
-                <li>• Ensure platform security and prevent abuse</li>
+                <li>• <strong>Contract Performance:</strong> Processing necessary to provide our services</li>
+                <li>• <strong>Legitimate Interests:</strong> Service improvement and customer support</li>
+                <li>• <strong>Consent:</strong> Marketing communications and optional features</li>
+                <li>• <strong>Legal Obligation:</strong> Compliance with applicable laws</li>
               </ul>
             </CardContent>
           </Card>
@@ -96,6 +122,27 @@ const Privacy = () => {
                 <li>• Access to your data is strictly limited to authorized personnel</li>
                 <li>• We do not sell your personal information to third parties</li>
                 <li>• Regular security audits and monitoring</li>
+                <li>• Data is hosted in secure, GDPR-compliant facilities</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <Globe className="w-6 h-6 text-purple-500" />
+                <CardTitle className="text-white">Data Transfers</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="text-gray-300 space-y-4">
+              <p>
+                Your data may be transferred to and processed in countries outside the EEA. 
+                We ensure adequate protection through:
+              </p>
+              <ul className="space-y-2 ml-4">
+                <li>• EU Standard Contractual Clauses</li>
+                <li>• Adequacy decisions by the European Commission</li>
+                <li>• Other appropriate safeguards under GDPR</li>
               </ul>
             </CardContent>
           </Card>
@@ -104,16 +151,18 @@ const Privacy = () => {
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <UserCheck className="w-6 h-6 text-purple-500" />
-                <CardTitle className="text-white">Your Rights</CardTitle>
+                <CardTitle className="text-white">Data Retention</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
-              <ul className="space-y-2">
-                <li>• <strong>Access:</strong> Request a copy of your personal data</li>
-                <li>• <strong>Correction:</strong> Update or correct your information</li>
-                <li>• <strong>Deletion:</strong> Request deletion of your account and data</li>
-                <li>• <strong>Portability:</strong> Export your data in a readable format</li>
-                <li>• <strong>Opt-out:</strong> Unsubscribe from marketing communications</li>
+              <p>We retain your personal data only as long as necessary for:</p>
+              <ul className="space-y-2 ml-4">
+                <li>• Providing our services to you</li>
+                <li>• Complying with legal obligations</li>
+                <li>• Resolving disputes and enforcing agreements</li>
+                <li>• Account data: Until you delete your account</li>
+                <li>• Usage data: Up to 3 years for analytics purposes</li>
+                <li>• Chat data: Anonymized after 1 year</li>
               </ul>
             </CardContent>
           </Card>
@@ -122,12 +171,19 @@ const Privacy = () => {
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <Mail className="w-6 h-6 text-orange-500" />
-                <CardTitle className="text-white">Contact Us</CardTitle>
+                <CardTitle className="text-white">Contact & Complaints</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="text-gray-300">
-              <p>If you have questions about this Privacy Policy or your data, contact us at:</p>
+            <CardContent className="text-gray-300 space-y-4">
+              <p>For privacy-related questions or to exercise your rights, contact us at:</p>
               <p className="mt-2 font-semibold">privacy@grindmentor.com</p>
+              <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="font-semibold text-blue-400 mb-2">Right to Lodge a Complaint:</p>
+                <p className="text-sm">
+                  You have the right to lodge a complaint with a supervisory authority. 
+                  In Norway, you can contact Datatilsynet (Norwegian Data Protection Authority).
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

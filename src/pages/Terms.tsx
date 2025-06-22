@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, AlertTriangle, Shield, Gavel, Users, Zap } from "lucide-react";
+import { ArrowLeft, FileText, AlertTriangle, Shield, Gavel, Users, Zap, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Terms = () => {
@@ -50,6 +51,27 @@ const Terms = () => {
           <Card className="bg-gray-900 border-gray-800">
             <CardHeader>
               <div className="flex items-center space-x-3">
+                <Globe className="w-6 h-6 text-green-500" />
+                <CardTitle className="text-white">Legal Jurisdiction & Norwegian Law Compliance</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="text-gray-300 space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <p className="font-semibold text-blue-400 mb-2">NORWEGIAN CONSUMER RIGHTS:</p>
+                <ul className="space-y-2 text-sm">
+                  <li>• For Norwegian residents: Consumer purchase rights may apply where legally required</li>
+                  <li>• Withdrawal rights (angrerett) may apply for certain digital services under Norwegian law</li>
+                  <li>• These terms are subject to mandatory Norwegian consumer protection laws where applicable</li>
+                  <li>• Any disputes will be resolved according to Norwegian law and jurisdiction</li>
+                </ul>
+              </div>
+              <p>This service complies with Norwegian regulations for digital services and data protection (GDPR).</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
                 <Zap className="w-6 h-6 text-orange-500" />
                 <CardTitle className="text-white">Service Description</CardTitle>
               </div>
@@ -81,6 +103,7 @@ const Terms = () => {
                 <li>• Protect your account credentials and personal information</li>
                 <li>• Comply with all applicable laws and regulations</li>
                 <li>• Do not misuse or attempt to harm our systems</li>
+                <li>• You must be at least 16 years old to use this service</li>
               </ul>
             </CardContent>
           </Card>
@@ -96,11 +119,12 @@ const Terms = () => {
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
                 <p className="font-semibold text-yellow-400 mb-2">IMPORTANT MEDICAL DISCLAIMER:</p>
                 <ul className="space-y-2 text-sm">
-                  <li>• GrindMentor provides general fitness information and is not medical advice</li>
-                  <li>• Always consult healthcare professionals before starting any fitness program</li>
+                  <li>• GrindMentor provides general fitness information and is NOT medical advice</li>
+                  <li>• Always consult qualified healthcare professionals before starting any fitness program</li>
                   <li>• We are not responsible for injuries or health issues from using our recommendations</li>
                   <li>• If you experience pain or discomfort, stop immediately and consult a doctor</li>
                   <li>• Our AI provides science-backed advice but cannot replace professional medical guidance</li>
+                  <li>• This service is not intended to diagnose, treat, cure, or prevent any disease</li>
                 </ul>
               </div>
             </CardContent>
@@ -129,16 +153,36 @@ const Terms = () => {
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
               <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
-                <p className="font-semibold text-red-400 mb-2">NO REFUND POLICY:</p>
-                <p className="text-sm">All payments are final and non-refundable. We do not offer refunds, returns, or credits for any subscription fees, regardless of usage or satisfaction. Please consider your purchase carefully before subscribing.</p>
+                <p className="font-semibold text-red-400 mb-2">REFUND POLICY:</p>
+                <p className="text-sm">
+                  <strong>General Policy:</strong> All payments are final and non-refundable under normal circumstances. 
+                  However, Norwegian consumer protection laws may grant certain withdrawal rights (angrerett) for Norwegian residents. 
+                  Please contact support if you believe you have legal grounds for a refund under Norwegian consumer law.
+                </p>
               </div>
               <ul className="space-y-2">
                 <li>• Free and premium subscription tiers available</li>
                 <li>• Premium subscriptions auto-renew unless cancelled</li>
-                <li>• All sales are final - no refunds will be provided</li>
-                <li>• We reserve the right to modify pricing with advance notice</li>
+                <li>• All sales are generally final - limited refunds as per Norwegian law</li>
+                <li>• We reserve the right to modify pricing with 30 days advance notice</li>
                 <li>• Cancellation can be done anytime to prevent future charges</li>
                 <li>• Cancelled subscriptions remain active until the end of the billing period</li>
+                <li>• Norwegian residents may have additional rights under consumer protection laws</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-white">Data Protection & Privacy</CardTitle>
+            </CardHeader>
+            <CardContent className="text-gray-300 space-y-4">
+              <ul className="space-y-2">
+                <li>• We comply with GDPR and Norwegian data protection regulations</li>
+                <li>• Your personal data is processed according to our Privacy Policy</li>
+                <li>• You have rights to access, correct, and delete your personal data</li>
+                <li>• Data transfers comply with international data protection requirements</li>
+                <li>• We implement appropriate security measures to protect your data</li>
               </ul>
             </CardContent>
           </Card>
@@ -148,7 +192,11 @@ const Terms = () => {
               <CardTitle className="text-white">Limitation of Liability</CardTitle>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
-              <p>GrindMentor is provided "as is" without warranties of any kind. We shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or other intangible losses.</p>
+              <p>
+                GrindMentor is provided "as is" without warranties of any kind. We shall not be liable for any indirect, 
+                incidental, special, consequential, or punitive damages, including but not limited to loss of profits, 
+                data, or other intangible losses. This limitation applies to the extent permitted by Norwegian law.
+              </p>
             </CardContent>
           </Card>
 
@@ -157,7 +205,11 @@ const Terms = () => {
               <CardTitle className="text-white">Changes to Terms</CardTitle>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
-              <p>We reserve the right to modify these terms at any time. Users will be notified of significant changes. Continued use of the service after changes constitutes acceptance of new terms.</p>
+              <p>
+                We reserve the right to modify these terms at any time with reasonable notice. 
+                Users will be notified of significant changes via email or in-app notification. 
+                Continued use of the service after changes constitutes acceptance of new terms.
+              </p>
             </CardContent>
           </Card>
 
@@ -168,6 +220,9 @@ const Terms = () => {
             <CardContent className="text-gray-300">
               <p>For questions about these Terms of Service, contact us at:</p>
               <p className="mt-2 font-semibold">legal@grindmentor.com</p>
+              <p className="mt-2 text-sm">
+                For Norwegian residents with consumer law questions: support@grindmentor.com
+              </p>
             </CardContent>
           </Card>
         </div>

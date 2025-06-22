@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,11 +30,23 @@ const Index = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section with Better Image */}
       <section className="container mx-auto px-6 py-16 text-center">
         <Badge className="mb-6 bg-orange-500/20 text-orange-400 border-orange-500/30">
           🤖 AI-Powered Fitness Coaching
         </Badge>
+        
+        {/* Hero Image */}
+        <div className="mb-8 flex justify-center">
+          <div className="w-64 h-40 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-2xl border border-orange-500/30 flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-600/10"></div>
+            <div className="relative z-10 text-center">
+              <Dumbbell className="w-16 h-16 text-orange-500 mx-auto mb-2" />
+              <Brain className="w-8 h-8 text-orange-400 mx-auto" />
+            </div>
+          </div>
+        </div>
+
         <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
           Your AI Fitness
           <br />
@@ -42,7 +55,7 @@ const Index = () => {
           </span>
         </h1>
         <p className="text-lg md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-          Transform your body with AI-powered meal planning, coaching, and progress tracking designed for serious lifters. All responses backed by scientific research and peer-reviewed studies.
+          Transform your physique with AI-powered meal planning, coaching, and progress tracking designed for serious lifters. All responses backed by scientific research and peer-reviewed studies.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -57,6 +70,15 @@ const Index = () => {
               Learn More
             </Button>
           </Link>
+        </div>
+
+        {/* Legal Compliance Notice */}
+        <div className="text-center mb-8">
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 max-w-2xl mx-auto">
+            <p className="text-sm text-blue-400">
+              <strong>Important:</strong> GrindMentor provides general fitness information only. Always consult with qualified healthcare professionals before starting any fitness or nutrition program. Not intended as medical advice.
+            </p>
+          </div>
         </div>
 
         {/* Updated Social Proof */}
@@ -273,7 +295,7 @@ const Index = () => {
             <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent"> Upgrade When Ready</span>
           </h2>
           <p className="text-xl text-gray-400">
-            No credit card required. Cancel anytime.
+            Cancel anytime. No refunds - all sales are final.
           </p>
         </div>
 
@@ -324,7 +346,7 @@ const Index = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-white">Premium</CardTitle>
               <div className="text-4xl font-bold text-white mt-4">
-                $10<span className="text-lg text-gray-400">/month</span>
+                $15<span className="text-lg text-gray-400">/month</span>
               </div>
               <p className="text-gray-400 mt-2">For serious lifters</p>
             </CardHeader>

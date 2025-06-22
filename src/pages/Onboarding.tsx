@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,9 +15,13 @@ const Onboarding = () => {
     weight: "",
     birthday: "",
     height: "",
+    heightFeet: "",
+    heightInches: "",
     experienceLevel: "",
     activityLevel: "",
-    goal: ""
+    goal: "",
+    weightUnit: "lbs" as 'kg' | 'lbs',
+    heightUnit: "ft-in" as 'cm' | 'ft-in' | 'in'
   });
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -25,14 +30,29 @@ const Onboarding = () => {
     if (step === 1) {
       setStep(2);
     } else {
+      // Convert to standard units before saving (lbs and inches)
+      let weightInLbs = parseFloat(formData.weight);
+      if (formData.weightUnit === 'kg') {
+        weightInLbs = weightInLbs * 2.20462;
+      }
+
+      let heightInInches: number;
+      if (formData.heightUnit === 'ft-in') {
+        heightInInches = parseInt(formData.heightFeet) * 12 + parseInt(formData.heightInches);
+      } else if (formData.heightUnit === 'cm') {
+        heightInInches = parseFloat(formData.height) / 2.54;
+      } else {
+        heightInInches = parseFloat(formData.height);
+      }
+
       // Save data to profiles table
       if (user) {
         const { error } = await supabase
           .from('profiles')
           .update({
-            weight: parseInt(formData.weight),
+            weight: Math.round(weightInLbs),
             birthday: formData.birthday,
-            height: parseInt(formData.height),
+            height: Math.round(heightInInches),
             experience: formData.experienceLevel,
             activity: formData.activityLevel,
             goal: formData.goal
@@ -47,7 +67,14 @@ const Onboarding = () => {
     }
   };
 
-  const canProceedStep1 = formData.weight && formData.birthday && formData.height;
+  const getHeightValidation = () => {
+    if (formData.heightUnit === 'ft-in') {
+      return formData.heightFeet && formData.heightInches;
+    }
+    return formData.height;
+  };
+
+  const canProceedStep1 = formData.weight && formData.birthday && getHeightValidation();
   const canProceedStep2 = formData.experienceLevel && formData.activityLevel && formData.goal;
 
   return (
@@ -77,16 +104,31 @@ const Onboarding = () => {
             {step === 1 ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="weight" className="text-white">Weight (lbs)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="weight" className="text-white">Weight</Label>
+                    <Select 
+                      value={formData.weightUnit} 
+                      onValueChange={(value: 'kg' | 'lbs') => setFormData({...formData, weightUnit: value, weight: ''})}
+                    >
+                      <SelectTrigger className="w-20 bg-gray-800 border-gray-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectItem value="lbs">lbs</SelectItem>
+                        <SelectItem value="kg">kg</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Input
                     id="weight"
                     type="number"
                     value={formData.weight}
                     onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                    placeholder="Enter your weight"
+                    placeholder={formData.weightUnit === 'kg' ? 'Enter weight in kg' : 'Enter weight in lbs'}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="birthday" className="text-white">Birthday</Label>
                   <Input
@@ -97,16 +139,57 @@ const Onboarding = () => {
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="height" className="text-white">Height (inches)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    value={formData.height}
-                    onChange={(e) => setFormData({...formData, height: e.target.value})}
-                    placeholder="Enter your height"
-                    className="bg-gray-800 border-gray-700 text-white"
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label className="text-white">Height</Label>
+                    <Select 
+                      value={formData.heightUnit} 
+                      onValueChange={(value: 'cm' | 'ft-in' | 'in') => setFormData({...formData, heightUnit: value, height: '', heightFeet: '', heightInches: ''})}
+                    >
+                      <SelectTrigger className="w-24 bg-gray-800 border-gray-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectItem value="ft-in">ft/in</SelectItem>
+                        <SelectItem value="in">in</SelectItem>
+                        <SelectItem value="cm">cm</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {formData.heightUnit === 'ft-in' ? (
+                    <div className="flex space-x-2">
+                      <div className="flex-1">
+                        <Input
+                          type="number"
+                          placeholder="5"
+                          value={formData.heightFeet}
+                          onChange={(e) => setFormData({...formData, heightFeet: e.target.value})}
+                          className="bg-gray-800 border-gray-700 text-white"
+                        />
+                        <Label className="text-xs text-gray-500 mt-1">feet</Label>
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          type="number"
+                          placeholder="10"
+                          value={formData.heightInches}
+                          onChange={(e) => setFormData({...formData, heightInches: e.target.value})}
+                          className="bg-gray-800 border-gray-700 text-white"
+                        />
+                        <Label className="text-xs text-gray-500 mt-1">inches</Label>
+                      </div>
+                    </div>
+                  ) : (
+                    <Input
+                      type="number"
+                      value={formData.height}
+                      onChange={(e) => setFormData({...formData, height: e.target.value})}
+                      placeholder={formData.heightUnit === 'cm' ? 'Enter height in cm' : 'Enter height in inches'}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                  )}
                 </div>
               </div>
             ) : (

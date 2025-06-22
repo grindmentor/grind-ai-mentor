@@ -1,11 +1,10 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calculator, ArrowLeft } from "lucide-react";
+import { Calculator, ArrowLeft, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertFeetAndInchesToInches, formatHeight, formatWeight } from "@/lib/unitConversions";
 
@@ -41,7 +40,38 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   });
   const [results, setResults] = useState<any>(null);
   const [calculationsUsed, setCalculationsUsed] = useState(0);
+  const [isCalculating, setIsCalculating] = useState(false);
   const maxCalculations = 3;
+
+  const calculateMaintenanceCalories = (weight: number, height: number, age: number, gender: string, activityLevel: string) => {
+    // Step 1: Calculate BMR using Mifflin-St Jeor equation (most accurate)
+    let bmr: number;
+    if (gender === 'male') {
+      bmr = (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) + 5;
+    } else {
+      bmr = (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) - 161;
+    }
+
+    // Step 2: Apply activity multiplier to get TDEE (Total Daily Energy Expenditure)
+    const activityMultipliers = {
+      sedentary: 1.2,      // Little/no exercise
+      light: 1.375,        // Light exercise 1-3 days/week
+      moderate: 1.55,      // Moderate exercise 3-5 days/week
+      active: 1.725,       // Hard exercise 6-7 days/week
+      very_active: 1.9     // Very hard exercise, physical job
+    };
+
+    const tdee = bmr * activityMultipliers[activityLevel as keyof typeof activityMultipliers];
+    
+    // Step 3: Maintenance calories = TDEE (this IS the maintenance)
+    const maintenanceCalories = Math.round(tdee);
+
+    return {
+      bmr: Math.round(bmr),
+      tdee: Math.round(tdee),
+      maintenanceCalories
+    };
+  };
 
   const handleCalculate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +87,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     
     if (!hasValidHeight) return;
     
+    setIsCalculating(true);
     setCalculationsUsed(prev => prev + 1);
     
     // Convert all inputs to standard units (lbs, inches)
@@ -79,21 +110,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     const age = parseInt(formData.age);
     const bodyFat = formData.bodyFat ? parseFloat(formData.bodyFat) : null;
     
-    // BMR calculation using Mifflin-St Jeor equation
-    const bmr = formData.gender === 'male' 
-      ? (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) + 5
-      : (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) - 161;
-    
-    // Activity multipliers
-    const activityMultipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9
-    };
-    
-    const tdee = bmr * activityMultipliers[formData.activityLevel as keyof typeof activityMultipliers];
+    // Calculate maintenance calories using our formula
+    const maintenanceData = calculateMaintenanceCalories(weightInLbs, heightInInches, age, formData.gender, formData.activityLevel);
     
     // FFMI calculation (if body fat provided)
     let ffmi = null;
@@ -117,44 +135,54 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     else if (bmi < 30) bmiCategory = 'Overweight';
     else bmiCategory = 'Obese';
     
-    // Caloric recommendations
-    const cuttingCalories = Math.round(tdee * 0.8);
-    const bulkingCalories = Math.round(tdee * 1.1);
-    const maintenanceCalories = Math.round(tdee);
+    // Caloric recommendations based on maintenance
+    const cuttingCalories = Math.round(maintenanceData.maintenanceCalories * 0.8); // 20% deficit
+    const bulkingCalories = Math.round(maintenanceData.maintenanceCalories * 1.1); // 10% surplus
     
     // Macro recommendations (general guidelines)
     const proteinGrams = Math.round(weightInLbs * 0.8);
     const fatGrams = Math.round(weightInLbs * 0.3);
-    const carbsGrams = Math.round((maintenanceCalories - (proteinGrams * 4) - (fatGrams * 9)) / 4);
+    const carbsGrams = Math.round((maintenanceData.maintenanceCalories - (proteinGrams * 4) - (fatGrams * 9)) / 4);
     
-    setResults({
-      bmr: Math.round(bmr),
-      tdee: Math.round(tdee),
-      bmi: bmi.toFixed(1),
-      bmiCategory,
-      ffmi: ffmi ? ffmi.toFixed(1) : null,
-      ffmiCategory,
-      cuttingCalories,
-      bulkingCalories,
-      maintenanceCalories,
-      macros: {
-        protein: proteinGrams,
-        fat: fatGrams,
-        carbs: carbsGrams
-      },
-      displayWeight: formatWeight(weightInLbs, formData.weightUnit),
-      displayHeight: formatHeight(heightInInches, formData.heightUnit),
-      recommendations: [
-        `Your BMR is ${Math.round(bmr)} calories - this is what you burn at rest`,
-        `Your TDEE is ${Math.round(tdee)} calories - this includes your activity`,
-        bmi < 18.5 ? 'Consider gaining weight gradually with a structured program' : 
-        bmi > 25 ? 'Consider a moderate caloric deficit with resistance training' : 
-        'You\'re in a healthy weight range - focus on body composition',
-        ffmi && ffmi > 22 ? 'Excellent muscle development - focus on maintaining strength' :
-        ffmi && ffmi < 20 ? 'Focus on progressive resistance training and adequate protein intake' :
-        'Continue building muscle while managing body fat levels'
-      ]
-    });
+    // Simulate calculation delay for better UX
+    setTimeout(() => {
+      setResults({
+        bmr: maintenanceData.bmr,
+        tdee: maintenanceData.tdee,
+        maintenanceCalories: maintenanceData.maintenanceCalories,
+        bmi: bmi.toFixed(1),
+        bmiCategory,
+        ffmi: ffmi ? ffmi.toFixed(1) : null,
+        ffmiCategory,
+        cuttingCalories,
+        bulkingCalories,
+        macros: {
+          protein: proteinGrams,
+          fat: fatGrams,
+          carbs: carbsGrams
+        },
+        displayWeight: formatWeight(weightInLbs, formData.weightUnit),
+        displayHeight: formatHeight(heightInInches, formData.heightUnit),
+        recommendations: [
+          `Your maintenance calories are ${maintenanceData.maintenanceCalories} per day`,
+          `BMR: ${maintenanceData.bmr} calories (what you burn at complete rest)`,
+          `TDEE: ${maintenanceData.tdee} calories (including daily activities)`,
+          bmi < 18.5 ? 'Consider gaining weight gradually with a structured program' : 
+          bmi > 25 ? 'Consider a moderate caloric deficit with resistance training' : 
+          'You\'re in a healthy weight range - focus on body composition',
+          ffmi && ffmi > 22 ? 'Excellent muscle development - focus on maintaining strength' :
+          ffmi && ffmi < 20 ? 'Focus on progressive resistance training and adequate protein intake' :
+          'Continue building muscle while managing body fat levels'
+        ]
+      });
+      setIsCalculating(false);
+    }, 1500);
+  };
+
+  const handleRecalculate = () => {
+    if (calculationsUsed < maxCalculations) {
+      handleCalculate(new Event('submit') as any);
+    }
   };
 
   const updateFormData = (field: keyof FormData, value: string) => {
@@ -173,15 +201,15 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
             <Calculator className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">TDEE & FFMI Calculator</h1>
-            <p className="text-gray-400">Calculate metabolic needs and muscle mass potential</p>
+            <h1 className="text-3xl font-bold text-white">TDEE & Maintenance Calculator</h1>
+            <p className="text-gray-400">Calculate your maintenance calories and metabolic needs</p>
           </div>
         </div>
       </div>
 
       <div className="flex items-center space-x-4">
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-          Calculations based on validated scientific formulas
+          Scientific formula: Mifflin-St Jeor equation + activity multipliers
         </Badge>
         <Badge className={`${calculationsUsed >= maxCalculations ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'}`}>
           {calculationsUsed}/{maxCalculations} calculations used
@@ -208,13 +236,14 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Body Stats Calculator</CardTitle>
+            <CardTitle className="text-white">Maintenance Calorie Calculator</CardTitle>
             <CardDescription className="text-gray-400">
-              Enter your information for TDEE and FFMI analysis
+              Enter your stats to calculate your daily maintenance calories
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCalculate} className="space-y-4">
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-white">Weight Unit</Label>
@@ -243,6 +272,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                 </div>
               </div>
 
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="weight" className="text-white">Weight ({formData.weightUnit})</Label>
@@ -292,6 +322,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                   </div>
                 )}
               </div>
+              
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -349,20 +380,32 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
               
               <Button 
                 type="submit" 
-                disabled={calculationsUsed >= maxCalculations}
+                disabled={calculationsUsed >= maxCalculations || isCalculating}
                 className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
               >
-                Calculate TDEE & FFMI
+                {isCalculating ? "Calculating..." : "Calculate Maintenance Calories"}
               </Button>
+
+              {results && calculationsUsed < maxCalculations && (
+                <Button 
+                  type="button"
+                  onClick={handleRecalculate}
+                  variant="outline"
+                  className="w-full mt-2 border-gray-700 text-white hover:bg-gray-800"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Recalculate
+                </Button>
+              )}
             </form>
           </CardContent>
         </Card>
 
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Your Results</CardTitle>
+            <CardTitle className="text-white">Your Maintenance Calories</CardTitle>
             <CardDescription className="text-gray-400">
-              Metabolic calculations and recommendations
+              Based on scientific formulas and your activity level
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -375,14 +418,22 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                   </div>
                 </div>
 
+                <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 p-4 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-green-400 text-3xl font-bold">{results.maintenanceCalories}</div>
+                    <div className="text-white text-lg font-medium">Maintenance Calories/Day</div>
+                    <div className="text-gray-400 text-sm mt-1">This is what you need to maintain your current weight</div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-800 p-3 rounded-lg text-center">
                     <div className="text-orange-400 text-xl font-bold">{results.bmr}</div>
-                    <div className="text-gray-400 text-sm">BMR (calories)</div>
+                    <div className="text-gray-400 text-sm">BMR (at rest)</div>
                   </div>
                   <div className="bg-gray-800 p-3 rounded-lg text-center">
                     <div className="text-orange-400 text-xl font-bold">{results.tdee}</div>
-                    <div className="text-gray-400 text-sm">TDEE (calories)</div>
+                    <div className="text-gray-400 text-sm">TDEE (with activity)</div>
                   </div>
                   <div className="bg-gray-800 p-3 rounded-lg text-center">
                     <div className="text-blue-400 text-xl font-bold">{results.bmi}</div>
@@ -399,25 +450,25 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                 </div>
                 
                 <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="text-white font-medium mb-3">Caloric Recommendations</h4>
+                  <h4 className="text-white font-medium mb-3">Goal-Based Recommendations</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-red-400">Cutting (Fat Loss)</span>
+                      <span className="text-red-400">Fat Loss (20% deficit)</span>
                       <span className="text-white font-bold">{results.cuttingCalories} cal</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Maintenance</span>
+                      <span className="text-green-400">Maintenance</span>
                       <span className="text-white font-bold">{results.maintenanceCalories} cal</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-green-400">Bulking (Muscle Gain)</span>
+                      <span className="text-blue-400">Muscle Gain (10% surplus)</span>
                       <span className="text-white font-bold">{results.bulkingCalories} cal</span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="text-white font-medium mb-3">Macro Recommendations</h4>
+                  <h4 className="text-white font-medium mb-3">Recommended Macros</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-blue-400">Protein</span>
@@ -435,7 +486,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                 </div>
                 
                 <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="text-white font-medium mb-2">Recommendations</h4>
+                  <h4 className="text-white font-medium mb-2">Key Insights</h4>
                   <ul className="text-gray-300 text-sm space-y-1">
                     {results.recommendations.map((rec: string, index: number) => (
                       <li key={index} className="text-xs">• {rec}</li>
@@ -444,14 +495,16 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                 </div>
                 
                 <div className="text-xs text-gray-500">
-                  <p>*BMR calculated using Mifflin-St Jeor equation</p>
-                  <p>*FFMI = Fat-Free Mass Index (muscle mass indicator)</p>
-                  <p>*Recommendations are general guidelines - consult professionals for personalized advice</p>
+                  <p>*Maintenance calories calculated using Mifflin-St Jeor BMR + activity multipliers</p>
+                  <p>*Individual metabolism may vary ±200 calories</p>
+                  <p>*Monitor weight changes and adjust accordingly</p>
                 </div>
               </div>
             ) : (
               <div className="text-gray-500 text-center py-8">
-                Enter your stats above to calculate your TDEE and FFMI
+                <Calculator className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Enter your information to calculate your maintenance calories</p>
+                <p className="text-xs mt-2">Based on scientifically validated formulas</p>
               </div>
             )}
           </CardContent>

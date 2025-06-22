@@ -15,15 +15,15 @@ const UpgradeSection = () => {
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold text-white mb-1">Unlock Premium Features</h3>
-            <div className="text-sm text-gray-300">
-              <span className="inline-block mr-4">• Unlimited queries</span>
-              <span className="inline-block">• 20 photos/month</span>
+            <h3 className="text-xl font-bold text-white mb-2">Unlock Premium Features</h3>
+            <div className="text-sm text-white/90 space-y-1">
+              <div>• Unlimited queries</div>
+              <div>• 20 photos/month</div>
             </div>
           </div>
           <Button 
             onClick={() => navigate('/pricing')}
-            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold"
           >
             Upgrade - $15/mo
           </Button>

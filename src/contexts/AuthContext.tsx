@@ -51,16 +51,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    // Use the current origin as the redirect URL
+    // Use the current origin as the redirect URL - this should work for both localhost and deployed versions
     const redirectUrl = `${window.location.origin}/signin`;
+    
+    console.log('Sign up attempt with redirect URL:', redirectUrl);
     
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl
+        emailRedirectTo: redirectUrl,
+        // This ensures the confirmation email gets sent
+        data: {
+          email_confirm: true
+        }
       }
     });
+
+    console.log('Sign up result:', { error });
 
     // Also add to subscribers table for email campaigns
     if (!error) {
@@ -71,10 +79,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('Sign in attempt for:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
+    console.log('Sign in result:', { error });
     return { error };
   };
 
@@ -83,9 +93,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const resetPassword = async (email: string) => {
+    const redirectUrl = `${window.location.origin}/signin?reset=true`;
+    console.log('Password reset for:', email, 'with redirect:', redirectUrl);
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/signin?reset=true`
+      redirectTo: redirectUrl
     });
+    
+    console.log('Password reset result:', { error });
     return { error };
   };
 

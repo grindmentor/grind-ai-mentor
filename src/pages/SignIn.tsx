@@ -147,7 +147,7 @@ const SignIn = () => {
                   <Button 
                     onClick={resetForm}
                     variant="outline"
-                    className="border-gray-700 text-white hover:bg-gray-800"
+                    className="border-gray-700 text-gray-900 bg-white hover:bg-gray-100 hover:text-black"
                   >
                     Back to Sign In
                   </Button>

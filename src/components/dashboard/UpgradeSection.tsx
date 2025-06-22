@@ -75,37 +75,37 @@ const UpgradeSection = () => {
   ];
 
   return (
-    <div className="mt-12">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+    <div className="mt-8">
+      <div className="text-center mb-6">
+        <h2 className="text-xl md:text-2xl font-semibold text-white mb-2">
           Unlock Your Full Potential
         </h2>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
         {plans.map((plan) => {
           const IconComponent = plan.icon;
           return (
-            <Card key={plan.name} className={`bg-gray-900 border-gray-800 relative ${plan.popular ? 'ring-2 ring-orange-500' : ''}`}>
+            <Card key={plan.name} className={`bg-gray-900 border-gray-800 relative ${plan.popular ? 'ring-1 ring-orange-500/50' : ''}`}>
               {plan.popular && (
-                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white">
-                  Most Popular
+                <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white text-xs">
+                  Popular
                 </Badge>
               )}
-              <CardHeader className="text-center">
-                <div className={`w-16 h-16 mx-auto ${plan.color} rounded-full flex items-center justify-center mb-4`}>
-                  <IconComponent className="w-8 h-8 text-white" />
+              <CardHeader className="text-center pb-3">
+                <div className={`w-12 h-12 mx-auto ${plan.color} rounded-full flex items-center justify-center mb-3`}>
+                  <IconComponent className="w-6 h-6 text-white" />
                 </div>
-                <CardTitle className="text-white text-2xl">{plan.name}</CardTitle>
-                <div className="text-3xl font-bold text-white">
-                  {plan.price}<span className="text-lg text-gray-400">{plan.period}</span>
+                <CardTitle className="text-white text-lg">{plan.name}</CardTitle>
+                <div className="text-2xl font-bold text-white">
+                  {plan.price}<span className="text-sm text-gray-400">{plan.period}</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-3">
+              <CardContent className="space-y-3">
+                <ul className="space-y-2">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center text-gray-300">
-                      <Check className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
+                    <li key={index} className="flex items-center text-gray-300 text-sm">
+                      <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mr-3 flex-shrink-0" />
                       {feature}
                     </li>
                   ))}
@@ -113,10 +113,10 @@ const UpgradeSection = () => {
                 <Button
                   onClick={() => handleUpgrade(plan.tier)}
                   disabled={isProcessing}
-                  className={`w-full ${plan.color} ${plan.hoverColor} text-white`}
+                  className={`w-full ${plan.color} ${plan.hoverColor} text-white text-sm`}
                 >
                   <IconComponent className="w-4 h-4 mr-2" />
-                  {isProcessing ? 'Processing...' : `Upgrade to ${plan.name}`}
+                  {isProcessing ? 'Processing...' : `Get ${plan.name}`}
                 </Button>
               </CardContent>
             </Card>

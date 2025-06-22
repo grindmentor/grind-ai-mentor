@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, AlertTriangle, Shield, Gavel, Users, Zap, Globe, Database, Eye } from "lucide-react";
+import { ArrowLeft, FileText, AlertTriangle, Shield, Gavel, Users, Zap, Globe, Database, Eye, Dumbbell } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Terms = () => {

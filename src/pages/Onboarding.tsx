@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -196,69 +196,54 @@ const Onboarding = () => {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <Label className="text-white">Experience Level</Label>
-                  <RadioGroup
+                  <Select
                     value={formData.experienceLevel}
                     onValueChange={(value) => setFormData({...formData, experienceLevel: value})}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="beginner" id="beginner" />
-                      <Label htmlFor="beginner" className="text-gray-300">Beginner (0-1 years)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="intermediate" id="intermediate" />
-                      <Label htmlFor="intermediate" className="text-gray-300">Intermediate (1-3 years)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="advanced" id="advanced" />
-                      <Label htmlFor="advanced" className="text-gray-300">Advanced (3+ years)</Label>
-                    </div>
-                  </RadioGroup>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select your experience level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="beginner">Beginner (0-1 years)</SelectItem>
+                      <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
+                      <SelectItem value="advanced">Advanced (3+ years)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-3">
                   <Label className="text-white">Activity Level</Label>
-                  <RadioGroup
+                  <Select
                     value={formData.activityLevel}
                     onValueChange={(value) => setFormData({...formData, activityLevel: value})}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sedentary" id="sedentary" />
-                      <Label htmlFor="sedentary" className="text-gray-300">Sedentary (desk job, no exercise)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="light" id="light" />
-                      <Label htmlFor="light" className="text-gray-300">Light (1-3 days/week)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="moderate" id="moderate" />
-                      <Label htmlFor="moderate" className="text-gray-300">Moderate (3-5 days/week)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="very" id="very" />
-                      <Label htmlFor="very" className="text-gray-300">Very Active (6-7 days/week)</Label>
-                    </div>
-                  </RadioGroup>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select your activity level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="sedentary">Sedentary (desk job, no exercise)</SelectItem>
+                      <SelectItem value="light">Light (1-3 days/week)</SelectItem>
+                      <SelectItem value="moderate">Moderate (3-5 days/week)</SelectItem>
+                      <SelectItem value="very">Very Active (6-7 days/week)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-3">
                   <Label className="text-white">Goal</Label>
-                  <RadioGroup
+                  <Select
                     value={formData.goal}
                     onValueChange={(value) => setFormData({...formData, goal: value})}
                   >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="maintain" id="maintain" />
-                      <Label htmlFor="maintain" className="text-gray-300">Maintain Weight</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="bulk" id="bulk" />
-                      <Label htmlFor="bulk" className="text-gray-300">Bulk (Gain Muscle)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="cut" id="cut" />
-                      <Label htmlFor="cut" className="text-gray-300">Cut (Lose Fat)</Label>
-                    </div>
-                  </RadioGroup>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select your primary goal" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="maintain">Maintain Weight</SelectItem>
+                      <SelectItem value="bulk">Bulk (Gain Muscle)</SelectItem>
+                      <SelectItem value="cut">Cut (Lose Fat)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}

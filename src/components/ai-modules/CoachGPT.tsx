@@ -1,13 +1,16 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Brain, ArrowLeft, Send, History, Trash2 } from "lucide-react";
+import { Brain, ArrowLeft, Send, History, Trash2, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCustomerMemory } from "@/hooks/useCustomerMemory";
+import { showInfoToast } from "@/components/EnhancedToast";
 
 interface CoachGPTProps {
   onBack: () => void;
@@ -23,6 +26,8 @@ const CoachGPT = ({ onBack }: CoachGPTProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { canUseFeature, incrementUsage, getRemainingUsage } = useUsageTracking();
+  const { customerProfile, logInteraction, addToFavorites } = useCustomerMemory();
+  
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -56,8 +61,31 @@ What would you like to know?`
   useEffect(() => {
     if (user) {
       loadConversationHistory();
+      // Log that user accessed CoachGPT
+      logInteraction('CoachGPT', 'session_start', { session_id: currentSessionId });
     }
   }, [user]);
+
+  // Personalize initial message based on customer profile
+  useEffect(() => {
+    if (customerProfile && messages.length === 1) {
+      let personalizedMessage = messages[0].content;
+      
+      if (customerProfile.display_name) {
+        personalizedMessage = personalizedMessage.replace('Hello!', `Hello ${customerProfile.display_name}!`);
+      }
+      
+      if (customerProfile.fitness_goals) {
+        personalizedMessage += `\n\n🎯 **I remember your goals:** ${customerProfile.fitness_goals}`;
+      }
+      
+      if (customerProfile.experience_level) {
+        personalizedMessage += `\n📊 **Your experience level:** ${customerProfile.experience_level}`;
+      }
+
+      setMessages([{ ...messages[0], content: personalizedMessage }]);
+    }
+  }, [customerProfile]);
 
   const loadConversationHistory = async () => {
     if (!user) return;
@@ -121,6 +149,9 @@ What would you like to know?`
         content: messages[0].content // Keep the initial message
       }]);
 
+      // Log conversation clear
+      await logInteraction('CoachGPT', 'conversation_cleared', { session_id: currentSessionId });
+
       toast({
         title: "Conversation cleared",
         description: "Chat history has been cleared.",
@@ -145,8 +176,12 @@ What would you like to know?`
     const newUserMessage = { role: 'user' as const, content: userMessage };
     setMessages(prev => [...prev, newUserMessage]);
     
-    // Save user message
+    // Save user message and log interaction
     await saveMessage('user', userMessage);
+    await logInteraction('CoachGPT', 'user_query', { 
+      query_length: userMessage.length,
+      session_id: currentSessionId 
+    });
     
     setIsLoading(true);
 
@@ -154,7 +189,12 @@ What would you like to know?`
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
           type: 'coaching',
-          userInput: userMessage
+          userInput: userMessage,
+          customerContext: customerProfile ? {
+            goals: customerProfile.fitness_goals,
+            experience: customerProfile.experience_level,
+            preferences: customerProfile.preferred_workout_style
+          } : null
         }
       });
 
@@ -181,8 +221,18 @@ What would you like to know?`
       const assistantMessage = { role: 'assistant' as const, content: data.response };
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Save assistant message
+      // Save assistant message and log successful interaction
       await saveMessage('assistant', data.response);
+      await logInteraction('CoachGPT', 'ai_response_received', { 
+        response_length: data.response.length,
+        session_id: currentSessionId 
+      });
+
+      // Check if user might want to favorite this feature
+      if (messages.length > 4) { // After a few interactions
+        await addToFavorites('CoachGPT');
+        showInfoToast('CoachGPT added to favorites!', 'This feature has been saved to your favorites based on your usage.');
+      }
       
     } catch (error) {
       console.error('Error getting coaching advice:', error);
@@ -191,6 +241,11 @@ What would you like to know?`
         content: 'Sorry, I encountered an error. Please try asking your question again. This attempt did not count towards your usage limit.' 
       };
       setMessages(prev => [...prev, errorMessage]);
+      
+      await logInteraction('CoachGPT', 'error_occurred', { 
+        error_type: 'ai_response_failed',
+        session_id: currentSessionId 
+      });
       
       toast({
         title: "Error",
@@ -227,6 +282,12 @@ What would you like to know?`
         <Badge className={`${!canUse ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
           {remainingUsage === -1 ? 'Unlimited' : `${remainingUsage} prompts left`}
         </Badge>
+        {customerProfile && (
+          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+            <User className="w-3 h-3 mr-1" />
+            Personalized for {customerProfile.display_name || 'you'}
+          </Badge>
+        )}
         {messages.length > 1 && (
           <Button
             variant="outline"
@@ -261,7 +322,7 @@ What would you like to know?`
         <CardHeader>
           <CardTitle className="text-white">Chat with CoachGPT</CardTitle>
           <CardDescription className="text-gray-400">
-            Ask any fitness question and get science-backed answers (excludes specific training programs & meal plans) - All conversations are saved
+            Ask any fitness question and get science-backed answers (excludes specific training programs & meal plans) - All conversations are saved and personalized
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

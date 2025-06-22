@@ -52,7 +52,7 @@ export const useCustomerMemory = () => {
         .from('customer_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading customer profile:', error);
@@ -60,7 +60,7 @@ export const useCustomerMemory = () => {
       }
 
       if (data) {
-        setCustomerProfile(data);
+        setCustomerProfile(data as CustomerProfile);
       } else {
         // Create new customer profile
         await createCustomerProfile();
@@ -94,7 +94,7 @@ export const useCustomerMemory = () => {
         return;
       }
 
-      setCustomerProfile(data);
+      setCustomerProfile(data as CustomerProfile);
     } catch (error) {
       console.error('Error creating customer profile:', error);
     }
@@ -116,13 +116,13 @@ export const useCustomerMemory = () => {
         return;
       }
 
-      setInteractionHistory(data || []);
+      setInteractionHistory((data || []) as InteractionLog[]);
     } catch (error) {
       console.error('Error loading interaction history:', error);
     }
   };
 
-  const updateCustomerProfile = async (updates: Partial<CustomerProfile>) => {
+  const updateCustomerProfile = async (updates: Partial<Omit<CustomerProfile, 'id' | 'user_id' | 'created_at'>>) => {
     if (!user || !customerProfile) return;
 
     try {
@@ -142,7 +142,7 @@ export const useCustomerMemory = () => {
         return;
       }
 
-      setCustomerProfile(data);
+      setCustomerProfile(data as CustomerProfile);
     } catch (error) {
       console.error('Error updating customer profile:', error);
     }

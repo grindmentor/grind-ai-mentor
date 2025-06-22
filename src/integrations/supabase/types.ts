@@ -36,6 +36,57 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_profiles: {
+        Row: {
+          created_at: string
+          dietary_preferences: string | null
+          display_name: string | null
+          experience_level: string | null
+          favorite_features: string[]
+          fitness_goals: string | null
+          id: string
+          interaction_count: number
+          last_active: string
+          notes: string | null
+          preferred_workout_style: string | null
+          subscription_tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dietary_preferences?: string | null
+          display_name?: string | null
+          experience_level?: string | null
+          favorite_features?: string[]
+          fitness_goals?: string | null
+          id?: string
+          interaction_count?: number
+          last_active?: string
+          notes?: string | null
+          preferred_workout_style?: string | null
+          subscription_tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dietary_preferences?: string | null
+          display_name?: string | null
+          experience_level?: string | null
+          favorite_features?: string[]
+          fitness_goals?: string | null
+          id?: string
+          interaction_count?: number
+          last_active?: string
+          notes?: string | null
+          preferred_workout_style?: string | null
+          subscription_tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cut_calculations: {
         Row: {
           created_at: string
@@ -178,6 +229,33 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interaction_logs: {
+        Row: {
+          feature_used: string
+          id: string
+          interaction_type: string
+          metadata: Json
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          feature_used: string
+          id?: string
+          interaction_type: string
+          metadata?: Json
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          feature_used?: string
+          id?: string
+          interaction_type?: string
+          metadata?: Json
+          timestamp?: string
           user_id?: string
         }
         Relationships: []

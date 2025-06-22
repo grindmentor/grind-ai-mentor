@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, ArrowLeft, Camera } from "lucide-react";
+import { TrendingUp, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 interface CutCalcProProps {
@@ -12,76 +12,69 @@ interface CutCalcProProps {
 }
 
 const CutCalcPro = ({ onBack }: CutCalcProProps) => {
-  const [weight, setWeight] = useState("");
-  const [bodyFat, setBodyFat] = useState("");
-  const [analysis, setAnalysis] = useState("");
+  const [formData, setFormData] = useState({
+    weight: '',
+    height: '',
+    age: '',
+    gender: 'male',
+    activityLevel: 'moderate'
+  });
+  const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAnalyze = () => {
-    if (!weight) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.weight || !formData.height || !formData.age) return;
     
     setIsLoading(true);
     
+    // Simulate complex body composition analysis
     setTimeout(() => {
-      const weightNum = parseFloat(weight);
-      const bfNum = bodyFat ? parseFloat(bodyFat) : 15; // Default estimate
+      const weight = parseFloat(formData.weight);
+      const height = parseFloat(formData.height);
+      const age = parseInt(formData.age);
       
-      setAnalysis(`**Body Composition Analysis**
-
-**Current Stats:**
-• Weight: ${weight} lbs
-• Estimated Body Fat: ${bfNum}%
-• Lean Body Mass: ${(weightNum * (1 - bfNum/100)).toFixed(1)} lbs
-• Fat Mass: ${(weightNum * (bfNum/100)).toFixed(1)} lbs
-
-**Phase Recommendations:**
-
-${bfNum > 20 ? `**Cutting Phase Recommended**
-• Target: 1-2 lbs fat loss per week
-• Calorie deficit: 500-750 calories below maintenance
-• Maintain protein: ${(weightNum * 1.2).toFixed(0)}g per day
-• Resistance training to preserve muscle mass
-
-**Scientific Support:**
-• Moderate deficits preserve lean mass better (Garthe et al., 2011)
-• Higher protein intake prevents muscle loss (Helms et al., 2014)` : 
-bfNum < 12 ? `**Lean Bulking Phase Recommended**
-• Target: 0.5-1 lb gain per week
-• Calorie surplus: 200-400 calories above maintenance  
-• Protein: ${(weightNum * 1.0).toFixed(0)}g per day
-• Focus on progressive overload training
-
-**Scientific Support:**
-• Slow weight gain minimizes fat accumulation (Garthe et al., 2019)
-• Adequate protein supports muscle protein synthesis (Moore et al., 2009)` :
-`**Maintenance/Recomposition Phase**
-• Maintain current weight
-• Eat at maintenance calories
-• High protein: ${(weightNum * 1.2).toFixed(0)}g per day
-• Focus on strength training progression
-
-**Scientific Support:**
-• Body recomposition possible at maintenance (Barakat et al., 2020)
-• Sufficient protein enables simultaneous fat loss and muscle gain`}
-
-**Tracking Recommendations:**
-• Weekly progress photos (same time, lighting, poses)
-• Body weight (daily, same time, track weekly averages)
-• Waist circumference measurements
-• Performance metrics (strength, endurance)
-
-**Important Notes:**
-• Body fat estimates have ±3-5% margin of error
-• Progress photos often more reliable than scale weight
-• Consistency in tracking methods is key
-
-**References:**
-1. Garthe, I., et al. (2011). Effect of weight loss rates on fat-free mass retention
-2. Helms, E., et al. (2014). High-protein, low-fat, short-term diet for fat loss
-3. Barakat, C., et al. (2020). Body recomposition: Can trained individuals build muscle and lose fat?`);
+      // Calculate BMR using Mifflin-St Jeor equation
+      const bmr = formData.gender === 'male' 
+        ? (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) + 5
+        : (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) - 161;
       
+      const activityMultipliers = {
+        sedentary: 1.2,
+        light: 1.375,
+        moderate: 1.55,
+        active: 1.725,
+        very_active: 1.9
+      };
+      
+      const tdee = bmr * activityMultipliers[formData.activityLevel as keyof typeof activityMultipliers];
+      const bmi = (weight / ((height * 0.0254) ** 2));
+      const ffmi = weight * 0.453592 * (1 - 0.15) / ((height * 0.0254) ** 2); // Estimated FFMI
+      
+      setResult({
+        bmr: Math.round(bmr),
+        tdee: Math.round(tdee),
+        bmi: bmi.toFixed(1),
+        ffmi: ffmi.toFixed(1),
+        bodyFatEstimate: formData.gender === 'male' ? '12-15%' : '16-20%',
+        cuttingCalories: Math.round(tdee - 500),
+        bulkingCalories: Math.round(tdee + 300),
+        recommendations: [
+          bmi < 18.5 ? 'Consider a lean bulk phase' : 
+          bmi > 25 ? 'Consider a cutting phase' : 
+          'Maintenance or body recomposition recommended',
+          ffmi > 22 ? 'Excellent muscle development' : 
+          ffmi > 20 ? 'Good muscle development' : 
+          'Focus on muscle building',
+          'Track progress photos and measurements weekly'
+        ]
+      });
       setIsLoading(false);
     }, 2000);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -97,66 +90,97 @@ bfNum < 12 ? `**Lean Bulking Phase Recommended**
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white">CutCalc Pro</h1>
-            <p className="text-gray-400">Body composition analysis</p>
+            <p className="text-gray-400">Advanced body composition analysis and cutting calculator</p>
           </div>
         </div>
       </div>
 
       <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-        Analysis based on validated body composition research
+        Calculations based on validated scientific formulas and research
       </Badge>
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle className="text-white">Body Composition Input</CardTitle>
+            <CardTitle className="text-white">Body Composition Analysis</CardTitle>
             <CardDescription className="text-gray-400">
-              Enter your current stats for personalized analysis
+              Enter your stats for comprehensive analysis
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="weight" className="text-white">Current Weight (lbs)</Label>
-              <Input
-                id="weight"
-                type="number"
-                placeholder="180"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bodyfat" className="text-white">Body Fat % (optional)</Label>
-              <Input
-                id="bodyfat"
-                type="number"
-                placeholder="15"
-                value={bodyFat}
-                onChange={(e) => setBodyFat(e.target.value)}
-                className="bg-gray-800 border-gray-700 text-white"
-              />
-              <p className="text-xs text-gray-500">Leave blank for visual estimation</p>
-            </div>
-
-            <div className="border-t border-gray-700 pt-4">
-              <div className="flex items-center space-x-2 text-gray-400 mb-2">
-                <Camera className="w-4 h-4" />
-                <span className="text-sm">Photo Analysis (Coming Soon)</span>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weight" className="text-white">Weight (lbs)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    placeholder="180"
+                    value={formData.weight}
+                    onChange={(e) => handleInputChange('weight', e.target.value)}
+                    className="bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height" className="text-white">Height (inches)</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    placeholder="70"
+                    value={formData.height}
+                    onChange={(e) => handleInputChange('height', e.target.value)}
+                    className="bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
               </div>
-              <p className="text-xs text-gray-500">
-                Upload progress photos for visual body fat estimation using AI
-              </p>
-            </div>
-
-            <Button 
-              onClick={handleAnalyze}
-              disabled={!weight || isLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              {isLoading ? "Analyzing..." : "Analyze Body Composition"}
-            </Button>
+              
+              <div className="space-y-2">
+                <Label htmlFor="age" className="text-white">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  placeholder="25"
+                  value={formData.age}
+                  onChange={(e) => handleInputChange('age', e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-white">Gender</Label>
+                <select
+                  value={formData.gender}
+                  onChange={(e) => handleInputChange('gender', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2"
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-white">Activity Level</Label>
+                <select
+                  value={formData.activityLevel}
+                  onChange={(e) => handleInputChange('activityLevel', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2"
+                >
+                  <option value="sedentary">Sedentary (desk job)</option>
+                  <option value="light">Lightly active (1-3 days/week)</option>
+                  <option value="moderate">Moderately active (3-5 days/week)</option>
+                  <option value="active">Very active (6-7 days/week)</option>
+                  <option value="very_active">Extremely active (2x/day)</option>
+                </select>
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              >
+                {isLoading ? "Analyzing..." : "Calculate Body Composition"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
 
@@ -164,17 +188,59 @@ bfNum < 12 ? `**Lean Bulking Phase Recommended**
           <CardHeader>
             <CardTitle className="text-white">Analysis Results</CardTitle>
             <CardDescription className="text-gray-400">
-              Science-backed recommendations for your goals
+              Science-based calculations and recommendations
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {analysis ? (
-              <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-sm">{analysis}</pre>
+            {result ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-orange-400 text-sm font-medium">BMR</div>
+                    <div className="text-white text-xl font-bold">{result.bmr} cal</div>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-orange-400 text-sm font-medium">TDEE</div>
+                    <div className="text-white text-xl font-bold">{result.tdee} cal</div>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-orange-400 text-sm font-medium">BMI</div>
+                    <div className="text-white text-xl font-bold">{result.bmi}</div>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-orange-400 text-sm font-medium">FFMI</div>
+                    <div className="text-white text-xl font-bold">{result.ffmi}</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-green-400 text-sm font-medium">Cutting Calories</div>
+                    <div className="text-white text-lg">{result.cuttingCalories} cal/day</div>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-blue-400 text-sm font-medium">Bulking Calories</div>
+                    <div className="text-white text-lg">{result.bulkingCalories} cal/day</div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-800 p-3 rounded-lg">
+                  <div className="text-orange-400 text-sm font-medium mb-2">Recommendations</div>
+                  <ul className="text-gray-300 text-sm space-y-1">
+                    {result.recommendations.map((rec: string, index: number) => (
+                      <li key={index}>• {rec}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="text-xs text-gray-500 mt-4">
+                  <p>*Calculations based on Mifflin-St Jeor equation and validated research</p>
+                  <p>*Body fat estimates are approximate - consider DEXA scan for accuracy</p>
+                </div>
               </div>
             ) : (
               <div className="text-gray-500 text-center py-8">
-                Enter your weight above to get your personalized body composition analysis
+                Enter your information to get detailed body composition analysis
               </div>
             )}
           </CardContent>

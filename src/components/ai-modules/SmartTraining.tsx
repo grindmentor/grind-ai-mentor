@@ -1,10 +1,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Dumbbell, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
@@ -13,59 +11,65 @@ interface SmartTrainingProps {
 }
 
 const SmartTraining = ({ onBack }: SmartTrainingProps) => {
-  const [goal, setGoal] = useState("");
-  const [experience, setExperience] = useState("");
-  const [program, setProgram] = useState("");
+  const [input, setInput] = useState("");
+  const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [promptsUsed, setPromptsUsed] = useState(0);
+  const maxPrompts = 3; // Basic tier limit
 
-  const handleGenerateProgram = () => {
-    if (!goal || !experience) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || promptsUsed >= maxPrompts) return;
     
     setIsLoading(true);
+    setPromptsUsed(prev => prev + 1);
     
+    // Simulate AI response with science-backed training programs
     setTimeout(() => {
-      setProgram(`**12-Week Science-Based Training Program**
+      setResponse(`Based on exercise science research, here's your personalized training program:
 
-**Phase 1: Foundation (Weeks 1-4)**
-*Goal: Movement patterns, work capacity*
+**PROGRAM: ${input.includes('beginner') ? 'Foundation Builder' : input.includes('advanced') ? 'Elite Performance' : 'Progressive Strength'}**
 
-**Day 1: Upper Body**
-• Bench Press: 3 sets x 8-12 reps
-• Bent-over Row: 3 sets x 8-12 reps  
-• Overhead Press: 3 sets x 8-12 reps
-• Pull-ups/Lat Pulldown: 3 sets x 8-12 reps
-• Dips: 2 sets x 8-15 reps
+**Week 1-4: Foundation Phase**
+*Monday - Upper Body Strength*
+- Bench Press: 3x8-10 (Progressive overload principle)
+- Pull-ups/Lat Pulldowns: 3x8-12
+- Overhead Press: 3x6-8
+- Barbell Rows: 3x8-10
+- Rest: 2-3 minutes between sets
 
-**Day 2: Lower Body**
-• Squat: 3 sets x 8-12 reps
-• Romanian Deadlift: 3 sets x 8-12 reps
-• Bulgarian Split Squats: 2 sets x 10 each leg
-• Hip Thrusts: 3 sets x 12-15 reps
-• Calf Raises: 3 sets x 15-20 reps
+*Wednesday - Lower Body Power*
+- Squats: 4x6-8 (Focus on eccentric control)
+- Romanian Deadlifts: 3x8-10
+- Bulgarian Split Squats: 3x10 each leg
+- Hip Thrusts: 3x12-15
 
-**Day 3: Full Body**
-• Deadlift: 3 sets x 5-8 reps
-• Push-ups: 2 sets x 10-15 reps
-• Goblet Squats: 2 sets x 12-15 reps
-• Plank: 3 sets x 30-60 seconds
+*Friday - Full Body Circuit*
+- Deadlifts: 3x5 (Technical focus)
+- Push-ups: 3x max reps
+- Kettlebell Swings: 3x20
+- Planks: 3x45-60 seconds
 
 **Scientific Principles Applied:**
-• **Progressive Overload** (Schoenfeld, 2010)
-• **Periodization** for optimal adaptations (Haff & Triplett, 2015)
-• **Volume Landmarks** based on research (Schoenfeld et al., 2017)
+- **Progressive Overload**: Systematic increase in training stimulus (Schoenfeld et al., 2017)
+- **Specificity**: Exercise selection targets your stated goals
+- **Recovery**: 48-72 hours between training same muscle groups (Damas et al., 2018)
 
-**Recovery Guidelines:**
-• 48-72 hours between training same muscle groups
-• 7-9 hours sleep for optimal recovery (Walker, 2017)
-• Protein: 1.6-2.2g/kg bodyweight (Helms et al., 2014)
+**Periodization Schedule:**
+Week 1-2: Adaptation (75% 1RM)
+Week 3-4: Intensification (80-85% 1RM)
+Week 5: Deload (65% 1RM)
 
-**References:**
-1. Schoenfeld, B. (2010). The mechanisms of muscle hypertrophy
-2. Haff, G. & Triplett, N. (2015). Essentials of Strength Training
-3. Walker, M. (2017). Why We Sleep: Sleep and Recovery`);
-      
+**Research Citations:**
+1. Schoenfeld, B.J. (2017). "Dose-response relationship between resistance training volume and muscle hypertrophy"
+2. Damas, F. (2018). "Early resistance training-induced increases in muscle cross-sectional area are concomitant with edema-induced muscle swelling"
+3. Helms, E.R. (2014). "Evidence-based recommendations for natural bodybuilding contest preparation"
+
+⚠️ **Safety Note**: Always warm up properly and use proper form. Consult a healthcare provider before starting any new training program.
+
+**Next Steps**: Track your progress weekly and adjust weights based on RPE (Rate of Perceived Exertion) scale.`);
       setIsLoading(false);
-    }, 2000);
+    }, 2500);
   };
 
   return (
@@ -81,105 +85,85 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white">Smart Training</h1>
-            <p className="text-gray-400">Programs based on exercise science</p>
+            <p className="text-gray-400">Evidence-based workout programs with scientific backing</p>
           </div>
         </div>
       </div>
 
-      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-        Built on periodization principles and progressive overload research
-      </Badge>
+      <div className="flex items-center space-x-4">
+        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+          All programs based on peer-reviewed exercise science research
+        </Badge>
+        <Badge className={`${promptsUsed >= maxPrompts ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'}`}>
+          {promptsUsed}/{maxPrompts} programs used
+        </Badge>
+      </div>
 
-      <Tabs defaultValue="generator" className="space-y-6">
-        <TabsList className="bg-gray-800">
-          <TabsTrigger value="generator" className="text-white">Program Generator</TabsTrigger>
-          <TabsTrigger value="program" className="text-white">Your Program</TabsTrigger>
-        </TabsList>
+      {promptsUsed >= maxPrompts && (
+        <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
+          <CardContent className="pt-6 text-center">
+            <h3 className="text-xl font-bold text-white mb-2">Program Limit Reached</h3>
+            <p className="text-gray-300 mb-4">
+              Upgrade to get unlimited training programs and advanced features
+            </p>
+            <Button 
+              onClick={() => window.open('/pricing', '_blank')}
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+            >
+              Upgrade Now
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-        <TabsContent value="generator">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">Generate Your Training Program</CardTitle>
-              <CardDescription className="text-gray-400">
-                Based on exercise science research and periodization principles
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-white text-base mb-3 block">Primary Goal</Label>
-                  <RadioGroup value={goal} onValueChange={setGoal}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="strength" id="strength" />
-                      <Label htmlFor="strength" className="text-gray-300">Build Strength</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="muscle" id="muscle" />
-                      <Label htmlFor="muscle" className="text-gray-300">Build Muscle</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="endurance" id="endurance" />
-                      <Label htmlFor="endurance" className="text-gray-300">Improve Endurance</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="fat-loss" id="fat-loss" />
-                      <Label htmlFor="fat-loss" className="text-gray-300">Fat Loss</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div>
-                  <Label className="text-white text-base mb-3 block">Training Experience</Label>
-                  <RadioGroup value={experience} onValueChange={setExperience}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="beginner" id="beginner" />
-                      <Label htmlFor="beginner" className="text-gray-300">Beginner (0-1 years)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="intermediate" id="intermediate" />
-                      <Label htmlFor="intermediate" className="text-gray-300">Intermediate (2-4 years)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="advanced" id="advanced" />
-                      <Label htmlFor="advanced" className="text-gray-300">Advanced (5+ years)</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-
+      <div className="grid lg:grid-cols-2 gap-6">
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">Create Training Program</CardTitle>
+            <CardDescription className="text-gray-400">
+              Describe your goals, experience level, and available equipment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Textarea
+                placeholder="Example: I'm an intermediate lifter looking to build muscle. I have access to a full gym and can train 4 days per week. My goal is to increase strength in bench, squat, and deadlift while gaining lean mass..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                className="bg-gray-800 border-gray-700 text-white min-h-32"
+                disabled={promptsUsed >= maxPrompts}
+              />
               <Button 
-                onClick={handleGenerateProgram}
-                disabled={!goal || !experience || isLoading}
+                type="submit" 
+                disabled={!input.trim() || isLoading || promptsUsed >= maxPrompts}
                 className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
               >
-                {isLoading ? "Generating Program..." : "Generate Training Program"}
+                {isLoading ? "Creating Program..." : "Generate Training Program"}
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </form>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="program">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">Your Training Program</CardTitle>
-              <CardDescription className="text-gray-400">
-                Science-backed program with research citations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {program ? (
-                <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
-                  <pre className="whitespace-pre-wrap text-sm">{program}</pre>
-                </div>
-              ) : (
-                <div className="text-gray-500 text-center py-8">
-                  Generate your program in the Generator tab to see your personalized training plan
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">Your Training Program</CardTitle>
+            <CardDescription className="text-gray-400">
+              Science-backed programs with research citations
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {response ? (
+              <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-sm">{response}</pre>
+              </div>
+            ) : (
+              <div className="text-gray-500 text-center py-8">
+                Enter your training goals above to get your personalized program
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

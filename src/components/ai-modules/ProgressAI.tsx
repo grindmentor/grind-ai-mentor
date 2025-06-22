@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,8 @@ import { aiService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { convertWeight, formatWeight } from "@/lib/unitConversions";
 
 interface ProgressAIProps {
   onBack: () => void;
@@ -30,6 +33,7 @@ interface ProgressPhoto {
 const ProgressAI = ({ onBack }: ProgressAIProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { preferences } = usePreferences();
   const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -38,6 +42,9 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
   const [photoType, setPhotoType] = useState<'front' | 'side' | 'back' | 'custom'>('front');
   const [showHistory, setShowHistory] = useState(false);
   const { canUseFeature, incrementUsage } = useUsageTracking();
+
+  // Get user's preferred units
+  const weightUnit = preferences?.weight_unit || 'lbs';
 
   useEffect(() => {
     if (user) {
@@ -73,6 +80,9 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
     if (!user) return;
 
     try {
+      // Convert weight to standard unit (lbs) for storage
+      const weightInLbs = weight ? (weightUnit === 'kg' ? convertWeight(parseFloat(weight), 'kg', 'lbs') : parseFloat(weight)) : null;
+
       const { error } = await supabase
         .from('progress_photos')
         .insert({
@@ -80,7 +90,7 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
           file_name: fileName,
           analysis_result: analysis,
           photo_type: photoType,
-          weight_at_time: weight ? parseFloat(weight) : null,
+          weight_at_time: weightInLbs,
           notes: notes || null,
           taken_date: new Date().toISOString().split('T')[0]
         });
@@ -112,8 +122,9 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
     
     try {
       // Create analysis prompt based on file type
+      const weightText = weight ? formatWeight(parseFloat(weight), weightUnit) : 'Not provided';
       const analysisPrompt = isImage ? 
-        `Analyze this progress photo for body composition, muscle definition, and provide science-based recommendations for training and nutrition. Include specific observations about muscle development, body fat percentage estimates, posture, and actionable next steps. Weight: ${weight || 'Not provided'} lbs. Notes: ${notes || 'None'}.` :
+        `Analyze this progress photo for body composition, muscle definition, and provide science-based recommendations for training and nutrition. Include specific observations about muscle development, body fat percentage estimates, posture, and actionable next steps. Weight: ${weightText}. Notes: ${notes || 'None'}. Please provide measurements and recommendations in both metric (kg/cm) and imperial (lbs/inches) units.` :
         `Analyze this workout program or fitness document. Provide detailed feedback on exercise selection, volume, progression, and optimization recommendations based on exercise science research.`;
 
       // Get AI analysis
@@ -202,7 +213,10 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
                       </div>
                       <p className="text-gray-400 text-sm">
                         {new Date(photo.taken_date).toLocaleDateString()}
-                        {photo.weight_at_time && ` • ${photo.weight_at_time} lbs`}
+                        {photo.weight_at_time && ` • ${formatWeight(
+                          weightUnit === 'kg' ? convertWeight(photo.weight_at_time, 'lbs', 'kg') : photo.weight_at_time,
+                          weightUnit
+                        )}`}
                       </p>
                       {photo.notes && (
                         <p className="text-gray-300 text-sm mt-1">{photo.notes}</p>
@@ -280,10 +294,10 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Current Weight (lbs)</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Current Weight ({weightUnit})</label>
                         <Input
                           type="number"
-                          placeholder="e.g., 175"
+                          placeholder={`e.g., ${weightUnit === 'kg' ? '80' : '175'}`}
                           value={weight}
                           onChange={(e) => setWeight(e.target.value)}
                           className="bg-gray-700 border-gray-600 text-white"
@@ -320,6 +334,7 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
                 <li>• <strong>Programs:</strong> Clear exercise names, sets, reps, and progression</li>
                 <li>• <strong>Format:</strong> PDF, Word docs, or clear images work best</li>
                 <li>• <strong>Detail:</strong> Include goals, experience level, available equipment</li>
+                <li>• <strong>Units:</strong> Analysis includes both metric and imperial measurements</li>
               </ul>
             </div>
           </CardContent>

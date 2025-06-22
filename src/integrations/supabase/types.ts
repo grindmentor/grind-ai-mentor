@@ -596,6 +596,7 @@ export type Database = {
           created_at: string
           cut_calc_uses: number | null
           food_log_analyses: number | null
+          food_photo_analyses: number | null
           habit_checks: number | null
           id: string
           meal_plan_generations: number | null
@@ -612,6 +613,7 @@ export type Database = {
           created_at?: string
           cut_calc_uses?: number | null
           food_log_analyses?: number | null
+          food_photo_analyses?: number | null
           habit_checks?: number | null
           id?: string
           meal_plan_generations?: number | null
@@ -628,6 +630,7 @@ export type Database = {
           created_at?: string
           cut_calc_uses?: number | null
           food_log_analyses?: number | null
+          food_photo_analyses?: number | null
           habit_checks?: number | null
           id?: string
           meal_plan_generations?: number | null
@@ -701,6 +704,7 @@ export type Database = {
           progress_analyses: number
           cut_calc_uses: number
           workout_timer_sessions: number
+          food_photo_analyses: number
         }[]
       }
     }

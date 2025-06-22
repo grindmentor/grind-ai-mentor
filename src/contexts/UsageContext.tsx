@@ -13,6 +13,7 @@ interface UsageContextType {
   progressAnalyses: number;
   cutCalcUses: number;
   workoutTimerSessions: number;
+  foodPhotoAnalyses: number;
   incrementUsage: (type: UsageType) => void;
   isLoading: boolean;
 }
@@ -26,7 +27,8 @@ export type UsageType =
   | 'trainingPrograms'
   | 'progressAnalyses'
   | 'cutCalcUses'
-  | 'workoutTimerSessions';
+  | 'workoutTimerSessions'
+  | 'foodPhotoAnalyses';
 
 const UsageContext = createContext<UsageContextType | undefined>(undefined);
 
@@ -41,7 +43,8 @@ export const UsageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     trainingPrograms: 0,
     progressAnalyses: 0,
     cutCalcUses: 0,
-    workoutTimerSessions: 0
+    workoutTimerSessions: 0,
+    foodPhotoAnalyses: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,7 +75,8 @@ export const UsageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           trainingPrograms: currentUsage.training_programs || 0,
           progressAnalyses: currentUsage.progress_analyses || 0,
           cutCalcUses: currentUsage.cut_calc_uses || 0,
-          workoutTimerSessions: currentUsage.workout_timer_sessions || 0
+          workoutTimerSessions: currentUsage.workout_timer_sessions || 0,
+          foodPhotoAnalyses: currentUsage.food_photo_analyses || 0
         });
       }
     } catch (error) {
@@ -128,7 +132,8 @@ export const UsageProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       trainingPrograms: 'training_programs',
       progressAnalyses: 'progress_analyses',
       cutCalcUses: 'cut_calc_uses',
-      workoutTimerSessions: 'workout_timer_sessions'
+      workoutTimerSessions: 'workout_timer_sessions',
+      foodPhotoAnalyses: 'food_photo_analyses'
     };
     return mapping[type];
   };

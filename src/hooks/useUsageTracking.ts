@@ -14,6 +14,7 @@ export interface UsageLimits {
   progress_analyses: number;
   cut_calc_uses: number;
   workout_timer_sessions: number;
+  food_photo_analyses: number;
 }
 
 interface CurrentUsage {
@@ -26,6 +27,7 @@ interface CurrentUsage {
   progress_analyses: number;
   cut_calc_uses: number;
   workout_timer_sessions: number;
+  food_photo_analyses: number;
 }
 
 export const useUsageTracking = () => {
@@ -67,7 +69,8 @@ export const useUsageTracking = () => {
           training_programs: 0,
           progress_analyses: 0,
           cut_calc_uses: 0,
-          workout_timer_sessions: 0
+          workout_timer_sessions: 0,
+          food_photo_analyses: 0
         });
       }
     } catch (error) {

@@ -52,7 +52,7 @@ const Index = () => {
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </Link>
-          <Link to="/signin">
+          <Link to="/about">
             <Button variant="outline" className="border-gray-600 text-black bg-white hover:bg-gray-100 px-8 py-4 text-lg">
               Learn More
             </Button>

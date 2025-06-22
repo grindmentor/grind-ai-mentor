@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import Index from './pages/Index'
+import About from './pages/About'
 import SignIn from './pages/SignIn'
 import App from './pages/App'
 import Settings from './pages/Settings'
@@ -15,6 +16,7 @@ function AppRouter() {
       <Router>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/about" element={<About />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/app" element={<App />} />

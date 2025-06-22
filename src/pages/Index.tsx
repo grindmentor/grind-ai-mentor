@@ -82,10 +82,10 @@ const Index = () => {
             Science-Based AI Fitness Coach
           </h1>
           <p className="text-lg md:text-xl text-gray-400 mb-4 max-w-2xl mx-auto">
-            Whether you're crushing PRs or just starting your fitness journey - get personalized meal plans & training programs that actually work.
+            Get personalized meal plans and training programs backed by research and tailored to your goals.
           </p>
           <p className="text-base text-gray-500 mb-8 max-w-xl mx-auto">
-            For science-based lifters who want the data, and casual gym-goers who just want results. No BS, just gains. 💪
+            Whether you're a seasoned lifter or just starting out, get results that actually work.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
             <SoundButton 
@@ -113,7 +113,7 @@ const Index = () => {
               Most Powerful AI Fitness Tools
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              The heavy hitters - our most popular AI tools designed by fitness experts and backed by scientific research
+              Our most popular AI tools designed by fitness experts and backed by scientific research
             </p>
           </div>
           
@@ -147,7 +147,7 @@ const Index = () => {
               Unlock Your Potential with AI-Powered Coaching
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Every recommendation is backed by scientific research and tailored to your unique goals - time to level up your game
+              Every recommendation is backed by scientific research and tailored to your unique goals
             </p>
           </div>
           
@@ -259,7 +259,7 @@ const Index = () => {
               Built on Scientific Evidence
             </h2>
             <p className="text-gray-400 text-lg">
-              Our AI recommendations are based on peer-reviewed research and proven methodologies - no bro science here
+              Our AI recommendations are based on peer-reviewed research and proven methodologies
             </p>
           </div>
           
@@ -358,7 +358,7 @@ const Index = () => {
             Ready to Start Your Transformation?
           </h2>
           <p className="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
-            Join thousands who have already transformed their lives with science-based fitness coaching. Time to get swole! 🔥
+            Join thousands who have already transformed their lives with science-based fitness coaching.
           </p>
           <SoundButton 
             onClick={() => navigate("/signin")}

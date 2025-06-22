@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-interface UsageLimits {
+export interface UsageLimits {
   coach_gpt_queries: number;
   meal_plan_generations: number;
   food_log_analyses: number;
@@ -27,7 +26,7 @@ interface CurrentUsage {
   workout_timer_sessions: number;
 }
 
-const TIER_LIMITS: Record<string, UsageLimits> = {
+export const TIER_LIMITS: Record<string, UsageLimits> = {
   free: {
     coach_gpt_queries: 3,
     meal_plan_generations: 2,

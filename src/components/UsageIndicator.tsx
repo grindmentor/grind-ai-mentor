@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Crown, Zap } from "lucide-react";
-import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { useUsageTracking, type UsageLimits } from "@/hooks/useUsageTracking";
 import { useNavigate } from "react-router-dom";
 
 interface UsageIndicatorProps {
-  featureKey: keyof typeof import('@/hooks/useUsageTracking').TIER_LIMITS.free;
+  featureKey: keyof UsageLimits;
   featureName: string;
   compact?: boolean;
 }

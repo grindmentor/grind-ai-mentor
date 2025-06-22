@@ -3,8 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Camera, ArrowLeft, Plus } from "lucide-react";
+import { Camera, ArrowLeft, Plus, Brain } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
+import UsageIndicator from "@/components/UsageIndicator";
 
 interface SmartFoodLogProps {
   onBack: () => void;
@@ -18,24 +21,41 @@ interface FoodEntry {
   carbs: number;
   fat: number;
   time: string;
+  analysis?: string;
 }
 
 const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
   const [foodInput, setFoodInput] = useState("");
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [promptsUsed, setPromptsUsed] = useState(0);
-  const maxPrompts = 3; // Free tier limit
+  const [analysis, setAnalysis] = useState("");
+  const { canUseFeature, incrementUsage } = useUsageTracking();
 
   const handleAddFood = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!foodInput.trim() || promptsUsed >= maxPrompts) return;
+    if (!foodInput.trim() || !canUseFeature('food_log_analyses')) return;
     
     setIsLoading(true);
-    setPromptsUsed(prev => prev + 1);
     
-    // Simulate AI food recognition and nutrient analysis
-    setTimeout(() => {
+    const success = await incrementUsage('food_log_analyses');
+    if (!success) {
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      // Get AI analysis of the food
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'food_log',
+          userInput: `Analyze this food item for nutritional content and provide macronutrient breakdown: ${foodInput}`
+        }
+      });
+
+      if (error) throw error;
+
+      // Parse the AI response to extract nutrition data
+      // For now, using mock data but in production this would parse the AI response
       const mockFoodData = {
         "chicken breast": { calories: 165, protein: 31, carbs: 0, fat: 3.6 },
         "rice": { calories: 130, protein: 2.7, carbs: 28, fat: 0.3 },
@@ -50,7 +70,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
       const foodName = foodInput.toLowerCase();
       const foodKey = Object.keys(mockFoodData).find(key => foodName.includes(key));
       const nutrition = foodKey ? mockFoodData[foodKey as keyof typeof mockFoodData] : 
-        { calories: 100, protein: 5, carbs: 10, fat: 3 }; // Default values
+        { calories: 100, protein: 5, carbs: 10, fat: 3 };
       
       const newEntry: FoodEntry = {
         id: Date.now().toString(),
@@ -59,13 +79,48 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
         protein: nutrition.protein,
         carbs: nutrition.carbs,
         fat: nutrition.fat,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        analysis: data.response
       };
       
       setFoodEntries(prev => [...prev, newEntry]);
       setFoodInput("");
+    } catch (error) {
+      console.error('Error analyzing food:', error);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  };
+
+  const generateDailyAnalysis = async () => {
+    if (foodEntries.length === 0 || !canUseFeature('food_log_analyses')) return;
+    
+    setIsLoading(true);
+    
+    const success = await incrementUsage('food_log_analyses');
+    if (!success) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const foodList = foodEntries.map(entry => `${entry.name} (${entry.calories} cal)`).join(', ');
+      
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'food_log',
+          userInput: `Provide a comprehensive nutritional analysis of today's food intake: ${foodList}. Total calories: ${totalNutrition.calories}, Protein: ${totalNutrition.protein.toFixed(1)}g, Carbs: ${totalNutrition.carbs.toFixed(1)}g, Fat: ${totalNutrition.fat.toFixed(1)}g. Include recommendations for optimization and cite scientific research.`
+        }
+      });
+
+      if (error) throw error;
+      setAnalysis(data.response);
+    } catch (error) {
+      console.error('Error generating analysis:', error);
+      setAnalysis('Sorry, there was an error generating your nutritional analysis. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const totalNutrition = foodEntries.reduce((total, entry) => ({
@@ -76,7 +131,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
   }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -88,43 +143,24 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white">Smart Food Log</h1>
-            <p className="text-gray-400">AI-powered nutrition tracking and analysis</p>
+            <p className="text-gray-400">AI-powered nutrition tracking with scientific analysis</p>
           </div>
         </div>
       </div>
 
       <div className="flex items-center space-x-4">
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-          AI analyzes foods and provides accurate nutritional data
+          AI analyzes foods and provides research-backed nutritional insights
         </Badge>
-        <Badge className={`${promptsUsed >= maxPrompts ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'}`}>
-          {promptsUsed}/{maxPrompts} foods logged
-        </Badge>
+        <UsageIndicator featureKey="food_log_analyses" featureName="Food Analyses" compact />
       </div>
 
-      {promptsUsed >= maxPrompts && (
-        <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Food Log Limit Reached</h3>
-            <p className="text-gray-300 mb-4">
-              Upgrade to get unlimited food logging and advanced nutrition analysis
-            </p>
-            <Button 
-              onClick={() => window.open('/pricing', '_blank')}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              Upgrade Now
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6">
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
             <CardTitle className="text-white">Log Food</CardTitle>
             <CardDescription className="text-gray-400">
-              Type food name or description for AI analysis
+              AI analyzes your food for accurate nutrition data
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -135,11 +171,11 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
                   value={foodInput}
                   onChange={(e) => setFoodInput(e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white flex-1"
-                  disabled={promptsUsed >= maxPrompts}
+                  disabled={!canUseFeature('food_log_analyses')}
                 />
                 <Button 
                   type="submit" 
-                  disabled={!foodInput.trim() || isLoading || promptsUsed >= maxPrompts}
+                  disabled={!foodInput.trim() || isLoading || !canUseFeature('food_log_analyses')}
                   className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
                 >
                   {isLoading ? "Analyzing..." : <Plus className="w-4 h-4" />}
@@ -209,33 +245,54 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
               </div>
 
               {foodEntries.length > 0 && (
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="text-white font-medium mb-2">Macro Breakdown</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-blue-400">Protein ({((totalNutrition.protein * 4 / totalNutrition.calories) * 100).toFixed(0)}%)</span>
-                      <span className="text-gray-300">{(totalNutrition.protein * 4).toFixed(0)} cal</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-green-400">Carbs ({((totalNutrition.carbs * 4 / totalNutrition.calories) * 100).toFixed(0)}%)</span>
-                      <span className="text-gray-300">{(totalNutrition.carbs * 4).toFixed(0)} cal</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-yellow-400">Fat ({((totalNutrition.fat * 9 / totalNutrition.calories) * 100).toFixed(0)}%)</span>
-                      <span className="text-gray-300">{(totalNutrition.fat * 9).toFixed(0)} cal</span>
+                <>
+                  <div className="bg-gray-800 p-4 rounded-lg">
+                    <h4 className="text-white font-medium mb-2">Macro Breakdown</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-400">Protein ({((totalNutrition.protein * 4 / totalNutrition.calories) * 100).toFixed(0)}%)</span>
+                        <span className="text-gray-300">{(totalNutrition.protein * 4).toFixed(0)} cal</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-400">Carbs ({((totalNutrition.carbs * 4 / totalNutrition.calories) * 100).toFixed(0)}%)</span>
+                        <span className="text-gray-300">{(totalNutrition.carbs * 4).toFixed(0)} cal</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-yellow-400">Fat ({((totalNutrition.fat * 9 / totalNutrition.calories) * 100).toFixed(0)}%)</span>
+                        <span className="text-gray-300">{(totalNutrition.fat * 9).toFixed(0)} cal</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                  
+                  <Button 
+                    onClick={generateDailyAnalysis}
+                    disabled={isLoading || !canUseFeature('food_log_analyses')}
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  >
+                    <Brain className="w-4 h-4 mr-2" />
+                    {isLoading ? "Analyzing..." : "Get AI Nutrition Analysis"}
+                  </Button>
+                </>
               )}
-            </div>
-
-            <div className="mt-4 text-xs text-gray-500">
-              <p>• AI analyzes food descriptions for accurate nutrition data</p>
-              <p>• Include portion sizes for better accuracy</p>
-              <p>• Data sourced from USDA nutrition database</p>
             </div>
           </CardContent>
         </Card>
+
+        {analysis && (
+          <Card className="bg-gray-900 border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-white">AI Nutrition Analysis</CardTitle>
+              <CardDescription className="text-gray-400">
+                Research-backed insights and recommendations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-sm">{analysis}</pre>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

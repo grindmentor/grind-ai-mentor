@@ -64,11 +64,11 @@ const AuthCallback = () => {
               setMessage('Failed to confirm email. The confirmation link may have expired.');
             } else {
               setStatus('success');
-              setMessage('Email confirmed successfully! You can now sign in.');
+              setMessage('Email confirmed successfully! Redirecting to your dashboard...');
               
-              // Automatically redirect to app after successful confirmation
+              // Redirect returning users to app, new users to onboarding
               setTimeout(() => {
-                navigate('/onboarding');
+                navigate('/app');
               }, 2000);
             }
           } else {
@@ -87,11 +87,11 @@ const AuthCallback = () => {
               setMessage('Authentication failed. The link may have expired or is invalid.');
             } else if (data.session) {
               setStatus('success');
-              setMessage('Authentication successful!');
+              setMessage('Welcome back! Redirecting to your dashboard...');
               
-              // Redirect to app
+              // Redirect to app for returning users
               setTimeout(() => {
-                navigate('/onboarding');
+                navigate('/app');
               }, 2000);
             } else {
               setStatus('error');
@@ -117,8 +117,8 @@ const AuthCallback = () => {
       // For password reset, go to a password change page or settings
       navigate('/settings');
     } else if (status === 'success') {
-      // For email confirmation, go to onboarding/app
-      navigate('/onboarding');
+      // For email confirmation, go to app dashboard
+      navigate('/app');
     } else {
       // For errors, go back to sign in
       navigate('/signin');

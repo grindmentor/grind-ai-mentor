@@ -11,6 +11,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   loading: boolean;
+  isNewUser: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -35,6 +37,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Check if this is a new user signup
+        if (event === 'SIGNED_UP') {
+          setIsNewUser(true);
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          // Check if user has completed onboarding by checking created_at
+          const userCreatedAt = new Date(session.user.created_at);
+          const now = new Date();
+          const timeDiff = now.getTime() - userCreatedAt.getTime();
+          const daysDiff = timeDiff / (1000 * 3600 * 24);
+          
+          // If user was created more than 1 day ago, they're a returning user
+          setIsNewUser(daysDiff < 1);
+        }
+        
         setLoading(false);
       }
     );
@@ -113,7 +130,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signIn,
       signOut,
       resetPassword,
-      loading
+      loading,
+      isNewUser
     }}>
       {children}
     </AuthContext.Provider>

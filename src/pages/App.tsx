@@ -3,23 +3,37 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import PaymentSetup from "@/components/PaymentSetup";
 import Dashboard from "@/components/Dashboard";
+import WelcomeBack from "@/components/WelcomeBack";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 const App = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isNewUser } = useAuth();
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/signin');
+    } else if (!loading && user && !isNewUser) {
+      // Show welcome back for returning users
+      const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
+      if (!hasSeenWelcome) {
+        setShowWelcomeBack(true);
+        sessionStorage.setItem('hasSeenWelcome', 'true');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isNewUser]);
 
   const handleSignOut = async () => {
+    sessionStorage.removeItem('hasSeenWelcome');
     await signOut();
     navigate('/');
+  };
+
+  const handleWelcomeBackContinue = () => {
+    setShowWelcomeBack(false);
   };
 
   if (loading) {
@@ -36,6 +50,14 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Welcome Back Modal */}
+      {showWelcomeBack && (
+        <WelcomeBack 
+          userEmail={user.email || ''} 
+          onContinue={handleWelcomeBackContinue}
+        />
+      )}
+
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-full w-64 bg-gray-900 border-r border-gray-800 p-6">
         {/* Logo */}

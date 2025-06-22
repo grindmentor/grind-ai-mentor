@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,13 +20,18 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const navigate = useNavigate();
-  const { signIn, resetPassword, user } = useAuth();
+  const { signIn, resetPassword, user, isNewUser } = useAuth();
 
   useEffect(() => {
     if (user) {
-      navigate("/onboarding");
+      // Redirect new users to onboarding, returning users to dashboard
+      if (isNewUser) {
+        navigate("/onboarding");
+      } else {
+        navigate("/app");
+      }
     }
-  }, [user, navigate]);
+  }, [user, isNewUser, navigate]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();

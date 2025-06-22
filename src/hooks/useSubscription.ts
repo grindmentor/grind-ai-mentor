@@ -16,6 +16,7 @@ export interface SubscriptionTier {
     progress_analyses: number;
     cut_calc_uses: number;
     workout_timer_sessions: number;
+    food_photo_analyses: number;
   };
 }
 
@@ -37,7 +38,8 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       training_programs: 1,
       progress_analyses: 1,
       cut_calc_uses: 2,
-      workout_timer_sessions: 3
+      workout_timer_sessions: 3,
+      food_photo_analyses: 2
     }
   },
   basic: {
@@ -62,22 +64,20 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       training_programs: 5,
       progress_analyses: 5,
       cut_calc_uses: 10,
-      workout_timer_sessions: 25
+      workout_timer_sessions: 25,
+      food_photo_analyses: 10
     }
   },
   premium: {
     name: 'Premium',
     price: 15,
     features: [
-      'Unlimited CoachGPT queries',
-      'Unlimited MealPlanAI generations',
-      'Unlimited Smart Food Log analyses',
-      'Unlimited TDEE calculations',
-      'Unlimited Smart Training programs',
-      '15 Progress photo analyses/month',
-      'Unlimited Habit tracking',
+      'Unlimited queries',
+      'Unlimited meal plans', 
+      'Unlimited food logging',
+      '20 photos/month',
       'Priority support',
-      'All future features included'
+      'All future features'
     ],
     limits: {
       coach_gpt_queries: -1, // -1 means unlimited
@@ -86,9 +86,10 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       tdee_calculations: -1,
       habit_checks: -1,
       training_programs: -1,
-      progress_analyses: 15, // Limited to 15 per month
+      progress_analyses: -1,
       cut_calc_uses: -1,
-      workout_timer_sessions: -1
+      workout_timer_sessions: -1,
+      food_photo_analyses: 20 // Limited to 20 per month
     }
   }
 };

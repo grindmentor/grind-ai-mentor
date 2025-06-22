@@ -1,8 +1,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { LucideIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";  
+import { LucideIcon, Settings } from "lucide-react";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface AIModule {
   id: string;
@@ -20,31 +22,67 @@ interface AIModuleCardProps {
   onModuleClick: (moduleId: string) => void;
 }
 
+const getUsageKey = (moduleId: string) => {
+  const mapping: Record<string, string> = {
+    'coach-gpt': 'coach_gpt_queries',
+    'meal-plan-ai': 'meal_plan_generations',
+    'smart-food-log': 'food_log_analyses',
+    'tdee-calculator': 'tdee_calculations',
+    'habit-tracker': 'habit_checks',
+    'smart-training': 'training_programs',
+    'progress-ai': 'progress_analyses',
+    'cut-calc-pro': 'cut_calc_uses',
+    'workout-timer': 'workout_timer_sessions',
+    'food-photo-logger': 'food_photo_analyses'
+  };
+  return mapping[moduleId];
+};
+
 const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
   const IconComponent = module.icon;
+  const { currentUsage, limits } = useUsageTracking();
+  const { currentTier } = useSubscription();
+  
+  const usageKey = getUsageKey(module.id);
+  const currentCount = currentUsage?.[usageKey as keyof typeof currentUsage] || 0;
+  const limit = limits?.[usageKey as keyof typeof limits] || 0;
+  
+  const isUnlimited = limit === -1;
+  const isPremium = currentTier !== 'free';
   
   return (
     <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all cursor-pointer relative">
-      {module.trending && (
-        <div className="absolute -top-2 -right-2">
-          <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs">
-            🔥 Trending
-          </Badge>
-        </div>
-      )}
       <CardHeader className="pb-3">
-        <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 ${module.color} rounded-lg flex items-center justify-center text-white`}>
-            <IconComponent className="w-6 h-6" />
-          </div>
-          <div className="flex-1">
-            <CardTitle className="text-white text-lg">{module.name}</CardTitle>
-            <div className="flex items-center space-x-2 mt-1">
-              <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
-                Free Access
-              </Badge>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className={`w-10 h-10 ${module.color} rounded-lg flex items-center justify-center text-white`}>
+              <IconComponent className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-white text-lg">{module.name}</CardTitle>
+              <div className="flex items-center space-x-2 mt-1">
+                <Badge className={`text-xs ${isPremium ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}`}>
+                  {isPremium ? 'Premium' : 'Free'}
+                </Badge>
+                {usageKey && (
+                  <Badge variant="outline" className="text-xs">
+                    {isUnlimited ? 'Unlimited' : `${currentCount}/${limit} left`}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Handle settings for this module
+            }}
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="pt-0">

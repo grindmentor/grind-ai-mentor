@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Dumbbell, Target, TrendingUp, Clock, Users, Star, Check, Brain, Calculator, Utensils, Camera, Heart, Timer } from "lucide-react";
@@ -26,6 +25,45 @@ const Index = () => {
   if (!loading && user) {
     return null;
   }
+
+  const featuredAIModules = [
+    {
+      title: "CoachGPT",
+      description: "24/7 AI fitness coaching with research citations and personalized guidance.",
+      icon: Brain,
+      color: "bg-blue-500"
+    },
+    {
+      title: "MealPlanAI", 
+      description: "Custom meal plans and nutrition guidance optimized for your goals.",
+      icon: Utensils,
+      color: "bg-green-500"
+    },
+    {
+      title: "Smart Training",
+      description: "AI-generated personalized weight training programs.",
+      icon: Dumbbell,
+      color: "bg-red-500"
+    },
+    {
+      title: "ProgressAI",
+      description: "AI photo analysis and body composition tracking.",
+      icon: Camera,
+      color: "bg-purple-500"
+    },
+    {
+      title: "TDEE Calculator",
+      description: "Calculate metabolic needs and muscle potential with advanced algorithms.",
+      icon: Calculator,
+      color: "bg-indigo-500"
+    },
+    {
+      title: "Smart Food Log",
+      description: "Photo-based food tracking and analysis with intelligent insights.",
+      icon: Camera,
+      color: "bg-yellow-500"
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -64,114 +102,36 @@ const Index = () => {
         </div>
       </section>
 
-      {/* AI Modules Showcase */}
+      {/* Featured AI Modules */}
       <section className="py-20 bg-gray-950/50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              AI-Powered Fitness Modules
+              Most Powerful AI Fitness Tools
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Access cutting-edge AI tools designed by fitness experts and backed by scientific research
+              Access our most popular AI tools designed by fitness experts and backed by scientific research
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white">
-                    <Brain className="w-6 h-6" />
+            {featuredAIModules.map((module, index) => (
+              <Card key={index} className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-12 h-12 ${module.color} rounded-lg flex items-center justify-center text-white`}>
+                      <module.icon className="w-6 h-6" />
+                    </div>
+                    <CardTitle className="text-white text-xl">{module.title}</CardTitle>
                   </div>
-                  <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-400 text-base">
-                  24/7 AI fitness coaching with research citations and personalized guidance for every fitness goal.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center text-white">
-                    <Calculator className="w-6 h-6" />
-                  </div>
-                  <CardTitle className="text-white text-xl">TDEE Calculator</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-400 text-base">
-                  Calculate metabolic needs and muscle potential with advanced algorithms based on latest research.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center text-white">
-                    <Utensils className="w-6 h-6" />
-                  </div>
-                  <CardTitle className="text-white text-xl">MealPlanAI</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-400 text-base">
-                  Custom meal plans and nutrition guidance optimized for your goals and dietary preferences.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center text-white">
-                    <Camera className="w-6 h-6" />
-                  </div>
-                  <CardTitle className="text-white text-xl">ProgressAI</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-400 text-base">
-                  AI photo analysis and body composition tracking to monitor your transformation journey.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center text-white">
-                    <Heart className="w-6 h-6" />
-                  </div>
-                  <CardTitle className="text-white text-xl">CardioAI</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-400 text-base">
-                  Science-based cardiovascular training programs tailored to your fitness level and goals.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center text-white">
-                    <Timer className="w-6 h-6" />
-                  </div>
-                  <CardTitle className="text-white text-xl">Workout Timer</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-gray-400 text-base">
-                  Smart rest periods and workout timing based on exercise science and your training intensity.
-                </CardDescription>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-gray-400 text-base">
+                    {module.description}
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

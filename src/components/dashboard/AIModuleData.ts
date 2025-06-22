@@ -13,6 +13,16 @@ import HabitTracker from "../ai-modules/HabitTracker";
 import RecoveryCoach from "../ai-modules/RecoveryCoach";
 import ProgressiveOverloadAI from "../ai-modules/ProgressiveOverloadAI";
 
+// Most useful AIs for front page display
+export const featuredModules = [
+  'coach-gpt',
+  'meal-plan-ai', 
+  'smart-training',
+  'progress-ai',
+  'tdee-calculator',
+  'smart-food-log'
+];
+
 export const aiModules = [
   {
     id: 'coach-gpt',
@@ -25,28 +35,6 @@ export const aiModules = [
     buttonText: 'Get Coaching'
   },
   {
-    id: 'progressive-overload',
-    name: 'Progressive Overload AI',
-    description: 'Track strength progress with intelligent suggestions',
-    icon: TrendingUp,
-    color: 'bg-gradient-to-r from-blue-500 to-purple-600',
-    component: ProgressiveOverloadAI,
-    tier: 'free',
-    trending: true,
-    buttonText: 'Track Progress'
-  },
-  {
-    id: 'recovery-coach',
-    name: 'Recovery Coach',
-    description: 'Sleep optimization and recovery protocols',
-    icon: Moon,
-    color: 'bg-indigo-500',
-    component: RecoveryCoach,
-    tier: 'free',
-    trending: true,
-    buttonText: 'Optimize Recovery'
-  },
-  {
     id: 'meal-plan-ai',
     name: 'MealPlanAI',
     description: 'Custom meal plans and nutrition guidance',
@@ -55,37 +43,6 @@ export const aiModules = [
     component: MealPlanAI,
     tier: 'free',
     buttonText: 'Create Meal Plan'
-  },
-  {
-    id: 'smart-food-log',
-    name: 'Smart Food Log',
-    description: 'Photo-based food tracking and analysis',
-    icon: FileImage,
-    color: 'bg-yellow-500',
-    component: SmartFoodLog,
-    tier: 'free',
-    buttonText: 'Track Food'
-  },
-  {
-    id: 'tdee-calculator',
-    name: 'TDEE & FFMI Calculator',
-    description: 'Calculate metabolic needs and muscle potential',
-    icon: Calculator,
-    color: 'bg-indigo-500',
-    component: TDEECalculator,
-    tier: 'free',
-    buttonText: 'Calculate TDEE'
-  },
-  {
-    id: 'habit-tracker',
-    name: 'Habit Tracker',
-    description: 'Build consistent fitness and wellness habits',
-    icon: Target,
-    color: 'bg-gradient-to-r from-green-500 to-blue-500',
-    component: HabitTracker,
-    tier: 'free',
-    trending: true,
-    buttonText: 'Track Habits'
   },
   {
     id: 'smart-training',
@@ -98,17 +55,6 @@ export const aiModules = [
     buttonText: 'Build Workout'
   },
   {
-    id: 'cardio-ai',
-    name: 'CardioAI',
-    description: 'Science-based cardiovascular training programs',
-    icon: Heart,
-    color: 'bg-red-600',
-    component: CardioAI,
-    tier: 'free',
-    trending: true,
-    buttonText: 'Plan Cardio'
-  },
-  {
     id: 'progress-ai',
     name: 'ProgressAI',
     description: 'AI photo analysis & body composition tracking',
@@ -116,8 +62,67 @@ export const aiModules = [
     color: 'bg-purple-500',
     component: ProgressAI,
     tier: 'free',
-    trending: true,
     buttonText: 'Track Progress'
+  },
+  {
+    id: 'tdee-calculator',
+    name: 'TDEE & FFMI Calculator',
+    description: 'Calculate metabolic needs and muscle potential',
+    icon: Calculator,
+    color: 'bg-indigo-500',
+    component: TDEECalculator,
+    tier: 'free',
+    buttonText: 'Calculate TDEE'
+  },
+  {
+    id: 'smart-food-log',
+    name: 'Smart Food Log',
+    description: 'Photo-based food tracking and analysis',
+    icon: FileImage,
+    color: 'bg-yellow-500',
+    component: SmartFoodLog,
+    tier: 'free',
+    buttonText: 'Track Food'
+  },
+  {
+    id: 'progressive-overload',
+    name: 'Progressive Overload AI',
+    description: 'Track strength progress with intelligent suggestions',
+    icon: TrendingUp,
+    color: 'bg-gradient-to-r from-blue-500 to-purple-600',
+    component: ProgressiveOverloadAI,
+    tier: 'free',
+    buttonText: 'Track Progress'
+  },
+  {
+    id: 'recovery-coach',
+    name: 'Recovery Coach',
+    description: 'Sleep optimization and recovery protocols',
+    icon: Moon,
+    color: 'bg-indigo-500',
+    component: RecoveryCoach,
+    tier: 'free',
+    buttonText: 'Optimize Recovery'
+  },
+  {
+    id: 'habit-tracker',
+    name: 'Habit Tracker',
+    description: 'Build consistent fitness and wellness habits',
+    icon: Target,
+    color: 'bg-gradient-to-r from-green-500 to-blue-500',
+    component: HabitTracker,
+    tier: 'free',
+    buttonText: 'Track Habits'
+  },
+  {
+    id: 'cardio-ai',
+    name: 'CardioAI',
+    description: 'Science-based cardiovascular training programs',
+    icon: Heart,
+    color: 'bg-red-600',
+    component: CardioAI,
+    tier: 'free',
+    buttonText: 'Plan Cardio'
   },
   {
     id: 'cut-calc-pro',

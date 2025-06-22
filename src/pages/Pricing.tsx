@@ -115,7 +115,7 @@ const Pricing = () => {
 
         <div className="text-center mt-12 space-y-4">
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
-            <span>✓ 30-day money-back guarantee</span>
+            <span>✓ No refunds policy</span>
             <span>✓ Secure payment processing</span>
             <span>✓ Cancel anytime</span>
           </div>

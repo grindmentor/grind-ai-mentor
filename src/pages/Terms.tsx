@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, FileText, AlertTriangle, Shield, Gavel, Users, Zap } from "lucide-react";
@@ -129,12 +128,17 @@ const Terms = () => {
               <CardTitle className="text-white">Subscription & Billing</CardTitle>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                <p className="font-semibold text-red-400 mb-2">NO REFUND POLICY:</p>
+                <p className="text-sm">All payments are final and non-refundable. We do not offer refunds, returns, or credits for any subscription fees, regardless of usage or satisfaction. Please consider your purchase carefully before subscribing.</p>
+              </div>
               <ul className="space-y-2">
                 <li>• Free and premium subscription tiers available</li>
                 <li>• Premium subscriptions auto-renew unless cancelled</li>
-                <li>• Refunds handled on a case-by-case basis</li>
-                <li>• We reserve the right to modify pricing with notice</li>
-                <li>• Cancellation can be done anytime through account settings</li>
+                <li>• All sales are final - no refunds will be provided</li>
+                <li>• We reserve the right to modify pricing with advance notice</li>
+                <li>• Cancellation can be done anytime to prevent future charges</li>
+                <li>• Cancelled subscriptions remain active until the end of the billing period</li>
               </ul>
             </CardContent>
           </Card>

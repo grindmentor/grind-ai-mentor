@@ -47,7 +47,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     // Validate height input based on unit
     let hasValidHeight = false;
     if (formData.heightUnit === 'ft-in') {
-      hasValidHeight = formData.heightFeet && formData.heightInches;
+      hasValidHeight = !!(formData.heightFeet && formData.heightInches);
     } else {
       hasValidHeight = !!formData.height;
     }
@@ -119,7 +119,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     }, 2000);
   };
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const updateFormData = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -158,7 +158,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-white">Weight Unit</Label>
-                  <Select value={formData.weightUnit} onValueChange={(value) => handleInputChange('weightUnit', value)}>
+                  <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => updateFormData('weightUnit', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -170,7 +170,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white">Height Unit</Label>
-                  <Select value={formData.heightUnit} onValueChange={(value) => handleInputChange('heightUnit', value)}>
+                  <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => updateFormData('heightUnit', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -191,7 +191,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                     type="number"
                     placeholder={formData.weightUnit === 'kg' ? '80' : '180'}
                     value={formData.weight}
-                    onChange={(e) => handleInputChange('weight', e.target.value)}
+                    onChange={(e) => updateFormData('weight', e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
@@ -204,7 +204,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                         type="number"
                         placeholder="5"
                         value={formData.heightFeet}
-                        onChange={(e) => handleInputChange('heightFeet', e.target.value)}
+                        onChange={(e) => updateFormData('heightFeet', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white"
                       />
                       <span className="text-white text-sm self-center">ft</span>
@@ -212,7 +212,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                         type="number"
                         placeholder="10"
                         value={formData.heightInches}
-                        onChange={(e) => handleInputChange('heightInches', e.target.value)}
+                        onChange={(e) => updateFormData('heightInches', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white"
                       />
                       <span className="text-white text-sm self-center">in</span>
@@ -226,7 +226,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                       type="number"
                       placeholder={formData.heightUnit === 'cm' ? '175' : '70'}
                       value={formData.height}
-                      onChange={(e) => handleInputChange('height', e.target.value)}
+                      onChange={(e) => updateFormData('height', e.target.value)}
                       className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
@@ -240,36 +240,38 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                   type="number"
                   placeholder="25"
                   value={formData.age}
-                  onChange={(e) => handleInputChange('age', e.target.value)}
+                  onChange={(e) => updateFormData('age', e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
               </div>
               
               <div className="space-y-2">
                 <Label className="text-white">Gender</Label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2"
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
+                <Select value={formData.gender} onValueChange={(value) => updateFormData('gender', value)}>
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
                 <Label className="text-white">Activity Level</Label>
-                <select
-                  value={formData.activityLevel}
-                  onChange={(e) => handleInputChange('activityLevel', e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2"
-                >
-                  <option value="sedentary">Sedentary (desk job)</option>
-                  <option value="light">Lightly active (1-3 days/week)</option>
-                  <option value="moderate">Moderately active (3-5 days/week)</option>
-                  <option value="active">Very active (6-7 days/week)</option>
-                  <option value="very_active">Extremely active (2x/day)</option>
-                </select>
+                <Select value={formData.activityLevel} onValueChange={(value) => updateFormData('activityLevel', value)}>
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="sedentary">Sedentary (desk job)</SelectItem>
+                    <SelectItem value="light">Lightly active (1-3 days/week)</SelectItem>
+                    <SelectItem value="moderate">Moderately active (3-5 days/week)</SelectItem>
+                    <SelectItem value="active">Very active (6-7 days/week)</SelectItem>
+                    <SelectItem value="very_active">Extremely active (2x/day)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <Button 

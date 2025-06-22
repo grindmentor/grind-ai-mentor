@@ -50,7 +50,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     // Validate height input based on unit
     let hasValidHeight = false;
     if (formData.heightUnit === 'ft-in') {
-      hasValidHeight = formData.heightFeet && formData.heightInches;
+      hasValidHeight = !!(formData.heightFeet && formData.heightInches);
     } else {
       hasValidHeight = !!formData.height;
     }
@@ -157,7 +157,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     });
   };
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const updateFormData = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -218,7 +218,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-white">Weight Unit</Label>
-                  <Select value={formData.weightUnit} onValueChange={(value) => handleInputChange('weightUnit', value)}>
+                  <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => updateFormData('weightUnit', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -230,7 +230,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white">Height Unit</Label>
-                  <Select value={formData.heightUnit} onValueChange={(value) => handleInputChange('heightUnit', value)}>
+                  <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => updateFormData('heightUnit', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -251,7 +251,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                     type="number"
                     placeholder={formData.weightUnit === 'kg' ? '80' : '180'}
                     value={formData.weight}
-                    onChange={(e) => handleInputChange('weight', e.target.value)}
+                    onChange={(e) => updateFormData('weight', e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
@@ -264,7 +264,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                         type="number"
                         placeholder="5"
                         value={formData.heightFeet}
-                        onChange={(e) => handleInputChange('heightFeet', e.target.value)}
+                        onChange={(e) => updateFormData('heightFeet', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white"
                       />
                       <span className="text-white text-sm self-center">ft</span>
@@ -272,7 +272,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                         type="number"
                         placeholder="10"
                         value={formData.heightInches}
-                        onChange={(e) => handleInputChange('heightInches', e.target.value)}
+                        onChange={(e)=>{updateFormData('heightInches', e.target.value)}}
                         className="bg-gray-800 border-gray-700 text-white"
                       />
                       <span className="text-white text-sm self-center">in</span>
@@ -286,7 +286,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                       type="number"
                       placeholder={formData.heightUnit === 'cm' ? '175' : '70'}
                       value={formData.height}
-                      onChange={(e) => handleInputChange('height', e.target.value)}
+                      onChange={(e) => updateFormData('height', e.target.value)}
                       className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
@@ -301,13 +301,13 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                     type="number"
                     placeholder="25"
                     value={formData.age}
-                    onChange={(e) => handleInputChange('age', e.target.value)}
+                    onChange={(e) => updateFormData('age', e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-white">Gender</Label>
-                  <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                  <Select value={formData.gender} onValueChange={(value) => updateFormData('gender', value)}>
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -321,7 +321,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
               
               <div className="space-y-2">
                 <Label className="text-white">Activity Level</Label>
-                <Select value={formData.activityLevel} onValueChange={(value) => handleInputChange('activityLevel', value)}>
+                <Select value={formData.activityLevel} onValueChange={(value) => updateFormData('activityLevel', value)}>
                   <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                     <SelectValue />
                   </SelectTrigger>
@@ -342,7 +342,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                   type="number"
                   placeholder="15"
                   value={formData.bodyFat}
-                  onChange={(e) => handleInputChange('bodyFat', e.target.value)}
+                  onChange={(e) => updateFormData('bodyFat', e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
               </div>

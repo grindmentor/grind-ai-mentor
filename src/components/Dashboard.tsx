@@ -1,202 +1,256 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Utensils, Dumbbell, Camera, TrendingUp, Calculator } from "lucide-react";
-import { useState } from "react";
-import MealPlanAI from "./ai-modules/MealPlanAI";
+import { Brain, Calculator, TrendingUp, Camera, Utensils, Dumbbell, Timer, FileImage, CreditCard, Target } from "lucide-react";
 import CoachGPT from "./ai-modules/CoachGPT";
-import SmartTraining from "./ai-modules/SmartTraining";
-import CutCalcPro from "./ai-modules/CutCalcPro";
-import SmartFoodLog from "./ai-modules/SmartFoodLog";
 import TDEECalculator from "./ai-modules/TDEECalculator";
+import CutCalcPro from "./ai-modules/CutCalcPro";
+import ProgressAI from "./ai-modules/ProgressAI";
+import MealPlanAI from "./ai-modules/MealPlanAI";
+import SmartTraining from "./ai-modules/SmartTraining";
+import WorkoutTimer from "./ai-modules/WorkoutTimer";
+import SmartFoodLog from "./ai-modules/SmartFoodLog";
+import HabitTracker from "./ai-modules/HabitTracker";
+import PaymentMethods from "./PaymentMethods";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
 
-  // Mock subscription tier - in real app this would come from auth context
-  const subscriptionTier = "free"; // "free", "basic", "premium"
-
-  const modules = [
+  const aiModules = [
     {
-      id: "coach-gpt",
-      title: "CoachGPT",
-      description: "24/7 AI coaching with research citations (5 prompts free)",
-      icon: Brain,
-      color: "bg-blue-500",
-      features: ["Research-backed advice", "Study citations", "Personalized guidance"],
+      id: 'coach-gpt',
+      name: 'CoachGPT',
+      description: '24/7 AI fitness coaching with research citations',
+      icon: <Brain className="w-6 h-6" />,
+      color: 'bg-blue-500',
       component: CoachGPT,
-      requiredTier: "free"
+      tier: 'basic'
     },
     {
-      id: "meal-plan",
-      title: "MealPlanAI",
-      description: "Science-backed personalized nutrition plans (5 prompts free)",
-      icon: Utensils,
-      color: "bg-green-500",
-      features: ["Evidence-based macros", "Budget optimization", "Dietary restrictions"],
+      id: 'meal-plan-ai',
+      name: 'MealPlanAI',
+      description: 'Custom meal plans and nutrition guidance',
+      icon: <Utensils className="w-6 h-6" />,
+      color: 'bg-green-500',
       component: MealPlanAI,
-      requiredTier: "free"
+      tier: 'basic'
     },
     {
-      id: "food-log",
-      title: "Smart Food Log",
-      description: "AI-powered nutrition tracking (3 prompts free)",
-      icon: Camera,
-      color: "bg-yellow-500",
-      features: ["Photo recognition", "Accurate portions", "Database validation"],
+      id: 'smart-food-log',
+      name: 'Smart Food Log',
+      description: 'Photo-based food tracking and analysis',
+      icon: <FileImage className="w-6 h-6" />,
+      color: 'bg-yellow-500',
       component: SmartFoodLog,
-      requiredTier: "free"
+      tier: 'basic'
     },
     {
-      id: "tdee-calc",
-      title: "TDEE & FFMI Calculator",
-      description: "Calculate metabolic needs & muscle mass potential (3 prompts free)",
-      icon: Calculator,
-      color: "bg-indigo-500",
-      features: ["TDEE calculation", "FFMI analysis", "Body composition estimates"],
+      id: 'tdee-calculator',
+      name: 'TDEE & FFMI Calculator',
+      description: 'Calculate metabolic needs and muscle potential',
+      icon: <Calculator className="w-6 h-6" />,
+      color: 'bg-indigo-500',
       component: TDEECalculator,
-      requiredTier: "free"
+      tier: 'basic'
     },
     {
-      id: "training",
-      title: "Smart Training",
-      description: "Programs based on exercise science",
-      icon: Dumbbell,
-      color: "bg-purple-500",
-      features: ["Periodization principles", "Progressive overload", "Recovery optimization"],
+      id: 'habit-tracker',
+      name: 'Habit Tracker',
+      description: 'Build consistent fitness and wellness habits',
+      icon: <Target className="w-6 h-6" />,
+      color: 'bg-gradient-to-r from-green-500 to-blue-500',
+      component: HabitTracker,
+      tier: 'basic',
+      trending: true
+    },
+    {
+      id: 'smart-training',
+      name: 'Smart Training',
+      description: 'AI-generated personalized training programs',
+      icon: <Dumbbell className="w-6 h-6" />,
+      color: 'bg-red-500',
       component: SmartTraining,
-      requiredTier: "basic"
+      tier: 'premium'
     },
     {
-      id: "progress",
-      title: "CutCalc Pro",
-      description: "Body composition analysis",
-      icon: TrendingUp,
-      color: "bg-pink-500",
-      features: ["Visual tracking", "Body fat estimation", "Phase recommendations"],
+      id: 'progress-ai',
+      name: 'ProgressAI',
+      description: 'AI photo analysis & body composition tracking',
+      icon: <Camera className="w-6 h-6" />,
+      color: 'bg-purple-500',
+      component: ProgressAI,
+      tier: 'premium',
+      trending: true
+    },
+    {
+      id: 'cut-calc-pro',
+      name: 'CutCalc Pro',
+      description: 'Advanced body composition & cutting calculator',
+      icon: <TrendingUp className="w-6 h-6" />,
+      color: 'bg-pink-500',
       component: CutCalcPro,
-      requiredTier: "premium"
+      tier: 'premium'
+    },
+    {
+      id: 'workout-timer',
+      name: 'Workout Timer',
+      description: 'Smart rest periods and workout timing',
+      icon: <Timer className="w-6 h-6" />,
+      color: 'bg-teal-500',
+      component: WorkoutTimer,
+      tier: 'premium'
     }
   ];
 
-  const isModuleAccessible = (requiredTier: string) => {
-    if (requiredTier === "free") return true;
-    if (subscriptionTier === "free") return false;
-    if (subscriptionTier === "premium") return true;
-    if (subscriptionTier === "basic" && (requiredTier === "basic" || requiredTier === "free")) return true;
-    return false;
+  const handleModuleClick = (moduleId: string) => {
+    setActiveModule(moduleId);
   };
 
-  // If a module is active, render its component
+  const handleBack = () => {
+    setActiveModule(null);
+    setSelectedPlan(null);
+  };
+
+  const handleUpgrade = (planName: string, price: number) => {
+    setSelectedPlan({ name: planName, price: price });
+  };
+
+  const handlePaymentSuccess = () => {
+    setSelectedPlan(null);
+    alert('Payment successful! You now have access to all premium features.');
+  };
+
+  if (selectedPlan) {
+    return (
+      <div className="min-h-screen bg-black text-white p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center space-x-4 mb-8">
+            <Button variant="ghost" onClick={handleBack} className="text-white hover:bg-gray-800">
+              ← Back to Dashboard
+            </Button>
+            <h1 className="text-3xl font-bold text-white">Complete Your Purchase</h1>
+          </div>
+
+          <PaymentMethods
+            planName={selectedPlan.name}
+            amount={selectedPlan.price}
+            onSuccess={handlePaymentSuccess}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (activeModule) {
-    const module = modules.find(m => m.id === activeModule);
+    const module = aiModules.find(m => m.id === activeModule);
     if (module) {
       const ModuleComponent = module.component;
-      return <ModuleComponent onBack={() => setActiveModule(null)} />;
+      return <ModuleComponent onBack={handleBack} />;
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Your AI Fitness Dashboard</h1>
-        <p className="text-gray-400">All responses are backed by scientific research and peer-reviewed studies</p>
-        <Badge className="mt-2 bg-orange-500/20 text-orange-400 border-orange-500/30">
-          Science-Backed AI
-        </Badge>
-      </div>
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-white mb-4">
+            AI Fitness Dashboard
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Choose from our science-backed AI modules to optimize your fitness journey
+          </p>
+          <Badge className="mt-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+            All recommendations backed by peer-reviewed research
+          </Badge>
+        </div>
 
-      {subscriptionTier === "free" && (
-        <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Unlock Unlimited AI Access</h3>
-            <p className="text-gray-300 mb-4">
-              Get unlimited prompts and access to advanced training programs and analysis tools
-            </p>
-            <Button 
-              onClick={() => window.open('/pricing', '_blank')}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              View Pricing Plans
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {modules.map((module) => {
-          const isAccessible = isModuleAccessible(module.requiredTier);
-          
-          return (
-            <Card key={module.id} className={`bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group cursor-pointer ${
-              !isAccessible ? 'opacity-60' : ''
-            }`}>
-              <CardHeader>
-                <div className={`w-12 h-12 ${module.color} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <module.icon className="w-6 h-6 text-white" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+          {aiModules.map((module) => (
+            <Card key={module.id} className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all cursor-pointer relative">
+              {module.trending && (
+                <div className="absolute -top-2 -right-2">
+                  <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs">
+                    🔥 Trending
+                  </Badge>
                 </div>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white text-xl">{module.title}</CardTitle>
-                  {module.requiredTier !== "free" && (
-                    <Badge variant="outline" className="text-orange-400 border-orange-400">
-                      {module.requiredTier === "premium" ? "Premium" : "Basic"}
-                    </Badge>
-                  )}
+              )}
+              <CardHeader className="pb-3">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 ${module.color} rounded-lg flex items-center justify-center text-white`}>
+                    {module.icon}
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-white text-lg">{module.name}</CardTitle>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Badge className={`text-xs ${
+                        module.tier === 'basic' 
+                          ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                          : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                      }`}>
+                        {module.tier === 'basic' ? 'Basic' : 'Premium'}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-                <CardDescription className="text-gray-400">
+              </CardHeader>
+              <CardContent className="pt-0">
+                <CardDescription className="text-gray-400 text-sm mb-4">
                   {module.description}
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-gray-400 text-sm mb-4">
-                  {module.features.map((feature, index) => (
-                    <li key={index} className="flex items-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button 
-                  onClick={() => {
-                    if (isAccessible) {
-                      setActiveModule(module.id);
-                    } else {
-                      window.open('/pricing', '_blank');
-                    }
-                  }}
-                  className={`w-full ${
-                    isAccessible 
-                      ? 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700'
-                      : 'bg-gray-600 hover:bg-gray-500'
-                  }`}
-                >
-                  {isAccessible ? `Launch ${module.title}` : 'Upgrade to Access'}
-                </Button>
+                {module.tier === 'premium' ? (
+                  <div className="space-y-2">
+                    <Button 
+                      onClick={() => handleUpgrade('Premium', 15)}
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-sm"
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Upgrade for $15/mo
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={() => handleModuleClick(module.id)}
+                    className="w-full bg-gray-700 hover:bg-gray-600 text-white"
+                  >
+                    Open Module
+                  </Button>
+                )}
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
 
-      <Card className="bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-white">Scientific Backing</CardTitle>
-          <CardDescription className="text-gray-400">
-            Our AI responses are grounded in evidence-based research
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-gray-300">
-          <p>
-            Every recommendation, meal plan, and training program is backed by peer-reviewed studies 
-            and scientific literature. Our AI includes citations and research references to ensure 
-            you receive the most accurate and effective fitness guidance available.
-          </p>
-        </CardContent>
-      </Card>
+        {/* Quick upgrade section */}
+        <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-white mb-2">Unlock All Premium Features</h3>
+              <p className="text-gray-300 mb-6">
+                Get unlimited access to all AI modules, advanced analytics, and priority support
+              </p>
+              <div className="flex justify-center space-x-4">
+                <Button 
+                  onClick={() => handleUpgrade('Basic', 10)}
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
+                >
+                  Basic Plan - $10/mo
+                </Button>
+                <Button 
+                  onClick={() => handleUpgrade('Premium', 15)}
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                >
+                  Premium Plan - $15/mo
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
 
 export default Dashboard;
-

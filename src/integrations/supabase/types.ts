@@ -407,6 +407,45 @@ export type Database = {
         }
         Relationships: []
       }
+      progressive_overload_entries: {
+        Row: {
+          created_at: string
+          exercise_name: string
+          id: string
+          notes: string | null
+          reps: number
+          rpe: number | null
+          sets: number
+          user_id: string
+          weight: number
+          workout_date: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_name: string
+          id?: string
+          notes?: string | null
+          reps: number
+          rpe?: number | null
+          sets: number
+          user_id: string
+          weight: number
+          workout_date?: string
+        }
+        Update: {
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          notes?: string | null
+          reps?: number
+          rpe?: number | null
+          sets?: number
+          user_id?: string
+          weight?: number
+          workout_date?: string
+        }
+        Relationships: []
+      }
       recovery_data: {
         Row: {
           created_at: string

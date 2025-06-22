@@ -78,7 +78,7 @@ const ProgressiveOverloadAI = () => {
         .limit(50);
 
       if (error) throw error;
-      setExercises((data || []) as ExerciseEntry[]);
+      setExercises(data || []);
     } catch (error) {
       console.error('Error loading exercise history:', error);
       showErrorToast('Error', 'Failed to load exercise history');

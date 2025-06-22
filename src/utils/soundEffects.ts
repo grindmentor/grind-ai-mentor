@@ -117,4 +117,36 @@ export class SoundEffects {
       console.log('Sound playback not available');
     }
   }
+
+  // Warning sound for warnings
+  static playWarning() {
+    if (!this.isEnabled) return;
+    
+    try {
+      const ctx = this.getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(350, ctx.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.2);
+    } catch (error) {
+      console.log('Sound playback not available');
+    }
+  }
 }
+
+// Export individual functions for convenience
+export const playSuccessSound = () => SoundEffects.playSuccess();
+export const playClickSound = () => SoundEffects.playClick();
+export const playErrorSound = () => SoundEffects.playError();
+export const playNotificationSound = () => SoundEffects.playNotification();
+export const playWarningSound = () => SoundEffects.playWarning();

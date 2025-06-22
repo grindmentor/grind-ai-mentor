@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Dumbbell, Target, TrendingUp, Clock, Users, Star, Check } from "lucide-react";
+import { ArrowRight, Dumbbell, Target, TrendingUp, Clock, Users, Star, Check, Brain, Calculator, Utensils, Camera, Heart, Timer } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { SoundButton } from "@/components/SoundButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,7 +29,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section - Removed background image for minimalistic look */}
+      {/* Hero Section */}
       <section className="relative py-24 md:py-32 lg:py-40 bg-gradient-to-b from-gray-900/50 to-black">
         <div className="container mx-auto text-center px-6">
           {/* Logo */}
@@ -64,8 +64,120 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* AI Modules Showcase */}
       <section className="py-20 bg-gray-950/50">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              AI-Powered Fitness Modules
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Access cutting-edge AI tools designed by fitness experts and backed by scientific research
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white">
+                    <Brain className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400 text-base">
+                  24/7 AI fitness coaching with research citations and personalized guidance for every fitness goal.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center text-white">
+                    <Calculator className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="text-white text-xl">TDEE Calculator</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400 text-base">
+                  Calculate metabolic needs and muscle potential with advanced algorithms based on latest research.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center text-white">
+                    <Utensils className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="text-white text-xl">MealPlanAI</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400 text-base">
+                  Custom meal plans and nutrition guidance optimized for your goals and dietary preferences.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center text-white">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="text-white text-xl">ProgressAI</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400 text-base">
+                  AI photo analysis and body composition tracking to monitor your transformation journey.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center text-white">
+                    <Heart className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="text-white text-xl">CardioAI</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400 text-base">
+                  Science-based cardiovascular training programs tailored to your fitness level and goals.
+                </CardDescription>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center text-white">
+                    <Timer className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="text-white text-xl">Workout Timer</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-gray-400 text-base">
+                  Smart rest periods and workout timing based on exercise science and your training intensity.
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-black">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -176,15 +288,15 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-black">
+      {/* Science-Based Facts Section */}
+      <section className="py-20 bg-gray-950/50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Real Results, Real People
+              Built on Scientific Evidence
             </h2>
             <p className="text-gray-400 text-lg">
-              See what our community has achieved with science-based training
+              Our AI recommendations are based on peer-reviewed research and proven methodologies
             </p>
           </div>
           
@@ -192,20 +304,20 @@ const Index = () => {
             <Card className="bg-gray-900/80 border-gray-800">
               <CardContent className="p-8">
                 <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg">
-                    M
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-lg">Mike Chen</p>
-                    <p className="text-gray-400">Software Engineer</p>
+                    <p className="text-white font-semibold text-lg">Progressive Overload</p>
+                    <p className="text-gray-400">Scientific Principle</p>
                   </div>
                 </div>
                 <p className="text-gray-300 text-lg leading-relaxed mb-4">
-                  "Lost 25 pounds in 12 weeks while gaining muscle. The AI recommendations are incredibly accurate and the science behind every suggestion builds real confidence."
+                  Our training algorithms follow the principle of progressive overload, gradually increasing training stimulus to maximize muscle growth and strength gains based on exercise science research.
                 </p>
                 <div className="flex items-center space-x-2">
                   <Check className="w-5 h-5 text-green-400" />
-                  <span className="text-green-400 font-medium">Verified Transformation</span>
+                  <span className="text-green-400 font-medium">Research-Backed Method</span>
                 </div>
               </CardContent>
             </Card>
@@ -213,20 +325,62 @@ const Index = () => {
             <Card className="bg-gray-900/80 border-gray-800">
               <CardContent className="p-8">
                 <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-lg">
-                    S
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-lg">Sarah Johnson</p>
-                    <p className="text-gray-400">Marketing Director</p>
+                    <p className="text-white font-semibold text-lg">Caloric Balance</p>
+                    <p className="text-gray-400">Nutrition Science</p>
                   </div>
                 </div>
                 <p className="text-gray-300 text-lg leading-relaxed mb-4">
-                  "Finally found a system that fits my busy schedule. The efficiency of the workouts and meal plans is unmatched. Best investment I've made in my health."
+                  Our meal planning AI uses thermodynamics and metabolic research to create precise caloric and macronutrient targets for optimal body composition changes.
                 </p>
                 <div className="flex items-center space-x-2">
                   <Check className="w-5 h-5 text-green-400" />
-                  <span className="text-green-400 font-medium">Verified Transformation</span>
+                  <span className="text-green-400 font-medium">Evidence-Based Nutrition</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800">
+              <CardContent className="p-8">
+                <div className="flex items-start space-x-4 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-lg">Recovery Optimization</p>
+                    <p className="text-gray-400">Sports Science</p>
+                  </div>
+                </div>
+                <p className="text-gray-300 text-lg leading-relaxed mb-4">
+                  Rest periods, sleep recommendations, and recovery protocols are based on exercise physiology research to maximize adaptation and prevent overtraining.
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Check className="w-5 h-5 text-green-400" />
+                  <span className="text-green-400 font-medium">Scientifically Optimized</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800">
+              <CardContent className="p-8">
+                <div className="flex items-start space-x-4 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-lg">Individualization</p>
+                    <p className="text-gray-400">Personalized Approach</p>
+                  </div>
+                </div>
+                <p className="text-gray-300 text-lg leading-relaxed mb-4">
+                  Our AI considers individual differences in genetics, training history, and lifestyle factors to create truly personalized fitness and nutrition recommendations.
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Check className="w-5 h-5 text-green-400" />
+                  <span className="text-green-400 font-medium">Tailored to You</span>
                 </div>
               </CardContent>
             </Card>

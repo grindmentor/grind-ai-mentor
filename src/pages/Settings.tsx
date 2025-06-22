@@ -14,6 +14,8 @@ import UnitPreferences from "@/components/settings/UnitPreferences";
 import AppPreferences from "@/components/settings/AppPreferences";
 import BasicInformation from "@/components/settings/BasicInformation";
 import FitnessProfile from "@/components/settings/FitnessProfile";
+import DisplayNameSection from "@/components/settings/DisplayNameSection";
+import SubscriptionManager from "@/components/subscription/SubscriptionManager";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -29,7 +31,8 @@ const Settings = () => {
     activity: '',
     goal: '',
     heightFeet: '',
-    heightInches: ''
+    heightInches: '',
+    displayName: ''
   });
 
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
@@ -97,7 +100,8 @@ const Settings = () => {
         activity: data.activity || '',
         goal: data.goal || '',
         heightFeet: '',
-        heightInches: ''
+        heightInches: '',
+        displayName: data.display_name || ''
       });
     }
   };
@@ -266,6 +270,13 @@ const Settings = () => {
         </Badge>
 
         <div className="grid lg:grid-cols-2 gap-6">
+          <DisplayNameSection 
+            displayName={profile.displayName}
+            onDisplayNameChange={(value) => handleInputChange('displayName', value)}
+          />
+
+          <SubscriptionManager />
+
           <UnitPreferences 
             preferences={preferences} 
             onPreferenceChange={handlePreferenceChange} 

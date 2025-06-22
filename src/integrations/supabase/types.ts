@@ -253,6 +253,7 @@ export type Database = {
           activity: string | null
           birthday: string | null
           created_at: string
+          display_name: string | null
           email: string
           experience: string | null
           goal: string | null
@@ -265,6 +266,7 @@ export type Database = {
           activity?: string | null
           birthday?: string | null
           created_at?: string
+          display_name?: string | null
           email: string
           experience?: string | null
           goal?: string | null
@@ -277,6 +279,7 @@ export type Database = {
           activity?: string | null
           birthday?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string
           experience?: string | null
           goal?: string | null

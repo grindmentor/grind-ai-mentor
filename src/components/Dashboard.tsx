@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import PaymentMethods from "./PaymentMethods";
 import DashboardHeader from "./dashboard/DashboardHeader";
 import AIModuleCard from "./dashboard/AIModuleCard";
-import UpgradeSection from "./dashboard/UpgradeSection";
 import { aiModules } from "./dashboard/AIModuleData";
 import { ArrowLeft } from "lucide-react";
 
@@ -27,7 +26,6 @@ const Dashboard = () => {
 
   const handlePaymentSuccess = () => {
     setSelectedPlan(null);
-    // Show success toast or modal
     console.log('Payment successful! Premium features unlocked.');
   };
 
@@ -70,7 +68,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto">
         <DashboardHeader />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8 md:mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {aiModules.map((module) => (
             <AIModuleCard
               key={module.id}
@@ -79,8 +77,6 @@ const Dashboard = () => {
             />
           ))}
         </div>
-
-        <UpgradeSection />
       </div>
     </div>
   );

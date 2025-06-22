@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +58,6 @@ const Settings = () => {
     }
   }, [profile.birthday]);
 
-  // Apply dark mode
   useEffect(() => {
     if (preferences.dark_mode) {
       document.documentElement.classList.add('dark');
@@ -68,7 +66,6 @@ const Settings = () => {
     }
   }, [preferences.dark_mode]);
 
-  // Update height display when unit changes
   useEffect(() => {
     if (profile.height && preferences.height_unit === 'ft-in') {
       const heightInInches = parseFloat(profile.height);
@@ -118,37 +115,11 @@ const Settings = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const savePreferences = async () => {
-    if (!user) return;
-
-    try {
-      const { error } = await (supabase as any)
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          weight_unit: preferences.weight_unit,
-          height_unit: preferences.height_unit,
-          notifications: preferences.notifications,
-          email_updates: preferences.email_updates,
-          dark_mode: preferences.dark_mode
-        });
-
-      if (error) {
-        console.error('Error saving preferences:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-      throw error;
-    }
-  };
-
   const handleSave = async () => {
     if (!user) return;
     setIsLoading(true);
 
     try {
-      // Convert height to inches if using feet+inches
       let finalHeight = profile.height;
       if (preferences.height_unit === 'ft-in' && profile.heightFeet && profile.heightInches) {
         const feet = parseInt(profile.heightFeet) || 0;
@@ -156,7 +127,6 @@ const Settings = () => {
         finalHeight = convertFeetAndInchesToInches(feet, inches).toString();
       }
 
-      // Prepare profile data with proper validation - ensure numbers are valid
       const profileData: any = {
         weight: null,
         birthday: profile.birthday || null,
@@ -167,19 +137,16 @@ const Settings = () => {
         display_name: profile.displayName || null
       };
 
-      // Only set weight if it's a valid number
       if (profile.weight && !isNaN(parseFloat(profile.weight)) && parseFloat(profile.weight) > 0) {
         profileData.weight = parseFloat(profile.weight);
       }
 
-      // Only set height if it's a valid number
       if (finalHeight && !isNaN(parseFloat(finalHeight)) && parseFloat(finalHeight) > 0) {
         profileData.height = parseFloat(finalHeight);
       }
 
       console.log('Saving profile data:', profileData);
 
-      // Try to update first, if no rows affected, insert
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
@@ -187,7 +154,6 @@ const Settings = () => {
         .single();
 
       if (existingProfile) {
-        // Update existing profile
         const { error: profileError } = await supabase
           .from('profiles')
           .update(profileData)
@@ -198,7 +164,6 @@ const Settings = () => {
           throw profileError;
         }
       } else {
-        // Insert new profile
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -213,12 +178,9 @@ const Settings = () => {
         }
       }
 
-      // Save preferences
-      await savePreferences();
-
       toast({
         title: "Settings saved successfully!",
-        description: "Your profile and preferences have been updated.",
+        description: "Your profile has been updated.",
       });
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -230,10 +192,6 @@ const Settings = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handlePreferenceChange = (field: keyof typeof preferences, value: any) => {
-    updatePreferences({ [field]: value });
   };
 
   const handleSignOut = async () => {
@@ -327,7 +285,7 @@ const Settings = () => {
         </div>
 
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-          Changes will be applied to all AI recommendations
+          Unit preferences are saved automatically
         </Badge>
 
         <div className="grid lg:grid-cols-2 gap-6">
@@ -340,12 +298,12 @@ const Settings = () => {
 
           <UnitPreferences 
             preferences={preferences} 
-            onPreferenceChange={handlePreferenceChange} 
+            onPreferenceChange={updatePreferences} 
           />
 
           <AppPreferences 
             preferences={preferences} 
-            onPreferenceChange={handlePreferenceChange} 
+            onPreferenceChange={updatePreferences} 
           />
 
           <BasicInformation 
@@ -374,7 +332,7 @@ const Settings = () => {
               soundType="success"
             >
               <Save className="w-4 h-4 mr-2" />
-              {isLoading ? 'Saving...' : 'Save Settings'}
+              {isLoading ? 'Saving...' : 'Save Profile'}
             </SoundButton>
           </CardContent>
         </Card>

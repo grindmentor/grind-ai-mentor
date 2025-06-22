@@ -6,7 +6,7 @@ import { UserPreferences } from '@/types/userPreferences';
 
 interface PreferencesContextType {
   preferences: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
-  updatePreferences: (newPreferences: Partial<Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => void;
+  updatePreferences: (newPreferences: Partial<Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -59,8 +59,32 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const updatePreferences = (newPreferences: Partial<typeof preferences>) => {
-    setPreferences(prev => ({ ...prev, ...newPreferences }));
+  const updatePreferences = async (newPreferences: Partial<typeof preferences>) => {
+    if (!user) return;
+
+    // Update local state immediately
+    const updatedPreferences = { ...preferences, ...newPreferences };
+    setPreferences(updatedPreferences);
+
+    // Save to database
+    try {
+      const { error } = await (supabase as any)
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          ...updatedPreferences
+        });
+
+      if (error) {
+        console.error('Error saving preferences:', error);
+        // Revert local state on error
+        setPreferences(preferences);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      throw error;
+    }
   };
 
   return (

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +54,7 @@ const Index = () => {
           </Link>
           <Link to="/app">
             <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800 px-8 py-4 text-lg">
-              View Demo
+              Learn More
             </Button>
           </Link>
         </div>
@@ -308,7 +307,7 @@ const Index = () => {
                 </li>
               </ul>
               <Link to="/app">
-                <Button className="w-full bg-gray-700 hover:bg-gray-600">
+                <Button className="w-full bg-gray-700 hover:bg-gray-600 text-white">
                   Start Free
                 </Button>
               </Link>
@@ -316,7 +315,7 @@ const Index = () => {
           </Card>
 
           {/* Premium Tier */}
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-orange-500/50 relative">
+          <Card className="bg-gray-900 border-orange-500/50 relative">
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
               <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-1">
                 MOST POPULAR
@@ -330,7 +329,7 @@ const Index = () => {
               <p className="text-gray-400 mt-2">For serious lifters</p>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-gray-300 mb-6">
+              <ul className="space-y-3 text-white mb-6">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-3" />
                   Unlimited AI meal plans
@@ -357,7 +356,7 @@ const Index = () => {
                 </li>
               </ul>
               <Link to="/app">
-                <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+                <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
                   Start Premium Trial
                 </Button>
               </Link>
@@ -381,11 +380,6 @@ const Index = () => {
               <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-4 text-lg">
                 Start Your Journey
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/app">
-              <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800 px-8 py-4 text-lg">
-                Watch Demo
               </Button>
             </Link>
           </div>

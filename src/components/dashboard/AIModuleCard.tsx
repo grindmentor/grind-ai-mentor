@@ -2,12 +2,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LucideIcon } from "lucide-react";
 
 interface AIModule {
   id: string;
   name: string;
   description: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   color: string;
   tier: string;
   trending?: boolean;
@@ -20,6 +21,8 @@ interface AIModuleCardProps {
 }
 
 const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
+  const IconComponent = module.icon;
+  
   return (
     <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all cursor-pointer relative">
       {module.trending && (
@@ -32,7 +35,7 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
       <CardHeader className="pb-3">
         <div className="flex items-center space-x-3">
           <div className={`w-10 h-10 ${module.color} rounded-lg flex items-center justify-center text-white`}>
-            {module.icon}
+            <IconComponent className="w-6 h-6" />
           </div>
           <div className="flex-1">
             <CardTitle className="text-white text-lg">{module.name}</CardTitle>

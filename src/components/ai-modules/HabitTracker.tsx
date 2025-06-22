@@ -68,6 +68,7 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
           const streak = await calculateStreak(habit.id);
           return {
             ...habit,
+            category: habit.category as 'fitness' | 'nutrition' | 'recovery' | 'mindset',
             completed_today: completedHabitIds.has(habit.id),
             streak
           };

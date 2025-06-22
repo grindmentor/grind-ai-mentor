@@ -1,9 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, ArrowRight, Zap, Brain, Camera, TrendingUp, Utensils, Dumbbell, Users, Target, BarChart3 } from "lucide-react";
+import { Check, Star, ArrowRight, Zap, Brain, Camera, TrendingUp, Utensils, Dumbbell, Users, Target, BarChart3, Sparkles, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SoundButton } from "@/components/SoundButton";
 
 const Index = () => {
   return (
@@ -18,30 +18,31 @@ const Index = () => {
         </div>
         <div className="flex items-center space-x-4">
           <Link to="/signin">
-            <Button variant="ghost" className="text-white hover:bg-gray-800">
+            <SoundButton variant="ghost" className="text-white hover:bg-gray-800">
               Sign In
-            </Button>
+            </SoundButton>
           </Link>
           <Link to="/signin">
-            <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+            <SoundButton className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 hover:scale-105 transition-all">
               Get Started
-            </Button>
+              <Sparkles className="ml-2 w-4 h-4" />
+            </SoundButton>
           </Link>
         </div>
       </nav>
 
-      {/* Hero Section with Better Image */}
+      {/* Hero Section */}
       <section className="container mx-auto px-6 py-16 text-center">
-        <Badge className="mb-6 bg-orange-500/20 text-orange-400 border-orange-500/30">
+        <Badge className="mb-6 bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse">
           🤖 AI-Powered Fitness Coaching
         </Badge>
         
         {/* Hero Image */}
         <div className="mb-8 flex justify-center">
-          <div className="w-64 h-40 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-2xl border border-orange-500/30 flex items-center justify-center relative overflow-hidden">
+          <div className="w-64 h-40 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-2xl border border-orange-500/30 flex items-center justify-center relative overflow-hidden hover:scale-105 transition-transform">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-600/10"></div>
             <div className="relative z-10 text-center">
-              <Dumbbell className="w-16 h-16 text-orange-500 mx-auto mb-2" />
+              <Dumbbell className="w-16 h-16 text-orange-500 mx-auto mb-2 animate-pulse" />
               <Brain className="w-8 h-8 text-orange-400 mx-auto" />
             </div>
           </div>
@@ -60,15 +61,21 @@ const Index = () => {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Link to="/signin">
-            <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-4 text-lg">
+            <SoundButton 
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-4 text-lg hover:scale-105 transition-all"
+              soundType="success"
+            >
               Get Started
               <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+            </SoundButton>
           </Link>
           <Link to="/about">
-            <Button variant="outline" className="border-gray-600 text-black bg-white hover:bg-gray-100 px-8 py-4 text-lg">
+            <SoundButton 
+              variant="outline" 
+              className="border-gray-600 text-black bg-white hover:bg-gray-100 px-8 py-4 text-lg hover:scale-105 transition-all"
+            >
               Learn More
-            </Button>
+            </SoundButton>
           </Link>
         </div>
 
@@ -83,15 +90,15 @@ const Index = () => {
 
         {/* Updated Social Proof */}
         <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-gray-400">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 hover:text-orange-400 transition-colors">
             <Brain className="w-5 h-5" />
             <span>Science-Backed AI Responses</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 hover:text-orange-400 transition-colors">
             <Target className="w-5 h-5" />
             <span>Personalized Training Programs</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 hover:text-orange-400 transition-colors">
             <BarChart3 className="w-5 h-5" />
             <span>Advanced Progress Tracking</span>
           </div>
@@ -112,7 +119,7 @@ const Index = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* MealPlanAI */}
-          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group">
+          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Utensils className="w-6 h-6 text-white" />
@@ -141,7 +148,7 @@ const Index = () => {
           </Card>
 
           {/* CoachGPT */}
-          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group">
+          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Brain className="w-6 h-6 text-white" />
@@ -170,7 +177,7 @@ const Index = () => {
           </Card>
 
           {/* Training Programs */}
-          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group">
+          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Dumbbell className="w-6 h-6 text-white" />
@@ -199,7 +206,7 @@ const Index = () => {
           </Card>
 
           {/* CutCalc */}
-          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group">
+          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 bg-pink-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <TrendingUp className="w-6 h-6 text-white" />
@@ -228,7 +235,7 @@ const Index = () => {
           </Card>
 
           {/* Food Tracking */}
-          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group">
+          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Camera className="w-6 h-6 text-white" />
@@ -257,7 +264,7 @@ const Index = () => {
           </Card>
 
           {/* Premium Features */}
-          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group">
+          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Zap className="w-6 h-6 text-white" />
@@ -280,6 +287,35 @@ const Index = () => {
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2" />
                   Advanced analytics
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Progressive Overload Tracker */}
+          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
+            <CardHeader>
+              <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Trophy className="w-6 h-6 text-white" />
+              </div>
+              <CardTitle className="text-white text-xl">Progressive Overload</CardTitle>
+              <CardDescription className="text-gray-400">
+                Smart strength tracking with AI suggestions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li className="flex items-center">
+                  <Check className="w-4 h-4 text-green-500 mr-2" />
+                  Automatic progression tracking
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-4 h-4 text-green-500 mr-2" />
+                  Smart load recommendations
+                </li>
+                <li className="flex items-center">
+                  <Check className="w-4 h-4 text-green-500 mr-2" />
+                  Available to all users
                 </li>
               </ul>
             </CardContent>

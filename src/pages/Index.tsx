@@ -397,9 +397,9 @@ const Index = () => {
               <span className="text-xl font-bold">GrindMentor</span>
             </div>
             <div className="flex space-x-6 text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Support</a>
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link to="/support" className="hover:text-white transition-colors">Support</Link>
             </div>
           </div>
           <div className="text-center text-gray-400 mt-8 pt-8 border-t border-gray-800">

@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, ArrowLeft, Send, BookOpen } from "lucide-react";
-import { useState } from "react";
+import { MessageSquare, ArrowLeft, Send, BookOpen, ImagePlus, X } from "lucide-react";
+import { useState, useRef } from "react";
 
 interface AIAssistantProps {
   onBack: () => void;
@@ -13,10 +13,14 @@ interface AIAssistantProps {
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  image?: string;
 }
 
 const AIAssistant = ({ onBack }: AIAssistantProps) => {
   const [input, setInput] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -29,36 +33,72 @@ const AIAssistant = ({ onBack }: AIAssistantProps) => {
 • Recovery and sleep optimization
 • Injury prevention
 • Fat loss and muscle building strategies
+• Progress photo analysis
 
 **Special Features:**
 ✅ All answers backed by peer-reviewed research
 ✅ Study citations included when relevant
 ✅ Personalized advice based on your profile
 ✅ Safe, evidence-based recommendations
+✅ Progress photo analysis and feedback
 
-Ask me anything about fitness, nutrition, or health!`
+Ask me anything about fitness, nutrition, or health! You can also upload progress photos for analysis.`
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() && !selectedImage) return;
 
-    const userMessage = input;
+    const userMessage = input || "Please analyze this image";
+    const messageWithImage: Message = {
+      role: 'user',
+      content: userMessage,
+      image: imagePreview || undefined
+    };
+
     setInput("");
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    removeImage();
+    setMessages(prev => [...prev, messageWithImage]);
     setIsLoading(true);
 
     // Simulate AI response with scientific backing
     setTimeout(() => {
       const responses = [
-        `Great question about "${userMessage}"! Based on current scientific literature:
+        `Great question about "${userMessage}"! ${selectedImage ? 'Looking at your progress photo, ' : ''}Based on current scientific literature:
 
 **Key Research Findings:**
 The latest meta-analysis by Rodriguez et al. (2023) in the Journal of Sports Medicine found that [specific finding related to your question]. This builds on earlier work by Thompson & Smith (2022) who demonstrated [related finding].
 
-**Practical Application:**
+${selectedImage ? `**Photo Analysis:**
+Based on your progress photo, I can see:
+• Body composition appears to be [assessment]
+• Muscle definition suggests [observation]
+• Consider focusing on [specific recommendation]
+• Progress tracking shows [trend analysis]
+
+` : ''}**Practical Application:**
 1. [Specific actionable advice based on research]
 2. [Additional recommendation with scientific basis]
 3. [Safety consideration from literature]
@@ -68,16 +108,23 @@ The latest meta-analysis by Rodriguez et al. (2023) in the Journal of Sports Med
 • Thompson, K. & Smith, J. (2022). "Effects of [relevant intervention]." International Journal of Exercise Science, 15(2), 67-89.
 
 **Bottom Line:**
-Based on this research, I recommend [clear, actionable advice]. Remember to consult with healthcare professionals for personalized medical advice.
+Based on this research${selectedImage ? ' and your progress photo' : ''}, I recommend [clear, actionable advice]. Remember to consult with healthcare professionals for personalized medical advice.
 
 Would you like me to explain any of these studies in more detail?`,
 
-        `Excellent question! The science shows:
+        `Excellent question! ${selectedImage ? 'Analyzing your progress photo along with ' : ''}The science shows:
 
 **Research Summary:**
 A recent systematic review in Sports Science Review (Chen et al., 2023) analyzed 32 studies and found that [specific finding]. The effect size was moderate to large (Cohen's d = 0.72), indicating practical significance.
 
-**What This Means for You:**
+${selectedImage ? `**Visual Assessment:**
+From your progress photo:
+• Current body composition: [assessment]
+• Muscle symmetry and development: [observation]
+• Areas of strength: [positive feedback]
+• Opportunities for improvement: [constructive feedback]
+
+` : ''}**What This Means for You:**
 Based on your profile and this research:
 • [Personalized recommendation 1]
 • [Personalized recommendation 2]  
@@ -141,6 +188,9 @@ Need clarification on any aspect of this research?`
         <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
           Study citations included
         </Badge>
+        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+          Progress photo analysis
+        </Badge>
       </div>
 
       <div className="grid gap-6">
@@ -148,7 +198,7 @@ Need clarification on any aspect of this research?`
           <CardHeader>
             <CardTitle className="text-white">Chat with AI Assistant</CardTitle>
             <CardDescription className="text-gray-400">
-              Get evidence-based answers to your fitness and nutrition questions
+              Get evidence-based answers to your fitness and nutrition questions. Upload progress photos for analysis.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -160,6 +210,13 @@ Need clarification on any aspect of this research?`
                       ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' 
                       : 'bg-gray-700 text-gray-100'
                   }`}>
+                    {message.image && (
+                      <img 
+                        src={message.image} 
+                        alt="Progress photo" 
+                        className="w-full max-w-xs rounded-lg mb-2"
+                      />
+                    )}
                     <pre className="whitespace-pre-wrap text-sm font-sans">{message.content}</pre>
                   </div>
                 </div>
@@ -175,16 +232,44 @@ Need clarification on any aspect of this research?`
               )}
             </div>
             
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="relative inline-block">
+                <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+                <button
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="flex space-x-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+              >
+                <ImagePlus className="w-4 h-4" />
+              </Button>
               <Input
-                placeholder="Ask about training, nutrition, supplements, recovery..."
+                placeholder="Ask about training, nutrition, supplements, recovery... or upload a progress photo"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white flex-1"
               />
               <Button 
                 type="submit" 
-                disabled={!input.trim() || isLoading}
+                disabled={(!input.trim() && !selectedImage) || isLoading}
                 className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
               >
                 <Send className="w-4 h-4" />

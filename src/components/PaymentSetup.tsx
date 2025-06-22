@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface PaymentSetupProps {
   onUpgrade?: () => void;
@@ -11,11 +12,14 @@ interface PaymentSetupProps {
 
 const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleUpgrade = async () => {
     setIsLoading(true);
     
-    // Redirect to pricing page
+    // Navigate to pricing page
+    navigate('/pricing');
+    
     setTimeout(() => {
       setIsLoading(false);
       if (onUpgrade) onUpgrade();
@@ -23,7 +27,7 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
   };
 
   return (
-    <Card className="bg-gray-900 border-orange-500/30">
+    <Card className="bg-gray-900 border-orange-500/30 cursor-pointer hover:border-orange-400/50 transition-colors" onClick={handleUpgrade}>
       <CardHeader className="text-center">
         <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-4">
           <Zap className="w-6 h-6 text-white" />
@@ -52,7 +56,7 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
                 <h3 className="text-white font-medium">Premium Plan</h3>
                 <Zap className="w-4 h-4 text-yellow-500" />
               </div>
-              <p className="text-sm text-gray-400">Unlimited usage</p>
+              <p className="text-sm text-gray-400">Unlimited most features, limited progress analysis</p>
             </div>
             <div className="text-right">
               <div className="text-lg font-bold text-white">$15</div>
@@ -80,12 +84,15 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-            Progress photo analysis
+            Progress photo analysis (15/month premium)
           </div>
         </div>
 
         <Button 
-          onClick={handleUpgrade}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleUpgrade();
+          }}
           disabled={isLoading}
           className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
         >

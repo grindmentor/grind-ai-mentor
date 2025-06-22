@@ -85,24 +85,31 @@ const Settings = () => {
   const loadProfile = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-    if (data && !error) {
-      setProfile({
-        weight: data.weight?.toString() || '',
-        birthday: data.birthday || '',
-        height: data.height?.toString() || '',
-        experience: data.experience || '',
-        activity: data.activity || '',
-        goal: data.goal || '',
-        heightFeet: '',
-        heightInches: '',
-        displayName: data.display_name || ''
-      });
+      if (data) {
+        console.log('Loaded profile data:', data);
+        setProfile({
+          weight: data.weight?.toString() || '',
+          birthday: data.birthday || '',
+          height: data.height?.toString() || '',
+          experience: data.experience || '',
+          activity: data.activity || '',
+          goal: data.goal || '',
+          heightFeet: '',
+          heightInches: '',
+          displayName: data.display_name || ''
+        });
+      } else if (error) {
+        console.error('Error loading profile:', error);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
     }
   };
 
@@ -149,20 +156,28 @@ const Settings = () => {
         ).toString();
       }
 
-      // Save profile
+      // Save profile with all fields
+      const profileData = {
+        weight: profile.weight ? parseInt(profile.weight) : null,
+        birthday: profile.birthday || null,
+        height: finalHeight ? parseInt(finalHeight) : null,
+        experience: profile.experience || null,
+        activity: profile.activity || null,
+        goal: profile.goal || null,
+        display_name: profile.displayName || null
+      };
+
+      console.log('Saving profile data:', profileData);
+
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
-          weight: profile.weight ? parseInt(profile.weight) : null,
-          birthday: profile.birthday || null,
-          height: finalHeight ? parseInt(finalHeight) : null,
-          experience: profile.experience || null,
-          activity: profile.activity || null,
-          goal: profile.goal || null
-        })
+        .update(profileData)
         .eq('id', user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile save error:', profileError);
+        throw profileError;
+      }
 
       // Save preferences
       await savePreferences();

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,7 +74,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       'Unlimited Smart Food Log analyses',
       'Unlimited TDEE calculations',
       'Unlimited Smart Training programs',
-      '15 Progress photo analyses',
+      '15 Progress photo analyses/month',
       'Unlimited Habit tracking',
       'Priority support',
       'All future features included'
@@ -87,7 +86,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       tdee_calculations: -1,
       habit_checks: -1,
       training_programs: -1,
-      progress_analyses: 15,
+      progress_analyses: 15, // Limited to 15 per month
       cut_calc_uses: -1,
       workout_timer_sessions: -1
     }

@@ -590,6 +590,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          dark_mode: boolean | null
+          email_updates: boolean | null
+          height_unit: string | null
+          id: string
+          notifications: boolean | null
+          updated_at: string
+          user_id: string
+          weight_unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          dark_mode?: boolean | null
+          email_updates?: boolean | null
+          height_unit?: string | null
+          id?: string
+          notifications?: boolean | null
+          updated_at?: string
+          user_id: string
+          weight_unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          dark_mode?: boolean | null
+          email_updates?: boolean | null
+          height_unit?: string | null
+          id?: string
+          notifications?: boolean | null
+          updated_at?: string
+          user_id?: string
+          weight_unit?: string | null
+        }
+        Relationships: []
+      }
       user_usage: {
         Row: {
           coach_gpt_queries: number | null

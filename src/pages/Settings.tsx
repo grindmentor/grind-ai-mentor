@@ -16,6 +16,7 @@ import BasicInformation from "@/components/settings/BasicInformation";
 import FitnessProfile from "@/components/settings/FitnessProfile";
 import DisplayNameSection from "@/components/settings/DisplayNameSection";
 import SubscriptionManager from "@/components/subscription/SubscriptionManager";
+import { SoundButton } from "@/components/SoundButton";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -121,7 +122,8 @@ const Settings = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Use any type to bypass TypeScript errors until types are regenerated
+      const { error } = await (supabase as any)
         .from('user_preferences')
         .upsert({
           user_id: user.id,
@@ -286,10 +288,15 @@ const Settings = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate('/app')} className="hover:bg-accent">
+            <SoundButton 
+              variant="ghost" 
+              onClick={() => navigate('/app')} 
+              className="hover:bg-accent"
+              soundType="click"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
-            </Button>
+            </SoundButton>
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
                 <SettingsIcon className="w-6 h-6" />
@@ -300,9 +307,14 @@ const Settings = () => {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="border-border hover:bg-accent text-foreground">
+          <SoundButton 
+            variant="outline" 
+            onClick={handleSignOut} 
+            className="border-border hover:bg-accent text-foreground"
+            soundType="click"
+          >
             Sign Out
-          </Button>
+          </SoundButton>
         </div>
 
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
@@ -346,14 +358,15 @@ const Settings = () => {
 
         <Card className="bg-card border-border">
           <CardContent className="pt-6">
-            <Button 
+            <SoundButton 
               onClick={handleSave}
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+              soundType="success"
             >
               <Save className="w-4 h-4 mr-2" />
               {isLoading ? 'Saving...' : 'Save Settings'}
-            </Button>
+            </SoundButton>
           </CardContent>
         </Card>
       </div>

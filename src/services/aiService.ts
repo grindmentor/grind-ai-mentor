@@ -35,38 +35,30 @@ class AIService {
           userInput: userInput,
           formatting: `CRITICAL INSTRUCTIONS - Follow these exactly:
 
-1. FIRST, ask 3-4 specific questions about:
-   - Current experience level and training history
-   - Available equipment and gym access
-   - Time commitment per session and weekly frequency
-   - Specific goals (strength, muscle gain, fat loss, etc.)
-   - Any injuries or limitations
+1. NEVER use bold text or any formatting symbols
+2. ONLY use bullet points with • symbol
+3. Provide INSTANT, easy-to-read information
 
-2. ONLY after receiving answers, provide a detailed program using this EXACT format:
+First, ask 2-3 quick questions about:
+• Equipment available
+• Time per session 
+• Current experience level
 
-TRAINING PROGRAM GRID:
-Week 1-2: Foundation Phase
+Then provide a simple program format:
+
+WEEK 1-2:
 Day 1: Upper Body
-• Exercise 1: Sets x Reps - Rest period
-• Exercise 2: Sets x Reps - Rest period
-[Continue for all exercises]
+• Exercise 1: 3 sets x 8-10 reps
+• Exercise 2: 3 sets x 8-10 reps
 
-Day 2: Lower Body
-• Exercise 1: Sets x Reps - Rest period
-[Continue pattern]
+Day 2: Lower Body  
+• Exercise 1: 3 sets x 8-10 reps
+• Exercise 2: 3 sets x 8-10 reps
 
-3. END with a clear SUMMARY section highlighting:
-• Key program principles
-• Expected progression timeline
-• Important safety notes
-
-FORMATTING RULES:
-- Use NO bold, italic, or markdown symbols whatsoever
-- Use bullet points with • symbol only
-- Present programs in clear grid format
-- Make content easy to copy and save
-- Ask questions BEFORE giving detailed plans
-- Base all recommendations on scientific evidence`
+End with KEY POINTS:
+• Program focus
+• Expected results
+• Safety notes`
         }
       });
 
@@ -94,38 +86,30 @@ FORMATTING RULES:
           userInput: userInput,
           formatting: `CRITICAL INSTRUCTIONS - Follow these exactly:
 
-1. FIRST, ask 3-4 specific questions about:
-   - Dietary preferences and restrictions
-   - Daily calorie target and macronutrient goals
-   - Cooking skills and meal prep time available
-   - Budget considerations and food availability
-   - Current eating patterns and schedule
+1. NEVER use bold text or any formatting symbols
+2. ONLY use bullet points with • symbol  
+3. Provide INSTANT, easy-to-read information
 
-2. ONLY after receiving answers, provide a detailed meal plan using this EXACT format:
+First, ask 2-3 quick questions about:
+• Daily calorie target
+• Dietary restrictions
+• Meal prep time available
 
-MEAL PLAN GRID:
-Day 1:
+Then provide simple meal format:
+
+DAY 1:
 Breakfast:
-• Food item: Portion size - Calories, Protein, Carbs, Fat
-• Food item: Portion size - Calories, Protein, Carbs,
+• Food: Portion - Calories, Protein
+• Food: Portion - Calories, Protein
 
 Lunch:
-• Food item: Portion size - Calories, Protein, Carbs, Fat
-[Continue pattern for all meals]
+• Food: Portion - Calories, Protein
+• Food: Portion - Calories, Protein
 
-3. END with a NUTRITION SUMMARY:
-• Total daily calories
-• Macronutrient breakdown
-• Key nutritional highlights
-• Meal prep tips
-
-FORMATTING RULES:
-- Use NO bold, italic, or markdown symbols
-- Use bullet points with • symbol only
-- Present plans in structured grid format
-- Make recommendations easy to copy and save
-- Ask questions BEFORE providing detailed plans
-- Include scientific nutritional reasoning`
+End with DAILY TOTALS:
+• Total calories
+• Total protein
+• Key nutrients`
         }
       });
 
@@ -151,12 +135,11 @@ FORMATTING RULES:
         body: { 
           type: 'cardio',
           userInput: userInput,
-          formatting: `Please follow these guidelines:
-          1. Ask clarifying questions about current fitness level, preferred activities, and time availability
-          2. Present cardio programs in a structured format with duration, intensity, and progression
-          3. Use plain text only - no formatting symbols
-          4. Use bullet points with • symbol
-          5. Provide a summary with key benefits`
+          formatting: `CRITICAL INSTRUCTIONS:
+1. NEVER use bold text or formatting symbols
+2. ONLY use bullet points with • symbol
+3. Provide INSTANT, easy-to-read information
+4. Ask 2-3 quick questions then give simple program format`
         }
       });
 
@@ -183,15 +166,10 @@ FORMATTING RULES:
           type: 'coaching',
           userInput: userInput,
           formatting: `CRITICAL INSTRUCTIONS:
-
-1. FIRST, ask clarifying questions to understand the specific situation
-2. Provide structured advice with actionable steps
-3. Use NO formatting symbols - no bold, italic, or markdown
-4. Use bullet points with • symbol only
-5. Include scientific citations when relevant
-6. End with a brief summary of key recommendations
-7. Make advice easy to copy and implement
-8. Ask questions BEFORE giving detailed advice`
+1. NEVER use bold text or formatting symbols
+2. ONLY use bullet points with • symbol
+3. Provide INSTANT, easy-to-read advice
+4. Keep responses short and actionable`
         }
       });
 
@@ -218,13 +196,10 @@ FORMATTING RULES:
           type: 'recovery',
           userInput: userInput,
           formatting: `CRITICAL INSTRUCTIONS:
-
-1. Ask clarifying questions about current recovery practices and concerns
-2. Provide structured recovery recommendations
-3. Use NO formatting symbols - no bold, italic, or markdown  
-4. Use bullet points with • symbol only
-5. Provide evidence-based suggestions
-6. Ask questions BEFORE giving detailed advice`
+1. NEVER use bold text or formatting symbols
+2. ONLY use bullet points with • symbol
+3. Provide INSTANT, easy-to-read advice
+4. Keep responses short and actionable`
         }
       });
 
@@ -251,14 +226,10 @@ FORMATTING RULES:
           type: 'food_log',
           userInput: userInput,
           formatting: `CRITICAL INSTRUCTIONS:
-
-1. Ask clarifying questions about portion sizes, preparation methods, and goals
-2. Provide detailed nutritional analysis in structured format
-3. Use NO formatting symbols - no bold, italic, or markdown
-4. Use bullet points with • symbol only  
-5. Include specific recommendations for improvement
-6. Provide a summary with key insights
-7. Ask questions BEFORE providing detailed analysis`
+1. NEVER use bold text or formatting symbols
+2. ONLY use bullet points with • symbol
+3. Provide INSTANT nutritional analysis
+4. Show key metrics clearly`
         }
       });
 
@@ -275,6 +246,36 @@ FORMATTING RULES:
     } catch (error) {
       console.error('Error analyzing food log:', error);
       throw new Error('Failed to analyze food log. Please try again.');
+    }
+  }
+
+  async analyzeProgressPhoto(imageData: string, weight?: number, height?: number): Promise<{
+    bodyFat: number;
+    muscleMass: number;
+    analysis: string;
+  }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-photo', {
+        body: { 
+          image: imageData,
+          weight: weight,
+          height: height
+        }
+      });
+
+      if (error) {
+        console.error('Photo analysis error:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('No response received from photo analysis');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error analyzing photo:', error);
+      throw new Error('Failed to analyze photo. Please try again.');
     }
   }
 }

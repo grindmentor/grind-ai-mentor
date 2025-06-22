@@ -128,7 +128,7 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+      oscillator.frequency = 400;
       oscillator.frequency.setValueAtTime(350, ctx.currentTime + 0.1);
       
       gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
@@ -136,6 +136,32 @@ export class SoundEffects {
       
       oscillator.start(ctx.currentTime);
       oscillator.stop(ctx.currentTime + 0.2);
+    } catch (error) {
+      console.log('Sound playback not available');
+    }
+  }
+
+  // Swoosh sound for tab transitions
+  static playSwoosh() {
+    if (!this.isEnabled) return;
+    
+    try {
+      const ctx = this.getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      // Create swoosh effect with frequency sweep
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.3);
+      
+      gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.3);
     } catch (error) {
       console.log('Sound playback not available');
     }
@@ -148,3 +174,4 @@ export const playClickSound = () => SoundEffects.playClick();
 export const playErrorSound = () => SoundEffects.playError();
 export const playNotificationSound = () => SoundEffects.playNotification();
 export const playWarningSound = () => SoundEffects.playWarning();
+export const playSwooshSound = () => SoundEffects.playSwoosh();

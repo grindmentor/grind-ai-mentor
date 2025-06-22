@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import { SoundButton } from "@/components/SoundButton";
 
 const DashboardHeader = () => {
   const navigate = useNavigate();
@@ -32,41 +33,45 @@ const DashboardHeader = () => {
         
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-4">
-          <Button
+          <SoundButton
             variant="ghost"
             onClick={() => navigate('/notifications')}
             className="text-white hover:bg-gray-800"
+            soundType="click"
           >
             <Bell className="w-5 h-5 mr-2" />
             Notifications
-          </Button>
-          <Button
+          </SoundButton>
+          <SoundButton
             variant="ghost"
             onClick={() => navigate('/account')}
             className="text-white hover:bg-gray-800"
+            soundType="click"
           >
             <User className="w-5 h-5 mr-2" />
             Account
-          </Button>
-          <Button
+          </SoundButton>
+          <SoundButton
             variant="ghost"
             onClick={() => navigate('/settings')}
             className="text-white hover:bg-gray-800"
+            soundType="click"
           >
             <Settings className="w-5 h-5 mr-2" />
             Settings
-          </Button>
+          </SoundButton>
         </div>
 
         {/* Mobile Menu Button */}
         <div className="md:hidden">
-          <Button
+          <SoundButton
             variant="ghost"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="text-white hover:bg-gray-800"
+            soundType="click"
           >
             <Menu className="w-5 h-5" />
-          </Button>
+          </SoundButton>
         </div>
       </div>
 
@@ -74,39 +79,42 @@ const DashboardHeader = () => {
       {showMobileMenu && (
         <div className="md:hidden mt-4 p-4 bg-gray-900 rounded-lg border border-gray-800">
           <div className="flex flex-col space-y-2">
-            <Button
+            <SoundButton
               variant="ghost"
               onClick={() => {
                 navigate('/notifications');
                 setShowMobileMenu(false);
               }}
               className="text-white hover:bg-gray-800 justify-start"
+              soundType="click"
             >
               <Bell className="w-5 h-5 mr-2" />
               Notifications
-            </Button>
-            <Button
+            </SoundButton>
+            <SoundButton
               variant="ghost"
               onClick={() => {
                 navigate('/account');
                 setShowMobileMenu(false);
               }}
               className="text-white hover:bg-gray-800 justify-start"
+              soundType="click"
             >
               <User className="w-5 h-5 mr-2" />
               Account
-            </Button>
-            <Button
+            </SoundButton>
+            <SoundButton
               variant="ghost"
               onClick={() => {
                 navigate('/settings');
                 setShowMobileMenu(false);
               }}
               className="text-white hover:bg-gray-800 justify-start"
+              soundType="click"
             >
               <Settings className="w-5 h-5 mr-2" />
               Settings
-            </Button>
+            </SoundButton>
           </div>
         </div>
       )}

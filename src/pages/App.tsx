@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import PaymentSetup from "@/components/PaymentSetup";
 import Dashboard from "@/components/Dashboard";
+import { useNavigate } from "react-router-dom";
 
 const App = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -24,26 +26,25 @@ const App = () => {
           <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
             Dashboard
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
-            MealPlanAI
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
-            CoachGPT
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
-            Smart Training
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
-            Progress
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-gray-800"
+            onClick={() => navigate('/settings')}
+          >
             Settings
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-gray-800"
+            onClick={() => window.open('/pricing', '_blank')}
+          >
+            Upgrade
           </Button>
         </nav>
 
         {/* Upgrade Card */}
         <div className="mt-auto">
-          <PaymentSetup onUpgrade={() => setShowPaymentModal(true)} />
+          <PaymentSetup onUpgrade={() => window.open('/pricing', '_blank')} />
         </div>
       </div>
 

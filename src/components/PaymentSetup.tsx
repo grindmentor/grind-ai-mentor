@@ -15,12 +15,11 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
   const handleUpgrade = async () => {
     setIsLoading(true);
     
-    // Simulate payment processing
-    // In production, integrate with Stripe or your preferred payment provider
+    // Redirect to pricing page
     setTimeout(() => {
       setIsLoading(false);
       if (onUpgrade) onUpgrade();
-    }, 2000);
+    }, 500);
   };
 
   return (
@@ -36,18 +35,18 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center">
-          <div className="text-3xl font-bold text-white">
-            $10<span className="text-lg text-gray-400">/month</span>
+          <div className="text-2xl font-bold text-white">
+            Starting at $10<span className="text-sm text-gray-400">/month</span>
           </div>
           <Badge className="mt-2 bg-orange-500/20 text-orange-400 border-orange-500/30">
-            Cancel anytime
+            Two plans available
           </Badge>
         </div>
         
         <div className="space-y-2 text-sm text-gray-300">
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-            Unlimited AI meal plans & coaching
+            AI meal plans & coaching
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
@@ -55,11 +54,11 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-            Advanced progress tracking
+            TDEE & FFMI calculators
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-            Priority support
+            Advanced training programs
           </div>
         </div>
 
@@ -69,11 +68,11 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
           className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
         >
           <CreditCard className="w-4 h-4 mr-2" />
-          {isLoading ? "Processing..." : "Upgrade Now"}
+          {isLoading ? "Loading..." : "View Plans"}
         </Button>
         
         <p className="text-xs text-gray-500 text-center mt-2">
-          Ready for Stripe integration
+          Choose between Basic ($10) and Premium ($20)
         </p>
       </CardContent>
     </Card>
@@ -81,4 +80,3 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
 };
 
 export default PaymentSetup;
-

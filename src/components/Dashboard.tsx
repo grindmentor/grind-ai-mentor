@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Calculator, TrendingUp, Camera, Utensils, Dumbbell, Timer, FileImage, CreditCard, Target, Heart } from "lucide-react";
+import { Brain, Calculator, TrendingUp, Camera, Utensils, Dumbbell, Timer, FileImage, CreditCard, Target, Heart, Moon } from "lucide-react";
 import CoachGPT from "./ai-modules/CoachGPT";
 import TDEECalculator from "./ai-modules/TDEECalculator";
 import CutCalcPro from "./ai-modules/CutCalcPro";
@@ -14,6 +13,7 @@ import CardioAI from "./ai-modules/CardioAI";
 import WorkoutTimer from "./ai-modules/WorkoutTimer";
 import SmartFoodLog from "./ai-modules/SmartFoodLog";
 import HabitTracker from "./ai-modules/HabitTracker";
+import RecoveryCoach from "./ai-modules/RecoveryCoach";
 import PaymentMethods from "./PaymentMethods";
 
 const Dashboard = () => {
@@ -29,6 +29,16 @@ const Dashboard = () => {
       color: 'bg-blue-500',
       component: CoachGPT,
       tier: 'free'
+    },
+    {
+      id: 'recovery-coach',
+      name: 'Recovery Coach',
+      description: 'Sleep optimization and recovery protocols',
+      icon: <Moon className="w-6 h-6" />,
+      color: 'bg-indigo-500',
+      component: RecoveryCoach,
+      tier: 'free',
+      trending: true
     },
     {
       id: 'meal-plan-ai',

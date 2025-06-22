@@ -74,6 +74,23 @@ class AIService {
       throw new Error('Failed to get coaching advice. Please try again.');
     }
   }
+
+  async getRecoveryAdvice(userInput: string): Promise<string> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'recovery',
+          userInput: userInput
+        }
+      });
+
+      if (error) throw error;
+      return data.response;
+    } catch (error) {
+      console.error('Error getting recovery advice:', error);
+      throw new Error('Failed to get recovery advice. Please try again.');
+    }
+  }
 }
 
 export const aiService = new AIService();

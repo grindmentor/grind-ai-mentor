@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Utensils, Dumbbell, Camera, TrendingUp, Calculator, Timer } from "lucide-react";
+import { Brain, Utensils, Dumbbell, Camera, TrendingUp, Calculator } from "lucide-react";
 import { useState } from "react";
 import MealPlanAI from "./ai-modules/MealPlanAI";
 import CoachGPT from "./ai-modules/CoachGPT";
@@ -10,7 +10,6 @@ import SmartTraining from "./ai-modules/SmartTraining";
 import CutCalcPro from "./ai-modules/CutCalcPro";
 import SmartFoodLog from "./ai-modules/SmartFoodLog";
 import TDEECalculator from "./ai-modules/TDEECalculator";
-import WorkoutTimer from "./ai-modules/WorkoutTimer";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
@@ -20,54 +19,44 @@ const Dashboard = () => {
 
   const modules = [
     {
-      id: "workout-timer",
-      title: "Workout Timer",
-      description: "Basic interval and rest timer for workouts",
-      icon: Timer,
-      color: "bg-blue-500",
-      features: ["Customizable intervals", "Rest timer", "Workout logging"],
-      component: WorkoutTimer,
-      requiredTier: "free"
-    },
-    {
       id: "coach-gpt",
       title: "CoachGPT",
-      description: "24/7 AI coaching with research citations",
+      description: "24/7 AI coaching with research citations (5 prompts free)",
       icon: Brain,
       color: "bg-blue-500",
       features: ["Research-backed advice", "Study citations", "Personalized guidance"],
       component: CoachGPT,
-      requiredTier: "basic"
+      requiredTier: "free"
     },
     {
       id: "meal-plan",
       title: "MealPlanAI",
-      description: "Science-backed personalized nutrition plans",
+      description: "Science-backed personalized nutrition plans (5 prompts free)",
       icon: Utensils,
       color: "bg-green-500",
       features: ["Evidence-based macros", "Budget optimization", "Dietary restrictions"],
       component: MealPlanAI,
-      requiredTier: "basic"
+      requiredTier: "free"
     },
     {
       id: "food-log",
       title: "Smart Food Log",
-      description: "AI-powered nutrition tracking",
+      description: "AI-powered nutrition tracking (3 prompts free)",
       icon: Camera,
       color: "bg-yellow-500",
       features: ["Photo recognition", "Accurate portions", "Database validation"],
       component: SmartFoodLog,
-      requiredTier: "basic"
+      requiredTier: "free"
     },
     {
       id: "tdee-calc",
       title: "TDEE & FFMI Calculator",
-      description: "Calculate metabolic needs & muscle mass potential",
+      description: "Calculate metabolic needs & muscle mass potential (3 prompts free)",
       icon: Calculator,
       color: "bg-indigo-500",
       features: ["TDEE calculation", "FFMI analysis", "Body composition estimates"],
       component: TDEECalculator,
-      requiredTier: "basic"
+      requiredTier: "free"
     },
     {
       id: "training",
@@ -77,7 +66,7 @@ const Dashboard = () => {
       color: "bg-purple-500",
       features: ["Periodization principles", "Progressive overload", "Recovery optimization"],
       component: SmartTraining,
-      requiredTier: "premium"
+      requiredTier: "basic"
     },
     {
       id: "progress",
@@ -95,7 +84,7 @@ const Dashboard = () => {
     if (requiredTier === "free") return true;
     if (subscriptionTier === "free") return false;
     if (subscriptionTier === "premium") return true;
-    if (subscriptionTier === "basic" && requiredTier === "basic") return true;
+    if (subscriptionTier === "basic" && (requiredTier === "basic" || requiredTier === "free")) return true;
     return false;
   };
 
@@ -121,9 +110,9 @@ const Dashboard = () => {
       {subscriptionTier === "free" && (
         <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
           <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Unlock AI-Powered Fitness</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Unlock Unlimited AI Access</h3>
             <p className="text-gray-300 mb-4">
-              Get access to science-backed AI coaching, meal plans, and training programs
+              Get unlimited prompts and access to advanced training programs and analysis tools
             </p>
             <Button 
               onClick={() => window.open('/pricing', '_blank')}
@@ -149,7 +138,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white text-xl">{module.title}</CardTitle>
-                  {!isAccessible && (
+                  {module.requiredTier !== "free" && (
                     <Badge variant="outline" className="text-orange-400 border-orange-400">
                       {module.requiredTier === "premium" ? "Premium" : "Basic"}
                     </Badge>
@@ -210,3 +199,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

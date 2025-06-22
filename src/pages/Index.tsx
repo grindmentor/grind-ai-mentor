@@ -10,9 +10,9 @@ const Index = () => {
     <div className="min-h-screen bg-black text-white">
       {/* Header/Navigation */}
       <nav className="container mx-auto px-6 py-4 flex items-center justify-between border-b border-gray-800">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-            <span className="font-bold text-white text-sm">GM</span>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+            <Dumbbell className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold">GrindMentor</span>
         </div>
@@ -37,14 +37,10 @@ const Index = () => {
           🤖 AI-Powered Fitness Coaching
         </Badge>
         
-        {/* Hero Image */}
+        {/* Minimalistic Hero Image */}
         <div className="mb-8 flex justify-center">
-          <div className="w-64 h-40 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-2xl border border-orange-500/30 flex items-center justify-center relative overflow-hidden hover:scale-105 transition-transform">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-600/10"></div>
-            <div className="relative z-10 text-center">
-              <Dumbbell className="w-16 h-16 text-orange-500 mx-auto mb-2 animate-pulse" />
-              <Brain className="w-8 h-8 text-orange-400 mx-auto" />
-            </div>
+          <div className="w-32 h-32 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-orange-500/20">
+            <Dumbbell className="w-12 h-12 text-white" />
           </div>
         </div>
 
@@ -77,15 +73,6 @@ const Index = () => {
               Learn More
             </SoundButton>
           </Link>
-        </div>
-
-        {/* Legal Compliance Notice */}
-        <div className="text-center mb-8">
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 max-w-2xl mx-auto">
-            <p className="text-sm text-blue-400">
-              <strong>Important:</strong> GrindMentor provides general fitness information only. Always consult with qualified healthcare professionals before starting any fitness or nutrition program. Not intended as medical advice.
-            </p>
-          </div>
         </div>
 
         {/* Updated Social Proof */}
@@ -448,9 +435,9 @@ const Index = () => {
       <footer className="border-t border-gray-800 py-12">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                <span className="font-bold text-white text-sm">GM</span>
+                <Dumbbell className="w-4 h-4 text-white" />
               </div>
               <span className="text-xl font-bold">GrindMentor</span>
             </div>

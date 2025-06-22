@@ -51,8 +51,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    // Use the current origin as the redirect URL - this should work for both localhost and deployed versions
-    const redirectUrl = `${window.location.origin}/signin`;
+    // Use the auth callback route for email confirmations
+    const redirectUrl = `${window.location.origin}/auth/callback`;
     
     console.log('Sign up attempt with redirect URL:', redirectUrl);
     
@@ -93,7 +93,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/signin?reset=true`;
+    // Use the auth callback route for password resets
+    const redirectUrl = `${window.location.origin}/auth/callback`;
     console.log('Password reset for:', email, 'with redirect:', redirectUrl);
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {

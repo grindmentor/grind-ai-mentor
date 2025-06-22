@@ -7,6 +7,7 @@ import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import Support from './pages/Support'
 import SignIn from './pages/SignIn'
+import AuthCallback from './pages/AuthCallback'
 import App from './pages/App'
 import Settings from './pages/Settings'
 import Pricing from './pages/Pricing'
@@ -24,6 +25,7 @@ function AppRouter() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/support" element={<Support />} />
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/app" element={<App />} />
           <Route path="/settings" element={<Settings />} />

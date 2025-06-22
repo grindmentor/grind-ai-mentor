@@ -18,18 +18,12 @@ const UpgradeSection = () => {
           <p className="text-gray-300 mb-6">
             Get unlimited usage and support the development of new AI features
           </p>
-          <div className="flex justify-center space-x-4">
-            <Button 
-              onClick={() => navigate('/pricing')}
-              className="bg-gray-700 hover:bg-gray-600 text-white"
-            >
-              Basic Plan - $10/mo
-            </Button>
+          <div className="flex justify-center">
             <Button 
               onClick={() => navigate('/pricing')}
               className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
             >
-              Premium Plan - $15/mo
+              Upgrade to Premium - $15/mo
             </Button>
           </div>
         </div>

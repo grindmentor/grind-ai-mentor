@@ -19,7 +19,7 @@ export class SoundEffects {
     return this.isEnabled;
   }
 
-  // Subtle success sound for completed actions
+  // Subtle success sound - low, gentle tone
   static playSuccess() {
     if (!this.isEnabled) return;
     
@@ -31,19 +31,19 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(300, ctx.currentTime);
       
-      gainNode.gain.setValueAtTime(0.02, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      gainNode.gain.setValueAtTime(0.01, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.15);
+      oscillator.stop(ctx.currentTime + 0.1);
     } catch (error) {
       console.log('Sound playback not available');
     }
   }
 
-  // Very subtle click sound for button interactions
+  // Very subtle click sound - minimal feedback
   static playClick() {
     if (!this.isEnabled) return;
     
@@ -55,18 +55,18 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(1000, ctx.currentTime);
-      gainNode.gain.setValueAtTime(0.015, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.008, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.08);
+      oscillator.stop(ctx.currentTime + 0.05);
     } catch (error) {
       console.log('Sound playback not available');
     }
   }
 
-  // Error sound for failed actions
+  // Low error tone - non-intrusive
   static playError() {
     if (!this.isEnabled) return;
     
@@ -78,20 +78,19 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(220, ctx.currentTime); // A3
-      oscillator.frequency.setValueAtTime(196, ctx.currentTime + 0.15); // G3
+      oscillator.frequency.setValueAtTime(180, ctx.currentTime);
       
-      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.015, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
+      oscillator.stop(ctx.currentTime + 0.15);
     } catch (error) {
       console.log('Sound playback not available');
     }
   }
 
-  // Notification sound for important updates
+  // Gentle notification - barely noticeable
   static playNotification() {
     if (!this.isEnabled) return;
     
@@ -103,20 +102,19 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(440, ctx.currentTime); // A4
-      oscillator.frequency.setValueAtTime(554.37, ctx.currentTime + 0.1); // C#5
+      oscillator.frequency.setValueAtTime(350, ctx.currentTime);
       
-      gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      gainNode.gain.setValueAtTime(0.012, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.2);
+      oscillator.stop(ctx.currentTime + 0.12);
     } catch (error) {
       console.log('Sound playback not available');
     }
   }
 
-  // Warning sound for warnings
+  // Soft warning tone
   static playWarning() {
     if (!this.isEnabled) return;
     
@@ -128,20 +126,19 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
-      oscillator.frequency.setValueAtTime(350, ctx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(250, ctx.currentTime);
       
-      gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      gainNode.gain.setValueAtTime(0.015, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.2);
+      oscillator.stop(ctx.currentTime + 0.12);
     } catch (error) {
       console.log('Sound playback not available');
     }
   }
 
-  // Swoosh sound for tab transitions
+  // Subtle swoosh for transitions - low frequency sweep
   static playSwoosh() {
     if (!this.isEnabled) return;
     
@@ -153,15 +150,15 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      // Create swoosh effect with frequency sweep
-      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.3);
+      // Gentle frequency sweep - very subtle
+      oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.15);
       
-      gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.008, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
+      oscillator.stop(ctx.currentTime + 0.15);
     } catch (error) {
       console.log('Sound playback not available');
     }

@@ -81,8 +81,11 @@ const Index = () => {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
             Science-Based AI Fitness Coach
           </h1>
-          <p className="text-lg md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            Personalized meal plans & training programs to transform your physique using proven scientific methods.
+          <p className="text-lg md:text-xl text-gray-400 mb-4 max-w-2xl mx-auto">
+            Whether you're crushing PRs or just starting your fitness journey - get personalized meal plans & training programs that actually work.
+          </p>
+          <p className="text-base text-gray-500 mb-8 max-w-xl mx-auto">
+            For science-based lifters who want the data, and casual gym-goers who just want results. No BS, just gains. 💪
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
             <SoundButton 
@@ -110,7 +113,7 @@ const Index = () => {
               Most Powerful AI Fitness Tools
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Access our most popular AI tools designed by fitness experts and backed by scientific research
+              The heavy hitters - our most popular AI tools designed by fitness experts and backed by scientific research
             </p>
           </div>
           
@@ -144,7 +147,7 @@ const Index = () => {
               Unlock Your Potential with AI-Powered Coaching
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Every recommendation is backed by scientific research and tailored to your unique goals
+              Every recommendation is backed by scientific research and tailored to your unique goals - time to level up your game
             </p>
           </div>
           
@@ -160,7 +163,7 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-gray-400 text-base">
-                  AI-driven workout plans tailored to your goals, experience level, and available equipment. Every exercise is optimized for maximum results.
+                  AI-driven workout plans tailored to your goals, experience level, and available equipment. Every exercise is optimized for maximum gains.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -176,7 +179,7 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-gray-400 text-base">
-                  Science-backed nutrition plans designed to optimize your metabolism and support muscle growth or fat loss goals.
+                  Science-backed nutrition plans designed to optimize your metabolism and support muscle growth or fat loss goals. Fuel your transformation.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -192,7 +195,7 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-gray-400 text-base">
-                  Detailed analytics and insights to monitor your progress and stay motivated on your fitness journey.
+                  Detailed analytics and insights to monitor your progress and stay motivated on your fitness journey. Track those gains!
                 </CardDescription>
               </CardContent>
             </Card>
@@ -256,7 +259,7 @@ const Index = () => {
               Built on Scientific Evidence
             </h2>
             <p className="text-gray-400 text-lg">
-              Our AI recommendations are based on peer-reviewed research and proven methodologies
+              Our AI recommendations are based on peer-reviewed research and proven methodologies - no bro science here
             </p>
           </div>
           
@@ -355,7 +358,7 @@ const Index = () => {
             Ready to Start Your Transformation?
           </h2>
           <p className="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
-            Join thousands who have already transformed their lives with science-based fitness coaching.
+            Join thousands who have already transformed their lives with science-based fitness coaching. Time to get swole! 🔥
           </p>
           <SoundButton 
             onClick={() => navigate("/signin")}

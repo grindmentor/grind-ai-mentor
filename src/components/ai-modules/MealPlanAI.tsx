@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,89 +62,22 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
       return;
     }
 
-    const normalizedInput = normalizeInput(input);
-    
-    setTimeout(() => {
-      const isVegetarian = normalizedInput.includes('vegetarian') || normalizedInput.includes('plant-based');
-      const isWeightLoss = normalizedInput.includes('weight loss') || normalizedInput.includes('lose weight');
-      const isMuscleBuilding = normalizedInput.includes('muscle') || normalizedInput.includes('build') || normalizedInput.includes('bulk');
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'nutrition',
+          userInput: input
+        }
+      });
 
-      setResponse(`**EVIDENCE-BASED NUTRITION PLAN**
-
-**NUTRITIONAL FRAMEWORK**
-
-*Macronutrient Distribution*
-Based on current research, optimal macronutrient ratios support your specific goals through strategic nutrient timing and composition.
-
-*Protein Requirements*
-Research indicates protein intake should be distributed throughout the day to maximize muscle protein synthesis and metabolic benefits.
-
-**DAILY MEAL STRUCTURE**
-
-*Breakfast (7:00 AM)*
-- High-protein foundation meal to kickstart metabolism
-- Complex carbohydrates for sustained energy
-- Healthy fats for hormone production
-
-*Mid-Morning (10:00 AM)*
-- Balanced macronutrient snack
-- Focus on satiety and blood sugar stability
-
-*Lunch (1:00 PM)*
-- Complete protein source with vegetables
-- Micronutrient-dense foods for optimal health
-- Appropriate portion sizes for energy needs
-
-*Afternoon (4:00 PM)*
-- Strategic pre/post-workout nutrition timing
-- Emphasis on recovery and performance support
-
-*Dinner (7:00 PM)*
-- Balanced evening meal supporting recovery
-- Focus on sleep quality through appropriate nutrients
-- Digestive considerations for overnight fasting
-
-**NUTRITIONAL SCIENCE PRINCIPLES**
-
-*Protein Timing and Distribution*
-Research demonstrates that distributing protein intake across multiple meals optimizes muscle protein synthesis rates throughout the day.
-
-*Micronutrient Density*
-Emphasis on nutrient-dense whole foods ensures adequate vitamin and mineral intake while supporting overall health markers.
-
-*Metabolic Flexibility*
-Strategic macronutrient cycling supports the body's ability to efficiently utilize both carbohydrates and fats as fuel sources.
-
-**MEAL TIMING STRATEGIES**
-
-*Pre-Workout Nutrition*
-Consuming appropriate nutrients 1-3 hours before exercise optimizes performance and reduces muscle breakdown during training.
-
-*Post-Workout Recovery*
-The post-exercise period represents a critical window for nutrient uptake and recovery initiation.
-
-*Evening Protocols*
-Strategic evening nutrition supports sleep quality, recovery, and metabolic processes during overnight fasting periods.
-
-**HYDRATION AND SUPPLEMENTATION**
-
-*Fluid Balance*
-Adequate hydration supports all physiological processes and optimizes nutrient transport throughout the body.
-
-*Evidence-Based Supplementation*
-Only scientifically-supported supplements should be considered, with emphasis on obtaining nutrients from whole food sources.
-
-**RESEARCH CITATIONS**
-
-1. Schoenfeld, B.J., et al. (2017). "How much protein can the body use in a single meal for muscle-building? Implications for daily protein distribution." Journal of the International Society of Sports Nutrition, 15, 10.
-
-2. Helms, E.R., et al. (2014). "Evidence-based recommendations for natural bodybuilding contest preparation: nutrition and supplementation." Journal of the International Society of Sports Nutrition, 11, 20.
-
-3. Aragon, A.A., et al. (2013). "International society of sports nutrition position stand: nutrient timing." Journal of the International Society of Sports Nutrition, 10, 53.
-
-4. Phillips, S.M. & Van Loon, L.J. (2011). "Dietary protein for athletes: from requirements to optimum adaptation." Journal of Sports Sciences, 29(S1), S29-S38.`);
+      if (error) throw error;
+      setResponse(data.response);
+    } catch (error) {
+      console.error('Error generating meal plan:', error);
+      setResponse('Sorry, there was an error generating your meal plan. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (

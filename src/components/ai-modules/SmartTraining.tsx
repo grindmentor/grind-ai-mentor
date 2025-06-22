@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +6,7 @@ import { Dumbbell, ArrowLeft, Download, Play, MessageCircle } from "lucide-react
 import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SmartTrainingProps {
   onBack: () => void;
@@ -61,78 +61,22 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
     
     setIsLoading(true);
     
-    const normalizedInput = normalizeInput(input);
-    
-    // Generate response based on normalized input
-    setTimeout(() => {
-      const isBeginnerProgram = normalizedInput.includes('beginner') || normalizedInput.includes('new') || normalizedInput.includes('start');
-      const isAdvancedProgram = normalizedInput.includes('advanced') || normalizedInput.includes('experienced') || normalizedInput.includes('competition');
-      const isHomeWorkout = normalizedInput.includes('home') || normalizedInput.includes('dumbbell') || normalizedInput.includes('bodyweight');
-      
-      let programType = 'Progressive Strength';
-      if (isBeginnerProgram) programType = 'Foundation Builder';
-      if (isAdvancedProgram) programType = 'Elite Performance';
-      if (isHomeWorkout) programType = 'Home Fitness';
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'training',
+          userInput: input
+        }
+      });
 
-      setResponse(`**EVIDENCE-BASED ${programType.toUpperCase()} PROGRAM**
-
-**TRAINING STRUCTURE**
-
-*Week 1-4: Foundation Phase*
-- Focus on movement pattern mastery and progressive overload
-- Training frequency: 3-4 sessions per week
-- Rest periods: 2-3 minutes between compound movements
-
-*Week 5-8: Development Phase*
-- Increased training volume and intensity
-- Advanced exercise variations introduced
-- Systematic progression tracking
-
-**EXERCISE SELECTION**
-
-Primary Movements:
-- Compound exercises targeting multiple muscle groups
-- Progressive overload through load, volume, or intensity
-- Movement quality prioritized over maximum weight
-
-Accessory Work:
-- Targeted muscle group isolation
-- Injury prevention and muscle balance
-- Functional movement patterns
-
-**SCIENTIFIC PRINCIPLES APPLIED**
-
-*Progressive Overload*: Systematic increase in training stimulus ensures continuous adaptation. Research demonstrates that progressive overload is the primary driver of strength and muscle gains.
-
-*Periodization*: Structured variation in training variables prevents plateaus and optimizes recovery. Studies show periodized programs produce superior results compared to non-periodized approaches.
-
-*Recovery Optimization*: Adequate rest between sessions allows for protein synthesis and strength adaptations. Research indicates 48-72 hours recovery time between training the same muscle groups.
-
-**PROGRAM PROGRESSION**
-
-Week 1-2: Adaptation (70-75% intensity)
-Week 3-4: Development (75-80% intensity)
-Week 5-6: Intensification (80-85% intensity)
-Week 7: Recovery/Deload (60-65% intensity)
-
-**SAFETY CONSIDERATIONS**
-
-- Proper warm-up protocols mandatory
-- Form assessment before load progression
-- Listen to your body and adjust accordingly
-- Stop immediately if experiencing pain
-
-**RESEARCH CITATIONS**
-
-1. Schoenfeld, B.J., et al. (2017). "Dose-response relationship between weekly resistance training volume and increases in muscle mass." Journal of Sports Medicine, 47(6), 1207-1220.
-
-2. Rhea, M.R., et al. (2003). "A comparison of linear and daily undulating periodized programs." Journal of Strength and Conditioning Research, 17(3), 82-87.
-
-3. Damas, F., et al. (2018). "Early resistance training-induced increases in muscle cross-sectional area are concomitant with edema-induced muscle swelling." European Journal of Applied Physiology, 118(1), 135-147.
-
-4. Helms, E.R., et al. (2014). "Evidence-based recommendations for natural bodybuilding contest preparation." Journal of Sports Medicine, 44(3), 967-982.`);
+      if (error) throw error;
+      setResponse(data.response);
+    } catch (error) {
+      console.error('Error generating training program:', error);
+      setResponse('Sorry, there was an error generating your training program. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 2500);
+    }
   };
 
   return (

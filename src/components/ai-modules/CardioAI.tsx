@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,114 +57,22 @@ const CardioAI = ({ onBack }: CardioAIProps) => {
     
     setIsLoading(true);
     
-    const normalizedInput = normalizeInput(input);
-    
-    setTimeout(() => {
-      const isWeightLoss = normalizedInput.includes('weight') || normalizedInput.includes('fat') || normalizedInput.includes('lose');
-      const isEndurance = normalizedInput.includes('endurance') || normalizedInput.includes('marathon') || normalizedInput.includes('5k');
-      const isHiit = normalizedInput.includes('hiit') || normalizedInput.includes('high intensity') || normalizedInput.includes('interval');
-      
-      let programType = 'Cardiovascular Conditioning';
-      if (isWeightLoss) programType = 'Fat Loss Accelerator';
-      if (isEndurance) programType = 'Aerobic Base Builder';
-      if (isHiit) programType = 'High-Intensity Interval Training';
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'cardio',
+          userInput: input
+        }
+      });
 
-      setResponse(`**EVIDENCE-BASED ${programType.toUpperCase()} PROGRAM**
-
-**CARDIOVASCULAR TRAINING FRAMEWORK**
-
-*Foundation Phase (Weeks 1-4)*
-Building aerobic base and movement efficiency through progressive volume increases while maintaining appropriate heart rate zones.
-
-*Development Phase (Weeks 5-8)*
-Introducing higher intensity intervals while maintaining aerobic base development for optimal cardiovascular adaptations.
-
-**HEART RATE ZONE TRAINING**
-
-Zone 1 (50-60% HRmax): Active Recovery
-- Purpose: Enhanced recovery and fat oxidation
-- Duration: 20-45 minutes
-- Perceived exertion: Very light
-
-Zone 2 (60-70% HRmax): Aerobic Base
-- Purpose: Mitochondrial development and aerobic efficiency
-- Duration: 30-90 minutes
-- Perceived exertion: Light to moderate
-
-Zone 3 (70-80% HRmax): Aerobic Threshold
-- Purpose: Lactate clearance and aerobic power
-- Duration: 20-40 minutes
-- Perceived exertion: Moderate
-
-Zone 4 (80-90% HRmax): Lactate Threshold
-- Purpose: Anaerobic threshold improvement
-- Duration: 8-40 minutes (intervals)
-- Perceived exertion: Hard
-
-Zone 5 (90-100% HRmax): Neuromuscular Power
-- Purpose: VO2max and neuromuscular adaptations
-- Duration: 30 seconds to 8 minutes (intervals)
-- Perceived exertion: Very hard to maximal
-
-**WEEKLY TRAINING STRUCTURE**
-
-*Monday: High-Intensity Intervals*
-- Warm-up: 10 minutes Zone 1-2
-- Main set: 6 x 4 minutes Zone 4 / 2 minutes Zone 1 recovery
-- Cool-down: 10 minutes Zone 1
-
-*Wednesday: Moderate Continuous*
-- Duration: 45-60 minutes
-- Intensity: Zone 2-3 (conversational pace)
-- Focus: Aerobic base development
-
-*Friday: Tempo Training*
-- Warm-up: 15 minutes Zone 1-2
-- Main set: 20-30 minutes Zone 3-4
-- Cool-down: 10 minutes Zone 1
-
-*Saturday: Long Slow Distance*
-- Duration: 60-120 minutes
-- Intensity: Zone 1-2
-- Focus: Aerobic capacity and fat oxidation
-
-**PHYSIOLOGICAL ADAPTATIONS**
-
-*Cardiovascular System*
-Research demonstrates that structured cardiovascular training produces significant adaptations including increased stroke volume, cardiac output, and arterial compliance.
-
-*Metabolic Efficiency*
-Progressive training enhances mitochondrial density and oxidative enzyme activity, improving the body's ability to utilize both carbohydrates and fats as fuel sources.
-
-*VO2max Improvements*
-High-intensity interval training has been shown to produce 6-15% improvements in maximal oxygen uptake within 6-12 weeks of consistent training.
-
-**PROGRESSION GUIDELINES**
-
-Week 1-2: Establish base fitness (10% weekly volume increase)
-Week 3-4: Introduce intensity (maintain volume, add Zone 4 work)
-Week 5-6: Peak development (reduce volume, increase intensity)
-Week 7: Recovery (50% volume reduction)
-Week 8: Testing and reassessment
-
-**SAFETY AND MONITORING**
-
-- Use Rate of Perceived Exertion (RPE) scale 1-10
-- Monitor morning resting heart rate for overtraining
-- Hydration protocols for sessions exceeding 60 minutes
-- Stop training if experiencing chest pain, dizziness, or unusual shortness of breath
-
-**RESEARCH CITATIONS**
-
-1. Laursen, P.B. & Buchheit, M. (2019). "Science and application of high-intensity interval training." Human Kinetics.
-
-2. Seiler, S. (2010). "What is best practice for training intensity and duration distribution in endurance athletes?" International Journal of Sports Physiology and Performance, 5(3), 276-291.
-
-3. Milanović, Z., et al. (2015). "Effectiveness of high-intensity interval training (HIT) and continuous endurance training for VO2max improvements." Sports Medicine, 45(10), 1469-1481.
-
-4. Coggan, A.R. & McInnis, T.R. (2018). "Metabolic adaptations to endurance training." Exercise and Sport Sciences Reviews, 46(4), 251-259.`);
+      if (error) throw error;
+      setResponse(data.response);
+    } catch (error) {
+      console.error('Error generating cardio program:', error);
+      setResponse('Sorry, there was an error generating your cardio program. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 2500);
+    }
   };
 
   return (

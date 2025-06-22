@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,7 @@ const CoachGPT = ({ onBack }: CoachGPTProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hello! I'm CoachGPT, your 24/7 AI fitness coach. All my advice is backed by scientific research and I'll provide study citations when relevant.
+      content: `Hello! I'm CoachGPT, your 24/7 AI fitness coach powered by advanced AI. All my advice is backed by scientific research and I'll provide study citations when relevant.
 
 I can help you with:
 • General fitness advice and motivation
@@ -36,7 +35,7 @@ What would you like to know?`
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [promptsUsed, setPromptsUsed] = useState(0);
-  const maxPrompts = 5; // Free tier limit
+  const maxPrompts = 5;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,38 +47,26 @@ What would you like to know?`
     setIsLoading(true);
     setPromptsUsed(prev => prev + 1);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const response = `Based on current research, here's what the science says about "${userMessage}":
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          type: 'coaching',
+          userInput: userMessage
+        }
+      });
 
-**Key Points:**
-• Evidence-based recommendation tailored to your question
-• Practical application of scientific findings
-• Safety considerations from peer-reviewed literature
-
-**Scientific Support:**
-Research shows that [specific finding related to your question]. This is supported by multiple studies including:
-
-1. **Smith et al. (2023)** - "Exercise Science Journal"
-   - Found significant improvements in [relevant metric]
-   - Sample size: 150 participants over 12 weeks
-
-2. **Johnson & Williams (2022)** - "Sports Medicine Review" 
-   - Meta-analysis of 25 studies
-   - Confidence interval: 95%
-
-**Practical Application:**
-Based on this research, I recommend [specific actionable advice].
-
-⚠️ **Note:** For specific training programs, please use our Smart Training module. For detailed nutrition plans, use MealPlanAI.
-
-**Important Note:** Always consult healthcare professionals for personalized medical advice.
-
-Would you like me to elaborate on any specific aspect?`;
-
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      if (error) throw error;
+      
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+    } catch (error) {
+      console.error('Error getting coaching advice:', error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, I encountered an error. Please try asking your question again.' 
+      }]);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -180,4 +167,3 @@ Would you like me to elaborate on any specific aspect?`;
 };
 
 export default CoachGPT;
-

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,8 +34,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     age: '',
     gender: 'male',
     activityLevel: 'moderate',
-    weightUnit: 'lbs',
-    heightUnit: 'ft-in'
+    weightUnit: 'lbs' as 'kg' | 'lbs',
+    heightUnit: 'ft-in' as 'cm' | 'ft-in' | 'in'
   });
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);

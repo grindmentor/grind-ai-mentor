@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,8 +36,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     gender: 'male',
     activityLevel: 'moderate',
     bodyFat: '',
-    weightUnit: 'lbs',
-    heightUnit: 'ft-in'
+    weightUnit: 'lbs' as 'kg' | 'lbs',
+    heightUnit: 'ft-in' as 'cm' | 'ft-in' | 'in'
   });
   const [results, setResults] = useState<any>(null);
   const [calculationsUsed, setCalculationsUsed] = useState(0);

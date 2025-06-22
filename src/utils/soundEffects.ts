@@ -19,7 +19,7 @@ export class SoundEffects {
     return this.isEnabled;
   }
 
-  // Success sound for completed actions
+  // Subtle success sound for completed actions
   static playSuccess() {
     if (!this.isEnabled) return;
     
@@ -31,21 +31,19 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-      oscillator.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-      oscillator.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
       
-      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.02, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
+      oscillator.stop(ctx.currentTime + 0.15);
     } catch (error) {
       console.log('Sound playback not available');
     }
   }
 
-  // Click sound for button interactions
+  // Very subtle click sound for button interactions
   static playClick() {
     if (!this.isEnabled) return;
     
@@ -57,12 +55,12 @@ export class SoundEffects {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       
-      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
-      gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(1000, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.015, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
       
       oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.1);
+      oscillator.stop(ctx.currentTime + 0.08);
     } catch (error) {
       console.log('Sound playback not available');
     }

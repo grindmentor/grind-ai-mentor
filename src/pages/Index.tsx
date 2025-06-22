@@ -59,7 +59,7 @@ const Index = () => {
           <Link to="/signin">
             <SoundButton 
               className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-4 text-lg hover:scale-105 transition-all"
-              soundType="success"
+              soundType="click"
             >
               Get Started
               <ArrowRight className="ml-2 w-5 h-5" />

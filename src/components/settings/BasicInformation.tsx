@@ -34,24 +34,24 @@ const BasicInformation = ({
   getHeightDisplay
 }: BasicInformationProps) => {
   const handleHeightFeetChange = (value: string) => {
-    if (value === '' || /^\d*$/.test(value)) {
-      const numValue = parseInt(value);
-      if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 9)) {
-        onInputChange('heightFeet', value);
-      }
+    // Allow empty or valid numbers 0-9
+    if (value === '' || (/^\d+$/.test(value) && parseInt(value) >= 0 && parseInt(value) <= 9)) {
+      onInputChange('heightFeet', value);
     }
   };
 
   const handleHeightInchesChange = (value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+    // Allow empty, decimal numbers from 0 to 11.99
+    if (value === '' || (/^\d*\.?\d*$/.test(value))) {
       const numValue = parseFloat(value);
-      if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 11.99)) {
+      if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue < 12)) {
         onInputChange('heightInches', value);
       }
     }
   };
 
   const handleHeightChange = (value: string) => {
+    // Allow empty or valid decimal numbers up to 300
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       const numValue = parseFloat(value);
       if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 300)) {
@@ -61,6 +61,7 @@ const BasicInformation = ({
   };
 
   const handleWeightChange = (value: string) => {
+    // Allow empty or valid decimal numbers up to 1000
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       const numValue = parseFloat(value);
       if (value === '' || (!isNaN(numValue) && numValue >= 0 && numValue <= 1000)) {

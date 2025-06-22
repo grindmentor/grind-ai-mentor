@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, ArrowLeft, Send } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUsage } from "@/contexts/UsageContext";
 
 interface CoachGPTProps {
   onBack: () => void;
@@ -16,6 +18,7 @@ interface Message {
 }
 
 const CoachGPT = ({ onBack }: CoachGPTProps) => {
+  const { coachGptQueries, incrementUsage } = useUsage();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -35,18 +38,17 @@ What would you like to know?`
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [promptsUsed, setPromptsUsed] = useState(0);
   const maxPrompts = 5;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || promptsUsed >= maxPrompts) return;
+    if (!input.trim() || coachGptQueries >= maxPrompts) return;
 
     const userMessage = input;
     setInput("");
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
-    setPromptsUsed(prev => prev + 1);
+    incrementUsage('coachGptQueries');
 
     try {
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
@@ -92,12 +94,12 @@ What would you like to know?`
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           Every response includes scientific citations and peer-reviewed research
         </Badge>
-        <Badge className={`${promptsUsed >= maxPrompts ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
-          {promptsUsed}/{maxPrompts} prompts used
+        <Badge className={`${coachGptQueries >= maxPrompts ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
+          {coachGptQueries}/{maxPrompts} prompts used
         </Badge>
       </div>
 
-      {promptsUsed >= maxPrompts && (
+      {coachGptQueries >= maxPrompts && (
         <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
           <CardContent className="pt-6 text-center">
             <h3 className="text-xl font-bold text-white mb-2">Prompt Limit Reached</h3>
@@ -151,11 +153,11 @@ What would you like to know?`
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="bg-gray-800 border-gray-700 text-white flex-1"
-              disabled={promptsUsed >= maxPrompts}
+              disabled={coachGptQueries >= maxPrompts}
             />
             <Button 
               type="submit" 
-              disabled={!input.trim() || isLoading || promptsUsed >= maxPrompts}
+              disabled={!input.trim() || isLoading || coachGptQueries >= maxPrompts}
               className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
             >
               <Send className="w-4 h-4" />

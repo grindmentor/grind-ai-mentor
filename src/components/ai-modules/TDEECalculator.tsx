@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Calculator, ArrowLeft, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { useUsage } from "@/contexts/UsageContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertFeetAndInchesToInches, formatHeight, formatWeight } from "@/lib/unitConversions";
 
 interface TDEECalculatorProps {
@@ -21,11 +24,12 @@ interface FormData {
   gender: string;
   activityLevel: string;
   bodyFat: string;
-  weightUnit: 'kg' | 'lbs';
-  heightUnit: 'cm' | 'ft-in' | 'in';
 }
 
 const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
+  const { tdeeCalculations, incrementUsage } = useUsage();
+  const { preferences } = usePreferences();
+  
   const [formData, setFormData] = useState<FormData>({
     weight: '',
     height: '',
@@ -34,12 +38,9 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     age: '',
     gender: 'male',
     activityLevel: 'moderate',
-    bodyFat: '',
-    weightUnit: 'lbs',
-    heightUnit: 'ft-in'
+    bodyFat: ''
   });
   const [results, setResults] = useState<any>(null);
-  const [calculationsUsed, setCalculationsUsed] = useState(0);
   const [isCalculating, setIsCalculating] = useState(false);
   const maxCalculations = 3;
 
@@ -75,11 +76,11 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
   const handleCalculate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.weight || !formData.age || calculationsUsed >= maxCalculations) return;
+    if (!formData.weight || !formData.age || tdeeCalculations >= maxCalculations) return;
     
     // Validate height input based on unit
     let hasValidHeight = false;
-    if (formData.heightUnit === 'ft-in') {
+    if (preferences.height_unit === 'ft-in') {
       hasValidHeight = !!(formData.heightFeet && formData.heightInches);
     } else {
       hasValidHeight = !!formData.height;
@@ -88,20 +89,20 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     if (!hasValidHeight) return;
     
     setIsCalculating(true);
-    setCalculationsUsed(prev => prev + 1);
+    incrementUsage('tdeeCalculations');
     
     // Convert all inputs to standard units (lbs, inches)
-    const weightInLbs = formData.weightUnit === 'kg' 
+    const weightInLbs = preferences.weight_unit === 'kg' 
       ? convertKgToLbs(parseFloat(formData.weight))
       : parseFloat(formData.weight);
     
     let heightInInches: number;
-    if (formData.heightUnit === 'ft-in') {
+    if (preferences.height_unit === 'ft-in') {
       heightInInches = convertFeetAndInchesToInches(
         parseInt(formData.heightFeet), 
         parseInt(formData.heightInches)
       );
-    } else if (formData.heightUnit === 'cm') {
+    } else if (preferences.height_unit === 'cm') {
       heightInInches = convertCmToInches(parseFloat(formData.height));
     } else {
       heightInInches = parseFloat(formData.height);
@@ -161,8 +162,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
           fat: fatGrams,
           carbs: carbsGrams
         },
-        displayWeight: formatWeight(weightInLbs, formData.weightUnit),
-        displayHeight: formatHeight(heightInInches, formData.heightUnit),
+        displayWeight: formatWeight(weightInLbs, preferences.weight_unit),
+        displayHeight: formatHeight(heightInInches, preferences.height_unit),
         recommendations: [
           `Your maintenance calories are ${maintenanceData.maintenanceCalories} per day`,
           `BMR: ${maintenanceData.bmr} calories (what you burn at complete rest)`,
@@ -180,7 +181,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   };
 
   const handleRecalculate = () => {
-    if (calculationsUsed < maxCalculations) {
+    if (tdeeCalculations < maxCalculations) {
       handleCalculate(new Event('submit') as any);
     }
   };
@@ -211,12 +212,12 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           Scientific formula: Mifflin-St Jeor equation + activity multipliers
         </Badge>
-        <Badge className={`${calculationsUsed >= maxCalculations ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'}`}>
-          {calculationsUsed}/{maxCalculations} calculations used
+        <Badge className={`${tdeeCalculations >= maxCalculations ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'}`}>
+          {tdeeCalculations}/{maxCalculations} calculations used
         </Badge>
       </div>
 
-      {calculationsUsed >= maxCalculations && (
+      {tdeeCalculations >= maxCalculations && (
         <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
           <CardContent className="pt-6 text-center">
             <h3 className="text-xl font-bold text-white mb-2">Calculation Limit Reached</h3>
@@ -246,47 +247,18 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-white">Weight Unit</Label>
-                  <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => updateFormData('weightUnit', value)}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="lbs">Pounds (lbs)</SelectItem>
-                      <SelectItem value="kg">Kilograms (kg)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white">Height Unit</Label>
-                  <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => updateFormData('heightUnit', value)}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="ft-in">Feet & Inches</SelectItem>
-                      <SelectItem value="in">Inches only</SelectItem>
-                      <SelectItem value="cm">Centimeters</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="weight" className="text-white">Weight ({formData.weightUnit})</Label>
+                  <Label htmlFor="weight" className="text-white">Weight ({preferences.weight_unit})</Label>
                   <Input
                     id="weight"
                     type="number"
-                    placeholder={formData.weightUnit === 'kg' ? '80' : '180'}
+                    placeholder={preferences.weight_unit === 'kg' ? '80' : '180'}
                     value={formData.weight}
                     onChange={(e) => updateFormData('weight', e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
                 
-                {formData.heightUnit === 'ft-in' ? (
+                {preferences.height_unit === 'ft-in' ? (
                   <div className="space-y-2">
                     <Label className="text-white">Height</Label>
                     <div className="flex space-x-1">
@@ -302,7 +274,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                         type="number"
                         placeholder="10"
                         value={formData.heightInches}
-                        onChange={(e)=>{updateFormData('heightInches', e.target.value)}}
+                        onChange={(e) => updateFormData('heightInches', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white"
                       />
                       <span className="text-white text-sm self-center">in</span>
@@ -310,11 +282,11 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Label htmlFor="height" className="text-white">Height ({formData.heightUnit})</Label>
+                    <Label htmlFor="height" className="text-white">Height ({preferences.height_unit})</Label>
                     <Input
                       id="height"
                       type="number"
-                      placeholder={formData.heightUnit === 'cm' ? '175' : '70'}
+                      placeholder={preferences.height_unit === 'cm' ? '175' : '70'}
                       value={formData.height}
                       onChange={(e) => updateFormData('height', e.target.value)}
                       className="bg-gray-800 border-gray-700 text-white"
@@ -380,13 +352,13 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
               
               <Button 
                 type="submit" 
-                disabled={calculationsUsed >= maxCalculations || isCalculating}
+                disabled={tdeeCalculations >= maxCalculations || isCalculating}
                 className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
               >
                 {isCalculating ? "Calculating..." : "Calculate Maintenance Calories"}
               </Button>
 
-              {results && calculationsUsed < maxCalculations && (
+              {results && tdeeCalculations < maxCalculations && (
                 <Button 
                   type="button"
                   onClick={handleRecalculate}

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +100,10 @@ const Settings = () => {
         heightInches: ''
       });
     }
+  };
+
+  const handleInputChange = (field: keyof typeof profile, value: string) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
   };
 
   const savePreferences = async () => {

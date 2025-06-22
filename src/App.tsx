@@ -8,7 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { PreferencesProvider } from "./contexts/PreferencesContext";
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
-import App as AppPage from "./pages/App";
+import AppPage from "./pages/App";
 import Settings from "./pages/Settings";
 import Onboarding from "./pages/Onboarding";
 import About from "./pages/About";

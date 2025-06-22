@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertInchesToFeetAndInches, convertFeetAndInchesToInches } from "@/lib/unitConversions";
 import { useToast } from "@/hooks/use-toast";
+import { UserPreferences } from "@/types/userPreferences";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -30,12 +31,12 @@ const Settings = () => {
     heightInches: ''
   });
 
-  const [preferences, setPreferences] = useState({
-    weightUnit: 'lbs' as 'kg' | 'lbs',
-    heightUnit: 'ft-in' as 'cm' | 'ft-in' | 'in',
+  const [preferences, setPreferences] = useState<Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
+    weight_unit: 'lbs',
+    height_unit: 'ft-in',
     notifications: true,
-    emailUpdates: true,
-    darkMode: true
+    email_updates: true,
+    dark_mode: true
   });
 
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
@@ -64,16 +65,16 @@ const Settings = () => {
 
   // Apply dark mode
   useEffect(() => {
-    if (preferences.darkMode) {
+    if (preferences.dark_mode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [preferences.darkMode]);
+  }, [preferences.dark_mode]);
 
   // Update height display when unit changes
   useEffect(() => {
-    if (profile.height && preferences.heightUnit === 'ft-in') {
+    if (profile.height && preferences.height_unit === 'ft-in') {
       const heightInInches = parseInt(profile.height);
       if (!isNaN(heightInInches)) {
         const { feet, inches } = convertInchesToFeetAndInches(heightInInches);
@@ -84,7 +85,7 @@ const Settings = () => {
         }));
       }
     }
-  }, [preferences.heightUnit]);
+  }, [preferences.height_unit]);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -112,39 +113,50 @@ const Settings = () => {
   const loadPreferences = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    try {
+      // Use type assertion to work around missing type definitions
+      const { data, error } = await (supabase as any)
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-    if (data && !error) {
-      setPreferences({
-        weightUnit: data.weight_unit || 'lbs',
-        heightUnit: data.height_unit || 'ft-in',
-        notifications: data.notifications ?? true,
-        emailUpdates: data.email_updates ?? true,
-        darkMode: data.dark_mode ?? true
-      });
+      if (data && !error) {
+        setPreferences({
+          weight_unit: data.weight_unit || 'lbs',
+          height_unit: data.height_unit || 'ft-in',
+          notifications: data.notifications ?? true,
+          email_updates: data.email_updates ?? true,
+          dark_mode: data.dark_mode ?? true
+        });
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
     }
   };
 
   const savePreferences = async () => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from('user_preferences')
-      .upsert({
-        user_id: user.id,
-        weight_unit: preferences.weightUnit,
-        height_unit: preferences.heightUnit,
-        notifications: preferences.notifications,
-        email_updates: preferences.emailUpdates,
-        dark_mode: preferences.darkMode
-      });
+    try {
+      const { error } = await (supabase as any)
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          weight_unit: preferences.weight_unit,
+          height_unit: preferences.height_unit,
+          notifications: preferences.notifications,
+          email_updates: preferences.email_updates,
+          dark_mode: preferences.dark_mode
+        });
 
-    if (error) {
+      if (error) {
+        console.error('Error saving preferences:', error);
+        throw error;
+      }
+    } catch (error) {
       console.error('Error saving preferences:', error);
+      throw error;
     }
   };
 
@@ -155,7 +167,7 @@ const Settings = () => {
     try {
       // Convert height to inches if using feet+inches
       let finalHeight = profile.height;
-      if (preferences.heightUnit === 'ft-in' && profile.heightFeet && profile.heightInches) {
+      if (preferences.height_unit === 'ft-in' && profile.heightFeet && profile.heightInches) {
         finalHeight = convertFeetAndInchesToInches(
           parseInt(profile.heightFeet), 
           parseInt(profile.heightInches)
@@ -203,7 +215,7 @@ const Settings = () => {
     }));
   };
 
-  const handlePreferenceChange = (field: string, value: any) => {
+  const handlePreferenceChange = (field: keyof typeof preferences, value: any) => {
     setPreferences(prev => ({
       ...prev,
       [field]: value
@@ -218,7 +230,7 @@ const Settings = () => {
   const getWeightDisplay = () => {
     if (!profile.weight) return '';
     const weightInLbs = parseInt(profile.weight);
-    return preferences.weightUnit === 'kg' 
+    return preferences.weight_unit === 'kg' 
       ? Math.round(convertLbsToKg(weightInLbs)).toString()
       : weightInLbs.toString();
   };
@@ -226,7 +238,7 @@ const Settings = () => {
   const getHeightDisplay = () => {
     if (!profile.height) return '';
     const heightInInches = parseInt(profile.height);
-    if (preferences.heightUnit === 'cm') {
+    if (preferences.height_unit === 'cm') {
       return Math.round(convertInchesToCm(heightInInches)).toString();
     }
     return heightInInches.toString();
@@ -241,7 +253,7 @@ const Settings = () => {
     const numValue = parseInt(value);
     if (isNaN(numValue)) return;
     
-    const weightInLbs = preferences.weightUnit === 'kg' 
+    const weightInLbs = preferences.weight_unit === 'kg' 
       ? Math.round(convertKgToLbs(numValue))
       : numValue;
     
@@ -257,7 +269,7 @@ const Settings = () => {
     const numValue = parseInt(value);
     if (isNaN(numValue)) return;
     
-    const heightInInches = preferences.heightUnit === 'cm' 
+    const heightInInches = preferences.height_unit === 'cm' 
       ? Math.round(convertCmToInches(numValue))
       : numValue;
     
@@ -283,7 +295,7 @@ const Settings = () => {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="border-border hover:bg-accent">
+          <Button variant="outline" onClick={handleSignOut} className="border-border hover:bg-accent text-foreground">
             Sign Out
           </Button>
         </div>
@@ -296,16 +308,16 @@ const Settings = () => {
           {/* Unit Preferences */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Unit Preferences</CardTitle>
+              <CardTitle className="text-foreground">Unit Preferences</CardTitle>
               <CardDescription>
                 Choose your preferred units for measurements
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Weight Unit</Label>
-                <Select value={preferences.weightUnit} onValueChange={(value: 'kg' | 'lbs') => handlePreferenceChange('weightUnit', value)}>
-                  <SelectTrigger className="bg-background border-border">
+                <Label className="text-foreground">Weight Unit</Label>
+                <Select value={preferences.weight_unit} onValueChange={(value: 'kg' | 'lbs') => handlePreferenceChange('weight_unit', value)}>
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
@@ -316,9 +328,9 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label>Height Unit</Label>
-                <Select value={preferences.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => handlePreferenceChange('heightUnit', value)}>
-                  <SelectTrigger className="bg-background border-border">
+                <Label className="text-foreground">Height Unit</Label>
+                <Select value={preferences.height_unit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => handlePreferenceChange('height_unit', value)}>
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
@@ -334,7 +346,7 @@ const Settings = () => {
           {/* App Preferences */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>App Preferences</CardTitle>
+              <CardTitle className="text-foreground">App Preferences</CardTitle>
               <CardDescription>
                 Customize your app experience
               </CardDescription>
@@ -342,7 +354,7 @@ const Settings = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Push Notifications</Label>
+                  <Label className="text-foreground">Push Notifications</Label>
                   <p className="text-sm text-muted-foreground">Receive workout reminders</p>
                 </div>
                 <Switch 
@@ -353,23 +365,23 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Email Updates</Label>
+                  <Label className="text-foreground">Email Updates</Label>
                   <p className="text-sm text-muted-foreground">Newsletter & progress reports</p>
                 </div>
                 <Switch 
-                  checked={preferences.emailUpdates}
-                  onCheckedChange={(checked) => handlePreferenceChange('emailUpdates', checked)}
+                  checked={preferences.email_updates}
+                  onCheckedChange={(checked) => handlePreferenceChange('email_updates', checked)}
                 />
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Dark Mode</Label>
+                  <Label className="text-foreground">Dark Mode</Label>
                   <p className="text-sm text-muted-foreground">App theme preference</p>
                 </div>
                 <Switch 
-                  checked={preferences.darkMode}
-                  onCheckedChange={(checked) => handlePreferenceChange('darkMode', checked)}
+                  checked={preferences.dark_mode}
+                  onCheckedChange={(checked) => handlePreferenceChange('dark_mode', checked)}
                 />
               </div>
             </CardContent>
@@ -378,43 +390,43 @@ const Settings = () => {
           {/* Basic Information */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle className="text-foreground">Basic Information</CardTitle>
               <CardDescription>
                 Your physical stats for accurate calculations
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="weight">
-                  Weight ({preferences.weightUnit})
+                <Label htmlFor="weight" className="text-foreground">
+                  Weight ({preferences.weight_unit})
                 </Label>
                 <Input
                   id="weight"
                   type="number"
-                  placeholder={preferences.weightUnit === 'kg' ? '80' : '180'}
+                  placeholder={preferences.weight_unit === 'kg' ? '80' : '180'}
                   value={getWeightDisplay()}
                   onChange={(e) => handleWeightChange(e.target.value)}
-                  className="bg-background border-border"
+                  className="bg-background border-border text-foreground"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="birthday">Birthday</Label>
+                <Label htmlFor="birthday" className="text-foreground">Birthday</Label>
                 <Input
                   id="birthday"
                   type="date"
                   value={profile.birthday}
                   onChange={(e) => handleInputChange('birthday', e.target.value)}
-                  className="bg-background border-border"
+                  className="bg-background border-border text-foreground"
                 />
                 {calculatedAge !== null && (
                   <p className="text-sm text-muted-foreground">Current age: {calculatedAge} years</p>
                 )}
               </div>
               
-              {preferences.heightUnit === 'ft-in' ? (
+              {preferences.height_unit === 'ft-in' ? (
                 <div className="space-y-2">
-                  <Label>Height</Label>
+                  <Label className="text-foreground">Height</Label>
                   <div className="flex space-x-2">
                     <div className="flex-1">
                       <Input
@@ -422,7 +434,7 @@ const Settings = () => {
                         placeholder="5"
                         value={profile.heightFeet}
                         onChange={(e) => handleInputChange('heightFeet', e.target.value)}
-                        className="bg-background border-border"
+                        className="bg-background border-border text-foreground"
                       />
                       <Label className="text-xs text-muted-foreground">feet</Label>
                     </div>
@@ -432,7 +444,7 @@ const Settings = () => {
                         placeholder="10"
                         value={profile.heightInches}
                         onChange={(e) => handleInputChange('heightInches', e.target.value)}
-                        className="bg-background border-border"
+                        className="bg-background border-border text-foreground"
                       />
                       <Label className="text-xs text-muted-foreground">inches</Label>
                     </div>
@@ -440,16 +452,16 @@ const Settings = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="height">
-                    Height ({preferences.heightUnit})
+                  <Label htmlFor="height" className="text-foreground">
+                    Height ({preferences.height_unit})
                   </Label>
                   <Input
                     id="height"
                     type="number"
-                    placeholder={preferences.heightUnit === 'cm' ? '175' : '70'}
+                    placeholder={preferences.height_unit === 'cm' ? '175' : '70'}
                     value={getHeightDisplay()}
                     onChange={(e) => handleHeightChange(e.target.value)}
-                    className="bg-background border-border"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
               )}
@@ -459,16 +471,16 @@ const Settings = () => {
           {/* Fitness Profile */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Fitness Profile</CardTitle>
+              <CardTitle className="text-foreground">Fitness Profile</CardTitle>
               <CardDescription>
                 Your experience and goals for personalized recommendations
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Experience Level</Label>
+                <Label className="text-foreground">Experience Level</Label>
                 <Select value={profile.experience} onValueChange={(value) => handleInputChange('experience', value)}>
-                  <SelectTrigger className="bg-background border-border">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Select experience level" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
@@ -480,9 +492,9 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label>Activity Level</Label>
+                <Label className="text-foreground">Activity Level</Label>
                 <Select value={profile.activity} onValueChange={(value) => handleInputChange('activity', value)}>
-                  <SelectTrigger className="bg-background border-border">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Select activity level" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
@@ -496,9 +508,9 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label>Primary Goal</Label>
+                <Label className="text-foreground">Primary Goal</Label>
                 <Select value={profile.goal} onValueChange={(value) => handleInputChange('goal', value)}>
-                  <SelectTrigger className="bg-background border-border">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Select your goal" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">

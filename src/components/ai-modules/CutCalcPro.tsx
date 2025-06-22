@@ -1,11 +1,12 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertFeetAndInchesToInches, formatHeight, formatWeight } from "@/lib/unitConversions";
 
 interface CutCalcProProps {
   onBack: () => void;
@@ -15,29 +16,58 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
   const [formData, setFormData] = useState({
     weight: '',
     height: '',
+    heightFeet: '',
+    heightInches: '',
     age: '',
     gender: 'male',
-    activityLevel: 'moderate'
+    activityLevel: 'moderate',
+    weightUnit: 'lbs' as 'kg' | 'lbs',
+    heightUnit: 'ft-in' as 'cm' | 'ft-in' | 'in'
   });
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.weight || !formData.height || !formData.age) return;
+    if (!formData.weight || !formData.age) return;
+    
+    // Validate height input based on unit
+    let hasValidHeight = false;
+    if (formData.heightUnit === 'ft-in') {
+      hasValidHeight = formData.heightFeet && formData.heightInches;
+    } else {
+      hasValidHeight = !!formData.height;
+    }
+    
+    if (!hasValidHeight) return;
     
     setIsLoading(true);
     
     // Simulate complex body composition analysis
     setTimeout(() => {
-      const weight = parseFloat(formData.weight);
-      const height = parseFloat(formData.height);
+      // Convert all inputs to standard units (lbs, inches)
+      const weightInLbs = formData.weightUnit === 'kg' 
+        ? convertKgToLbs(parseFloat(formData.weight))
+        : parseFloat(formData.weight);
+      
+      let heightInInches: number;
+      if (formData.heightUnit === 'ft-in') {
+        heightInInches = convertFeetAndInchesToInches(
+          parseInt(formData.heightFeet), 
+          parseInt(formData.heightInches)
+        );
+      } else if (formData.heightUnit === 'cm') {
+        heightInInches = convertCmToInches(parseFloat(formData.height));
+      } else {
+        heightInInches = parseFloat(formData.height);
+      }
+      
       const age = parseInt(formData.age);
       
       // Calculate BMR using Mifflin-St Jeor equation
       const bmr = formData.gender === 'male' 
-        ? (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) + 5
-        : (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) - 161;
+        ? (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) + 5
+        : (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) - 161;
       
       const activityMultipliers = {
         sedentary: 1.2,
@@ -48,8 +78,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       };
       
       const tdee = bmr * activityMultipliers[formData.activityLevel as keyof typeof activityMultipliers];
-      const bmi = (weight / ((height * 0.0254) ** 2));
-      const ffmi = weight * 0.453592 * (1 - 0.15) / ((height * 0.0254) ** 2); // Estimated FFMI
+      const bmi = weightInLbs / ((heightInInches * 0.0254) ** 2);
+      const ffmi = weightInLbs * 0.453592 * (1 - 0.15) / ((heightInInches * 0.0254) ** 2); // Estimated FFMI
       
       setResult({
         bmr: Math.round(bmr),
@@ -59,14 +89,17 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
         bodyFatEstimate: formData.gender === 'male' ? '12-15%' : '16-20%',
         cuttingCalories: Math.round(tdee - 500),
         bulkingCalories: Math.round(tdee + 300),
+        displayWeight: formatWeight(weightInLbs, formData.weightUnit),
+        displayHeight: formatHeight(heightInInches, formData.heightUnit),
         recommendations: [
-          bmi < 18.5 ? 'Consider a lean bulk phase' : 
-          bmi > 25 ? 'Consider a cutting phase' : 
+          bmi < 18.5 ? 'Consider a lean bulk phase with progressive overload training' : 
+          bmi > 25 ? 'Consider a cutting phase with adequate protein intake' : 
           'Maintenance or body recomposition recommended',
-          ffmi > 22 ? 'Excellent muscle development' : 
-          ffmi > 20 ? 'Good muscle development' : 
-          'Focus on muscle building',
-          'Track progress photos and measurements weekly'
+          ffmi > 22 ? 'Excellent muscle development - focus on strength training' : 
+          ffmi > 20 ? 'Good muscle development - continue progressive overload' : 
+          'Focus on muscle building with compound movements',
+          'Track progress photos and measurements weekly for best results',
+          'Prioritize sleep (7-9 hours) and stress management for optimal body composition'
         ]
       });
       setIsLoading(false);
@@ -111,27 +144,80 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="weight" className="text-white">Weight (lbs)</Label>
+                  <Label className="text-white">Weight Unit</Label>
+                  <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => handleInputChange('weightUnit', value)}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="lbs">Pounds (lbs)</SelectItem>
+                      <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white">Height Unit</Label>
+                  <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => handleInputChange('heightUnit', value)}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="ft-in">Feet & Inches</SelectItem>
+                      <SelectItem value="in">Inches only</SelectItem>
+                      <SelectItem value="cm">Centimeters</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weight" className="text-white">Weight ({formData.weightUnit})</Label>
                   <Input
                     id="weight"
                     type="number"
-                    placeholder="180"
+                    placeholder={formData.weightUnit === 'kg' ? '80' : '180'}
                     value={formData.weight}
                     onChange={(e) => handleInputChange('weight', e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="height" className="text-white">Height (inches)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    placeholder="70"
-                    value={formData.height}
-                    onChange={(e) => handleInputChange('height', e.target.value)}
-                    className="bg-gray-800 border-gray-700 text-white"
-                  />
-                </div>
+                
+                {formData.heightUnit === 'ft-in' ? (
+                  <div className="space-y-2">
+                    <Label className="text-white">Height</Label>
+                    <div className="flex space-x-1">
+                      <Input
+                        type="number"
+                        placeholder="5"
+                        value={formData.heightFeet}
+                        onChange={(e) => handleInputChange('heightFeet', e.target.value)}
+                        className="bg-gray-800 border-gray-700 text-white"
+                      />
+                      <span className="text-white text-sm self-center">ft</span>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        value={formData.heightInches}
+                        onChange={(e) => handleInputChange('heightInches', e.target.value)}
+                        className="bg-gray-800 border-gray-700 text-white"
+                      />
+                      <span className="text-white text-sm self-center">in</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="height" className="text-white">Height ({formData.heightUnit})</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      placeholder={formData.heightUnit === 'cm' ? '175' : '70'}
+                      value={formData.height}
+                      onChange={(e) => handleInputChange('height', e.target.value)}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -194,6 +280,13 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
           <CardContent>
             {result ? (
               <div className="space-y-4">
+                <div className="bg-gray-800 p-3 rounded-lg">
+                  <div className="text-orange-400 text-sm font-medium">Your Stats</div>
+                  <div className="text-white text-sm">
+                    {result.displayWeight} • {result.displayHeight}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-800 p-3 rounded-lg">
                     <div className="text-orange-400 text-sm font-medium">BMR</div>

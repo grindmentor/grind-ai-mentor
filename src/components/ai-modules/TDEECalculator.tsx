@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Calculator, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertFeetAndInchesToInches, formatHeight, formatWeight } from "@/lib/unitConversions";
 
 interface TDEECalculatorProps {
   onBack: () => void;
@@ -16,30 +16,59 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   const [formData, setFormData] = useState({
     weight: '',
     height: '',
+    heightFeet: '',
+    heightInches: '',
     age: '',
     gender: 'male',
     activityLevel: 'moderate',
-    bodyFat: ''
+    bodyFat: '',
+    weightUnit: 'lbs' as 'kg' | 'lbs',
+    heightUnit: 'ft-in' as 'cm' | 'ft-in' | 'in'
   });
   const [results, setResults] = useState<any>(null);
   const [calculationsUsed, setCalculationsUsed] = useState(0);
-  const maxCalculations = 3; // Free tier limit
+  const maxCalculations = 3;
 
   const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.weight || !formData.height || !formData.age || calculationsUsed >= maxCalculations) return;
+    if (!formData.weight || !formData.age || calculationsUsed >= maxCalculations) return;
+    
+    // Validate height input based on unit
+    let hasValidHeight = false;
+    if (formData.heightUnit === 'ft-in') {
+      hasValidHeight = formData.heightFeet && formData.heightInches;
+    } else {
+      hasValidHeight = !!formData.height;
+    }
+    
+    if (!hasValidHeight) return;
     
     setCalculationsUsed(prev => prev + 1);
     
-    const weight = parseFloat(formData.weight);
-    const height = parseFloat(formData.height);
+    // Convert all inputs to standard units (lbs, inches)
+    const weightInLbs = formData.weightUnit === 'kg' 
+      ? convertKgToLbs(parseFloat(formData.weight))
+      : parseFloat(formData.weight);
+    
+    let heightInInches: number;
+    if (formData.heightUnit === 'ft-in') {
+      heightInInches = convertFeetAndInchesToInches(
+        parseInt(formData.heightFeet), 
+        parseInt(formData.heightInches)
+      );
+    } else if (formData.heightUnit === 'cm') {
+      heightInInches = convertCmToInches(parseFloat(formData.height));
+    } else {
+      heightInInches = parseFloat(formData.height);
+    }
+    
     const age = parseInt(formData.age);
     const bodyFat = formData.bodyFat ? parseFloat(formData.bodyFat) : null;
     
     // BMR calculation using Mifflin-St Jeor equation
     const bmr = formData.gender === 'male' 
-      ? (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) + 5
-      : (10 * weight * 0.453592) + (6.25 * height * 2.54) - (5 * age) - 161;
+      ? (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) + 5
+      : (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) - 161;
     
     // Activity multipliers
     const activityMultipliers = {
@@ -56,8 +85,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     let ffmi = null;
     let ffmiCategory = '';
     if (bodyFat) {
-      const leanMass = weight * (1 - bodyFat / 100);
-      ffmi = leanMass * 0.453592 / ((height * 0.0254) ** 2);
+      const leanMass = weightInLbs * (1 - bodyFat / 100);
+      ffmi = leanMass * 0.453592 / ((heightInInches * 0.0254) ** 2);
       
       if (ffmi > 25) ffmiCategory = 'Exceptional (Elite level)';
       else if (ffmi > 22) ffmiCategory = 'Excellent (Very muscular)';
@@ -67,7 +96,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     }
     
     // BMI calculation
-    const bmi = weight / ((height * 0.0254) ** 2);
+    const bmi = weightInLbs / ((heightInInches * 0.0254) ** 2);
     let bmiCategory = '';
     if (bmi < 18.5) bmiCategory = 'Underweight';
     else if (bmi < 25) bmiCategory = 'Normal weight';
@@ -75,13 +104,13 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     else bmiCategory = 'Obese';
     
     // Caloric recommendations
-    const cuttingCalories = Math.round(tdee * 0.8); // 20% deficit
-    const bulkingCalories = Math.round(tdee * 1.1); // 10% surplus
+    const cuttingCalories = Math.round(tdee * 0.8);
+    const bulkingCalories = Math.round(tdee * 1.1);
     const maintenanceCalories = Math.round(tdee);
     
     // Macro recommendations (general guidelines)
-    const proteinGrams = Math.round(weight * 0.8); // 0.8g per lb
-    const fatGrams = Math.round(weight * 0.3); // 0.3g per lb
+    const proteinGrams = Math.round(weightInLbs * 0.8);
+    const fatGrams = Math.round(weightInLbs * 0.3);
     const carbsGrams = Math.round((maintenanceCalories - (proteinGrams * 4) - (fatGrams * 9)) / 4);
     
     setResults({
@@ -99,15 +128,17 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
         fat: fatGrams,
         carbs: carbsGrams
       },
+      displayWeight: formatWeight(weightInLbs, formData.weightUnit),
+      displayHeight: formatHeight(heightInInches, formData.heightUnit),
       recommendations: [
         `Your BMR is ${Math.round(bmr)} calories - this is what you burn at rest`,
         `Your TDEE is ${Math.round(tdee)} calories - this includes your activity`,
-        bmi < 18.5 ? 'Consider gaining weight gradually' : 
-        bmi > 25 ? 'Consider a moderate caloric deficit' : 
-        'You\'re in a healthy weight range',
-        ffmi && ffmi > 22 ? 'Excellent muscle development - focus on maintaining' :
-        ffmi && ffmi < 20 ? 'Focus on resistance training and adequate protein' :
-        'Continue building muscle while managing body fat'
+        bmi < 18.5 ? 'Consider gaining weight gradually with a structured program' : 
+        bmi > 25 ? 'Consider a moderate caloric deficit with resistance training' : 
+        'You\'re in a healthy weight range - focus on body composition',
+        ffmi && ffmi > 22 ? 'Excellent muscle development - focus on maintaining strength' :
+        ffmi && ffmi < 20 ? 'Focus on progressive resistance training and adequate protein intake' :
+        'Continue building muscle while managing body fat levels'
       ]
     });
   };
@@ -172,27 +203,80 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
             <form onSubmit={handleCalculate} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="weight" className="text-white">Weight (lbs)</Label>
+                  <Label className="text-white">Weight Unit</Label>
+                  <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => handleInputChange('weightUnit', value)}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="lbs">Pounds (lbs)</SelectItem>
+                      <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white">Height Unit</Label>
+                  <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => handleInputChange('heightUnit', value)}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="ft-in">Feet & Inches</SelectItem>
+                      <SelectItem value="in">Inches only</SelectItem>
+                      <SelectItem value="cm">Centimeters</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weight" className="text-white">Weight ({formData.weightUnit})</Label>
                   <Input
                     id="weight"
                     type="number"
-                    placeholder="180"
+                    placeholder={formData.weightUnit === 'kg' ? '80' : '180'}
                     value={formData.weight}
                     onChange={(e) => handleInputChange('weight', e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="height" className="text-white">Height (inches)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    placeholder="70"
-                    value={formData.height}
-                    onChange={(e) => handleInputChange('height', e.target.value)}
-                    className="bg-gray-800 border-gray-700 text-white"
-                  />
-                </div>
+                
+                {formData.heightUnit === 'ft-in' ? (
+                  <div className="space-y-2">
+                    <Label className="text-white">Height</Label>
+                    <div className="flex space-x-1">
+                      <Input
+                        type="number"
+                        placeholder="5"
+                        value={formData.heightFeet}
+                        onChange={(e) => handleInputChange('heightFeet', e.target.value)}
+                        className="bg-gray-800 border-gray-700 text-white"
+                      />
+                      <span className="text-white text-sm self-center">ft</span>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        value={formData.heightInches}
+                        onChange={(e) => handleInputChange('heightInches', e.target.value)}
+                        className="bg-gray-800 border-gray-700 text-white"
+                      />
+                      <span className="text-white text-sm self-center">in</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="height" className="text-white">Height ({formData.heightUnit})</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      placeholder={formData.heightUnit === 'cm' ? '175' : '70'}
+                      value={formData.height}
+                      onChange={(e) => handleInputChange('height', e.target.value)}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -270,6 +354,13 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
           <CardContent>
             {results ? (
               <div className="space-y-4">
+                <div className="bg-gray-800 p-3 rounded-lg">
+                  <div className="text-orange-400 text-sm font-medium">Your Stats</div>
+                  <div className="text-white text-sm">
+                    {results.displayWeight} • {results.displayHeight}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-800 p-3 rounded-lg text-center">
                     <div className="text-orange-400 text-xl font-bold">{results.bmr}</div>

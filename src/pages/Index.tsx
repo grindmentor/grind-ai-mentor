@@ -250,35 +250,6 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Premium Features */}
-          <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
-            <CardHeader>
-              <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <CardTitle className="text-white text-xl">Premium AI</CardTitle>
-              <CardDescription className="text-gray-400">
-                Advanced features with unlimited access
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-gray-400 text-sm">
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Unlimited everything
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Priority responses
-                </li>
-                <li className="flex items-center">
-                  <Check className="w-4 h-4 text-green-500 mr-2" />
-                  Advanced analytics
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-
           {/* Progressive Overload Tracker */}
           <Card className="bg-gray-900 border-gray-800 hover:border-orange-500/50 transition-all group hover:scale-105">
             <CardHeader>

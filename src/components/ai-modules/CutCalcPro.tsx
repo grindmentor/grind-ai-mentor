@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { convertKgToLbs, convertLbsToKg, convertCmToInches, convertInchesToCm, convertFeetAndInchesToInches, formatHeight, formatWeight } from "@/lib/unitConversions";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 interface CutCalcProProps {
   onBack: () => void;
@@ -21,11 +21,14 @@ interface FormData {
   age: string;
   gender: string;
   activityLevel: string;
+  bodyFat: string;
   weightUnit: 'kg' | 'lbs';
   heightUnit: 'cm' | 'ft-in' | 'in';
 }
 
 const CutCalcPro = ({ onBack }: CutCalcProProps) => {
+  const { preferences } = usePreferences();
+  
   const [formData, setFormData] = useState<FormData>({
     weight: '',
     height: '',
@@ -34,17 +37,40 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     age: '',
     gender: 'male',
     activityLevel: 'moderate',
-    weightUnit: 'lbs',
-    heightUnit: 'ft-in'
+    bodyFat: '',
+    weightUnit: preferences.weight_unit,
+    heightUnit: preferences.height_unit
   });
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Update form data when preferences change
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      weightUnit: preferences.weight_unit,
+      heightUnit: preferences.height_unit
+    }));
+  }, [preferences]);
+
+  const calculateOptimalBodyFat = (gender: string, age: number) => {
+    if (gender === 'male') {
+      if (age < 30) return { min: 10, max: 15, optimal: 12 };
+      if (age < 40) return { min: 12, max: 17, optimal: 14 };
+      if (age < 50) return { min: 14, max: 19, optimal: 16 };
+      return { min: 16, max: 21, optimal: 18 };
+    } else {
+      if (age < 30) return { min: 16, max: 21, optimal: 18 };
+      if (age < 40) return { min: 18, max: 23, optimal: 20 };
+      if (age < 50) return { min: 20, max: 25, optimal: 22 };
+      return { min: 22, max: 27, optimal: 24 };
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.weight || !formData.age) return;
     
-    // Validate height input based on unit
     let hasValidHeight = false;
     if (formData.heightUnit === 'ft-in') {
       hasValidHeight = !!(formData.heightFeet && formData.heightInches);
@@ -56,9 +82,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     
     setIsLoading(true);
     
-    // Simulate complex body composition analysis
     setTimeout(() => {
-      // Convert all inputs to standard units (lbs, inches)
       const weightInLbs = formData.weightUnit === 'kg' 
         ? convertKgToLbs(parseFloat(formData.weight))
         : parseFloat(formData.weight);
@@ -76,8 +100,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       }
       
       const age = parseInt(formData.age);
+      const currentBodyFat = formData.bodyFat ? parseFloat(formData.bodyFat) : null;
       
-      // Calculate BMR using Mifflin-St Jeor equation
       const bmr = formData.gender === 'male' 
         ? (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) + 5
         : (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) - 161;
@@ -92,19 +116,24 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       
       const tdee = bmr * activityMultipliers[formData.activityLevel as keyof typeof activityMultipliers];
       const bmi = weightInLbs / ((heightInInches * 0.0254) ** 2);
-      const ffmi = weightInLbs * 0.453592 * (1 - 0.15) / ((heightInInches * 0.0254) ** 2); // Estimated FFMI
+      const ffmi = weightInLbs * 0.453592 * (1 - (currentBodyFat ? currentBodyFat / 100 : 0.15)) / ((heightInInches * 0.0254) ** 2);
+      
+      const optimalBF = calculateOptimalBodyFat(formData.gender, age);
       
       setResult({
         bmr: Math.round(bmr),
         tdee: Math.round(tdee),
         bmi: bmi.toFixed(1),
         ffmi: ffmi.toFixed(1),
-        bodyFatEstimate: formData.gender === 'male' ? '12-15%' : '16-20%',
+        currentBodyFat: currentBodyFat ? `${currentBodyFat}%` : 'Not provided',
+        optimalBodyFat: `${optimalBF.optimal}% (Range: ${optimalBF.min}-${optimalBF.max}%)`,
         cuttingCalories: Math.round(tdee - 500),
         bulkingCalories: Math.round(tdee + 300),
         displayWeight: formatWeight(weightInLbs, formData.weightUnit),
         displayHeight: formatHeight(heightInInches, formData.heightUnit),
         recommendations: [
+          currentBodyFat && currentBodyFat > optimalBF.max ? 'Consider a cutting phase to reduce body fat to optimal range' :
+          currentBodyFat && currentBodyFat < optimalBF.min ? 'Consider a lean bulk to build muscle mass' :
           bmi < 18.5 ? 'Consider a lean bulk phase with progressive overload training' : 
           bmi > 25 ? 'Consider a cutting phase with adequate protein intake' : 
           'Maintenance or body recomposition recommended',
@@ -124,7 +153,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 p-4">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -135,7 +164,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
             <TrendingUp className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">CutCalc Pro</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">CutCalc Pro</h1>
             <p className="text-gray-400">Advanced body composition analysis and cutting calculator</p>
           </div>
         </div>
@@ -155,35 +184,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-white">Weight Unit</Label>
-                  <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => updateFormData('weightUnit', value)}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="lbs">Pounds (lbs)</SelectItem>
-                      <SelectItem value="kg">Kilograms (kg)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-white">Height Unit</Label>
-                  <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => updateFormData('heightUnit', value)}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="ft-in">Feet & Inches</SelectItem>
-                      <SelectItem value="in">Inches only</SelectItem>
-                      <SelectItem value="cm">Centimeters</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="weight" className="text-white">Weight ({formData.weightUnit})</Label>
                   <Input
@@ -232,17 +233,34 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                   </div>
                 )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="age" className="text-white">Age</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  placeholder="25"
-                  value={formData.age}
-                  onChange={(e) => updateFormData('age', e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
-                />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="age" className="text-white">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    placeholder="25"
+                    value={formData.age}
+                    onChange={(e) => updateFormData('age', e.target.value)}
+                    className="bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bodyFat" className="text-white">Body Fat % (Optional)</Label>
+                  <Input
+                    id="bodyFat"
+                    type="number"
+                    placeholder="15"
+                    min="3"
+                    max="50"
+                    step="0.1"
+                    value={formData.bodyFat}
+                    onChange={(e) => updateFormData('bodyFat', e.target.value)}
+                    className="bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -320,6 +338,17 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                     <div className="text-white text-xl font-bold">{result.ffmi}</div>
                   </div>
                 </div>
+
+                <div className="space-y-3">
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-purple-400 text-sm font-medium">Current Body Fat</div>
+                    <div className="text-white text-lg">{result.currentBodyFat}</div>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg">
+                    <div className="text-blue-400 text-sm font-medium">Optimal Body Fat</div>
+                    <div className="text-white text-lg">{result.optimalBodyFat}</div>
+                  </div>
+                </div>
                 
                 <div className="space-y-3">
                   <div className="bg-gray-800 p-3 rounded-lg">
@@ -343,7 +372,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                 
                 <div className="text-xs text-gray-500 mt-4">
                   <p>*Calculations based on Mifflin-St Jeor equation and validated research</p>
-                  <p>*Body fat estimates are approximate - consider DEXA scan for accuracy</p>
+                  <p>*Body fat estimates enhance accuracy when provided</p>
                 </div>
               </div>
             ) : (

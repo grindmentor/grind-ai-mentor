@@ -193,7 +193,7 @@ const Notifications = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
                               <h3 className="text-white font-semibold">{rec.title}</h3>
-                              <Badge className={getCategoryColor(rec.category)} size="sm">
+                              <Badge className={getCategoryColor(rec.category)}>
                                 {rec.category}
                               </Badge>
                             </div>
@@ -234,10 +234,10 @@ const Notifications = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
                             <h3 className="text-white font-semibold">{achievement.title}</h3>
-                            <Badge className={getCategoryColor(achievement.category)} size="sm">
+                            <Badge className={getCategoryColor(achievement.category)}>
                               {achievement.category}
                             </Badge>
-                            <Badge variant="outline" className="border-yellow-500/50 text-yellow-400" size="sm">
+                            <Badge variant="outline" className="border-yellow-500/50 text-yellow-400">
                               +{achievement.points} pts
                             </Badge>
                           </div>
@@ -271,7 +271,7 @@ const Notifications = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
                             <h3 className="text-white font-semibold">{reminder.title}</h3>
-                            <Badge className={getCategoryColor(reminder.category)} size="sm">
+                            <Badge className={getCategoryColor(reminder.category)}>
                               {reminder.category}
                             </Badge>
                           </div>

@@ -21,6 +21,15 @@ const defaultPreferences: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' 
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
 
+// Type guard functions
+const isValidWeightUnit = (value: any): value is 'kg' | 'lbs' => {
+  return value === 'kg' || value === 'lbs';
+};
+
+const isValidHeightUnit = (value: any): value is 'cm' | 'ft-in' | 'in' => {
+  return value === 'cm' || value === 'ft-in' || value === 'in';
+};
+
 export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState(defaultPreferences);
@@ -55,8 +64,8 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (data) {
         console.log('Loaded preferences:', data);
         setPreferences({
-          weight_unit: data.weight_unit || 'kg',
-          height_unit: data.height_unit || 'cm',
+          weight_unit: isValidWeightUnit(data.weight_unit) ? data.weight_unit : 'kg',
+          height_unit: isValidHeightUnit(data.height_unit) ? data.height_unit : 'cm',
           notifications: data.notifications ?? true,
           email_updates: data.email_updates ?? true,
           dark_mode: data.dark_mode ?? true

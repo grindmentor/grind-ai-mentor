@@ -7,71 +7,94 @@ interface FormattedAIResponseProps {
 }
 
 const FormattedAIResponse: React.FC<FormattedAIResponseProps> = ({ content, className = "" }) => {
-  // Parse the formatted content and render appropriately
-  const parseContent = (text: string) => {
-    // Split by lines to handle different elements
+  const formatContent = (text: string) => {
+    // Split content into lines for processing
     const lines = text.split('\n');
-    const elements: React.ReactNode[] = [];
+    const formattedLines: JSX.Element[] = [];
     
     lines.forEach((line, index) => {
-      if (line.trim() === '') {
-        elements.push(<br key={index} />);
-        return;
-      }
-      
       // Handle headers
-      if (line.includes('<h1>')) {
-        const content = line.replace(/<\/?h1>/g, '');
-        elements.push(<h1 key={index} className="text-2xl font-bold text-white mt-6 mb-3">{content}</h1>);
-      } else if (line.includes('<h2>')) {
-        const content = line.replace(/<\/?h2>/g, '');
-        elements.push(<h2 key={index} className="text-xl font-bold text-orange-400 mt-5 mb-2">{content}</h2>);
-      } else if (line.includes('<h3>')) {
-        const content = line.replace(/<\/?h3>/g, '');
-        elements.push(<h3 key={index} className="text-lg font-bold text-gray-300 mt-4 mb-2">{content}</h3>);
+      if (line.startsWith('### ')) {
+        formattedLines.push(
+          <h3 key={index} className="text-lg font-semibold text-white mt-4 mb-2">
+            {line.replace('### ', '')}
+          </h3>
+        );
+      } else if (line.startsWith('## ')) {
+        formattedLines.push(
+          <h2 key={index} className="text-xl font-bold text-white mt-4 mb-2">
+            {line.replace('## ', '')}
+          </h2>
+        );
+      } else if (line.startsWith('# ')) {
+        formattedLines.push(
+          <h1 key={index} className="text-2xl font-bold text-white mt-4 mb-3">
+            {line.replace('# ', '')}
+          </h1>
+        );
+      } else if (line.startsWith('**') && line.endsWith('**')) {
+        // Bold lines
+        formattedLines.push(
+          <p key={index} className="font-bold text-white mb-2">
+            {line.replace(/\*\*/g, '')}
+          </p>
+        );
+      } else if (line.startsWith('• ') || line.startsWith('- ')) {
+        // Bullet points
+        formattedLines.push(
+          <li key={index} className="text-gray-300 ml-4 mb-1">
+            {line.replace(/^[•\-]\s/, '')}
+          </li>
+        );
+      } else if (line.startsWith('|') && line.includes('|')) {
+        // Table rows - format as grid
+        const cells = line.split('|').filter(cell => cell.trim());
+        if (cells.length > 1) {
+          formattedLines.push(
+            <div key={index} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 bg-gray-800 p-2 rounded mb-1">
+              {cells.map((cell, cellIndex) => (
+                <div key={cellIndex} className="text-gray-300 text-sm">
+                  {cell.trim()}
+                </div>
+              ))}
+            </div>
+          );
+        }
+      } else if (line.trim()) {
+        // Regular text with inline formatting
+        const formattedLine = formatInlineText(line);
+        formattedLines.push(
+          <p key={index} className="text-gray-300 mb-2">
+            {formattedLine}
+          </p>
+        );
       } else {
-        // Handle regular text with inline formatting
-        const processedLine = processInlineFormatting(line);
-        elements.push(<div key={index} className="text-gray-300 mb-1">{processedLine}</div>);
+        // Empty line for spacing
+        formattedLines.push(<br key={index} />);
       }
     });
     
-    return elements;
+    return formattedLines;
   };
-  
-  const processInlineFormatting = (text: string) => {
-    const parts = [];
-    let currentIndex = 0;
-    
-    // Process bold text
-    const boldRegex = /<strong>(.*?)<\/strong>/g;
-    let match;
-    
-    while ((match = boldRegex.exec(text)) !== null) {
-      // Add text before the match
-      if (match.index > currentIndex) {
-        parts.push(text.slice(currentIndex, match.index));
+
+  const formatInlineText = (text: string) => {
+    // Handle bold text **text**
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={index} className="font-semibold text-white">
+            {part.replace(/\*\*/g, '')}
+          </strong>
+        );
       }
-      
-      // Add the bold text
-      parts.push(<strong key={match.index} className="font-bold text-white">{match[1]}</strong>);
-      
-      currentIndex = match.index + match[0].length;
-    }
-    
-    // Add remaining text
-    if (currentIndex < text.length) {
-      parts.push(text.slice(currentIndex));
-    }
-    
-    return parts.length > 0 ? parts : text;
+      return part;
+    });
   };
 
   return (
-    <div className={`formatted-ai-response ${className}`}>
-      <div className="space-y-2">
-        {parseContent(content)}
-      </div>
+    <div className={`formatted-ai-response space-y-2 ${className}`}>
+      {formatContent(content)}
     </div>
   );
 };

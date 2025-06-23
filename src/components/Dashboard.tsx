@@ -10,12 +10,14 @@ import { aiModules } from "./dashboard/AIModuleData";
 import { ArrowLeft, Star, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useUserData } from "@/contexts/UserDataContext";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
   const isMobile = useIsMobile();
   const { currentTier, isSubscribed } = useSubscription();
+  const { refreshUserData } = useUserData();
 
   const handleModuleClick = (moduleId: string) => {
     setActiveModule(moduleId);
@@ -33,6 +35,11 @@ const Dashboard = () => {
   const handlePaymentSuccess = () => {
     setSelectedPlan(null);
     console.log('Payment successful! Premium features unlocked.');
+  };
+
+  const handleFoodLogged = () => {
+    // Refresh user data when food is logged
+    refreshUserData();
   };
 
   if (selectedPlan) {
@@ -65,6 +72,12 @@ const Dashboard = () => {
     const module = aiModules.find(m => m.id === activeModule);
     if (module) {
       const ModuleComponent = module.component;
+      
+      // Special handling for FoodPhotoLogger which needs onFoodLogged prop
+      if (module.id === 'food-photo-logger') {
+        return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
+      }
+      
       return <ModuleComponent onBack={handleBack} />;
     }
   }

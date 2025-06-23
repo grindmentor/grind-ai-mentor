@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +8,8 @@ import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserData } from "@/contexts/UserDataContext";
+import FormattedAIResponse from "@/components/FormattedAIResponse";
 
 interface SmartTrainingProps {
   onBack: () => void;
@@ -17,6 +20,7 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { canUseFeature, incrementUsage } = useUsageTracking();
+  const { getPrefilledData } = useUserData();
 
   const examplePrompts = [
     "I'm a beginner who wants to build muscle mass with 3 workouts per week",
@@ -26,30 +30,20 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
   ];
 
   const handleExampleClick = (prompt: string) => {
-    setInput(prompt);
-  };
-
-  const normalizeInput = (text: string) => {
-    // Basic spelling corrections for common fitness terms
-    const corrections: { [key: string]: string } = {
-      'beginer': 'beginner',
-      'mussel': 'muscle',
-      'strenght': 'strength',
-      'waight': 'weight',
-      'excersize': 'exercise',
-      'workut': 'workout',
-      'protien': 'protein',
-      'squats': 'squat',
-      'benchpress': 'bench press',
-      'deadlifts': 'deadlift'
-    };
-
-    let normalized = text.toLowerCase();
-    Object.entries(corrections).forEach(([wrong, correct]) => {
-      normalized = normalized.replace(new RegExp(wrong, 'g'), correct);
-    });
+    const userData = getPrefilledData();
+    let enhancedPrompt = prompt;
     
-    return normalized;
+    if (userData.experience) {
+      enhancedPrompt += ` (Experience level: ${userData.experience})`;
+    }
+    if (userData.goal) {
+      enhancedPrompt += ` (Primary goal: ${userData.goal})`;
+    }
+    if (userData.activity) {
+      enhancedPrompt += ` (Activity level: ${userData.activity})`;
+    }
+    
+    setInput(enhancedPrompt);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,10 +56,21 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
     setIsLoading(true);
     
     try {
+      const userData = getPrefilledData();
+      const enhancedInput = `${input}
+
+User Profile:
+- Weight: ${userData.weight || 'Not specified'} ${userData.weightUnit}
+- Height: ${userData.height || 'Not specified'} ${userData.heightUnit}
+- Age: ${userData.age || 'Not specified'}
+- Experience: ${userData.experience || 'Not specified'}
+- Activity Level: ${userData.activity || 'Not specified'}
+- Primary Goal: ${userData.goal || 'Not specified'}`;
+
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
           type: 'training',
-          userInput: input
+          userInput: enhancedInput
         }
       });
 
@@ -183,8 +188,8 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
                     Download
                   </Button>
                 </div>
-                <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
-                  <pre className="whitespace-pre-wrap text-sm">{response}</pre>
+                <div className="max-h-96 overflow-y-auto bg-gray-800 p-4 rounded-lg">
+                  <FormattedAIResponse content={response} />
                 </div>
               </div>
             ) : (

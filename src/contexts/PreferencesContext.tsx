@@ -11,8 +11,8 @@ interface PreferencesContextType {
 }
 
 const defaultPreferences: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
-  weight_unit: 'lbs',
-  height_unit: 'ft-in',
+  weight_unit: 'kg',
+  height_unit: 'cm',
   notifications: true,
   email_updates: true,
   dark_mode: true
@@ -45,8 +45,8 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       if (data && !error) {
         setPreferences({
-          weight_unit: data.weight_unit || 'lbs',
-          height_unit: data.height_unit || 'ft-in',
+          weight_unit: data.weight_unit || 'kg',
+          height_unit: data.height_unit || 'cm',
           notifications: data.notifications ?? true,
           email_updates: data.email_updates ?? true,
           dark_mode: data.dark_mode ?? true

@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, Plus, Target, Calendar, Award, AlertTriangle, Zap } from "lucide-react";
+import { TrendingUp, Plus, Target, Calendar, Award, AlertTriangle, Zap, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCustomerMemory } from "@/hooks/useCustomerMemory";
@@ -36,13 +36,17 @@ interface ProgressSuggestion {
   confidence: number;
 }
 
+interface ProgressiveOverloadAIProps {
+  onBack: () => void;
+}
+
 const POPULAR_EXERCISES = [
   'Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull-ups',
   'Barbell Row', 'Incline Bench Press', 'Romanian Deadlift', 'Dips',
   'Lateral Raises', 'Bicep Curls', 'Tricep Extensions', 'Leg Press'
 ];
 
-const ProgressiveOverloadAI = () => {
+const ProgressiveOverloadAI = ({ onBack }: ProgressiveOverloadAIProps) => {
   const { user } = useAuth();
   const { logInteraction, addToFavorites } = useCustomerMemory();
   const { canUseFeature, incrementUsage, getRemainingUsage } = useUsageTracking();
@@ -257,6 +261,17 @@ const ProgressiveOverloadAI = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center space-x-4">
+        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        <h1 className="text-3xl font-bold text-white">Progressive Overload AI</h1>
+        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+          Science-Based Training
+        </Badge>
+      </div>
+
       <Card className="bg-gray-900 border-gray-800">
         <CardHeader>
           <div className="flex items-center space-x-3">

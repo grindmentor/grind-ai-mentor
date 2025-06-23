@@ -177,19 +177,6 @@ const WorkoutTimer = ({ onBack }: WorkoutTimerProps) => {
                 </Button>
               </div>
             </div>
-
-            <div className="bg-gray-800 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2">Want More?</h4>
-              <p className="text-gray-400 text-sm mb-3">
-                Upgrade to access AI coaching, meal plans, and advanced training programs backed by science.
-              </p>
-              <Button 
-                onClick={() => window.open('/pricing', '_blank')}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-              >
-                View Pricing Plans
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>

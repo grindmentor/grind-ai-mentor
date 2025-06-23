@@ -63,8 +63,8 @@ const UnitPreferences = ({ preferences, onPreferenceChange }: UnitPreferencesPro
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
-              <SelectItem value="lbs">Pounds (lbs)</SelectItem>
               <SelectItem value="kg">Kilograms (kg)</SelectItem>
+              <SelectItem value="lbs">Pounds (lbs)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -76,9 +76,9 @@ const UnitPreferences = ({ preferences, onPreferenceChange }: UnitPreferencesPro
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
+              <SelectItem value="cm">Centimeters (cm)</SelectItem>
               <SelectItem value="ft-in">Feet & Inches (5'10")</SelectItem>
               <SelectItem value="in">Inches only</SelectItem>
-              <SelectItem value="cm">Centimeters (cm)</SelectItem>
             </SelectContent>
           </Select>
         </div>

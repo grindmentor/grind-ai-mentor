@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,6 @@ import UnitPreferences from "@/components/settings/UnitPreferences";
 import AppPreferences from "@/components/settings/AppPreferences";
 import BasicInformation from "@/components/settings/BasicInformation";
 import FitnessProfile from "@/components/settings/FitnessProfile";
-import DisplayNameSection from "@/components/settings/DisplayNameSection";
 import SubscriptionManager from "@/components/subscription/SubscriptionManager";
 import { SoundButton } from "@/components/SoundButton";
 
@@ -250,6 +250,15 @@ const Settings = () => {
     handleInputChange('height', heightInInches.toString());
   };
 
+  // Wrapper functions for preferences components
+  const handleUnitPreferenceChange = async (field: string, value: any) => {
+    await updatePreferences({ [field]: value });
+  };
+
+  const handleAppPreferenceChange = async (field: string, value: any) => {
+    await updatePreferences({ [field]: value });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -289,21 +298,16 @@ const Settings = () => {
         </Badge>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          <DisplayNameSection 
-            displayName={profile.displayName}
-            onDisplayNameChange={(value) => handleInputChange('displayName', value)}
-          />
-
           <SubscriptionManager />
 
           <UnitPreferences 
             preferences={preferences} 
-            onPreferenceChange={updatePreferences} 
+            onPreferenceChange={handleUnitPreferenceChange} 
           />
 
           <AppPreferences 
             preferences={preferences} 
-            onPreferenceChange={updatePreferences} 
+            onPreferenceChange={handleAppPreferenceChange} 
           />
 
           <BasicInformation 

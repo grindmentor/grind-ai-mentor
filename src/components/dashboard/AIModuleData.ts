@@ -1,147 +1,149 @@
 
-import { Brain, Calculator, TrendingUp, Camera, Utensils, Dumbbell, Timer, FileImage, Target, Heart, Moon } from "lucide-react";
+import { Brain, Utensils, Calculator, Camera, Timer, Target, TrendingUp, Heart, Dumbbell, BarChart3, Activity, Zap } from "lucide-react";
 import CoachGPT from "../ai-modules/CoachGPT";
-import TDEECalculator from "../ai-modules/TDEECalculator";
-import CutCalcPro from "../ai-modules/CutCalcPro";
-import ProgressAI from "../ai-modules/ProgressAI";
 import MealPlanAI from "../ai-modules/MealPlanAI";
-import SmartTraining from "../ai-modules/SmartTraining";
-import CardioAI from "../ai-modules/CardioAI";
+import TDEECalculator from "../ai-modules/TDEECalculator";
+import FoodPhotoLogger from "../ai-modules/FoodPhotoLogger";
 import WorkoutTimer from "../ai-modules/WorkoutTimer";
+import SmartTraining from "../ai-modules/SmartTraining";
+import ProgressAI from "../ai-modules/ProgressAI";
+import RecoveryCoach from "../ai-modules/RecoveryCoach";
+import WorkoutLibrary from "../ai-modules/WorkoutLibrary";
 import SmartFoodLog from "../ai-modules/SmartFoodLog";
 import HabitTracker from "../ai-modules/HabitTracker";
-import RecoveryCoach from "../ai-modules/RecoveryCoach";
-import ProgressiveOverloadAI from "../ai-modules/ProgressiveOverloadAI";
-
-// Most useful AIs for front page display
-export const featuredModules = [
-  'coach-gpt',
-  'meal-plan-ai', 
-  'smart-training',
-  'progress-ai',
-  'tdee-calculator',
-  'smart-food-log'
-];
+import CutCalcPro from "../ai-modules/CutCalcPro";
 
 export const aiModules = [
   {
-    id: 'coach-gpt',
-    name: 'CoachGPT',
-    description: '24/7 AI fitness coaching with research citations',
+    id: "coach-gpt",
+    title: "CoachGPT",
+    description: "Your personal AI fitness coach",
     icon: Brain,
-    color: 'bg-blue-500',
+    gradient: "from-blue-500 to-blue-700",
     component: CoachGPT,
-    tier: 'free',
-    buttonText: 'Get Coaching'
+    isNew: false,
+    isPremium: false,
+    usageKey: "coach_gpt_queries" as const
   },
   {
-    id: 'meal-plan-ai',
-    name: 'MealPlanAI',
-    description: 'Custom meal plans and nutrition guidance',
-    icon: Utensils,
-    color: 'bg-green-500',
-    component: MealPlanAI,
-    tier: 'free',
-    buttonText: 'Create Meal Plan'
-  },
-  {
-    id: 'smart-training',
-    name: 'Smart Training',
-    description: 'AI-generated personalized weight training programs',
+    id: "smart-training",
+    title: "Smart Training",
+    description: "AI-powered workout programs with progressive overload",
     icon: Dumbbell,
-    color: 'bg-red-500',
+    gradient: "from-purple-500 to-purple-700",
     component: SmartTraining,
-    tier: 'free',
-    buttonText: 'Build Workout'
+    isNew: false,
+    isPremium: true, // Premium only feature
+    usageKey: "training_programs" as const
   },
   {
-    id: 'progress-ai',
-    name: 'ProgressAI',
-    description: 'AI photo analysis & body composition tracking',
-    icon: Camera,
-    color: 'bg-purple-500',
-    component: ProgressAI,
-    tier: 'free',
-    buttonText: 'Track Progress'
+    id: "meal-plan-ai",
+    title: "MealPlan AI",
+    description: "Custom meal plans based on your goals",
+    icon: Utensils,
+    gradient: "from-green-500 to-green-700",
+    component: MealPlanAI,
+    isNew: false,
+    isPremium: false,
+    usageKey: "meal_plan_generations" as const
   },
   {
-    id: 'tdee-calculator',
-    name: 'TDEE & FFMI Calculator',
-    description: 'Calculate metabolic needs and muscle potential',
+    id: "tdee-calculator",
+    title: "TDEE & FFMI Calculator",
+    description: "Calculate your daily energy needs",
     icon: Calculator,
-    color: 'bg-indigo-500',
+    gradient: "from-orange-500 to-orange-700",
     component: TDEECalculator,
-    tier: 'free',
-    buttonText: 'Calculate TDEE'
+    isNew: false,
+    isPremium: false,
+    usageKey: "tdee_calculations" as const
   },
   {
-    id: 'smart-food-log',
-    name: 'Smart Food Log',
-    description: 'Photo-based food tracking and analysis',
-    icon: FileImage,
-    color: 'bg-yellow-500',
-    component: SmartFoodLog,
-    tier: 'free',
-    buttonText: 'Track Food'
-  },
-  {
-    id: 'progressive-overload',
-    name: 'Progressive Overload AI',
-    description: 'Track strength progress with intelligent suggestions',
-    icon: TrendingUp,
-    color: 'bg-gradient-to-r from-blue-500 to-purple-600',
-    component: ProgressiveOverloadAI,
-    tier: 'free',
-    buttonText: 'Track Progress'
-  },
-  {
-    id: 'recovery-coach',
-    name: 'Recovery Coach',
-    description: 'Sleep optimization and recovery protocols',
-    icon: Moon,
-    color: 'bg-indigo-500',
-    component: RecoveryCoach,
-    tier: 'free',
-    buttonText: 'Optimize Recovery'
-  },
-  {
-    id: 'habit-tracker',
-    name: 'Habit Tracker',
-    description: 'Build consistent fitness and wellness habits',
+    id: "cut-calc-pro",
+    title: "CutCalc Pro",
+    description: "Advanced cutting calculator with body fat analysis",
     icon: Target,
-    color: 'bg-gradient-to-r from-green-500 to-blue-500',
-    component: HabitTracker,
-    tier: 'free',
-    buttonText: 'Track Habits'
-  },
-  {
-    id: 'cardio-ai',
-    name: 'CardioAI',
-    description: 'Science-based cardiovascular training programs',
-    icon: Heart,
-    color: 'bg-red-600',
-    component: CardioAI,
-    tier: 'free',
-    buttonText: 'Plan Cardio'
-  },
-  {
-    id: 'cut-calc-pro',
-    name: 'CutCalc Pro',
-    description: 'Advanced body composition & cutting calculator',
-    icon: TrendingUp,
-    color: 'bg-pink-500',
+    gradient: "from-red-500 to-red-700",
     component: CutCalcPro,
-    tier: 'free',
-    buttonText: 'Calculate Cut'
+    isNew: false,
+    isPremium: false,
+    usageKey: "cut_calc_uses" as const
   },
   {
-    id: 'workout-timer',
-    name: 'Workout Timer',
-    description: 'Smart rest periods and workout timing',
+    id: "food-photo-logger",
+    title: "Food Photo Logger",
+    description: "Log meals with AI photo analysis",
+    icon: Camera,
+    gradient: "from-pink-500 to-pink-700",
+    component: FoodPhotoLogger,
+    isNew: false,
+    isPremium: false,
+    usageKey: "food_photo_analyses" as const
+  },
+  {
+    id: "smart-food-log",
+    title: "Smart Food Log",
+    description: "Track nutrition with AI insights",
+    icon: Activity,
+    gradient: "from-emerald-500 to-emerald-700",
+    component: SmartFoodLog,
+    isNew: false,
+    isPremium: false,
+    usageKey: "food_log_analyses" as const
+  },
+  {
+    id: "workout-timer",
+    title: "Workout Timer",
+    description: "Time your workouts with smart features",
     icon: Timer,
-    color: 'bg-teal-500',
+    gradient: "from-cyan-500 to-cyan-700",
     component: WorkoutTimer,
-    tier: 'free',
-    buttonText: 'Start Timer'
+    isNew: false,
+    isPremium: false,
+    usageKey: "workout_timer_sessions" as const
+  },
+  {
+    id: "progress-ai",
+    title: "Progress AI",
+    description: "AI analysis of your fitness progress",
+    icon: TrendingUp,
+    gradient: "from-indigo-500 to-indigo-700",
+    component: ProgressAI,
+    isNew: false,
+    isPremium: false,
+    usageKey: "progress_analyses" as const
+  },
+  {
+    id: "recovery-coach",
+    title: "Recovery Coach",
+    description: "Optimize your rest and recovery",
+    icon: Heart,
+    gradient: "from-teal-500 to-teal-700",
+    component: RecoveryCoach,
+    isNew: false,
+    isPremium: false,
+    usageKey: "habit_checks" as const
+  },
+  {
+    id: "workout-library",
+    title: "Workout Library",
+    description: "Comprehensive exercise database",
+    icon: BarChart3,
+    gradient: "from-violet-500 to-violet-700",
+    component: WorkoutLibrary,
+    isNew: false,
+    isPremium: false,
+    usageKey: "coach_gpt_queries" as const
+  },
+  {
+    id: "habit-tracker",
+    title: "Habit Tracker",
+    description: "Build lasting fitness habits",
+    icon: Zap,
+    gradient: "from-yellow-500 to-yellow-700",
+    component: HabitTracker,
+    isNew: false,
+    isPremium: false,
+    usageKey: "habit_checks" as const
   }
 ];

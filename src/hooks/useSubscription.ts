@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,7 +36,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       food_log_analyses: 5,
       tdee_calculations: 2,
       habit_checks: 10,
-      training_programs: 1,
+      training_programs: 0, // No access to premium Smart Training
       progress_analyses: 1,
       cut_calc_uses: 2,
       workout_timer_sessions: 3,
@@ -75,6 +76,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       'Unlimited queries',
       'Unlimited meal plans', 
       'Unlimited food logging',
+      'Unlimited Smart Training',
       '20 photos/month',
       'Priority support',
       'All future features'
@@ -99,14 +101,23 @@ export const useSubscription = () => {
   const [currentTier, setCurrentTier] = useState<string>('free');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastChecked, setLastChecked] = useState<number>(0);
 
   useEffect(() => {
     if (user) {
-      checkSubscription();
+      // Check subscription immediately and cache for 5 minutes
+      const now = Date.now();
+      if (now - lastChecked > 300000) { // 5 minutes
+        checkSubscription();
+        setLastChecked(now);
+      } else {
+        setIsLoading(false);
+      }
     } else {
+      setCurrentTier('free');
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, lastChecked]);
 
   const checkSubscription = async () => {
     if (!user) return;
@@ -129,13 +140,20 @@ export const useSubscription = () => {
       if (data && data.length > 0) {
         const subscription = data[0];
         const tier = subscription.subscription_tier?.toLowerCase() || 'free';
-        setCurrentTier(tier);
         
-        // Calculate subscription end date (30 days from payment)
+        // Check if subscription is still valid (within 30 days)
         const paymentDate = new Date(subscription.created_at);
         const endDate = new Date(paymentDate);
         endDate.setMonth(endDate.getMonth() + 1);
-        setSubscriptionEnd(endDate.toISOString());
+        
+        if (new Date() <= endDate) {
+          setCurrentTier(tier);
+          setSubscriptionEnd(endDate.toISOString());
+        } else {
+          // Subscription expired
+          setCurrentTier('free');
+          setSubscriptionEnd(null);
+        }
       } else {
         setCurrentTier('free');
         setSubscriptionEnd(null);

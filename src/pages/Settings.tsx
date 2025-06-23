@@ -13,7 +13,6 @@ import UnitPreferences from "@/components/settings/UnitPreferences";
 import AppPreferences from "@/components/settings/AppPreferences";
 import BasicInformation from "@/components/settings/BasicInformation";
 import FitnessProfile from "@/components/settings/FitnessProfile";
-import SubscriptionManager from "@/components/subscription/SubscriptionManager";
 import UpgradeSection from "@/components/dashboard/UpgradeSection";
 import { SoundButton } from "@/components/SoundButton";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -81,6 +80,8 @@ const Settings = () => {
       }
     }
   }, [preferences.height_unit, profile.height]);
+
+  // ... keep existing code (loadProfile, handleInputChange, handleSave, handleSignOut, etc.)
 
   const loadProfile = async () => {
     if (!user) return;
@@ -293,7 +294,6 @@ const Settings = () => {
         </Badge>
 
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2'} gap-6`}>
-          <SubscriptionManager />
           <UnitPreferences />
           <AppPreferences />
           <BasicInformation 

@@ -1,20 +1,20 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";  
-import { LucideIcon } from "lucide-react";
-import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { LucideIcon, Crown, Lock } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
 
 interface AIModule {
   id: string;
-  name: string;
+  title: string;
   description: string;
   icon: LucideIcon;
-  color: string;
-  tier: string;
-  trending?: boolean;
-  buttonText: string;
+  gradient: string;
+  isNew?: boolean;
+  isPremium?: boolean;
+  usageKey: string;
 }
 
 interface AIModuleCardProps {
@@ -22,70 +22,85 @@ interface AIModuleCardProps {
   onModuleClick: (moduleId: string) => void;
 }
 
-const getUsageKey = (moduleId: string) => {
-  const mapping: Record<string, string> = {
-    'coach-gpt': 'coach_gpt_queries',
-    'meal-plan-ai': 'meal_plan_generations',
-    'smart-food-log': 'food_log_analyses',
-    'tdee-calculator': 'tdee_calculations',
-    'habit-tracker': 'habit_checks',
-    'smart-training': 'training_programs',
-    'progress-ai': 'progress_analyses',
-    'cut-calc-pro': 'cut_calc_uses',
-    'workout-timer': 'workout_timer_sessions',
-    'food-photo-logger': 'food_photo_analyses'
-  };
-  return mapping[moduleId];
-};
-
 const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
+  const { currentTier, isSubscribed } = useSubscription();
+  const { canUseFeature, getRemainingUsage } = useUsageTracking();
   const IconComponent = module.icon;
-  const { currentUsage, limits } = useUsageTracking();
-  const { currentTier } = useSubscription();
-  
-  const usageKey = getUsageKey(module.id);
-  const currentCount = currentUsage?.[usageKey as keyof typeof currentUsage] || 0;
-  const limit = limits?.[usageKey as keyof typeof limits] || 0;
-  
-  const isUnlimited = limit === -1;
-  const isPremium = currentTier !== 'free';
-  
+
+  const canAccess = !module.isPremium || isSubscribed;
+  const remaining = getRemainingUsage(module.usageKey as any);
+  const canUse = canUseFeature(module.usageKey as any);
+
+  const handleClick = () => {
+    if (!canAccess) {
+      // Show upgrade prompt or redirect to upgrade
+      return;
+    }
+    onModuleClick(module.id);
+  };
+
   return (
-    <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all cursor-pointer">
+    <Card 
+      className={`bg-gradient-to-br ${module.gradient} border-0 text-white cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl ${
+        !canAccess ? 'opacity-75' : ''
+      }`}
+      onClick={handleClick}
+    >
       <CardHeader className="pb-3">
-        <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 ${module.color} rounded-lg flex items-center justify-center text-white`}>
-            <IconComponent className="w-6 h-6" />
+        <div className="flex items-start justify-between">
+          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+            {!canAccess ? (
+              <Lock className="w-6 h-6 text-white" />
+            ) : (
+              <IconComponent className="w-6 h-6 text-white" />
+            )}
           </div>
-          <div className="flex-1">
-            <CardTitle className="text-white text-lg">{module.name}</CardTitle>
-            <div className="flex items-center space-x-2 mt-1">
-              <Badge className={`text-xs ${isPremium ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}`}>
-                {isPremium ? 'Premium' : 'Free'}
+          <div className="flex flex-col items-end space-y-1">
+            {module.isNew && (
+              <Badge className="bg-white/20 text-white text-xs">New</Badge>
+            )}
+            {module.isPremium && (
+              <Badge className="bg-yellow-500/20 text-yellow-300 text-xs border-yellow-500/30">
+                <Crown className="w-3 h-3 mr-1" />
+                Premium
               </Badge>
-              {usageKey && (
-                <Badge variant="outline" className="text-xs text-white border-gray-600">
-                  {isUnlimited ? (
-                    <span className="text-orange-400 font-semibold">Unlimited</span>
-                  ) : (
-                    `${currentCount}/${limit} left`
-                  )}
-                </Badge>
-              )}
-            </div>
+            )}
           </div>
         </div>
+        <CardTitle className="text-white text-lg">{module.title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
-        <CardDescription className="text-gray-400 text-sm mb-4 line-clamp-2">
+      <CardContent>
+        <CardDescription className="text-white/80 text-sm mb-3">
           {module.description}
         </CardDescription>
-        <Button 
-          onClick={() => onModuleClick(module.id)}
-          className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
-        >
-          {module.buttonText}
-        </Button>
+        
+        {canAccess ? (
+          <div className="flex items-center justify-between">
+            <span className="text-white/70 text-xs">
+              {remaining === -1 ? 'Unlimited' : `${remaining} remaining`}
+            </span>
+            <Button 
+              variant="secondary" 
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white border-0"
+              disabled={!canUse}
+            >
+              {canUse ? 'Launch' : 'Limit reached'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <span className="text-white/70 text-xs">Premium Required</span>
+            <Button 
+              variant="secondary" 
+              size="sm"
+              className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0"
+            >
+              <Crown className="w-3 h-3 mr-1" />
+              Upgrade
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

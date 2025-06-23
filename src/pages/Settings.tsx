@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +14,16 @@ import AppPreferences from "@/components/settings/AppPreferences";
 import BasicInformation from "@/components/settings/BasicInformation";
 import FitnessProfile from "@/components/settings/FitnessProfile";
 import SubscriptionManager from "@/components/subscription/SubscriptionManager";
+import UpgradeSection from "@/components/dashboard/UpgradeSection";
 import { SoundButton } from "@/components/SoundButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { preferences, updatePreferences } = usePreferences();
+  const { preferences } = usePreferences();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [profile, setProfile] = useState({
     weight: '',
@@ -250,19 +252,10 @@ const Settings = () => {
     handleInputChange('height', heightInInches.toString());
   };
 
-  // Wrapper functions for preferences components
-  const handleUnitPreferenceChange = async (field: string, value: any) => {
-    await updatePreferences({ [field]: value });
-  };
-
-  const handleAppPreferenceChange = async (field: string, value: any) => {
-    await updatePreferences({ [field]: value });
-  };
-
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'items-center justify-between'}`}>
           <div className="flex items-center space-x-4">
             <SoundButton 
               variant="ghost" 
@@ -278,38 +271,31 @@ const Settings = () => {
                 <SettingsIcon className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">Settings</h1>
+                <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold`}>Settings</h1>
                 <p className="text-muted-foreground">Update your profile and preferences</p>
               </div>
             </div>
           </div>
-          <SoundButton 
-            variant="outline" 
-            onClick={handleSignOut} 
-            className="border-border hover:bg-accent text-foreground"
-            soundType="click"
-          >
-            Sign Out
-          </SoundButton>
+          {!isMobile && (
+            <SoundButton 
+              variant="outline" 
+              onClick={handleSignOut} 
+              className="border-border hover:bg-accent text-foreground"
+              soundType="click"
+            >
+              Sign Out
+            </SoundButton>
+          )}
         </div>
 
         <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
           Unit preferences are saved automatically
         </Badge>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2'} gap-6`}>
           <SubscriptionManager />
-
-          <UnitPreferences 
-            preferences={preferences} 
-            onPreferenceChange={handleUnitPreferenceChange} 
-          />
-
-          <AppPreferences 
-            preferences={preferences} 
-            onPreferenceChange={handleAppPreferenceChange} 
-          />
-
+          <UnitPreferences />
+          <AppPreferences />
           <BasicInformation 
             profile={profile}
             preferences={preferences}
@@ -320,11 +306,15 @@ const Settings = () => {
             getWeightDisplay={getWeightDisplay}
             getHeightDisplay={getHeightDisplay}
           />
-
           <FitnessProfile 
             profile={profile}
             onInputChange={handleInputChange}
           />
+        </div>
+
+        {/* Upgrade Section */}
+        <div className="mt-8">
+          <UpgradeSection />
         </div>
 
         <Card className="bg-card border-border">
@@ -340,6 +330,19 @@ const Settings = () => {
             </SoundButton>
           </CardContent>
         </Card>
+
+        {isMobile && (
+          <div className="pt-6">
+            <SoundButton 
+              variant="outline" 
+              onClick={handleSignOut} 
+              className="w-full border-border hover:bg-accent text-foreground"
+              soundType="click"
+            >
+              Sign Out
+            </SoundButton>
+          </div>
+        )}
       </div>
     </div>
   );

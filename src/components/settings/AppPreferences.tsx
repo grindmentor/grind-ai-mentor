@@ -2,32 +2,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
-interface AppPreferencesProps {
-  preferences: {
-    notifications: boolean;
-    email_updates: boolean;
-    dark_mode: boolean;
-  };
-  onPreferenceChange: (field: string, value: any) => Promise<void>;
-}
+const AppPreferences = () => {
+  const { preferences, updatePreference } = usePreferences();
 
-const AppPreferences = ({ preferences, onPreferenceChange }: AppPreferencesProps) => {
-  const { toast } = useToast();
-
-  const handlePreferenceChange = async (field: string, value: boolean, label: string) => {
+  const handlePreferenceChange = async (field: string, value: boolean) => {
     try {
-      await onPreferenceChange(field, value);
-      toast({
-        title: `${label} ${value ? 'enabled' : 'disabled'}`,
-      });
+      await updatePreference(field as any, value);
     } catch (error) {
-      toast({
-        title: `Error updating ${label.toLowerCase()}`,
-        description: "Please try again.",
-        variant: "destructive",
-      });
+      console.error(`Failed to update ${field}:`, error);
     }
   };
 
@@ -47,7 +31,7 @@ const AppPreferences = ({ preferences, onPreferenceChange }: AppPreferencesProps
           </div>
           <Switch 
             checked={preferences.notifications}
-            onCheckedChange={(checked) => handlePreferenceChange('notifications', checked, 'Notifications')}
+            onCheckedChange={(checked) => handlePreferenceChange('notifications', checked)}
           />
         </div>
         
@@ -58,7 +42,7 @@ const AppPreferences = ({ preferences, onPreferenceChange }: AppPreferencesProps
           </div>
           <Switch 
             checked={preferences.email_updates}
-            onCheckedChange={(checked) => handlePreferenceChange('email_updates', checked, 'Email updates')}
+            onCheckedChange={(checked) => handlePreferenceChange('email_updates', checked)}
           />
         </div>
         
@@ -69,7 +53,7 @@ const AppPreferences = ({ preferences, onPreferenceChange }: AppPreferencesProps
           </div>
           <Switch 
             checked={preferences.dark_mode}
-            onCheckedChange={(checked) => handlePreferenceChange('dark_mode', checked, 'Dark mode')}
+            onCheckedChange={(checked) => handlePreferenceChange('dark_mode', checked)}
           />
         </div>
       </CardContent>

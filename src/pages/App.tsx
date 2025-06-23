@@ -6,13 +6,15 @@ import Dashboard from "@/components/Dashboard";
 import WelcomeBack from "@/components/WelcomeBack";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Dumbbell, Home, Settings, CreditCard, LogOut } from "lucide-react";
+import { Dumbbell, Home, Settings, LogOut, Menu, X } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const App = () => {
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { user, loading, signOut, isNewUser } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -64,8 +66,34 @@ const App = () => {
         />
       )}
 
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                <Dumbbell className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-lg font-bold">GrindMentor</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-white hover:bg-gray-800"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-gray-900/95 backdrop-blur border-r border-gray-800 p-6">
+      <div className={`fixed left-0 top-0 h-full bg-gray-900/95 backdrop-blur border-r border-gray-800 p-6 transition-transform duration-300 z-40 ${
+        isMobile 
+          ? `w-64 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+          : 'w-64 translate-x-0'
+      }`}>
         {/* Logo */}
         <div className="flex items-center space-x-3 mb-8">
           <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
@@ -76,30 +104,34 @@ const App = () => {
 
         {/* Navigation */}
         <nav className="space-y-2">
-          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors"
+            onClick={() => {
+              if (isMobile) setSidebarOpen(false);
+            }}
+          >
             <Home className="w-5 h-5 mr-3" />
             Dashboard
           </Button>
           <Button 
             variant="ghost" 
             className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors"
-            onClick={() => navigate('/settings')}
+            onClick={() => {
+              navigate('/settings');
+              if (isMobile) setSidebarOpen(false);
+            }}
           >
             <Settings className="w-5 h-5 mr-3" />
             Settings
           </Button>
           <Button 
             variant="ghost" 
-            className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors"
-            onClick={() => window.open('/pricing', '_blank')}
-          >
-            <CreditCard className="w-5 h-5 mr-3" />
-            Upgrade
-          </Button>
-          <Button 
-            variant="ghost" 
             className="w-full justify-start text-white hover:bg-gray-800 hover:text-red-400 transition-colors"
-            onClick={handleSignOut}
+            onClick={() => {
+              handleSignOut();
+              if (isMobile) setSidebarOpen(false);
+            }}
           >
             <LogOut className="w-5 h-5 mr-3" />
             Sign Out
@@ -108,36 +140,29 @@ const App = () => {
 
         {/* User Info */}
         <div className="absolute bottom-6 left-6 right-6">
-          <div className="bg-gray-800/80 p-4 rounded-xl mb-4 border border-gray-700">
+          <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
             <div className="text-white text-sm font-medium mb-1">Signed in as:</div>
             <div className="text-gray-400 text-xs truncate">{user.email}</div>
           </div>
-          <PaymentSetup onUpgrade={() => window.open('/pricing', '_blank')} />
         </div>
       </div>
+
+      {/* Mobile Overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Main Content */}
-      <div className="ml-64 min-h-screen">
+      <div className={`min-h-screen transition-all duration-300 ${
+        isMobile 
+          ? 'pt-16' 
+          : 'ml-64'
+      }`}>
         <Dashboard />
       </div>
-
-      {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-xl p-8 max-w-md w-full mx-4 border border-gray-800">
-            <h3 className="text-xl font-bold text-white mb-4">Payment Successful!</h3>
-            <p className="text-gray-400 mb-6">
-              Welcome to Premium! You now have access to all features.
-            </p>
-            <Button
-              onClick={() => setShowPaymentModal(false)}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              Continue
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

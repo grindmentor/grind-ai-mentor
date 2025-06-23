@@ -6,10 +6,12 @@ import DashboardHeader from "./dashboard/DashboardHeader";
 import AIModuleCard from "./dashboard/AIModuleCard";
 import { aiModules } from "./dashboard/AIModuleData";
 import { ArrowLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
+  const isMobile = useIsMobile();
 
   const handleModuleClick = (moduleId: string) => {
     setActiveModule(moduleId);
@@ -68,7 +70,11 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto">
         <DashboardHeader />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className={`grid gap-4 sm:gap-6 ${
+          isMobile 
+            ? 'grid-cols-1 sm:grid-cols-2' 
+            : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+        }`}>
           {aiModules.map((module) => (
             <AIModuleCard
               key={module.id}

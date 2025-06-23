@@ -3,10 +3,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPreferences } from '@/types/userPreferences';
+import { useToast } from '@/hooks/use-toast';
 
 interface PreferencesContextType {
   preferences: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
-  updatePreferences: (newPreferences: Partial<Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => Promise<void>;
+  updatePreference: (field: keyof Omit<UserPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>, value: any) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -24,6 +25,7 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { user } = useAuth();
   const [preferences, setPreferences] = useState(defaultPreferences);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -37,13 +39,21 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!user) return;
 
     try {
-      const { data, error } = await (supabase as any)
+      console.log('Loading preferences for user:', user.id);
+      
+      const { data, error } = await supabase
         .from('user_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (data && !error) {
+      if (error) {
+        console.error('Error loading preferences:', error);
+        return;
+      }
+
+      if (data) {
+        console.log('Loaded preferences:', data);
         setPreferences({
           weight_unit: data.weight_unit || 'kg',
           height_unit: data.height_unit || 'cm',
@@ -51,44 +61,85 @@ export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ c
           email_updates: data.email_updates ?? true,
           dark_mode: data.dark_mode ?? true
         });
+      } else {
+        console.log('No preferences found, creating default preferences');
+        await createDefaultPreferences();
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
+      console.error('Error in loadPreferences:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updatePreferences = async (newPreferences: Partial<typeof preferences>) => {
+  const createDefaultPreferences = async () => {
     if (!user) return;
 
-    // Update local state immediately
-    const updatedPreferences = { ...preferences, ...newPreferences };
-    setPreferences(updatedPreferences);
-
-    // Save to database
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('user_preferences')
-        .upsert({
+        .insert({
           user_id: user.id,
-          ...updatedPreferences
+          ...defaultPreferences
         });
 
       if (error) {
-        console.error('Error saving preferences:', error);
-        // Revert local state on error
-        setPreferences(preferences);
-        throw error;
+        console.error('Error creating default preferences:', error);
+      } else {
+        console.log('Created default preferences');
       }
     } catch (error) {
-      console.error('Error updating preferences:', error);
+      console.error('Error in createDefaultPreferences:', error);
+    }
+  };
+
+  const updatePreference = async (field: keyof typeof preferences, value: any) => {
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
+
+    console.log(`Updating preference ${field} to:`, value);
+
+    // Update local state immediately
+    const updatedPreferences = { ...preferences, [field]: value };
+    setPreferences(updatedPreferences);
+
+    try {
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          [field]: value
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error(`Error updating ${field}:`, error);
+        // Revert local state on error
+        setPreferences(preferences);
+        toast({
+          title: "Error saving preference",
+          description: `Failed to update ${field}. Please try again.`,
+          variant: "destructive",
+        });
+        throw error;
+      } else {
+        console.log(`Successfully updated ${field}`);
+        toast({
+          title: "Preference saved",
+          description: `${field.replace('_', ' ')} updated successfully`,
+        });
+      }
+    } catch (error) {
+      console.error(`Error in updatePreference for ${field}:`, error);
       throw error;
     }
   };
 
   return (
-    <PreferencesContext.Provider value={{ preferences, updatePreferences, isLoading }}>
+    <PreferencesContext.Provider value={{ preferences, updatePreference, isLoading }}>
       {children}
     </PreferencesContext.Provider>
   );

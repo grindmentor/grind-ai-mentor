@@ -2,48 +2,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
-interface UnitPreferencesProps {
-  preferences: {
-    weight_unit: 'kg' | 'lbs';
-    height_unit: 'cm' | 'ft-in' | 'in';
-  };
-  onPreferenceChange: (field: string, value: any) => Promise<void>;
-}
-
-const UnitPreferences = ({ preferences, onPreferenceChange }: UnitPreferencesProps) => {
-  const { toast } = useToast();
+const UnitPreferences = () => {
+  const { preferences, updatePreference } = usePreferences();
 
   const handleWeightUnitChange = async (value: 'kg' | 'lbs') => {
     try {
-      await onPreferenceChange('weight_unit', value);
-      toast({
-        title: "Weight unit updated",
-        description: `Changed to ${value}`,
-      });
+      await updatePreference('weight_unit', value);
     } catch (error) {
-      toast({
-        title: "Error updating weight unit",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+      console.error('Failed to update weight unit:', error);
     }
   };
 
   const handleHeightUnitChange = async (value: 'cm' | 'ft-in' | 'in') => {
     try {
-      await onPreferenceChange('height_unit', value);
-      toast({
-        title: "Height unit updated",
-        description: `Changed to ${value === 'ft-in' ? 'feet & inches' : value}`,
-      });
+      await updatePreference('height_unit', value);
     } catch (error) {
-      toast({
-        title: "Error updating height unit",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+      console.error('Failed to update height unit:', error);
     }
   };
 

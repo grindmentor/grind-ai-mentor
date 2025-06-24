@@ -72,13 +72,8 @@ const Dashboard = () => {
     if (module) {
       const ModuleComponent = module.component;
       
-      // Modules that need onFoodLogged prop
-      if (module.id === 'food-photo-logger' || module.id === 'smart-food-log') {
-        return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
-      }
-      
-      // For other modules, just pass onBack
-      return <ModuleComponent onBack={handleBack} />;
+      // Always pass both props to all modules - let them use what they need
+      return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
     }
   }
 

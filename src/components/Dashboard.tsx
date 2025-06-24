@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +72,7 @@ const Dashboard = () => {
     if (module) {
       const ModuleComponent = module.component;
       
-      // Special handling for FoodPhotoLogger which needs onFoodLogged prop
+      // Pass onFoodLogged prop to FoodPhotoLogger
       if (module.id === 'food-photo-logger') {
         return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
       }

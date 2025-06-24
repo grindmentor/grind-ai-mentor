@@ -12,6 +12,9 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: any }>;
   loading: boolean;
   isNewUser: boolean;
+  isEmailUnconfirmed: boolean;
+  canResendEmail: boolean;
+  resendConfirmationEmail: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +32,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [isEmailUnconfirmed, setIsEmailUnconfirmed] = useState(false);
+  const [canResendEmail, setCanResendEmail] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener
@@ -38,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check if this is a new user signup - fix the type comparison
+        // Handle email confirmation status
         if (event === 'SIGNED_IN' && session?.user) {
           // Check if user was just created (within last few minutes)
           const userCreatedAt = new Date(session.user.created_at);
@@ -48,8 +53,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           // If user was created less than 5 minutes ago, they're a new user
           setIsNewUser(minutesDiff < 5);
+          
+          // Check if email is confirmed
+          setIsEmailUnconfirmed(!session.user.email_confirmed_at);
         } else if (event === 'SIGNED_OUT') {
           setIsNewUser(false);
+          setIsEmailUnconfirmed(false);
         }
         
         setLoading(false);
@@ -61,6 +70,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+      }
+      
       setLoading(false);
     });
 
@@ -68,6 +82,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string) => {
+    // Prevent multiple requests
+    if (!canResendEmail) {
+      return { error: { message: 'Please wait before sending another verification email.' } };
+    }
+
     // Use grindmentor.xyz domain for redirect
     const redirectUrl = `https://grindmentor.xyz/auth/callback`;
     
@@ -90,6 +109,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Also add to subscribers table for email campaigns
     if (!error) {
       await supabase.from('subscribers').insert({ email });
+      
+      // Rate limit email sending
+      setCanResendEmail(false);
+      setTimeout(() => setCanResendEmail(true), 60000); // 1 minute cooldown
     }
 
     return { error };
@@ -101,15 +124,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       email,
       password
     });
+    
+    if (error) {
+      // Handle specific error cases
+      if (error.message.includes('Email not confirmed')) {
+        setIsEmailUnconfirmed(true);
+      }
+    }
+    
     console.log('Sign in result:', { error });
     return { error };
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setIsEmailUnconfirmed(false);
   };
 
   const resetPassword = async (email: string) => {
+    // Prevent multiple requests
+    if (!canResendEmail) {
+      return { error: { message: 'Please wait before sending another reset email.' } };
+    }
+
     // Use grindmentor.xyz domain for redirect
     const redirectUrl = `https://grindmentor.xyz/auth/callback`;
     console.log('Password reset for:', email, 'with redirect:', redirectUrl);
@@ -118,7 +155,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       redirectTo: redirectUrl
     });
     
+    if (!error) {
+      // Rate limit email sending
+      setCanResendEmail(false);
+      setTimeout(() => setCanResendEmail(true), 60000); // 1 minute cooldown
+    }
+    
     console.log('Password reset result:', { error });
+    return { error };
+  };
+
+  const resendConfirmationEmail = async (email: string) => {
+    // Prevent multiple requests
+    if (!canResendEmail) {
+      return { error: { message: 'Please wait before sending another confirmation email.' } };
+    }
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: `https://grindmentor.xyz/auth/callback`
+      }
+    });
+
+    if (!error) {
+      // Rate limit email sending
+      setCanResendEmail(false);
+      setTimeout(() => setCanResendEmail(true), 60000); // 1 minute cooldown
+    }
+
     return { error };
   };
 
@@ -131,7 +197,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signOut,
       resetPassword,
       loading,
-      isNewUser
+      isNewUser,
+      isEmailUnconfirmed,
+      canResendEmail,
+      resendConfirmationEmail
     }}>
       {children}
     </AuthContext.Provider>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import PaymentSetup from "@/components/PaymentSetup";
 import Dashboard from "@/components/Dashboard";
 import WelcomeBack from "@/components/WelcomeBack";
+import EmailVerificationPrompt from "@/components/EmailVerificationPrompt";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
@@ -14,21 +15,21 @@ const App = () => {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, loading, signOut, isNewUser } = useAuth();
+  const { user, loading, signOut, isNewUser, isEmailUnconfirmed } = useAuth();
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/signin');
-    } else if (!loading && user && !isNewUser) {
-      // Show welcome back for returning users
+    } else if (!loading && user && !isNewUser && !isEmailUnconfirmed) {
+      // Show welcome back for returning users with confirmed emails
       const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
       if (!hasSeenWelcome) {
         setShowWelcomeBack(true);
         sessionStorage.setItem('hasSeenWelcome', 'true');
       }
     }
-  }, [user, loading, navigate, isNewUser]);
+  }, [user, loading, navigate, isNewUser, isEmailUnconfirmed]);
 
   const handleSignOut = async () => {
     sessionStorage.removeItem('hasSeenWelcome');
@@ -38,6 +39,11 @@ const App = () => {
 
   const handleWelcomeBackContinue = () => {
     setShowWelcomeBack(false);
+  };
+
+  const handleEmailVerificationContinue = () => {
+    // Force a page refresh to check auth status
+    window.location.reload();
   };
 
   if (loading) {
@@ -55,6 +61,16 @@ const App = () => {
 
   if (!user) {
     return null; // Will redirect in useEffect
+  }
+
+  // Show email verification prompt for unconfirmed emails
+  if (isEmailUnconfirmed) {
+    return (
+      <EmailVerificationPrompt 
+        userEmail={user.email || ''} 
+        onContinue={handleEmailVerificationContinue}
+      />
+    );
   }
 
   return (

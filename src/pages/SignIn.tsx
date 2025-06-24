@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { EnhancedSignUp } from "@/components/EnhancedSignUp";
 import { SoundButton } from "@/components/SoundButton";
 import { playSuccessSound, playErrorSound, playClickSound } from "@/utils/soundEffects";
-import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { Mail, Lock, ArrowLeft, CheckCircle, RefreshCw } from "lucide-react";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -19,19 +20,16 @@ const SignIn = () => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
-  const { signIn, resetPassword, user, isNewUser } = useAuth();
+  const { signIn, resetPassword, user, isNewUser, canResendEmail } = useAuth();
 
   useEffect(() => {
     if (user) {
-      // Redirect new users to onboarding, returning users to dashboard
-      if (isNewUser) {
-        navigate("/onboarding");
-      } else {
-        navigate("/app");
-      }
+      // Redirect users to app - the app will handle email verification
+      navigate("/app");
     }
-  }, [user, isNewUser, navigate]);
+  }, [user, navigate]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +52,7 @@ const SignIn = () => {
         playErrorSound();
       } else {
         setMessage("Password reset email sent! Check your inbox for instructions.");
-        setIsForgotPassword(false);
+        setResetEmailSent(true);
         playSuccessSound();
       }
     } catch (err) {
@@ -76,10 +74,9 @@ const SignIn = () => {
       const { error } = await signIn(email, password);
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          setError("Invalid email or password. Please check your credentials or confirm your email if you just signed up.");
+          setError("Invalid email or password. Please check your credentials.");
         } else if (error.message.includes("Email not confirmed")) {
-          setError("Please check your email and click the confirmation link before signing in.");
-          setAwaitingConfirmation(true);
+          setError("Please verify your email address before signing in. Check your inbox for the verification link.");
         } else {
           setError(error.message);
         }
@@ -99,6 +96,7 @@ const SignIn = () => {
     setIsSignUp(false);
     setIsForgotPassword(false);
     setAwaitingConfirmation(false);
+    setResetEmailSent(false);
     setError("");
     setMessage("");
     playClickSound();
@@ -127,13 +125,19 @@ const SignIn = () => {
 
   const getTitle = () => {
     if (awaitingConfirmation) return "Check Your Email";
-    if (isForgotPassword) return "Reset Password";
+    if (isForgotPassword) {
+      return resetEmailSent ? "Reset Link Sent" : "Reset Password";
+    }
     return "Welcome Back";
   };
 
   const getDescription = () => {
     if (awaitingConfirmation) return "We've sent you a confirmation email";
-    if (isForgotPassword) return "Enter your email to receive reset instructions";
+    if (isForgotPassword) {
+      return resetEmailSent 
+        ? "Check your email for password reset instructions"
+        : "Enter your email to receive reset instructions";
+    }
     return "Sign in to continue your progress";
   };
 
@@ -170,6 +174,24 @@ const SignIn = () => {
                     className="border-gray-700 text-gray-900 bg-white hover:bg-gray-100 hover:text-black"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Sign In
+                  </SoundButton>
+                </div>
+              </div>
+            ) : resetEmailSent ? (
+              <div className="space-y-4">
+                <div className="text-center p-6">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-400" />
+                  </div>
+                  <p className="text-gray-300 mb-6">
+                    Password reset instructions have been sent to <strong className="text-white">{email}</strong>.
+                    Check your inbox and follow the link to reset your password.
+                  </p>
+                  <SoundButton 
+                    onClick={resetForm}
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                  >
                     Back to Sign In
                   </SoundButton>
                 </div>
@@ -226,22 +248,24 @@ const SignIn = () => {
                 <SoundButton 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition-all hover:scale-105"
-                  disabled={isLoading}
+                  disabled={isLoading || (isForgotPassword && !canResendEmail)}
                   soundType="success"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
                       <span>Please wait...</span>
                     </div>
                   ) : (
-                    isForgotPassword ? "Send Reset Email" : "Sign In"
+                    isForgotPassword ? 
+                      (canResendEmail ? "Send Reset Email" : "Wait before resending") 
+                      : "Sign In"
                   )}
                 </SoundButton>
               </form>
             )}
             
-            {!awaitingConfirmation && (
+            {!awaitingConfirmation && !resetEmailSent && (
               <>
                 <div className="mt-6 text-center space-y-3">
                   {!isForgotPassword && (
@@ -260,6 +284,7 @@ const SignIn = () => {
                   <button
                     onClick={() => {
                       setIsForgotPassword(!isForgotPassword);
+                      setResetEmailSent(false);
                       setError("");
                       setMessage("");
                       playClickSound();

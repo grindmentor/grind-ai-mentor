@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +19,7 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { canUseFeature, incrementUsage } = useUsageTracking();
-  const { getPrefilledData } = useUserData();
+  const { getCleanUserContext } = useUserData();
 
   const examplePrompts = [
     "I'm a beginner who wants to build muscle mass with 3 workouts per week",
@@ -30,20 +29,7 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
   ];
 
   const handleExampleClick = (prompt: string) => {
-    const userData = getPrefilledData();
-    let enhancedPrompt = prompt;
-    
-    if (userData.experience) {
-      enhancedPrompt += ` (Experience level: ${userData.experience})`;
-    }
-    if (userData.goal) {
-      enhancedPrompt += ` (Primary goal: ${userData.goal})`;
-    }
-    if (userData.activity) {
-      enhancedPrompt += ` (Activity level: ${userData.activity})`;
-    }
-    
-    setInput(enhancedPrompt);
+    setInput(prompt);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,16 +42,10 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
     setIsLoading(true);
     
     try {
-      const userData = getPrefilledData();
+      const userContext = getCleanUserContext();
       const enhancedInput = `${input}
 
-User Profile:
-- Weight: ${userData.weight || 'Not specified'} ${userData.weightUnit}
-- Height: ${userData.height || 'Not specified'} ${userData.heightUnit}
-- Age: ${userData.age || 'Not specified'}
-- Experience: ${userData.experience || 'Not specified'}
-- Activity Level: ${userData.activity || 'Not specified'}
-- Primary Goal: ${userData.goal || 'Not specified'}`;
+${userContext}`;
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 

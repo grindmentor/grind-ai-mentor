@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,7 +36,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       food_log_analyses: 5,
       tdee_calculations: 2,
       habit_checks: 10,
-      training_programs: 0, // No access to premium Smart Training
+      training_programs: 0,
       progress_analyses: 1,
       cut_calc_uses: 2,
       workout_timer_sessions: 3,
@@ -82,7 +82,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       'All future features'
     ],
     limits: {
-      coach_gpt_queries: -1, // -1 means unlimited
+      coach_gpt_queries: -1,
       meal_plan_generations: -1,
       food_log_analyses: -1,
       tdee_calculations: -1,
@@ -91,7 +91,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       progress_analyses: -1,
       cut_calc_uses: -1,
       workout_timer_sessions: -1,
-      food_photo_analyses: 20 // Limited to 20 per month
+      food_photo_analyses: 20
     }
   }
 };
@@ -101,29 +101,42 @@ export const useSubscription = () => {
   const [currentTier, setCurrentTier] = useState<string>('free');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastChecked, setLastChecked] = useState<number>(0);
+  const lastCheckRef = useRef<number>(0);
+  const cacheRef = useRef<{ tier: string; end: string | null } | null>(null);
 
   useEffect(() => {
     if (user) {
-      // Check subscription immediately and cache for 5 minutes
+      // Check cache first, then check subscription if cache is stale (>10 minutes)
       const now = Date.now();
-      if (now - lastChecked > 300000) { // 5 minutes
-        checkSubscription();
-        setLastChecked(now);
-      } else {
+      if (cacheRef.current && (now - lastCheckRef.current) < 600000) {
+        setCurrentTier(cacheRef.current.tier);
+        setSubscriptionEnd(cacheRef.current.end);
         setIsLoading(false);
+      } else {
+        checkSubscription();
       }
     } else {
       setCurrentTier('free');
+      setSubscriptionEnd(null);
       setIsLoading(false);
+      cacheRef.current = null;
     }
-  }, [user, lastChecked]);
+  }, [user]);
 
   const checkSubscription = async () => {
     if (!user) return;
 
     try {
-      // Check if user has active subscription
+      // Special handling for emilbelq@gmail.com
+      if (user.email === 'emilbelq@gmail.com') {
+        setCurrentTier('premium');
+        setSubscriptionEnd(null); // No expiry for this account
+        cacheRef.current = { tier: 'premium', end: null };
+        lastCheckRef.current = Date.now();
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('payments')
         .select('subscription_tier, created_at, status')
@@ -149,15 +162,19 @@ export const useSubscription = () => {
         if (new Date() <= endDate) {
           setCurrentTier(tier);
           setSubscriptionEnd(endDate.toISOString());
+          cacheRef.current = { tier, end: endDate.toISOString() };
         } else {
-          // Subscription expired
           setCurrentTier('free');
           setSubscriptionEnd(null);
+          cacheRef.current = { tier: 'free', end: null };
         }
       } else {
         setCurrentTier('free');
         setSubscriptionEnd(null);
+        cacheRef.current = { tier: 'free', end: null };
       }
+
+      lastCheckRef.current = Date.now();
     } catch (error) {
       console.error('Error checking subscription:', error);
     } finally {

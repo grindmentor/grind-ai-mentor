@@ -80,17 +80,24 @@ const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     try {
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
-          prompt: `Search for detailed nutrition information for "${searchQuery}". Use the most recent 2024 USDA FoodData Central database, Matvaretabellen (Norwegian food database), or other reliable scientific nutrition databases. 
+          prompt: `Search for detailed nutrition information for "${searchQuery}" using the most recent 2024 USDA FoodData Central database, Matvaretabellen (Norwegian food database), or other verified scientific nutrition databases.
 
-For this food item, provide:
-1. Standard serving size (e.g., "1 cup", "100g", "1 medium apple")
-2. Calories per serving
-3. Protein (grams)
-4. Carbohydrates (grams)
-5. Fat (grams)
-6. Fiber (grams)
+CRITICAL REQUIREMENTS:
+- ONLY return results if the food exists in verified databases
+- If the food is not found or doesn't exist, return: {"error": "Food not found"}
+- Do NOT guess or estimate values for unknown foods
+- Do NOT make up nutrition data
 
-Respond in JSON format like this:
+For verified foods, provide:
+1. Exact food name from database
+2. Standard serving size (e.g., "100g", "1 cup", "1 medium apple")
+3. Verified calories per serving
+4. Verified protein (grams)
+5. Verified carbohydrates (grams)
+6. Verified fat (grams)
+7. Verified fiber (grams)
+
+Respond in JSON format:
 {
   "foods": [
     {
@@ -105,7 +112,10 @@ Respond in JSON format like this:
   ]
 }
 
-If multiple variations exist (raw vs cooked, different brands), include the most common preparation. Base all values on verified scientific nutrition databases from 2024.`,
+OR if not found:
+{"error": "Food not found"}
+
+Only use verified 2024 scientific nutrition databases. Never estimate or guess values.`,
           feature: 'food_log_analyses'
         }
       });
@@ -116,19 +126,18 @@ If multiple variations exist (raw vs cooked, different brands), include the most
       let parsedResults;
       try {
         parsedResults = JSON.parse(data.response);
-        setSearchResults(parsedResults.foods || []);
+        
+        if (parsedResults.error) {
+          // Food not found
+          toast.error('Sorry, food not found in nutrition database. Please try a different search term or add manually.');
+          setSearchResults([]);
+        } else {
+          setSearchResults(parsedResults.foods || []);
+        }
       } catch (parseError) {
-        // If JSON parsing fails, show the raw response
-        setSearchResults([{
-          name: searchQuery,
-          serving_size: "1 serving",
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-          fiber: 0,
-          note: data.response
-        }]);
+        // If JSON parsing fails, treat as not found
+        toast.error('Sorry, food not found in nutrition database. Please try a different search term or add manually.');
+        setSearchResults([]);
       }
     } catch (error) {
       console.error('Error searching food:', error);
@@ -236,7 +245,7 @@ If multiple variations exist (raw vs cooked, different brands), include the most
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
-          prompt: `Analyze this daily food log using the latest 2024 nutritional science and research. Focus on evidence-based recommendations from recent studies.
+          prompt: `Analyze this daily food log using the latest 2024 nutritional science and research. Focus on evidence-based recommendations from recent peer-reviewed studies.
 
 **Daily Totals:**
 - Calories: ${totalCalories}
@@ -252,13 +261,13 @@ Provide a comprehensive analysis including:
 
 ## Nutritional Assessment
 - Overall calorie balance and macronutrient distribution
-- Protein adequacy for muscle synthesis (reference 2023-2024 studies on optimal protein intake)
+- Protein adequacy for muscle protein synthesis (reference 2024 studies on optimal protein intake)
 - Carbohydrate timing and quality assessment
 - Fat sources and omega-3/omega-6 balance
 
 ## Micronutrient Analysis
 - Likely vitamin and mineral gaps based on food choices
-- Recommendations based on latest RDA updates and research
+- Recommendations based on latest RDA updates and 2024 research
 
 ## Performance & Health Insights
 - Energy levels and workout performance implications
@@ -279,7 +288,7 @@ Base all recommendations on peer-reviewed research from 2023-2024, particularly 
       setAnalysis(data.response);
     } catch (error) {
       console.error('Error analyzing nutrition:', error);
-      toast.error('Failed to analyze nutrition');
+      setResponse('Sorry, there was an error analyzing your nutrition. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }

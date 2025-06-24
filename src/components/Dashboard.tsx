@@ -72,13 +72,8 @@ const Dashboard = () => {
     if (module) {
       const ModuleComponent = module.component;
       
-      // Pass both onBack and onFoodLogged props to FoodPhotoLogger
-      if (module.id === 'food-photo-logger') {
-        return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
-      }
-      
-      // For SmartFoodLog, pass both onBack and onFoodLogged
-      if (module.id === 'smart-food-log') {
+      // Modules that need onFoodLogged prop
+      if (module.id === 'food-photo-logger' || module.id === 'smart-food-log') {
         return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
       }
       

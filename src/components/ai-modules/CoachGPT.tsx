@@ -1,91 +1,39 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Brain, ArrowLeft, Send, History, Trash2, User } from "lucide-react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useUsageTracking } from "@/hooks/useUsageTracking";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCustomerMemory } from "@/hooks/useCustomerMemory";
-import { showInfoToast } from "@/components/EnhancedToast";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, ArrowLeft, Brain, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { useCoachMemory } from '@/hooks/useCoachMemory';
+import FormattedAIResponse from '../FormattedAIResponse';
 
 interface CoachGPTProps {
   onBack: () => void;
 }
 
 interface Message {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
-  id?: string;
+  timestamp: string;
 }
 
-const CoachGPT = ({ onBack }: CoachGPTProps) => {
+const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const { canUseFeature, incrementUsage, getRemainingUsage } = useUsageTracking();
-  const { customerProfile, logInteraction, addToFavorites } = useCustomerMemory();
-  
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: `Hello! I'm CoachGPT, your 24/7 AI fitness coach powered by advanced AI. All my advice is backed by scientific research and I'll provide study citations when relevant.
-
-I can help you with:
-• General fitness advice and motivation
-• Exercise form and technique guidance
-• Recovery and sleep optimization
-• Injury prevention strategies
-• Performance enhancement tips
-
-⚠️ **Note**: I cannot provide specific training programs (use Smart Training for that) or detailed meal plans (use MealPlanAI for nutrition).
-
-**Example questions to get started:**
-• "What's the best way to improve my squat form?"
-• "How much sleep do I need for optimal recovery?"
-• "What are the signs of overtraining?"
-• "How can I prevent lower back pain during deadlifts?"
-
-What would you like to know?`
-    }
-  ]);
+  const { userContext, isLoading: contextLoading, fetchUserContext, getContextPrompt } = useCoachMemory();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentSessionId] = useState(() => crypto.randomUUID());
-
-  const remainingUsage = getRemainingUsage('coach_gpt_queries');
-  const canUse = canUseFeature('coach_gpt_queries');
+  const [conversationSession] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     if (user) {
       loadConversationHistory();
-      // Log that user accessed CoachGPT
-      logInteraction('CoachGPT', 'session_start', { session_id: currentSessionId });
     }
-  }, [user]);
-
-  // Personalize initial message based on customer profile
-  useEffect(() => {
-    if (customerProfile && messages.length === 1) {
-      let personalizedMessage = messages[0].content;
-      
-      if (customerProfile.display_name) {
-        personalizedMessage = personalizedMessage.replace('Hello!', `Hello ${customerProfile.display_name}!`);
-      }
-      
-      if (customerProfile.fitness_goals) {
-        personalizedMessage += `\n\n🎯 **I remember your goals:** ${customerProfile.fitness_goals}`;
-      }
-      
-      if (customerProfile.experience_level) {
-        personalizedMessage += `\n📊 **Your experience level:** ${customerProfile.experience_level}`;
-      }
-
-      setMessages([{ ...messages[0], content: personalizedMessage }]);
-    }
-  }, [customerProfile]);
+  }, [user, conversationSession]);
 
   const loadConversationHistory = async () => {
     if (!user) return;
@@ -95,21 +43,21 @@ What would you like to know?`
         .from('coach_conversations')
         .select('*')
         .eq('user_id', user.id)
-        .eq('conversation_session', currentSessionId)
+        .eq('conversation_session', conversationSession)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        const loadedMessages = data.map(msg => ({
-          role: msg.message_role as 'user' | 'assistant',
-          content: msg.message_content,
-          id: msg.id
-        }));
-        setMessages(prev => [...prev.filter(m => m.role === 'assistant' && !m.id), ...loadedMessages]);
-      }
+      const formattedMessages: Message[] = data.map(msg => ({
+        id: msg.id,
+        role: msg.message_role as 'user' | 'assistant',
+        content: msg.message_content,
+        timestamp: msg.created_at
+      }));
+
+      setMessages(formattedMessages);
     } catch (error) {
-      console.error('Error loading conversation history:', error);
+      console.error('Error loading conversation:', error);
     }
   };
 
@@ -117,257 +65,239 @@ What would you like to know?`
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      await supabase
         .from('coach_conversations')
         .insert({
           user_id: user.id,
+          conversation_session: conversationSession,
           message_role: role,
-          message_content: content,
-          conversation_session: currentSessionId
+          message_content: content
         });
-
-      if (error) throw error;
     } catch (error) {
       console.error('Error saving message:', error);
     }
   };
 
-  const clearConversation = async () => {
-    if (!user) return;
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading || !user) return;
 
-    try {
-      const { error } = await supabase
-        .from('coach_conversations')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('conversation_session', currentSessionId);
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: inputMessage,
+      timestamp: new Date().toISOString()
+    };
 
-      if (error) throw error;
-
-      setMessages([{
-        role: 'assistant',
-        content: messages[0].content // Keep the initial message
-      }]);
-
-      // Log conversation clear
-      await logInteraction('CoachGPT', 'conversation_cleared', { session_id: currentSessionId });
-
-      toast({
-        title: "Conversation cleared",
-        description: "Chat history has been cleared.",
-      });
-    } catch (error) {
-      console.error('Error clearing conversation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to clear conversation.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || !canUse || isLoading) return;
-
-    const userMessage = input;
-    setInput("");
-    
-    const newUserMessage = { role: 'user' as const, content: userMessage };
-    setMessages(prev => [...prev, newUserMessage]);
-    
-    // Save user message and log interaction
-    await saveMessage('user', userMessage);
-    await logInteraction('CoachGPT', 'user_query', { 
-      query_length: userMessage.length,
-      session_id: currentSessionId 
-    });
-    
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
     setIsLoading(true);
 
+    // Save user message
+    await saveMessage('user', inputMessage);
+
     try {
+      // Get conversation history for context
+      const conversationHistory = messages
+        .slice(-6) // Last 6 messages for context
+        .map(msg => `${msg.role}: ${msg.content}`)
+        .join('\n\n');
+
+      // Get user context
+      const contextPrompt = getContextPrompt();
+
+      const fullPrompt = `${contextPrompt}
+
+## Conversation History
+${conversationHistory}
+
+## Current User Message
+${inputMessage}
+
+**Instructions**: You are an expert fitness coach with access to the user's complete fitness journey data. Provide personalized, science-based coaching that references their specific data when relevant. Use recent 2024 research and studies to support your recommendations. Be encouraging, specific, and actionable. Always maintain context from previous conversations and their tracked data.
+
+Focus areas:
+- Evidence-based training advice (cite 2024 studies when relevant)
+- Personalized nutrition guidance based on their food logs
+- Progress analysis using their tracked workouts
+- Goal-specific recommendations
+- Motivation and accountability
+
+Respond in a professional, encouraging tone that shows you understand their complete fitness journey.`;
+
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: { 
-          type: 'coaching',
-          userInput: userMessage,
-          customerContext: customerProfile ? {
-            goals: customerProfile.fitness_goals,
-            experience: customerProfile.experience_level,
-            preferences: customerProfile.preferred_workout_style
-          } : null
+        body: {
+          prompt: fullPrompt,
+          feature: 'coach_gpt_queries'
         }
       });
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      if (!data || !data.response) {
-        throw new Error('No response received from AI service');
-      }
-      
-      // Only increment usage on successful response
-      const success = await incrementUsage('coach_gpt_queries');
-      if (!success) {
-        toast({
-          title: "Usage Limit Reached",
-          description: "You've reached your monthly limit for this feature.",
-          variant: "destructive",
-        });
-        return;
-      }
+      const assistantMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: data.response,
+        timestamp: new Date().toISOString()
+      };
 
-      const assistantMessage = { role: 'assistant' as const, content: data.response };
       setMessages(prev => [...prev, assistantMessage]);
       
-      // Save assistant message and log successful interaction
+      // Save assistant message
       await saveMessage('assistant', data.response);
-      await logInteraction('CoachGPT', 'ai_response_received', { 
-        response_length: data.response.length,
-        session_id: currentSessionId 
-      });
 
-      // Check if user might want to favorite this feature
-      if (messages.length > 4) { // After a few interactions
-        await addToFavorites('CoachGPT');
-        showInfoToast('CoachGPT added to favorites!', 'This feature has been saved to your favorites based on your usage.');
-      }
-      
     } catch (error) {
-      console.error('Error getting coaching advice:', error);
-      const errorMessage = { 
-        role: 'assistant' as const, 
-        content: 'Sorry, I encountered an error. Please try asking your question again. This attempt did not count towards your usage limit.' 
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      
-      await logInteraction('CoachGPT', 'error_occurred', { 
-        error_type: 'ai_response_failed',
-        session_id: currentSessionId 
-      });
-      
-      toast({
-        title: "Error",
-        description: "Failed to get response. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error sending message:', error);
+      toast.error('Failed to get coach response');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const refreshContext = async () => {
+    await fetchUserContext();
+    toast.success('Context updated with latest data');
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 border-b border-gray-800">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-            <Brain className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white">CoachGPT</h1>
-            <p className="text-gray-400">24/7 AI coaching with research citations</p>
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center space-x-2">
+            <Brain className="w-6 h-6 text-orange-500" />
+            <div>
+              <h2 className="text-2xl font-bold text-white">CoachGPT</h2>
+              <p className="text-gray-400">Your AI fitness coach with memory</p>
+            </div>
           </div>
         </div>
+        <Button
+          onClick={refreshContext}
+          disabled={contextLoading}
+          variant="outline"
+          size="sm"
+          className="border-gray-700"
+        >
+          {contextLoading ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Update Context
+        </Button>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-          Every response includes scientific citations and peer-reviewed research
-        </Badge>
-        <Badge className={`${!canUse ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
-          {remainingUsage === -1 ? 'Unlimited' : `${remainingUsage} prompts left`}
-        </Badge>
-        {customerProfile && (
-          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-            <User className="w-3 h-3 mr-1" />
-            Personalized for {customerProfile.display_name || 'you'}
-          </Badge>
-        )}
-        {messages.length > 1 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={clearConversation}
-            className="border-gray-600 text-gray-300 hover:bg-gray-800"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear Chat
-          </Button>
-        )}
-      </div>
-
-      {!canUse && (
-        <Card className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/30">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Usage Limit Reached</h3>
-            <p className="text-gray-300 mb-4">
-              Upgrade to get unlimited prompts and access to all AI features
-            </p>
-            <Button 
-              onClick={() => window.open('/pricing', '_blank')}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              Upgrade Now
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Context Summary */}
+      {userContext && (
+        <div className="p-4 bg-gray-900/50 border-b border-gray-800">
+          <div className="text-sm text-gray-400">
+            <strong className="text-orange-400">Active Context:</strong>
+            {userContext.profile?.display_name && ` ${userContext.profile.display_name} | `}
+            {userContext.recentWorkouts?.length > 0 && `${userContext.recentWorkouts.length} recent workouts | `}
+            {userContext.recentFoodLogs?.length > 0 && `${userContext.recentFoodLogs.length} recent meals | `}
+            {userContext.tdeeData && `TDEE: ${userContext.tdeeData.tdee} cal`}
+          </div>
+        </div>
       )}
 
-      <Card className="bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-white">Chat with CoachGPT</CardTitle>
-          <CardDescription className="text-gray-400">
-            Ask any fitness question and get science-backed answers (excludes specific training programs & meal plans) - All conversations are saved and personalized
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="h-96 overflow-y-auto space-y-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
-            {messages.map((message, index) => (
-              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] p-3 rounded-lg ${
-                  message.role === 'user' 
-                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' 
-                    : 'bg-gray-700 text-gray-100 border border-gray-600'
-                }`}>
-                  <pre className="whitespace-pre-wrap text-sm font-sans">{message.content}</pre>
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-700 text-gray-100 p-3 rounded-lg border border-gray-600">
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                    <div className="animate-pulse">Researching scientific literature...</div>
-                  </div>
-                </div>
-              </div>
-            )}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {messages.length === 0 ? (
+          <div className="text-center py-12">
+            <Brain className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">Welcome to CoachGPT</h3>
+            <p className="text-gray-400 max-w-md mx-auto">
+              I'm your personal AI fitness coach with access to all your training, nutrition, and progress data. 
+              Ask me anything about your fitness journey!
+            </p>
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+              <Button
+                variant="outline"
+                className="border-gray-700 text-left justify-start"
+                onClick={() => setInputMessage("Analyze my recent workout progress and suggest improvements")}
+              >
+                📊 Analyze my progress
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gray-700 text-left justify-start"
+                onClick={() => setInputMessage("Review my nutrition and suggest optimizations")}
+              >
+                🥗 Review my nutrition
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gray-700 text-left justify-start"
+                onClick={() => setInputMessage("Create a workout plan based on my goals and experience")}
+              >
+                💪 Plan my workouts
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gray-700 text-left justify-start"
+                onClick={() => setInputMessage("Help me break through a training plateau")}
+              >
+                🚀 Break plateaus
+              </Button>
+            </div>
           </div>
-          
-          <form onSubmit={handleSubmit} className="flex space-x-2">
-            <Input
-              placeholder="Ask about fitness advice, exercise form, recovery... (No training programs or meal plans)"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white flex-1 focus:ring-2 focus:ring-blue-500"
-              disabled={!canUse || isLoading}
-            />
-            <Button 
-              type="submit" 
-              disabled={!input.trim() || isLoading || !canUse}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:opacity-50"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        ) : (
+          messages.map((message) => (
+            <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] ${message.role === 'user' ? 'bg-orange-600' : 'bg-gray-800'} rounded-lg p-4`}>
+                {message.role === 'assistant' ? (
+                  <FormattedAIResponse content={message.content} />
+                ) : (
+                  <p className="text-white">{message.content}</p>
+                )}
+                <div className={`text-xs mt-2 ${message.role === 'user' ? 'text-orange-100' : 'text-gray-500'}`}>
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+        
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-800 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+                <span className="text-gray-400">Coach is thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="p-6 border-t border-gray-800">
+        <div className="flex space-x-3">
+          <Textarea
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="Ask your coach anything... I remember your workouts, nutrition, and goals!"
+            className="bg-gray-800 border-gray-700 text-white resize-none"
+            rows={2}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+          />
+          <Button
+            onClick={sendMessage}
+            disabled={isLoading || !inputMessage.trim()}
+            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

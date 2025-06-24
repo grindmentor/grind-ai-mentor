@@ -18,11 +18,10 @@ const SignIn = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
-  const { signIn, resetPassword, user, isNewUser, canResendEmail } = useAuth();
+  const { signIn, resetPassword, user, canResendEmail, authPending } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -41,7 +40,6 @@ const SignIn = () => {
 
     setError("");
     setMessage("");
-    setIsLoading(true);
     playClickSound();
 
     try {
@@ -58,8 +56,6 @@ const SignIn = () => {
     } catch (err) {
       setError("An unexpected error occurred");
       playErrorSound();
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -67,7 +63,6 @@ const SignIn = () => {
     e.preventDefault();
     setError("");
     setMessage("");
-    setIsLoading(true);
     playClickSound();
 
     try {
@@ -87,8 +82,6 @@ const SignIn = () => {
     } catch (err) {
       setError("An unexpected error occurred");
       playErrorSound();
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -221,7 +214,7 @@ const SignIn = () => {
                       placeholder="Enter your email"
                       required
                       className="bg-gray-800 border-gray-700 text-white pl-10 focus:border-orange-500 transition-colors"
-                      disabled={isLoading}
+                      disabled={authPending}
                     />
                   </div>
                 </div>
@@ -239,7 +232,7 @@ const SignIn = () => {
                         placeholder="Enter your password"
                         required
                         className="bg-gray-800 border-gray-700 text-white pl-10 focus:border-orange-500 transition-colors"
-                        disabled={isLoading}
+                        disabled={authPending}
                       />
                     </div>
                   </div>
@@ -248,10 +241,10 @@ const SignIn = () => {
                 <SoundButton 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition-all hover:scale-105"
-                  disabled={isLoading || (isForgotPassword && !canResendEmail)}
+                  disabled={authPending || (isForgotPassword && !canResendEmail)}
                   soundType="success"
                 >
-                  {isLoading ? (
+                  {authPending ? (
                     <div className="flex items-center justify-center space-x-2">
                       <RefreshCw className="w-4 h-4 animate-spin" />
                       <span>Please wait...</span>
@@ -275,7 +268,7 @@ const SignIn = () => {
                         playClickSound();
                       }}
                       className="text-orange-400 hover:text-orange-300 text-sm block transition-colors"
-                      disabled={isLoading}
+                      disabled={authPending}
                     >
                       Don't have an account? Sign up
                     </button>
@@ -290,7 +283,7 @@ const SignIn = () => {
                       playClickSound();
                     }}
                     className="text-gray-400 hover:text-white text-sm block transition-colors"
-                    disabled={isLoading}
+                    disabled={authPending}
                   >
                     {isForgotPassword ? "Back to sign in" : "Forgot your password?"}
                   </button>

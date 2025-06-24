@@ -41,6 +41,8 @@ export type Database = {
           created_at: string
           dietary_preferences: string | null
           display_name: string | null
+          email_verification_attempts: number | null
+          email_verification_sent_at: string | null
           experience_level: string | null
           favorite_features: string[]
           fitness_goals: string | null
@@ -57,6 +59,8 @@ export type Database = {
           created_at?: string
           dietary_preferences?: string | null
           display_name?: string | null
+          email_verification_attempts?: number | null
+          email_verification_sent_at?: string | null
           experience_level?: string | null
           favorite_features?: string[]
           fitness_goals?: string | null
@@ -73,6 +77,8 @@ export type Database = {
           created_at?: string
           dietary_preferences?: string | null
           display_name?: string | null
+          email_verification_attempts?: number | null
+          email_verification_sent_at?: string | null
           experience_level?: string | null
           favorite_features?: string[]
           fitness_goals?: string | null
@@ -287,6 +293,36 @@ export type Database = {
           updated_at?: string
           user_id?: string
           user_requirements?: string | null
+        }
+        Relationships: []
+      }
+      password_resets: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+          user_id?: string
         }
         Relationships: []
       }
@@ -727,6 +763,10 @@ export type Database = {
       calculate_age: {
         Args: { birthday: string }
         Returns: number
+      }
+      cleanup_expired_password_resets: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_current_usage: {
         Args: { p_user_id: string }

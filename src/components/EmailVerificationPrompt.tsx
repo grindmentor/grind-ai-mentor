@@ -1,11 +1,9 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Mail, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Mail, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 
 interface EmailVerificationPromptProps {
   userEmail: string;
@@ -13,33 +11,35 @@ interface EmailVerificationPromptProps {
 }
 
 const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPromptProps) => {
-  const [isResending, setIsResending] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const { resendConfirmationEmail, canResendEmail, signOut } = useAuth();
+  const { resendConfirmationEmail, canResendEmail, authPending } = useAuth();
+  const [resendMessage, setResendMessage] = useState("");
+  const [resendError, setResendError] = useState("");
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    if (!canResendEmail && countdown === 0) {
+      setCountdown(60);
+    }
+  }, [canResendEmail, countdown]);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const handleResendEmail = async () => {
-    setIsResending(true);
-    setError("");
-    setMessage("");
+    setResendMessage("");
+    setResendError("");
 
-    try {
-      const { error } = await resendConfirmationEmail(userEmail);
-      
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage("Verification email sent! Please check your inbox.");
-      }
-    } catch (err) {
-      setError("Failed to send verification email. Please try again.");
-    } finally {
-      setIsResending(false);
+    const { error } = await resendConfirmationEmail(userEmail);
+    
+    if (error) {
+      setResendError(error.message);
+    } else {
+      setResendMessage("Verification email sent! Check your inbox.");
     }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
   };
 
   return (
@@ -55,62 +55,71 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
 
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-blue-400" />
-            </div>
             <CardTitle className="text-white">Verify Your Email</CardTitle>
             <CardDescription className="text-gray-400">
-              We've sent a verification link to your email address
+              Check your inbox to activate your account
             </CardDescription>
           </CardHeader>
-          
-          <CardContent className="space-y-6">
-            {error && (
-              <div className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded border border-red-500/20 flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4" />
-                <span>{error}</span>
+          <CardContent>
+            <div className="text-center p-6">
+              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Mail className="w-8 h-8 text-orange-400" />
               </div>
-            )}
-            
-            {message && (
-              <div className="text-green-400 text-sm text-center bg-green-500/10 p-3 rounded border border-green-500/20 flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>{message}</span>
+              
+              <h3 className="text-lg font-semibold text-white mb-3">
+                Almost there!
+              </h3>
+              
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                We've sent a verification email to{" "}
+                <strong className="text-white">{userEmail}</strong>
+              </p>
+              
+              <div className="bg-gray-800/50 p-4 rounded-lg mb-6 border border-gray-700">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="text-sm text-gray-300 mb-2">
+                      <strong>Next steps:</strong>
+                    </p>
+                    <ol className="text-sm text-gray-400 space-y-1">
+                      <li>1. Check your email inbox</li>
+                      <li>2. Click the verification link</li>
+                      <li>3. Return here to start using GrindMentor</li>
+                    </ol>
+                  </div>
+                </div>
               </div>
-            )}
 
-            <div className="text-center space-y-4">
-              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                <p className="text-white text-sm font-medium mb-1">Email sent to:</p>
-                <p className="text-orange-400 text-sm break-all">{userEmail}</p>
-              </div>
-
-              <div className="text-gray-300 text-sm space-y-2">
-                <p><strong>Next steps:</strong></p>
-                <ol className="text-left space-y-1 list-decimal list-inside">
-                  <li>Check your email inbox (and spam folder)</li>
-                  <li>Click the verification link in the email</li>
-                  <li>Return here and refresh the page</li>
-                </ol>
-              </div>
+              {resendMessage && (
+                <div className="text-green-400 text-sm mb-4 bg-green-500/10 p-3 rounded border border-green-500/20">
+                  {resendMessage}
+                </div>
+              )}
+              
+              {resendError && (
+                <div className="text-red-400 text-sm mb-4 bg-red-500/10 p-3 rounded border border-red-500/20 flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{resendError}</span>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <Button
                   onClick={handleResendEmail}
-                  disabled={isResending || !canResendEmail}
+                  disabled={authPending || !canResendEmail || countdown > 0}
                   variant="outline"
-                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+                  className="w-full border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
                 >
-                  {isResending ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
+                  {authPending ? (
+                    <div className="flex items-center space-x-2">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Sending...</span>
+                    </div>
+                  ) : countdown > 0 ? (
+                    `Resend in ${countdown}s`
                   ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      {canResendEmail ? "Resend Verification Email" : "Wait before resending"}
-                    </>
+                    "Resend verification email"
                   )}
                 </Button>
 
@@ -118,17 +127,13 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
                   onClick={onContinue}
                   className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
                 >
-                  I've Verified My Email
-                </Button>
-
-                <Button
-                  onClick={handleSignOut}
-                  variant="ghost"
-                  className="w-full text-gray-400 hover:text-white"
-                >
-                  Sign Out & Try Different Account
+                  I've verified my email
                 </Button>
               </div>
+
+              <p className="text-xs text-gray-500 mt-6">
+                Can't find the email? Check your spam folder or try resending.
+              </p>
             </div>
           </CardContent>
         </Card>

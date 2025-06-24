@@ -15,6 +15,7 @@ interface AuthContextType {
   isEmailUnconfirmed: boolean;
   canResendEmail: boolean;
   resendConfirmationEmail: (email: string) => Promise<{ error: any }>;
+  authPending: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isNewUser, setIsNewUser] = useState(false);
   const [isEmailUnconfirmed, setIsEmailUnconfirmed] = useState(false);
   const [canResendEmail, setCanResendEmail] = useState(true);
+  const [authPending, setAuthPending] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -61,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsEmailUnconfirmed(false);
         }
         
+        setAuthPending(false);
         setLoading(false);
       }
     );
@@ -83,10 +86,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string) => {
     // Prevent multiple requests
-    if (!canResendEmail) {
+    if (authPending || !canResendEmail) {
       return { error: { message: 'Please wait before sending another verification email.' } };
     }
 
+    setAuthPending(true);
+    
     // Use grindmentor.xyz domain for redirect
     const redirectUrl = `https://grindmentor.xyz/auth/callback`;
     
@@ -115,11 +120,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setTimeout(() => setCanResendEmail(true), 60000); // 1 minute cooldown
     }
 
+    setAuthPending(false);
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
+    if (authPending) {
+      return { error: { message: 'Authentication request already in progress.' } };
+    }
+
+    setAuthPending(true);
     console.log('Sign in attempt for:', email);
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -133,19 +145,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     console.log('Sign in result:', { error });
+    setAuthPending(false);
     return { error };
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setIsEmailUnconfirmed(false);
+    setAuthPending(false);
   };
 
   const resetPassword = async (email: string) => {
     // Prevent multiple requests
-    if (!canResendEmail) {
+    if (authPending || !canResendEmail) {
       return { error: { message: 'Please wait before sending another reset email.' } };
     }
+
+    setAuthPending(true);
 
     // Use grindmentor.xyz domain for redirect
     const redirectUrl = `https://grindmentor.xyz/auth/callback`;
@@ -162,14 +178,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     console.log('Password reset result:', { error });
+    setAuthPending(false);
     return { error };
   };
 
   const resendConfirmationEmail = async (email: string) => {
     // Prevent multiple requests
-    if (!canResendEmail) {
+    if (authPending || !canResendEmail) {
       return { error: { message: 'Please wait before sending another confirmation email.' } };
     }
+
+    setAuthPending(true);
 
     const { error } = await supabase.auth.resend({
       type: 'signup',
@@ -185,6 +204,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setTimeout(() => setCanResendEmail(true), 60000); // 1 minute cooldown
     }
 
+    setAuthPending(false);
     return { error };
   };
 
@@ -200,7 +220,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isNewUser,
       isEmailUnconfirmed,
       canResendEmail,
-      resendConfirmationEmail
+      resendConfirmationEmail,
+      authPending
     }}>
       {children}
     </AuthContext.Provider>

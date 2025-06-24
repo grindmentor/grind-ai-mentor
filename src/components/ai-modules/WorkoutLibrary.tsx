@@ -1,428 +1,313 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, Clock, Target, Zap, Users } from "lucide-react";
-import { useState } from "react";
+
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Search, Dumbbell, Target, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import FormattedAIResponse from '../FormattedAIResponse';
 
 interface WorkoutLibraryProps {
   onBack: () => void;
 }
 
-interface Exercise {
-  name: string;
-  sets: string;
-  reps: string;
-  rest: string;
-  notes?: string;
-  muscle_groups: string[];
-  equipment: string;
-  image: string;
-}
+const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [exerciseInfo, setExerciseInfo] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-interface Workout {
-  id: string;
-  name: string;
-  description: string;
-  duration: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  category: string;
-  muscles: string[];
-  equipment: string;
-  image: string;
-  exercises: Exercise[];
-}
-
-const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
-  const [exerciseSearchTerm, setExerciseSearchTerm] = useState("");
-
-  const exercises: Exercise[] = [
-    {
-      name: "Bench Press",
-      sets: "3-4",
-      reps: "8-12",
-      rest: "2-3 min",
-      muscle_groups: ["Chest", "Triceps", "Shoulders"],
-      equipment: "Barbell, Bench",
-      image: "photo-1571019613454-1cb2f99b2d8b",
-      notes: "Keep shoulder blades retracted and core tight"
-    },
-    {
-      name: "Squats",
-      sets: "3-4",
-      reps: "8-15",
-      rest: "2-3 min",
-      muscle_groups: ["Quadriceps", "Glutes", "Hamstrings"],
-      equipment: "Barbell or Bodyweight",
-      image: "photo-1566241440091-ec10de8db2e1",
-      notes: "Keep knees in line with toes, chest up"
-    },
-    {
-      name: "Deadlifts",
-      sets: "3-4",
-      reps: "5-8",
-      rest: "3-4 min",
-      muscle_groups: ["Hamstrings", "Glutes", "Back"],
-      equipment: "Barbell",
-      image: "photo-1534368270820-9de3d8053204",
-      notes: "Keep bar close to body, neutral spine"
-    },
-    {
-      name: "Pull-ups",
-      sets: "3-4",
-      reps: "5-12",
-      rest: "2-3 min",
-      muscle_groups: ["Lats", "Biceps", "Rhomboids"],
-      equipment: "Pull-up Bar",
-      image: "photo-1599058917765-a780eda07a3e",
-      notes: "Full range of motion, control the descent"
-    },
-    {
-      name: "Push-ups",
-      sets: "3-4",
-      reps: "10-20",
-      rest: "1-2 min",
-      muscle_groups: ["Chest", "Triceps", "Core"],
-      equipment: "Bodyweight",
-      image: "photo-1571019613454-1cb2f99b2d8b",
-      notes: "Keep straight line from head to heels"
-    },
-    {
-      name: "Lunges",
-      sets: "3",
-      reps: "10-15 each leg",
-      rest: "90 sec",
-      muscle_groups: ["Quadriceps", "Glutes", "Calves"],
-      equipment: "Bodyweight or Dumbbells",
-      image: "photo-1566241440091-ec10de8db2e1",
-      notes: "Step forward, lower back knee toward ground"
-    }
+  const exerciseCategories = [
+    { name: 'Chest', icon: '💪', description: 'Bench press, push-ups, flyes' },
+    { name: 'Back', icon: '🔄', description: 'Pull-ups, rows, deadlifts' },
+    { name: 'Shoulders', icon: '🌟', description: 'Press, raises, shrugs' },
+    { name: 'Arms', icon: '💪', description: 'Biceps, triceps, forearms' },
+    { name: 'Legs', icon: '🦵', description: 'Squats, lunges, calves' },
+    { name: 'Core', icon: '⚡', description: 'Planks, crunches, twists' },
+    { name: 'Cardio', icon: '❤️', description: 'Running, cycling, HIIT' },
+    { name: 'Full Body', icon: '🏋️', description: 'Compound movements' }
   ];
 
-  const workouts: Workout[] = [
-    {
-      id: '1',
-      name: 'Push-Pull-Legs Split',
-      description: 'Classic 3-day split focusing on major movement patterns',
-      duration: '45-60 min',
-      difficulty: 'Intermediate',
-      category: 'Strength',
-      muscles: ['Chest', 'Shoulders', 'Triceps', 'Back', 'Biceps', 'Legs'],
-      equipment: 'Full Gym',
-      image: 'photo-1581091226825-a6a2a5aee158',
-      exercises: exercises.slice(0, 4)
-    },
-    {
-      id: '2',
-      name: 'HIIT Fat Burner',
-      description: 'High-intensity interval training for maximum calorie burn',
-      duration: '20-30 min',
-      difficulty: 'Advanced',
-      category: 'Cardio',
-      muscles: ['Full Body'],
-      equipment: 'Bodyweight',
-      image: 'photo-1649972904349-6e44c42644a7',
-      exercises: exercises.slice(4, 6)
-    },
-    {
-      id: '3',
-      name: 'Beginner Full Body',
-      description: 'Perfect introduction to strength training',
-      duration: '30-40 min',
-      difficulty: 'Beginner',
-      category: 'Strength',
-      muscles: ['Full Body'],
-      equipment: 'Minimal',
-      image: 'photo-1488590528505-98d2b5aba04b',
-      exercises: exercises.slice(0, 3)
-    }
-  ];
+  const searchExerciseInfo = async (query: string) => {
+    if (!query.trim()) return;
 
-  const categories = ['All', 'Strength', 'Cardio', 'Flexibility', 'HIIT'];
+    setIsSearching(true);
+    setExerciseInfo('');
 
-  const filteredWorkouts = workouts.filter(workout => {
-    const matchesSearch = workout.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         workout.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || workout.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `Provide comprehensive information about "${query}" exercise(s). Use the latest 2024 exercise science research and biomechanics studies. Include:
 
-  const filteredExercises = exercises.filter(exercise =>
-    exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
-    exercise.muscle_groups.some(muscle => 
-      muscle.toLowerCase().includes(exerciseSearchTerm.toLowerCase())
-    ) ||
-    exercise.equipment.toLowerCase().includes(exerciseSearchTerm.toLowerCase())
-  );
+## Exercise Overview
+- Primary muscles worked
+- Secondary muscles worked
+- Movement pattern and biomechanics
+- Equipment needed
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Beginner': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'Intermediate': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'Advanced': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+## Proper Form & Technique
+- Step-by-step execution guide
+- Common mistakes to avoid (cite 2024 injury prevention research)
+- Breathing pattern
+- Range of motion considerations
+
+## Programming Guidelines
+- Beginner recommendations (sets, reps, frequency)
+- Intermediate progression
+- Advanced variations
+- Rest periods between sets
+
+## Scientific Benefits
+- Muscle activation patterns (reference recent EMG studies if available)
+- Strength and hypertrophy benefits
+- Functional movement benefits
+- Injury prevention aspects
+
+## Variations & Progressions
+- Easier modifications for beginners
+- Advanced variations
+- Equipment alternatives
+- Similar exercises for muscle groups
+
+## Safety Considerations
+- Contraindications
+- Who should avoid this exercise
+- Injury prevention tips based on 2024 research
+
+Base all recommendations on peer-reviewed exercise science research from 2023-2024, particularly biomechanics, sports medicine, and strength training studies. Be specific, practical, and science-backed.`,
+          feature: 'training_programs'
+        }
+      });
+
+      if (error) throw error;
+      setExerciseInfo(data.response);
+    } catch (error) {
+      console.error('Error searching exercise:', error);
+      toast.error('Failed to get exercise information');
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  if (selectedWorkout) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={() => setSelectedWorkout(null)} className="text-white hover:bg-gray-800">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Library
-          </Button>
-          <h1 className="text-3xl font-bold text-white">{selectedWorkout.name}</h1>
-        </div>
+  const searchCategoryExercises = async (category: string) => {
+    setSelectedCategory(category);
+    setIsSearching(true);
+    setExerciseInfo('');
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <img 
-                  src={`https://images.unsplash.com/${selectedWorkout.image}?w=400&h=200&fit=crop`}
-                  alt={selectedWorkout.name}
-                  className="w-full h-48 object-cover rounded-lg mb-4"
-                />
-                <CardTitle className="text-white">{selectedWorkout.name}</CardTitle>
-                <CardDescription className="text-gray-400">
-                  {selectedWorkout.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={getDifficultyColor(selectedWorkout.difficulty)}>
-                    {selectedWorkout.difficulty}
-                  </Badge>
-                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {selectedWorkout.duration}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-white font-medium mb-2">Equipment:</p>
-                  <p className="text-gray-400">{selectedWorkout.equipment}</p>
-                </div>
-                <div>
-                  <p className="text-white font-medium mb-2">Target Muscles:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedWorkout.muscles.map(muscle => (
-                      <Badge key={muscle} className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
-                        {muscle}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+    try {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `Provide a comprehensive guide to ${category.toLowerCase()} exercises. Use the latest 2024 exercise science and training research. Include:
 
-          <div className="lg:col-span-2">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-white">Workout Plan</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Follow this sequence for optimal results
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {selectedWorkout.exercises.map((exercise, index) => (
-                    <div key={index} className="bg-gray-800 p-4 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-white font-medium">{exercise.name}</h4>
-                        <Badge className="bg-gray-700 text-gray-300">
-                          Exercise {index + 1}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-400">Sets:</span>
-                          <p className="text-white font-medium">{exercise.sets}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Reps:</span>
-                          <p className="text-white font-medium">{exercise.reps}</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Rest:</span>
-                          <p className="text-white font-medium">{exercise.rest}</p>
-                        </div>
-                      </div>
-                      {exercise.notes && (
-                        <div className="mt-2 text-sm text-gray-400">
-                          💡 {exercise.notes}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
+## Best ${category} Exercises
+List 8-12 top exercises for ${category.toLowerCase()} development, including:
+- Primary compound movements
+- Isolation exercises  
+- Bodyweight alternatives
+- Equipment-based options
+
+For each exercise, provide:
+- **Exercise Name**
+- Primary muscles targeted
+- Difficulty level (Beginner/Intermediate/Advanced)
+- Equipment needed
+- Key benefits
+
+## Training Principles for ${category}
+- Optimal training frequency (cite 2024 research)
+- Volume recommendations (sets/reps)
+- Progressive overload strategies
+- Recovery considerations
+
+## Program Structure Examples
+- Beginner ${category.toLowerCase()} routine
+- Intermediate progression
+- Advanced training methods
+
+## Common Mistakes & Injury Prevention
+- Most frequent form errors
+- How to prevent common ${category.toLowerCase()} injuries
+- Red flags to watch for
+
+## Evidence-Based Recommendations
+- Latest research on ${category.toLowerCase()} training (2023-2024 studies)
+- Optimal programming based on current science
+- Muscle activation research findings
+
+Format the response clearly with proper headings and structure. Base all recommendations on peer-reviewed research from 2023-2024.`,
+          feature: 'training_programs'
+        }
+      });
+
+      if (error) throw error;
+      setExerciseInfo(data.response);
+    } catch (error) {
+      console.error('Error getting category info:', error);
+      toast.error('Failed to get exercise category information');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
-            <Target className="w-6 h-6 text-white" />
-          </div>
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
           <div>
-            <h1 className="text-3xl font-bold text-white">Workout Library</h1>
-            <p className="text-gray-400">Science-backed workout routines with detailed instructions</p>
+            <h2 className="text-2xl font-bold text-white">Exercise Library</h2>
+            <p className="text-gray-400">AI-powered exercise guidance and information</p>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-          <Users className="w-3 h-3 mr-1" />
-          Community Curated
-        </Badge>
-        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-          Free Access
-        </Badge>
-      </div>
-
-      {/* Search and Filter */}
-      <Card className="bg-gray-900 border-gray-800">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search workouts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            <div className="flex gap-2">
-              {categories.map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className={selectedCategory === category 
-                    ? "bg-purple-600 hover:bg-purple-700" 
-                    : "border-gray-700 text-gray-300 hover:bg-gray-800"
-                  }
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Exercise Search */}
+      {/* Search */}
       <Card className="bg-gray-900 border-gray-800">
         <CardHeader>
-          <CardTitle className="text-white">Exercise Database</CardTitle>
-          <CardDescription className="text-gray-400">
-            Search our comprehensive exercise library
-          </CardDescription>
+          <CardTitle className="text-white flex items-center space-x-2">
+            <Search className="w-5 h-5" />
+            <span>Search Exercises</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <div className="flex space-x-3">
             <Input
-              placeholder="Search exercises by name, muscle group, or equipment..."
-              value={exerciseSearchTerm}
-              onChange={(e) => setExerciseSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-800 border-gray-700 text-white"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for any exercise (e.g., bench press, squats, deadlift)"
+              className="bg-gray-800 border-gray-700 text-white"
+              onKeyPress={(e) => e.key === 'Enter' && searchExerciseInfo(searchQuery)}
             />
+            <Button
+              onClick={() => searchExerciseInfo(searchQuery)}
+              disabled={isSearching || !searchQuery.trim()}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {isSearching ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+            </Button>
           </div>
           
-          {exerciseSearchTerm && (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-60 overflow-y-auto">
-              {filteredExercises.map((exercise, index) => (
-                <div key={index} className="bg-gray-800 p-3 rounded-lg">
-                  <img 
-                    src={`https://images.unsplash.com/${exercise.image}?w=300&h=150&fit=crop`}
-                    alt={exercise.name}
-                    className="w-full h-20 object-cover rounded mb-2"
-                  />
-                  <h4 className="text-white font-medium text-sm">{exercise.name}</h4>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {exercise.muscle_groups.slice(0, 2).map(muscle => (
-                      <Badge key={muscle} className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
-                        {muscle}
-                      </Badge>
-                    ))}
-                  </div>
-                  <p className="text-gray-400 text-xs mt-1">{exercise.sets} sets × {exercise.reps}</p>
-                </div>
-              ))}
+          <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="text-blue-400 font-medium mb-2">AI-Powered Exercise Guide</h4>
+                <p className="text-sm text-gray-300">
+                  Search for any exercise or muscle group to get comprehensive, science-based guidance including 
+                  proper form, programming, variations, and the latest research from 2024 studies.
+                </p>
+              </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Workout Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredWorkouts.map(workout => (
-          <Card key={workout.id} className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all cursor-pointer">
-            <CardHeader className="pb-3">
-              <img 
-                src={`https://images.unsplash.com/${workout.image}?w=400&h=200&fit=crop`}
-                alt={workout.name}
-                className="w-full h-32 object-cover rounded-lg mb-3"
-              />
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white text-lg">{workout.name}</CardTitle>
-                <Badge className={getDifficultyColor(workout.difficulty)}>
-                  {workout.difficulty}
-                </Badge>
-              </div>
-              <CardDescription className="text-gray-400 text-sm">
-                {workout.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3 text-sm text-gray-400">
-                  <span className="flex items-center">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {workout.duration}
-                  </span>
-                  <span className="flex items-center">
-                    <Zap className="w-3 h-3 mr-1" />
-                    {workout.category}
-                  </span>
-                </div>
-              </div>
-              <Button 
-                onClick={() => setSelectedWorkout(workout)}
-                className="w-full bg-purple-600 hover:bg-purple-700"
+      {/* Exercise Categories */}
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center space-x-2">
+            <Target className="w-5 h-5" />
+            <span>Browse by Muscle Group</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {exerciseCategories.map((category) => (
+              <Button
+                key={category.name}
+                onClick={() => searchCategoryExercises(category.name)}
+                disabled={isSearching}
+                variant="outline"
+                className={`h-auto p-4 border-gray-700 hover:bg-gray-800 transition-colors ${
+                  selectedCategory === category.name ? 'bg-orange-600 border-orange-600 text-white' : 'text-gray-300'
+                }`}
               >
-                View Workout
+                <div className="text-center">
+                  <div className="text-2xl mb-2">{category.icon}</div>
+                  <div className="font-medium">{category.name}</div>
+                  <div className="text-xs text-gray-400 mt-1">{category.description}</div>
+                </div>
               </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      {filteredWorkouts.length === 0 && (
+      {/* Loading State */}
+      {isSearching && (
         <Card className="bg-gray-900 border-gray-800">
-          <CardContent className="pt-6 text-center">
-            <Target className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-500">No workouts found matching your criteria</p>
-            <p className="text-gray-600 text-sm mt-2">Try adjusting your search or category filter</p>
+          <CardContent className="p-8 text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+              <div>
+                <h3 className="text-lg font-medium text-white">Analyzing Exercise</h3>
+                <p className="text-gray-400">Gathering the latest science-based information...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Exercise Information */}
+      {exerciseInfo && (
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center space-x-2">
+              <Dumbbell className="w-5 h-5" />
+              <span>Exercise Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FormattedAIResponse content={exerciseInfo} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Getting Started */}
+      {!exerciseInfo && !isSearching && (
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">Welcome to the Exercise Library</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-gray-300 space-y-4">
+              <p>
+                Get comprehensive, science-based exercise guidance powered by AI. Our library provides:
+              </p>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                  <span>Detailed form and technique instructions</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                  <span>Programming recommendations based on 2024 research</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                  <span>Exercise variations and progressions</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                  <span>Injury prevention and safety guidelines</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                  <span>Latest scientific findings and muscle activation data</span>
+                </li>
+              </ul>
+              <p className="text-sm text-gray-400 mt-4">
+                Start by searching for a specific exercise or browse exercises by muscle group above.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

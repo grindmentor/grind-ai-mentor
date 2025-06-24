@@ -194,6 +194,15 @@ Additional notes about the food item and nutritional benefits.`;
 
   const totals = getTotalNutrients();
 
+  const handlePhotoLoggerBack = () => {
+    setShowPhotoLogger(false);
+  };
+
+  const handlePhotoLoggerFoodLogged = async () => {
+    // Reload entries when food is logged from photo logger
+    await loadFoodEntries();
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center space-x-4">
@@ -293,7 +302,10 @@ Additional notes about the food item and nutritional benefits.`;
       </div>
 
       {showPhotoLogger && (
-        <FoodPhotoLogger onFoodLogged={loadFoodEntries} />
+        <FoodPhotoLogger 
+          onBack={handlePhotoLoggerBack} 
+          onFoodLogged={handlePhotoLoggerFoodLogged} 
+        />
       )}
 
       {showAddForm && (

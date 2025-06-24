@@ -77,6 +77,11 @@ const Dashboard = () => {
         return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
       }
       
+      // For SmartFoodLog, pass both onBack and onFoodLogged
+      if (module.id === 'smart-food-log') {
+        return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
+      }
+      
       // For other modules, just pass onBack
       return <ModuleComponent onBack={handleBack} />;
     }

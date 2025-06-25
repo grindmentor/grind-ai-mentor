@@ -6,31 +6,28 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
 import { Dumbbell, Home, Settings, LogOut, Menu, X, HelpCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
+import OnboardingFlow from "@/components/OnboardingFlow";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import Logo from "@/components/ui/logo";
 
 // Lazy load components for better performance
 const Dashboard = lazy(() => import("@/components/Dashboard"));
 const WelcomeBack = lazy(() => import("@/components/WelcomeBack"));
 
-const LoadingSpinner = () => (
-  <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
-    <div className="flex flex-col items-center space-y-4">
-      <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-        <Dumbbell className="w-7 h-7 text-white" />
-      </div>
-      <div className="text-xl">Loading...</div>
-    </div>
-  </div>
-);
-
 const App = () => {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const navigate = useNavigate();
   const { user, loading, signOut, isNewUser } = useAuth();
   const isMobile = useIsMobile();
+  
+  // Initialize payment status monitoring
+  usePaymentStatus();
 
   // Enhanced mobile header scroll behavior
   useEffect(() => {
@@ -40,10 +37,8 @@ const App = () => {
       const currentScrollY = window.scrollY;
       
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down - hide header
         setHeaderVisible(false);
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show header
         setHeaderVisible(true);
       }
       
@@ -57,18 +52,26 @@ const App = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate('/signin');
-    } else if (!loading && user && !isNewUser) {
-      // Show welcome back for returning users
-      const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
-      if (!hasSeenWelcome) {
-        setShowWelcomeBack(true);
-        sessionStorage.setItem('hasSeenWelcome', 'true');
+    } else if (!loading && user) {
+      // Check if user needs onboarding
+      const hasCompletedOnboarding = localStorage.getItem('grindmentor_onboarding_completed');
+      
+      if (isNewUser && !hasCompletedOnboarding) {
+        setShowOnboarding(true);
+      } else if (!isNewUser) {
+        // Show welcome back for returning users
+        const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
+        if (!hasSeenWelcome) {
+          setShowWelcomeBack(true);
+          sessionStorage.setItem('hasSeenWelcome', 'true');
+        }
       }
     }
   }, [user, loading, navigate, isNewUser]);
 
   const handleSignOut = async () => {
     sessionStorage.removeItem('hasSeenWelcome');
+    localStorage.removeItem('grindmentor_onboarding_completed');
     await signOut();
     navigate('/');
   };
@@ -77,18 +80,31 @@ const App = () => {
     setShowWelcomeBack(false);
   };
 
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
+
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
+        <LoadingSpinner size="lg" text="Loading GrindMentor..." />
+      </div>
+    );
   }
 
   if (!user) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (
     <EmailVerificationGuard userEmail={user.email || ''}>
       <UserDataProvider>
         <div className="min-h-screen bg-black text-white ios-safe-area">
+          {/* Onboarding Flow */}
+          {showOnboarding && (
+            <OnboardingFlow onComplete={handleOnboardingComplete} />
+          )}
+
           {/* Welcome Back Modal */}
           {showWelcomeBack && (
             <Suspense fallback={null}>
@@ -105,12 +121,7 @@ const App = () => {
               headerVisible ? 'translate-y-0' : '-translate-y-full'
             }`} style={{ paddingTop: 'max(env(safe-area-inset-top, 0px) + 0.5rem, 1rem)' }}>
               <div className="flex items-center justify-between p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                    <Dumbbell className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-lg font-bold logo-text">GrindMentor</span>
-                </div>
+                <Logo size="sm" />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -132,11 +143,8 @@ const App = () => {
             <div className="p-6 h-full flex flex-col">
               {/* Desktop Logo */}
               {!isMobile && (
-                <div className="flex items-center space-x-3 mb-8">
-                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-                    <Dumbbell className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xl font-bold logo-text">GrindMentor</span>
+                <div className="mb-8">
+                  <Logo size="md" />
                 </div>
               )}
 
@@ -211,10 +219,10 @@ const App = () => {
           {/* Main Content */}
           <div className={`min-h-screen ${
             isMobile 
-              ? 'pt-20' // Account for mobile header
+              ? 'pt-20'
               : 'ml-64'
           }`} style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1rem)' }}>
-            <Suspense fallback={<LoadingSpinner />}>
+            <Suspense fallback={<LoadingSpinner size="lg" text="Loading Dashboard..." />}>
               <Dashboard />
             </Suspense>
           </div>

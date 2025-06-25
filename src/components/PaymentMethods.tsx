@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard, Smartphone, Building, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useSubscription } from "@/hooks/useSubscription";
+import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 
 interface PaymentMethodsProps {
   planName: string;
@@ -17,7 +16,7 @@ interface PaymentMethodsProps {
 const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
-  const { refreshSubscription } = useSubscription();
+  const { checkPaymentStatus } = usePaymentStatus();
 
   const handleStripePayment = async () => {
     setIsProcessing(true);
@@ -34,27 +33,35 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
         // Open Stripe checkout in a new tab
         const newWindow = window.open(data.url, '_blank');
         
-        // Listen for payment completion
-        const checkPaymentStatus = async () => {
-          try {
-            // Wait a bit then refresh subscription status
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            await refreshSubscription();
-            
-            toast({
-              title: "Payment Successful!",
-              description: "Your premium features are now active.",
-              duration: 5000,
-            });
-            
-            onSuccess();
-          } catch (error) {
-            console.error('Error checking payment status:', error);
+        // Start monitoring payment status
+        let attempts = 0;
+        const maxAttempts = 30; // 5 minutes of checking
+        
+        const checkStatus = async () => {
+          attempts++;
+          await checkPaymentStatus();
+          
+          if (attempts < maxAttempts && newWindow && !newWindow.closed) {
+            setTimeout(checkStatus, 10000); // Check every 10 seconds
+          } else if (newWindow?.closed) {
+            // Window was closed, do a final check
+            setTimeout(async () => {
+              await checkPaymentStatus();
+              toast({
+                title: "Payment Status",
+                description: "Please refresh if your subscription status hasn't updated.",
+              });
+            }, 2000);
           }
         };
 
-        // Check payment status after a delay
-        setTimeout(checkPaymentStatus, 5000);
+        // Start checking after a delay
+        setTimeout(checkStatus, 5000);
+        
+        toast({
+          title: "Redirected to Stripe",
+          description: "Complete your payment in the new tab. We'll update your account automatically.",
+        });
       }
     } catch (error) {
       console.error('Payment error:', error);

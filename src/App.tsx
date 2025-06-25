@@ -17,6 +17,7 @@ import Settings from "./pages/Settings";
 import Account from "./pages/Account";
 import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
+import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Pricing from "./pages/Pricing";
 import Terms from "./pages/Terms";
@@ -61,6 +62,11 @@ const App = () => (
               <Route path="/app" element={
                 <AuthenticatedProviders>
                   <AppPage />
+                </AuthenticatedProviders>
+              } />
+              <Route path="/profile" element={
+                <AuthenticatedProviders>
+                  <Profile />
                 </AuthenticatedProviders>
               } />
               <Route path="/settings" element={

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { AIModule } from "./AIModuleData";
 import { SmoothButton } from "@/components/ui/smooth-button";
 import { AnimatedCard } from "@/components/ui/animated-card";
+import YouButton from "./YouButton";
 
 interface MobileModuleSelectorProps {
   modules: AIModule[];
@@ -28,7 +28,7 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
   const freeModules = modules.filter(m => !m.isPremium);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       {/* Hero Section */}
       <AnimatedCard className="bg-gradient-to-br from-gray-900 via-gray-800 to-black border border-orange-500/20 overflow-hidden relative">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-600/5"></div>
@@ -135,6 +135,9 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
           </AnimatedCard>
         ))}
       </div>
+
+      {/* You Button */}
+      <YouButton />
     </div>
   );
 };

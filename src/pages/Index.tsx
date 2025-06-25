@@ -159,7 +159,7 @@ const Index = () => {
                       onClick={() => navigate('/signin')}
                       className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
                     >
-                      Start Free Trial
+                      Make an Account for Free
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </SmoothButton>
                     

@@ -23,7 +23,6 @@ const WelcomeBack = lazy(() => import("@/components/WelcomeBack"));
 
 const App = () => {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
@@ -31,7 +30,7 @@ const App = () => {
   const [appReady, setAppReady] = useState(false);
   
   const navigate = useNavigate();
-  const { user, loading, signOut, isNewUser } = useAuth();
+  const { user, loading, signOut, hasCompletedOnboarding, markOnboardingComplete } = useAuth();
   const isMobile = useIsMobile();
   
   // Premium monitoring hooks
@@ -86,13 +85,8 @@ const App = () => {
           // Prefetch likely next routes
           prefetchBasedOnBehavior('/app');
           
-          // Check if user needs onboarding
-          const hasCompletedOnboarding = localStorage.getItem('grindmentor_onboarding_completed');
-          
-          if (isNewUser && !hasCompletedOnboarding) {
-            setShowOnboarding(true);
-          } else if (!isNewUser) {
-            // Show welcome back for returning users
+          // Show welcome back for returning users who have completed onboarding
+          if (hasCompletedOnboarding) {
             const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
             if (!hasSeenWelcome) {
               setShowWelcomeBack(true);
@@ -111,13 +105,12 @@ const App = () => {
     };
 
     initializeApp();
-  }, [user, loading, navigate, isNewUser, prefetchBasedOnBehavior]);
+  }, [user, loading, navigate, hasCompletedOnboarding, prefetchBasedOnBehavior]);
 
   const handleSignOut = async () => {
     try {
       hapticFeedback('medium');
       sessionStorage.removeItem('hasSeenWelcome');
-      localStorage.removeItem('grindmentor_onboarding_completed');
       await signOut();
       navigate('/');
     } catch (error) {
@@ -132,7 +125,7 @@ const App = () => {
 
   const handleOnboardingComplete = () => {
     hapticFeedback('medium');
-    setShowOnboarding(false);
+    markOnboardingComplete();
   };
 
   const handlePreloaderComplete = () => {
@@ -180,6 +173,17 @@ const App = () => {
     return null;
   }
 
+  // Show mandatory onboarding for users who haven't completed it
+  if (!hasCompletedOnboarding) {
+    return (
+      <EmailVerificationGuard userEmail={user.email || ''}>
+        <div className="min-h-screen bg-black text-white ios-safe-area">
+          <OnboardingFlow onComplete={handleOnboardingComplete} />
+        </div>
+      </EmailVerificationGuard>
+    );
+  }
+
   return (
     <EmailVerificationGuard userEmail={user.email || ''}>
       <UserDataProvider>
@@ -197,11 +201,6 @@ const App = () => {
             <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-3 py-1 rounded-full text-xs">
               Health Issue Detected
             </div>
-          )}
-
-          {/* Onboarding Flow */}
-          {showOnboarding && (
-            <OnboardingFlow onComplete={handleOnboardingComplete} />
           )}
 
           {/* Welcome Back Modal */}

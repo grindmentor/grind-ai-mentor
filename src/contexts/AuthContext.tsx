@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +15,8 @@ interface AuthContextType {
   canResendEmail: boolean;
   resendConfirmationEmail: (email: string) => Promise<{ error: any }>;
   authPending: boolean;
+  hasCompletedOnboarding: boolean;
+  markOnboardingComplete: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +37,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isEmailUnconfirmed, setIsEmailUnconfirmed] = useState(false);
   const [canResendEmail, setCanResendEmail] = useState(true);
   const [authPending, setAuthPending] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+
+  // Check onboarding completion status
+  const checkOnboardingStatus = (userId: string) => {
+    const onboardingCompleted = localStorage.getItem(`grindmentor_onboarding_${userId}`);
+    setHasCompletedOnboarding(!!onboardingCompleted);
+  };
+
+  // Mark onboarding as complete
+  const markOnboardingComplete = () => {
+    if (user) {
+      localStorage.setItem(`grindmentor_onboarding_${user.id}`, 'completed');
+      setHasCompletedOnboarding(true);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -54,13 +70,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const minutesDiff = timeDiff / (1000 * 60);
           
           // If user was created less than 5 minutes ago, they're a new user
-          setIsNewUser(minutesDiff < 5);
+          const isUserNew = minutesDiff < 5;
+          setIsNewUser(isUserNew);
+          
+          // Check onboarding status for this specific user
+          checkOnboardingStatus(session.user.id);
           
           // Check if email is confirmed
           setIsEmailUnconfirmed(!session.user.email_confirmed_at);
         } else if (event === 'SIGNED_OUT') {
           setIsNewUser(false);
           setIsEmailUnconfirmed(false);
+          setHasCompletedOnboarding(false);
         }
         
         setAuthPending(false);
@@ -76,6 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (session?.user) {
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+        checkOnboardingStatus(session.user.id);
       }
       
       setLoading(false);
@@ -153,6 +175,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
     setIsEmailUnconfirmed(false);
     setAuthPending(false);
+    setHasCompletedOnboarding(false);
   };
 
   const resetPassword = async (email: string) => {
@@ -221,7 +244,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isEmailUnconfirmed,
       canResendEmail,
       resendConfirmationEmail,
-      authPending
+      authPending,
+      hasCompletedOnboarding,
+      markOnboardingComplete
     }}>
       {children}
     </AuthContext.Provider>

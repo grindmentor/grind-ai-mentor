@@ -12,7 +12,10 @@ import {
   ChevronLeft,
   CheckCircle,
   Sparkles,
-  Dumbbell
+  Dumbbell,
+  User,
+  Scale,
+  Calendar
 } from 'lucide-react';
 
 interface OnboardingFlowProps {
@@ -108,6 +111,37 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       )
     },
     {
+      title: "Let's Get Your Details",
+      subtitle: "Help us personalize your experience",
+      icon: User,
+      content: (
+        <div className="text-center space-y-6">
+          <div className="space-y-3">
+            <p className="text-lg text-gray-300">
+              Next, we'll gather some basic information about you
+            </p>
+            <div className="grid gap-3">
+              <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+                <Scale className="w-5 h-5 text-orange-500" />
+                <span className="text-sm">Weight and height</span>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+                <Calendar className="w-5 h-5 text-orange-500" />
+                <span className="text-sm">Age and experience level</span>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+                <Target className="w-5 h-5 text-orange-500" />
+                <span className="text-sm">Fitness goals and activity level</span>
+              </div>
+            </div>
+            <p className="text-gray-400 text-sm">
+              Don't worry - you can always update these later in your settings!
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
       title: "Ready to Transform?",
       subtitle: "Let's start your fitness journey",
       icon: TrendingUp,
@@ -135,10 +169,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const currentStepData = steps[currentStep];
   const IconComponent = currentStepData.icon;
   const isLastStep = currentStep === steps.length - 1;
+  const isProfileStep = currentStep === 3; // The "Let's Get Your Details" step
 
   const handleNext = () => {
+    if (isProfileStep) {
+      // Redirect to the actual profile onboarding page
+      window.location.href = '/onboarding';
+      return;
+    }
+    
     if (isLastStep) {
-      localStorage.setItem('grindmentor_onboarding_completed', 'true');
       onComplete();
     } else {
       setCurrentStep(prev => prev + 1);
@@ -147,11 +187,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
 
   const handlePrevious = () => {
     setCurrentStep(prev => Math.max(0, prev - 1));
-  };
-
-  const handleSkip = () => {
-    localStorage.setItem('grindmentor_onboarding_completed', 'true');
-    onComplete();
   };
 
   return (
@@ -183,43 +218,40 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           {currentStepData.content}
           
           <div className="flex justify-between items-center pt-4">
-            <Button
-              variant="ghost"
-              onClick={handleSkip}
-              className="text-gray-400 hover:text-white"
-            >
-              Skip Tour
-            </Button>
-            
-            <div className="flex space-x-2">
-              {currentStep > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  className="border-gray-700 hover:bg-gray-800"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Back
-                </Button>
-              )}
-              
+            {currentStep > 0 && (
               <Button
-                onClick={handleNext}
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                variant="outline"
+                onClick={handlePrevious}
+                className="border-gray-700 hover:bg-gray-800"
               >
-                {isLastStep ? (
-                  <>
-                    Get Started
-                    <Sparkles className="w-4 h-4 ml-1" />
-                  </>
-                ) : (
-                  <>
-                    Next
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </>
-                )}
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
               </Button>
-            </div>
+            )}
+            
+            {currentStep === 0 && <div></div>}
+            
+            <Button
+              onClick={handleNext}
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+            >
+              {isProfileStep ? (
+                <>
+                  Continue Setup
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </>
+              ) : isLastStep ? (
+                <>
+                  Get Started
+                  <Sparkles className="w-4 h-4 ml-1" />
+                </>
+              ) : (
+                <>
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

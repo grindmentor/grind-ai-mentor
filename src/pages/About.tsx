@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -65,14 +64,14 @@ const About = () => {
           </Card>
           <Card className="bg-gray-900 border-gray-800 text-center">
             <CardContent className="p-6">
-              <div className="text-3xl font-bold text-blue-500 mb-2">50K+</div>
-              <p className="text-gray-400">Users Transformed</p>
+              <div className="text-3xl font-bold text-blue-500 mb-2">Evidence</div>
+              <p className="text-gray-400">Based Approach</p>
             </CardContent>
           </Card>
           <Card className="bg-gray-900 border-gray-800 text-center">
             <CardContent className="p-6">
-              <div className="text-3xl font-bold text-green-500 mb-2">98%</div>
-              <p className="text-gray-400">User Satisfaction Rate</p>
+              <div className="text-3xl font-bold text-green-500 mb-2">Science</div>
+              <p className="text-gray-400">Backed Recommendations</p>
             </CardContent>
           </Card>
           <Card className="bg-gray-900 border-gray-800 text-center">
@@ -241,6 +240,7 @@ const About = () => {
           </p>
         </div>
 
+        
         <div className="grid md:grid-cols-2 gap-12 mb-16">
           <div>
             <h3 className="text-2xl font-bold mb-6">Research Areas We Cover</h3>
@@ -323,7 +323,7 @@ const About = () => {
               </div>
               <h3 className="font-bold mb-2">Exercise Physiologists</h3>
               <p className="text-gray-400 text-sm mb-4">PhD researchers from top universities</p>
-              <Badge className="bg-orange-500/20 text-orange-400">3 Advisors</Badge>
+              <Badge className="bg-orange-500/20 text-orange-400">Research Team</Badge>
             </CardContent>
           </Card>
 
@@ -334,7 +334,7 @@ const About = () => {
               </div>
               <h3 className="font-bold mb-2">Elite Coaches</h3>
               <p className="text-gray-400 text-sm mb-4">Olympic and professional sports experience</p>
-              <Badge className="bg-blue-500/20 text-blue-400">5 Advisors</Badge>
+              <Badge className="bg-blue-500/20 text-blue-400">Coaching Team</Badge>
             </CardContent>
           </Card>
 
@@ -345,7 +345,7 @@ const About = () => {
               </div>
               <h3 className="font-bold mb-2">Registered Dietitians</h3>
               <p className="text-gray-400 text-sm mb-4">Sports nutrition specialists</p>
-              <Badge className="bg-green-500/20 text-green-400">4 Advisors</Badge>
+              <Badge className="bg-green-500/20 text-green-400">Nutrition Team</Badge>
             </CardContent>
           </Card>
         </div>
@@ -442,13 +442,13 @@ const About = () => {
               <span className="text-xl font-bold">GrindMentor</span>
             </Link>
             <div className="flex space-x-6 text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Support</a>
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link to="/support" className="hover:text-white transition-colors">Support</Link>
             </div>
           </div>
           <div className="text-center text-gray-400 mt-8 pt-8 border-t border-gray-800">
-            <p>&copy; 2024 GrindMentor. Science-backed fitness coaching. All research citations available upon request.</p>
+            <p>&copy; 2025 GrindMentor. Science-backed fitness coaching. All research citations available upon request.</p>
           </div>
         </div>
       </footer>

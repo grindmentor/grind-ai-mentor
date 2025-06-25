@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, FileText, AlertTriangle, Shield, Gavel, Users, Zap, Globe, Database, Eye, Dumbbell } from "lucide-react";
@@ -32,7 +31,7 @@ const Terms = () => {
           <p className="text-xl text-gray-400">
             Terms and conditions for using GrindMentor
           </p>
-          <p className="text-sm text-gray-500 mt-2">Last updated: December 22, 2024</p>
+          <p className="text-sm text-gray-500 mt-2">Last updated: June 25, 2025</p>
         </div>
 
         <div className="space-y-8">
@@ -86,6 +85,7 @@ const Terms = () => {
                   By using GrindMentor, you agree that we collect, store, and analyze extensive data to provide personalized fitness coaching. This includes but is not limited to:
                 </p>
               </div>
+              
               
               <div className="space-y-4">
                 <div>
@@ -151,20 +151,20 @@ const Terms = () => {
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <Globe className="w-6 h-6 text-green-500" />
-                <CardTitle className="text-white">Legal Jurisdiction & Norwegian Law Compliance</CardTitle>
+                <CardTitle className="text-white">Legal Jurisdiction & International Law Compliance</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <p className="font-semibold text-blue-400 mb-2">NORWEGIAN CONSUMER RIGHTS:</p>
+                <p className="font-semibold text-blue-400 mb-2">INTERNATIONAL CONSUMER RIGHTS:</p>
                 <ul className="space-y-2 text-sm">
-                  <li>• For Norwegian residents: Consumer purchase rights may apply where legally required</li>
-                  <li>• Withdrawal rights (angrerett) may apply for certain digital services under Norwegian law</li>
-                  <li>• These terms are subject to mandatory Norwegian consumer protection laws where applicable</li>
-                  <li>• Any disputes will be resolved according to Norwegian law and jurisdiction</li>
+                  <li>• Consumer protection rights may apply based on your local jurisdiction</li>
+                  <li>• Withdrawal rights may apply for certain digital services under applicable consumer protection laws</li>
+                  <li>• These terms are subject to mandatory consumer protection laws where applicable</li>
+                  <li>• Disputes will be resolved according to the laws of your jurisdiction or as mutually agreed</li>
                 </ul>
               </div>
-              <p>This service complies with Norwegian regulations for digital services and data protection (GDPR).</p>
+              <p>This service complies with international regulations for digital services and data protection (including GDPR where applicable).</p>
             </CardContent>
           </Card>
 
@@ -210,28 +210,6 @@ const Terms = () => {
           <Card className="bg-gray-900 border-gray-800">
             <CardHeader>
               <div className="flex items-center space-x-3">
-                <AlertTriangle className="w-6 h-6 text-yellow-500" />
-                <CardTitle className="text-white">Health & Medical Disclaimer</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="text-gray-300 space-y-4">
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                <p className="font-semibold text-yellow-400 mb-2">IMPORTANT MEDICAL DISCLAIMER:</p>
-                <ul className="space-y-2 text-sm">
-                  <li>• GrindMentor provides general fitness information and is NOT medical advice</li>
-                  <li>• Always consult qualified healthcare professionals before starting any fitness program</li>
-                  <li>• We are not responsible for injuries or health issues from using our recommendations</li>
-                  <li>• If you experience pain or discomfort, stop immediately and consult a doctor</li>
-                  <li>• Our AI provides science-backed advice but cannot replace professional medical guidance</li>
-                  <li>• This service is not intended to diagnose, treat, cure, or prevent any disease</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
                 <Gavel className="w-6 h-6 text-purple-500" />
                 <CardTitle className="text-white">Intellectual Property</CardTitle>
               </div>
@@ -255,18 +233,18 @@ const Terms = () => {
                 <p className="font-semibold text-red-400 mb-2">REFUND POLICY:</p>
                 <p className="text-sm">
                   <strong>General Policy:</strong> All payments are final and non-refundable under normal circumstances. 
-                  However, Norwegian consumer protection laws may grant certain withdrawal rights (angrerett) for Norwegian residents. 
-                  Please contact support if you believe you have legal grounds for a refund under Norwegian consumer law.
+                  However, consumer protection laws in your jurisdiction may grant certain withdrawal rights. 
+                  Please contact support if you believe you have legal grounds for a refund under applicable consumer law.
                 </p>
               </div>
               <ul className="space-y-2">
                 <li>• Free and premium subscription tiers available</li>
                 <li>• Premium subscriptions auto-renew unless cancelled</li>
-                <li>• All sales are generally final - limited refunds as per Norwegian law</li>
+                <li>• All sales are generally final - limited refunds as per applicable law</li>
                 <li>• We reserve the right to modify pricing with 30 days advance notice</li>
                 <li>• Cancellation can be done anytime to prevent future charges</li>
                 <li>• Cancelled subscriptions remain active until the end of the billing period</li>
-                <li>• Norwegian residents may have additional rights under consumer protection laws</li>
+                <li>• Users may have additional rights under local consumer protection laws</li>
               </ul>
             </CardContent>
           </Card>
@@ -277,7 +255,7 @@ const Terms = () => {
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
               <ul className="space-y-2">
-                <li>• We comply with GDPR and Norwegian data protection regulations</li>
+                <li>• We comply with GDPR and applicable international data protection regulations</li>
                 <li>• Your personal data is processed according to our Privacy Policy</li>
                 <li>• You have rights to access, correct, and delete your personal data</li>
                 <li>• Data transfers comply with international data protection requirements</li>
@@ -294,7 +272,7 @@ const Terms = () => {
               <p>
                 GrindMentor is provided "as is" without warranties of any kind. We shall not be liable for any indirect, 
                 incidental, special, consequential, or punitive damages, including but not limited to loss of profits, 
-                data, or other intangible losses. This limitation applies to the extent permitted by Norwegian law.
+                data, or other intangible losses. This limitation applies to the extent permitted by applicable law.
               </p>
             </CardContent>
           </Card>
@@ -316,14 +294,49 @@ const Terms = () => {
             <CardHeader>
               <CardTitle className="text-white">Contact Information</CardTitle>
             </CardHeader>
-            <CardContent className="text-gray-300">
-              <p>For questions about these Terms of Service, contact us at:</p>
-              <p className="mt-2 font-semibold">legal@grindmentor.com</p>
-              <p className="mt-2 text-sm">
-                For Norwegian residents with consumer law questions: support@grindmentor.com
-              </p>
+            <CardContent className="text-gray-300 space-y-4">
+              <p>For questions about these Terms of Service, please visit our Support page:</p>
+              <div className="mt-4">
+                <Link to="/support">
+                  <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+                    Contact Support
+                  </Button>
+                </Link>
+              </div>
+              <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="font-semibold text-blue-400 mb-2">Legal Questions:</p>
+                <p className="text-sm">
+                  For legal inquiries or consumer law questions, please use our Support page to submit your request.
+                </p>
+              </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="mt-16 pt-8 border-t border-gray-800">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/about">
+              <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
+                About Us
+              </Button>
+            </Link>
+            <Link to="/privacy">
+              <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
+                Privacy Policy
+              </Button>
+            </Link>
+            <Link to="/support">
+              <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+                Support Center
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="text-center text-gray-400 mt-12 pt-8 border-t border-gray-800">
+          <p>&copy; 2025 GrindMentor. All rights reserved. Terms subject to applicable law.</p>
         </div>
       </div>
     </div>

@@ -32,7 +32,7 @@ const Privacy = () => {
           <p className="text-xl text-gray-400">
             Your privacy is our priority. Here's how we protect your data.
           </p>
-          <p className="text-sm text-gray-500 mt-2">Last updated: December 22, 2024</p>
+          <p className="text-sm text-gray-500 mt-2">Last updated: June 25, 2025</p>
         </div>
 
         <div className="space-y-8">
@@ -40,12 +40,12 @@ const Privacy = () => {
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <Globe className="w-6 h-6 text-blue-500" />
-                <CardTitle className="text-white">GDPR & Norwegian Data Protection Compliance</CardTitle>
+                <CardTitle className="text-white">GDPR & International Data Protection Compliance</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <p className="font-semibold text-blue-400 mb-2">YOUR RIGHTS UNDER GDPR & NORWEGIAN LAW:</p>
+                <p className="font-semibold text-blue-400 mb-2">YOUR RIGHTS UNDER GDPR & INTERNATIONAL LAW:</p>
                 <ul className="space-y-2 text-sm">
                   <li>• <strong>Right to Access:</strong> Request copies of your personal data</li>
                   <li>• <strong>Right to Rectification:</strong> Correct inaccurate personal data</li>
@@ -56,7 +56,7 @@ const Privacy = () => {
                   <li>• <strong>Right to Withdraw Consent:</strong> Withdraw consent at any time</li>
                 </ul>
               </div>
-              <p>We process your data lawfully under GDPR Article 6 (legitimate interests and consent) and comply with Norwegian Personal Data Act.</p>
+              <p>We process your data lawfully under GDPR Article 6 (legitimate interests and consent) and comply with applicable international data protection laws.</p>
             </CardContent>
           </Card>
 
@@ -175,17 +175,49 @@ const Privacy = () => {
               </div>
             </CardHeader>
             <CardContent className="text-gray-300 space-y-4">
-              <p>For privacy-related questions or to exercise your rights, contact us at:</p>
-              <p className="mt-2 font-semibold">privacy@grindmentor.com</p>
+              <p>For privacy-related questions or to exercise your rights, please visit our Support page:</p>
+              <div className="mt-4">
+                <Link to="/support">
+                  <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+                    Contact Support
+                  </Button>
+                </Link>
+              </div>
               <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                 <p className="font-semibold text-blue-400 mb-2">Right to Lodge a Complaint:</p>
                 <p className="text-sm">
-                  You have the right to lodge a complaint with a supervisory authority. 
-                  In Norway, you can contact Datatilsynet (Norwegian Data Protection Authority).
+                  You have the right to lodge a complaint with a supervisory authority in your jurisdiction 
+                  if you believe your data protection rights have been violated.
                 </p>
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="mt-16 pt-8 border-t border-gray-800">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/about">
+              <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
+                About Us
+              </Button>
+            </Link>
+            <Link to="/terms">
+              <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
+                Terms of Service
+              </Button>
+            </Link>
+            <Link to="/support">
+              <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+                Support Center
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="text-center text-gray-400 mt-12 pt-8 border-t border-gray-800">
+          <p>&copy; 2025 GrindMentor. All rights reserved. Your privacy is our priority.</p>
         </div>
       </div>
     </div>

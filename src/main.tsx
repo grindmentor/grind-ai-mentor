@@ -17,16 +17,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// PWA install prompt
+// Enhanced PWA install prompt
 let deferredPrompt: any;
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   
-  // Show install button or banner
+  // Show modern install button
   const installBtn = document.createElement('button');
-  installBtn.className = 'pwa-install-btn fixed bottom-4 right-4 z-50';
+  installBtn.className = 'fixed bottom-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 transform hover:scale-105';
   installBtn.innerHTML = '📱 Install App';
   installBtn.onclick = async () => {
     if (deferredPrompt) {
@@ -38,16 +38,18 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
   };
   
-  // Only show on mobile devices
-  if (window.innerWidth <= 768) {
+  // Show on mobile and tablet devices
+  if (window.innerWidth <= 1024) {
     document.body.appendChild(installBtn);
     
-    // Auto-hide after 10 seconds
+    // Auto-hide after 15 seconds
     setTimeout(() => {
       if (installBtn.parentNode) {
-        installBtn.remove();
+        installBtn.style.opacity = '0';
+        installBtn.style.transform = 'translateY(100%)';
+        setTimeout(() => installBtn.remove(), 300);
       }
-    }, 10000);
+    }, 15000);
   }
 });
 

@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSmartUserData } from "@/hooks/useSmartUserData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,25 +34,25 @@ interface UserProfile {
   goal: string | null;
   body_fat_percentage: number | null;
   birthday: string | null;
+  display_name: string | null;
 }
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { smartData, isLoading: smartDataLoading } = useSmartUserData();
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user && !smartDataLoading) {
+    if (user) {
       loadUserProfile();
-    } else if (!user && !smartDataLoading) {
+    } else {
       setLoading(false);
       setError("User not authenticated");
     }
-  }, [user, smartDataLoading]);
+  }, [user]);
 
   const loadUserProfile = async () => {
     if (!user) {
@@ -85,7 +84,8 @@ const Profile = () => {
         activity: null,
         goal: null,
         body_fat_percentage: null,
-        birthday: null
+        birthday: null,
+        display_name: null
       };
 
       if (profile) {
@@ -109,7 +109,8 @@ const Profile = () => {
           activity: profile.activity || null,
           goal: profile.goal || null,
           body_fat_percentage: profile.body_fat_percentage || null,
-          birthday: profile.birthday || null
+          birthday: profile.birthday || null,
+          display_name: profile.display_name || null
         };
       }
 
@@ -156,10 +157,24 @@ const Profile = () => {
         console.warn('Error fetching habit completions:', habitError);
       }
 
+      // Get TDEE data
+      const { data: tdeeData, error: tdeeError } = await supabase
+        .from('tdee_calculations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (tdeeError) {
+        console.warn('Error fetching TDEE data:', tdeeError);
+      }
+
       console.log('Data loaded:', { 
         workouts: workoutSessions?.length || 0, 
         recovery: recoveryData?.length || 0, 
-        habits: habitCompletions?.length || 0 
+        habits: habitCompletions?.length || 0,
+        tdee: tdeeData ? 'available' : 'none'
       });
 
       // Calculate stats with safe defaults
@@ -172,7 +187,9 @@ const Profile = () => {
       // Calculate percentiles and scores with safe fallbacks
       const experienceBonus = userData?.experience === 'advanced' ? 30 : userData?.experience === 'intermediate' ? 15 : 0;
       const strengthPercentile = Math.min(95, Math.max(5, totalWorkouts * 2 + experienceBonus));
-      const bodyFatPercentage = smartData?.bodyFatPercentage || userData?.body_fat_percentage || 15;
+      
+      // Use TDEE data or profile data for body fat, with fallback
+      const bodyFatPercentage = userData?.body_fat_percentage || 15;
 
       // Calculate trait scores (0-100) with safe calculations
       const dedication = Math.min(100, (habitCompletions?.length || 0) * 5 + daysActive * 2);
@@ -197,14 +214,14 @@ const Profile = () => {
       setProfileStats(stats);
     } catch (error) {
       console.error('Error loading profile stats:', error);
-      setError('Failed to load profile data');
+      setError('Failed to load profile statistics');
     } finally {
       setLoading(false);
     }
   };
 
   // Show loading state
-  if (loading || smartDataLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <PremiumLoader variant="minimal" message="Loading your profile..." />

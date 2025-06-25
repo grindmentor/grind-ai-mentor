@@ -100,26 +100,33 @@ export const useSubscription = () => {
   const { user } = useAuth();
   const [currentTier, setCurrentTier] = useState<string>('free');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const lastCheckRef = useRef<number>(0);
   const cacheRef = useRef<{ tier: string; end: string | null } | null>(null);
+  const initRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (user) {
-      // Check cache first, then check subscription if cache is stale (>10 minutes)
-      const now = Date.now();
-      if (cacheRef.current && (now - lastCheckRef.current) < 600000) {
-        setCurrentTier(cacheRef.current.tier);
-        setSubscriptionEnd(cacheRef.current.end);
+    if (user && !initRef.current) {
+      initRef.current = true;
+      
+      // Check cache first for immediate display
+      const cached = cacheRef.current;
+      if (cached) {
+        setCurrentTier(cached.tier);
+        setSubscriptionEnd(cached.end);
         setIsLoading(false);
       } else {
-        checkSubscription();
+        setIsLoading(true);
       }
-    } else {
+      
+      // Always check subscription status but don't show loading if cached
+      checkSubscription();
+    } else if (!user) {
       setCurrentTier('free');
       setSubscriptionEnd(null);
       setIsLoading(false);
       cacheRef.current = null;
+      initRef.current = false;
     }
   }, [user]);
 
@@ -129,10 +136,20 @@ export const useSubscription = () => {
     try {
       // Special handling for emilbelq@gmail.com
       if (user.email === 'emilbelq@gmail.com') {
+        const newStatus = { tier: 'premium', end: null };
         setCurrentTier('premium');
-        setSubscriptionEnd(null); // No expiry for this account
-        cacheRef.current = { tier: 'premium', end: null };
+        setSubscriptionEnd(null);
+        cacheRef.current = newStatus;
         lastCheckRef.current = Date.now();
+        setIsLoading(false);
+        return;
+      }
+
+      // Check cache freshness (5 minutes)
+      const now = Date.now();
+      if (cacheRef.current && (now - lastCheckRef.current) < 300000) {
+        setCurrentTier(cacheRef.current.tier);
+        setSubscriptionEnd(cacheRef.current.end);
         setIsLoading(false);
         return;
       }
@@ -147,8 +164,12 @@ export const useSubscription = () => {
 
       if (error) {
         console.error('Error checking subscription:', error);
+        setIsLoading(false);
         return;
       }
+
+      let newTier = 'free';
+      let newEnd = null;
 
       if (data && data.length > 0) {
         const subscription = data[0];
@@ -160,21 +181,16 @@ export const useSubscription = () => {
         endDate.setMonth(endDate.getMonth() + 1);
         
         if (new Date() <= endDate) {
-          setCurrentTier(tier);
-          setSubscriptionEnd(endDate.toISOString());
-          cacheRef.current = { tier, end: endDate.toISOString() };
-        } else {
-          setCurrentTier('free');
-          setSubscriptionEnd(null);
-          cacheRef.current = { tier: 'free', end: null };
+          newTier = tier;
+          newEnd = endDate.toISOString();
         }
-      } else {
-        setCurrentTier('free');
-        setSubscriptionEnd(null);
-        cacheRef.current = { tier: 'free', end: null };
       }
 
-      lastCheckRef.current = Date.now();
+      // Update state and cache
+      setCurrentTier(newTier);
+      setSubscriptionEnd(newEnd);
+      cacheRef.current = { tier: newTier, end: newEnd };
+      lastCheckRef.current = now;
     } catch (error) {
       console.error('Error checking subscription:', error);
     } finally {

@@ -1,8 +1,8 @@
 
-// Sound effects utility for user interactions
+// Sound effects utility for user interactions - DISABLED FOR PERFORMANCE
 export class SoundEffects {
   private static audioContext: AudioContext | null = null;
-  private static isEnabled = true;
+  private static isEnabled = false; // Disabled for performance
 
   private static getAudioContext(): AudioContext {
     if (!this.audioContext) {
@@ -12,163 +12,43 @@ export class SoundEffects {
   }
 
   static setEnabled(enabled: boolean) {
-    this.isEnabled = enabled;
+    this.isEnabled = false; // Force disabled
   }
 
   static isAudioEnabled(): boolean {
-    return this.isEnabled;
+    return false; // Always disabled for performance
   }
 
-  // Subtle success sound - low, gentle tone
+  // All sound methods are now no-ops for performance
   static playSuccess() {
-    if (!this.isEnabled) return;
-    
-    try {
-      const ctx = this.getAudioContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.frequency.setValueAtTime(300, ctx.currentTime);
-      
-      gainNode.gain.setValueAtTime(0.01, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.1);
-    } catch (error) {
-      console.log('Sound playback not available');
-    }
+    // Disabled for performance
   }
 
-  // Very subtle click sound - minimal feedback
   static playClick() {
-    if (!this.isEnabled) return;
-    
-    try {
-      const ctx = this.getAudioContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
-      gainNode.gain.setValueAtTime(0.008, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.05);
-    } catch (error) {
-      console.log('Sound playback not available');
-    }
+    // Disabled for performance
   }
 
-  // Low error tone - non-intrusive
   static playError() {
-    if (!this.isEnabled) return;
-    
-    try {
-      const ctx = this.getAudioContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.frequency.setValueAtTime(180, ctx.currentTime);
-      
-      gainNode.gain.setValueAtTime(0.015, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.15);
-    } catch (error) {
-      console.log('Sound playback not available');
-    }
+    // Disabled for performance
   }
 
-  // Gentle notification - barely noticeable
   static playNotification() {
-    if (!this.isEnabled) return;
-    
-    try {
-      const ctx = this.getAudioContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.frequency.setValueAtTime(350, ctx.currentTime);
-      
-      gainNode.gain.setValueAtTime(0.012, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.12);
-    } catch (error) {
-      console.log('Sound playback not available');
-    }
+    // Disabled for performance
   }
 
-  // Soft warning tone
   static playWarning() {
-    if (!this.isEnabled) return;
-    
-    try {
-      const ctx = this.getAudioContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.frequency.setValueAtTime(250, ctx.currentTime);
-      
-      gainNode.gain.setValueAtTime(0.015, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.12);
-    } catch (error) {
-      console.log('Sound playback not available');
-    }
+    // Disabled for performance
   }
 
-  // Subtle swoosh for transitions - low frequency sweep
   static playSwoosh() {
-    if (!this.isEnabled) return;
-    
-    try {
-      const ctx = this.getAudioContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      // Gentle frequency sweep - very subtle
-      oscillator.frequency.setValueAtTime(200, ctx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.15);
-      
-      gainNode.gain.setValueAtTime(0.008, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.15);
-    } catch (error) {
-      console.log('Sound playback not available');
-    }
+    // Disabled for performance
   }
 }
 
-// Export individual functions for convenience
-export const playSuccessSound = () => SoundEffects.playSuccess();
-export const playClickSound = () => SoundEffects.playClick();
-export const playErrorSound = () => SoundEffects.playError();
-export const playNotificationSound = () => SoundEffects.playNotification();
-export const playWarningSound = () => SoundEffects.playWarning();
-export const playSwooshSound = () => SoundEffects.playSwoosh();
+// Export individual functions for convenience - all disabled
+export const playSuccessSound = () => {}; // Disabled
+export const playClickSound = () => {}; // Disabled
+export const playErrorSound = () => {}; // Disabled
+export const playNotificationSound = () => {}; // Disabled
+export const playWarningSound = () => {}; // Disabled
+export const playSwooshSound = () => {}; // Disabled

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,7 @@ interface MobileModuleSelectorProps {
 
 const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorProps) => {
   const [selectedModule, setSelectedModule] = useState<AIModule | null>(null);
-  const { currentTier, isSubscribed } = useSubscription();
+  const { currentTier, isSubscribed, isLoading } = useSubscription();
   const { canUseFeature, getRemainingUsage } = useUsageTracking();
 
   const handleModuleChange = (moduleId: string) => {
@@ -40,9 +40,25 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
     }
   };
 
-  const canAccess = selectedModule ? (!selectedModule.isPremium || isSubscribed) : false;
-  const remaining = selectedModule ? getRemainingUsage(selectedModule.usageKey as any) : 0;
-  const canUse = selectedModule ? canUseFeature(selectedModule.usageKey as any) : false;
+  const moduleStatus = useMemo(() => {
+    if (!selectedModule || isLoading) return null;
+    
+    const canAccess = !selectedModule.isPremium || isSubscribed;
+    const remaining = getRemainingUsage(selectedModule.usageKey as any);
+    const canUse = canUseFeature(selectedModule.usageKey as any);
+    
+    return { canAccess, remaining, canUse };
+  }, [selectedModule, isSubscribed, isLoading]);
+
+  if (isLoading) {
+    return (
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle className="text-white text-lg">Loading modules...</CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -86,12 +102,12 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
             </SelectContent>
           </Select>
 
-          {selectedModule && (
+          {selectedModule && moduleStatus && (
             <Card className={`bg-gradient-to-br ${selectedModule.gradient} border-0 text-white`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                    {!canAccess ? (
+                    {!moduleStatus.canAccess ? (
                       <Lock className="w-6 h-6 text-white" />
                     ) : (
                       <selectedModule.icon className="w-6 h-6 text-white" />
@@ -116,20 +132,20 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
                   {selectedModule.description}
                 </CardDescription>
                 
-                {canAccess ? (
+                {moduleStatus.canAccess ? (
                   <div className="space-y-3">
                     <div className="text-center">
                       <span className="text-white/70 text-sm">
-                        {remaining === -1 ? 'Unlimited usage' : `${remaining} uses remaining`}
+                        {moduleStatus.remaining === -1 ? 'Unlimited usage' : `${moduleStatus.remaining} uses remaining`}
                       </span>
                     </div>
                     <Button 
                       onClick={handleLaunch}
                       className="w-full bg-white/20 hover:bg-white/30 text-white border-0"
-                      disabled={!canUse}
+                      disabled={!moduleStatus.canUse}
                       size="lg"
                     >
-                      {canUse ? 'Launch Module' : 'Usage Limit Reached'}
+                      {moduleStatus.canUse ? 'Launch Module' : 'Usage Limit Reached'}
                     </Button>
                   </div>
                 ) : (

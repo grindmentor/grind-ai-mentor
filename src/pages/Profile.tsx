@@ -15,10 +15,13 @@ import { AnimatedCard } from "@/components/ui/animated-card";
 interface ProfileStats {
   strengthPercentile: number;
   bodyFatPercentage: number;
-  dedication: number;
-  strength: number;
-  recovery: number;
-  consistency: number;
+  strength: number; // Weight lifted performance
+  endurance: number; // Cardio and stamina
+  consistency: number; // Workout frequency
+  recovery: number; // Sleep and recovery metrics
+  nutrition: number; // Food logging and diet adherence
+  aesthetics: number; // Body composition and visual progress
+  dedication: number; // Overall commitment score
   totalWorkouts: number;
   daysActive: number;
   avgSleep: number;
@@ -157,6 +160,37 @@ const Profile = () => {
         console.warn('Error fetching habit completions:', habitError);
       }
 
+      // Get progressive overload data for strength metrics
+      const { data: strengthData, error: strengthError } = await supabase
+        .from('progressive_overload_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (strengthError) {
+        console.warn('Error fetching strength data:', strengthError);
+      }
+
+      // Get food log entries for nutrition score
+      const { data: foodLogData, error: foodLogError } = await supabase
+        .from('food_log_entries')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (foodLogError) {
+        console.warn('Error fetching food log data:', foodLogError);
+      }
+
+      // Get progress photos for aesthetics score
+      const { data: progressPhotos, error: photoError } = await supabase
+        .from('progress_photos')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (photoError) {
+        console.warn('Error fetching progress photos:', photoError);
+      }
+
       // Get TDEE data
       const { data: tdeeData, error: tdeeError } = await supabase
         .from('tdee_calculations')
@@ -174,43 +208,93 @@ const Profile = () => {
         workouts: workoutSessions?.length || 0, 
         recovery: recoveryData?.length || 0, 
         habits: habitCompletions?.length || 0,
+        strength: strengthData?.length || 0,
+        foodLog: foodLogData?.length || 0,
+        photos: progressPhotos?.length || 0,
         tdee: tdeeData ? 'available' : 'none'
       });
 
-      // Calculate stats with safe defaults
+      // Calculate comprehensive stats with safe defaults
       const totalWorkouts = workoutSessions?.length || 0;
       const daysActive = workoutSessions?.length ? new Set(workoutSessions.map(w => w.session_date)).size : 0;
       const avgSleep = recoveryData?.length 
         ? recoveryData.reduce((sum, r) => sum + (r.sleep_hours || 0), 0) / recoveryData.length
         : 7.5; // Default average sleep
 
-      // Calculate percentiles and scores with safe fallbacks
+      // Calculate advanced fitness metrics
       const experienceBonus = userData?.experience === 'advanced' ? 30 : userData?.experience === 'intermediate' ? 15 : 0;
       const strengthPercentile = Math.min(95, Math.max(5, totalWorkouts * 2 + experienceBonus));
       
-      // Use TDEE data or profile data for body fat, with fallback
+      // Body fat percentage for aesthetics calculation
       const bodyFatPercentage = userData?.body_fat_percentage || 15;
 
-      // Calculate trait scores (0-100) with safe calculations
-      const dedication = Math.min(100, (habitCompletions?.length || 0) * 5 + daysActive * 2);
-      const strength = Math.min(100, strengthPercentile);
-      const recovery = Math.min(100, avgSleep * 12 + (recoveryData?.length || 0) * 3);
-      const consistency = Math.min(100, daysActive * 3);
+      // Calculate comprehensive trait scores (0-100)
+      
+      // Strength: Based on progressive overload entries and weight progression
+      const strengthScore = Math.min(100, 
+        (strengthData?.length || 0) * 3 + 
+        experienceBonus + 
+        Math.min(30, totalWorkouts)
+      );
+
+      // Endurance: Based on cardio sessions and workout duration
+      const cardioWorkouts = workoutSessions?.filter(w => 
+        w.workout_type?.toLowerCase().includes('cardio') || 
+        w.workout_name?.toLowerCase().includes('cardio') ||
+        w.workout_name?.toLowerCase().includes('run') ||
+        w.workout_name?.toLowerCase().includes('bike')
+      )?.length || 0;
+      const enduranceScore = Math.min(100, cardioWorkouts * 8 + totalWorkouts * 2);
+
+      // Consistency: Workout frequency and habit completion
+      const consistencyScore = Math.min(100, daysActive * 3 + (habitCompletions?.length || 0) * 2);
+
+      // Recovery: Sleep quality and recovery data tracking
+      const recoveryScore = Math.min(100, 
+        avgSleep * 12 + 
+        (recoveryData?.length || 0) * 4 +
+        (recoveryData?.filter(r => (r.sleep_quality || 0) >= 4)?.length || 0) * 3
+      );
+
+      // Nutrition: Food logging consistency and quality
+      const nutritionScore = Math.min(100, 
+        (foodLogData?.length || 0) * 2 + 
+        (foodLogData?.filter(f => f.protein && f.protein > 0)?.length || 0) * 3
+      );
+
+      // Aesthetics: Body composition progress and photo tracking
+      const aestheticsScore = Math.min(100,
+        (progressPhotos?.length || 0) * 10 +
+        (bodyFatPercentage <= 15 ? 40 : bodyFatPercentage <= 20 ? 25 : 10) +
+        (userData?.goal === 'lose_weight' && totalWorkouts > 10 ? 20 : 0) +
+        (userData?.goal === 'build_muscle' && strengthScore > 50 ? 20 : 0)
+      );
+
+      // Overall dedication: Combined engagement score
+      const dedicationScore = Math.min(100, 
+        (habitCompletions?.length || 0) * 4 + 
+        daysActive * 2 + 
+        (totalWorkouts > 20 ? 30 : totalWorkouts) +
+        (foodLogData && foodLogData.length > 50 ? 20 : (foodLogData?.length || 0) / 3)
+      );
 
       const stats = {
         strengthPercentile,
         bodyFatPercentage,
-        dedication,
-        strength,
-        recovery,
-        consistency,
+        strength: strengthScore,
+        endurance: enduranceScore,
+        consistency: consistencyScore,
+        recovery: recoveryScore,
+        nutrition: nutritionScore,
+        aesthetics: aestheticsScore,
+        dedication: dedicationScore,
         totalWorkouts,
         daysActive,
         avgSleep,
-        goalsAchieved: Math.floor(totalWorkouts / 10)
+        goalsAchieved: Math.floor(totalWorkouts / 10) + Math.floor((foodLogData?.length || 0) / 30)
       };
 
-      console.log('Calculated stats:', stats);
+      console.log('Calculated comprehensive stats:', stats);
       setProfileStats(stats);
     } catch (error) {
       console.error('Error loading profile stats:', error);
@@ -290,12 +374,15 @@ const Profile = () => {
     );
   }
 
-  // Prepare radar chart data with validation
+  // Prepare enhanced radar chart data with 7 key fitness variables
   const radarData = [
-    { trait: 'Dedication', value: Math.max(0, Math.min(100, profileStats.dedication || 0)) },
     { trait: 'Strength', value: Math.max(0, Math.min(100, profileStats.strength || 0)) },
-    { trait: 'Recovery', value: Math.max(0, Math.min(100, profileStats.recovery || 0)) },
+    { trait: 'Endurance', value: Math.max(0, Math.min(100, profileStats.endurance || 0)) },
     { trait: 'Consistency', value: Math.max(0, Math.min(100, profileStats.consistency || 0)) },
+    { trait: 'Recovery', value: Math.max(0, Math.min(100, profileStats.recovery || 0)) },
+    { trait: 'Nutrition', value: Math.max(0, Math.min(100, profileStats.nutrition || 0)) },
+    { trait: 'Aesthetics', value: Math.max(0, Math.min(100, profileStats.aesthetics || 0)) },
+    { trait: 'Dedication', value: Math.max(0, Math.min(100, profileStats.dedication || 0)) },
   ];
 
   const getPercentileColor = (percentile: number) => {
@@ -365,19 +452,20 @@ const Profile = () => {
             </AnimatedCard>
           </div>
 
-          {/* Radar Chart */}
+          {/* Enhanced Radar Chart with 7 Variables */}
           <AnimatedCard delay={200} className="bg-gradient-to-br from-gray-900 via-gray-800 to-black border border-orange-500/20">
             <CardHeader>
-              <CardTitle className="text-center text-white">Performance Profile</CardTitle>
+              <CardTitle className="text-center text-white">Fitness Profile</CardTitle>
+              <p className="text-center text-sm text-gray-400">Complete athletic performance overview</p>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="h-64 w-full">
+              <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData}>
                     <PolarGrid gridType="polygon" stroke="#374151" />
                     <PolarAngleAxis 
                       dataKey="trait" 
-                      tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                      tick={{ fill: '#9CA3AF', fontSize: 11 }}
                       className="text-xs"
                     />
                     <PolarRadiusAxis 

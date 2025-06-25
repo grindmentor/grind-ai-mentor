@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/contexts/UserDataContext";
+import { UserDataProvider } from "@/contexts/UserDataContext";
 import Dashboard from "@/components/Dashboard";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import YouButton from "@/components/dashboard/YouButton";
@@ -11,16 +11,12 @@ import { useNavigate } from "react-router-dom";
 
 const AppPage = () => {
   const { user, loading: authLoading } = useAuth();
-  const { userData, isLoading: userDataLoading } = useUserData();
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     console.log("AppPage - Auth loading:", authLoading);
     console.log("AppPage - User:", user?.email);
-    console.log("AppPage - UserData loading:", userDataLoading);
-    console.log("AppPage - UserData:", userData);
 
     // If auth is still loading, wait
     if (authLoading) {
@@ -35,40 +31,15 @@ const AppPage = () => {
       return;
     }
 
-    // If user exists but user data is still loading, wait
-    if (user && userDataLoading) {
-      console.log("AppPage - User exists but user data still loading, waiting...");
-      return;
+    // If we have a user, complete initialization
+    if (user && !authLoading) {
+      console.log("AppPage - User authenticated, completing initialization");
+      setIsInitializing(false);
     }
-
-    // Once we have user and user data loading is complete
-    if (user && !userDataLoading) {
-      try {
-        console.log("AppPage - User and data loaded, checking onboarding status");
-        
-        // Check if user needs onboarding - if they don't have basic info
-        const needsOnboarding = !userData.age || !userData.weight || !userData.height;
-        console.log("AppPage - Needs onboarding:", needsOnboarding);
-        
-        if (needsOnboarding) {
-          setShowOnboarding(true);
-        }
-        
-        // Complete initialization
-        setIsInitializing(false);
-      } catch (err) {
-        console.error("AppPage - Error during initialization:", err);
-        // Don't block the app, just continue
-        setIsInitializing(false);
-      }
-    }
-  }, [user, userData, authLoading, userDataLoading, navigate]);
-
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-  };
+  }, [user, authLoading, navigate]);
 
   const handlePreloaderComplete = () => {
+    console.log("AppPage - Preloader completed");
     setIsInitializing(false);
   };
 
@@ -95,7 +66,24 @@ const AppPage = () => {
     );
   }
 
-  // Show onboarding if user hasn't completed it
+  // Show main dashboard wrapped in UserDataProvider
+  return (
+    <UserDataProvider>
+      <AppPageContent />
+    </UserDataProvider>
+  );
+};
+
+const AppPageContent = () => {
+  const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // For now, don't show onboarding automatically
+  // Users can access it from settings if needed
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
+
   if (showOnboarding) {
     return (
       <PageTransition>
@@ -104,7 +92,6 @@ const AppPage = () => {
     );
   }
 
-  // Show main dashboard
   return (
     <PageTransition>
       <div className="min-h-screen bg-black relative">

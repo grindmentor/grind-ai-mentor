@@ -2,9 +2,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LucideIcon, Crown, Lock } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { LucideIcon, Crown, Lock, Zap } from "lucide-react";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useMemo } from "react";
 
 interface AIModule {
@@ -24,20 +23,41 @@ interface AIModuleCardProps {
 }
 
 const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
-  const { currentTier, isSubscribed } = useSubscription();
-  const { canUseFeature, getRemainingUsage } = useUsageTracking();
   const IconComponent = module.icon;
+  const { canAccess, canUse, remaining, isUnlimited, tierRequired } = useFeatureAccess(module.usageKey);
 
-  const moduleStatus = useMemo(() => {
-    const canAccess = !module.isPremium || isSubscribed;
-    const remaining = getRemainingUsage(module.usageKey as any);
-    const canUse = canUseFeature(module.usageKey as any);
-    
-    return { canAccess, remaining, canUse };
-  }, [module.isPremium, module.usageKey, isSubscribed]);
+  const statusInfo = useMemo(() => {
+    if (!canAccess) {
+      return {
+        status: 'locked',
+        buttonText: 'Upgrade Required',
+        buttonIcon: Crown,
+        statusText: `${tierRequired.charAt(0).toUpperCase() + tierRequired.slice(1)} Required`,
+        buttonDisabled: true
+      };
+    }
+
+    if (!canUse && !isUnlimited) {
+      return {
+        status: 'limit-reached',
+        buttonText: 'Limit Reached',
+        buttonIcon: Lock,
+        statusText: '0 remaining',
+        buttonDisabled: true
+      };
+    }
+
+    return {
+      status: 'available',
+      buttonText: 'Launch',
+      buttonIcon: Zap,
+      statusText: isUnlimited ? 'Unlimited' : `${remaining} remaining`,
+      buttonDisabled: false
+    };
+  }, [canAccess, canUse, remaining, isUnlimited, tierRequired]);
 
   const handleClick = () => {
-    if (!moduleStatus.canAccess) {
+    if (statusInfo.buttonDisabled) {
       return;
     }
     onModuleClick(module.id);
@@ -45,16 +65,15 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
 
   return (
     <Card 
-      className={`bg-gradient-to-br ${module.gradient} border-0 text-white cursor-pointer hover:scale-[1.02] ${
-        !moduleStatus.canAccess ? 'opacity-75' : ''
+      className={`bg-gradient-to-br ${module.gradient} border-0 text-white cursor-pointer hover:scale-[1.02] transition-transform duration-200 ${
+        statusInfo.buttonDisabled ? 'opacity-75' : ''
       }`}
       onClick={handleClick}
-      style={{ transition: 'transform 0.1s ease' }}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-            {!moduleStatus.canAccess ? (
+            {statusInfo.status === 'locked' ? (
               <Lock className="w-6 h-6 text-white" />
             ) : (
               <IconComponent className="w-6 h-6 text-white" />
@@ -72,44 +91,35 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
             )}
           </div>
         </div>
-        <CardTitle className="text-white text-lg">{module.title}</CardTitle>
+        <CardTitle className="text-white text-lg leading-tight">{module.title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <CardDescription className="text-white/80 text-sm mb-4">
+      <CardContent className="space-y-4">
+        <CardDescription className="text-white/80 text-sm leading-relaxed">
           {module.description}
         </CardDescription>
         
-        {moduleStatus.canAccess ? (
-          <div className="space-y-4">
-            <div className="text-center">
-              <span className="text-white/70 text-xs block">
-                {moduleStatus.remaining === -1 ? 'Unlimited' : `${moduleStatus.remaining} remaining`}
-              </span>
-            </div>
-            <Button 
-              variant="secondary" 
-              size="sm"
-              className="w-full bg-white/20 hover:bg-white/30 text-white border-0"
-              disabled={!moduleStatus.canUse}
-            >
-              {moduleStatus.canUse ? 'Launch' : 'Limit reached'}
-            </Button>
+        <div className="space-y-3">
+          <div className="text-center">
+            <span className="text-white/70 text-xs block">
+              {statusInfo.statusText}
+            </span>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="text-center">
-              <span className="text-white/70 text-xs block">Premium Required</span>
-            </div>
-            <Button 
-              variant="secondary" 
-              size="sm"
-              className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0"
-            >
-              <Crown className="w-3 h-3 mr-1" />
-              Upgrade
-            </Button>
-          </div>
-        )}
+          <Button 
+            variant="secondary" 
+            size="sm"
+            className={`w-full text-white border-0 min-h-[36px] ${
+              statusInfo.status === 'locked' 
+                ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300' 
+                : statusInfo.status === 'limit-reached'
+                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300'
+                : 'bg-white/20 hover:bg-white/30'
+            }`}
+            disabled={statusInfo.buttonDisabled}
+          >
+            <statusInfo.buttonIcon className="w-3 h-3 mr-1" />
+            {statusInfo.buttonText}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

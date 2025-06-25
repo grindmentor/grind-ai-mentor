@@ -36,7 +36,7 @@ const FormattedAIResponse: React.FC<FormattedAIResponseProps> = ({ content }) =>
         }} 
       />
       
-      <style jsx>{`
+      <style>{`
         .ai-response h1, .ai-response h2, .ai-response h3 {
           color: white !important;
         }

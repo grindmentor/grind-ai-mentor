@@ -69,7 +69,7 @@ const TDEECalculator = () => {
   };
 
   const saveTDEECalculation = async (bmr: number, tdee: number, recommendedCalories: number) => {
-    if (!user) return;
+    if (!user || !age || !weight || !height) return;
 
     try {
       const { error } = await supabase
@@ -80,7 +80,11 @@ const TDEECalculator = () => {
           tdee,
           recommended_calories: recommendedCalories,
           activity_level: activityLevel,
-          calculation_method: bodyFatPercentage ? 'Katch-McArdle' : 'Mifflin-St Jeor'
+          gender,
+          age,
+          weight,
+          height,
+          goal
         });
 
       if (error) {

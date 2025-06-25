@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -288,7 +287,7 @@ Base all recommendations on peer-reviewed research from 2023-2024, particularly 
       setAnalysis(data.response);
     } catch (error) {
       console.error('Error analyzing nutrition:', error);
-      setResponse('Sorry, there was an error analyzing your nutrition. Please try again.');
+      setAnalysis('Sorry, there was an error analyzing your nutrition. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }

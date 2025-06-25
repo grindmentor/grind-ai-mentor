@@ -5,11 +5,31 @@
   "description": "Transform your physique with personalized, science-based AI fitness coaching",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "orientation": "portrait",
   "scope": "/",
+  "lang": "en",
+  "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
@@ -26,7 +46,7 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-1024.png",
@@ -35,13 +55,41 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["fitness", "health", "lifestyle"],
   "screenshots": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 844'><rect width='390' height='844' fill='%23000000'/><text x='195' y='422' text-anchor='middle' fill='%23ffffff' font-size='24' font-family='Arial'>GrindMentor Dashboard</text></svg>",
-      "sizes": "390x844",
-      "type": "image/svg+xml",
-      "form_factor": "narrow"
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "GrindMentor AI Fitness Coach"
+    },
+    {
+      "src": "/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "GrindMentor Dashboard"
     }
-  ]
+  ],
+  "categories": ["fitness", "health", "lifestyle", "productivity"],
+  "shortcuts": [
+    {
+      "name": "CoachGPT",
+      "short_name": "CoachGPT",
+      "description": "AI-powered fitness coaching",
+      "url": "/app?module=coachgpt",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Workout Timer",
+      "short_name": "Timer",
+      "description": "Smart workout timing",
+      "url": "/app?module=timer",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "display_override": ["standalone", "minimal-ui"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

@@ -1,111 +1,109 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import { PreferencesProvider } from "./contexts/PreferencesContext";
-import { UsageProvider } from "./contexts/UsageContext";
 import { ModulesProvider } from "./contexts/ModulesContext";
-import { SmartPrefillProvider } from "./components/SmartPrefillProvider";
-import ErrorBoundary from "./components/ErrorBoundary";
+import { PreferencesProvider } from "./contexts/PreferencesContext";
+import { SubscriptionProvider } from "./hooks/useSubscription";
+import { UsageTrackingProvider } from "./hooks/useUsageTracking";
+import { SoundEffects } from "./utils/soundEffects";
 import Index from "./pages/Index";
-import SignIn from "./pages/SignIn";
-import AppPage from "./pages/App";
-import Settings from "./pages/Settings";
+import Pricing from "./pages/Pricing";
 import Account from "./pages/Account";
+import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
-import Profile from "./pages/Profile";
+import Support from "./pages/Support";
 import About from "./pages/About";
-import Pricing from "./pages/Pricing";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
-import Support from "./pages/Support";
-import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./components/Dashboard";
+import { useAuth } from "./contexts/AuthContext";
+import { PageTransition } from "@/components/ui/page-transition";
+import { Skeleton } from "@/components/ui/skeleton";
+import ModuleLibrary from "./pages/ModuleLibrary";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
+const AuthenticatedApp = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-// Create a wrapper component for authenticated routes
-const AuthenticatedProviders = ({ children }: { children: React.ReactNode }) => (
-  <PreferencesProvider>
-    <UsageProvider>
-      <ModulesProvider>
-        <SmartPrefillProvider>
-          {children}
-        </SmartPrefillProvider>
-      </ModulesProvider>
-    </UsageProvider>
-  </PreferencesProvider>
-);
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="flex flex-col items-center justify-center h-screen bg-black text-white">
+          <Skeleton className="w-[300px] h-[50px] mb-4" />
+          <Skeleton className="w-[200px] h-[30px]" />
+        </div>
+      </PageTransition>
+    );
+  }
+
+  return isAuthenticated ? (
+    <Dashboard />
+  ) : null;
+};
+
+const App = () => {
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+
+  useEffect(() => {
+    // Load audio preference from localStorage
+    const storedAudioPreference = localStorage.getItem('audioEnabled');
+    if (storedAudioPreference !== null) {
+      setIsAudioEnabled(storedAudioPreference === 'true');
+      SoundEffects.setEnabled(storedAudioPreference === 'true');
+    } else {
+      // Set default audio preference to true if not found in localStorage
+      localStorage.setItem('audioEnabled', 'true');
+      SoundEffects.setEnabled(true);
+    }
+  }, []);
+
+  // Update localStorage when audio preference changes
+  useEffect(() => {
+    localStorage.setItem('audioEnabled', isAudioEnabled.toString());
+    SoundEffects.setEnabled(isAudioEnabled);
+  }, [isAudioEnabled]);
+
+  return (
+    <Router>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/app" element={
-                <AuthenticatedProviders>
-                  <AppPage />
-                </AuthenticatedProviders>
-              } />
-              <Route path="/profile" element={
-                <AuthenticatedProviders>
-                  <Profile />
-                </AuthenticatedProviders>
-              } />
-              <Route path="/settings" element={
-                <AuthenticatedProviders>
-                  <Settings />
-                </AuthenticatedProviders>
-              } />
-              <Route path="/account" element={
-                <AuthenticatedProviders>
-                  <Account />
-                </AuthenticatedProviders>
-              } />
-              <Route path="/notifications" element={
-                <AuthenticatedProviders>
-                  <Notifications />
-                </AuthenticatedProviders>
-              } />
-              <Route path="/onboarding" element={
-                <AuthenticatedProviders>
-                  <Onboarding />
-                </AuthenticatedProviders>
-              } />
-              <Route path="/about" element={<About />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/support" element={
-                <AuthenticatedProviders>
-                  <Support />
-                </AuthenticatedProviders>
-              } />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <PreferencesProvider>
+          <SubscriptionProvider>
+            <UsageTrackingProvider>
+              <ModulesProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/modules" element={<ModuleLibrary />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/support" element={<Support />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ModulesProvider>
+            </UsageTrackingProvider>
+          </SubscriptionProvider>
+        </PreferencesProvider>
       </AuthProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+    </Router>
+  );
+};
 
 export default App;

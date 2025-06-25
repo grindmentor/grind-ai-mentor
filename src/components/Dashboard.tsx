@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, TrendingUp, Brain, Zap, Target, ChevronRight, Settings, User, Bell, Menu } from "lucide-react";
+import { Crown, TrendingUp, Brain, Zap, Target, ChevronRight, Settings, User, Bell, Menu, Library } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 import { useModules } from "@/contexts/ModulesContext";
 import { useAuth } from "@/contexts/AuthContext";
 import AIModuleCard from "./dashboard/AIModuleCard";
-import MobileModuleSelector from "./dashboard/MobileModuleSelector";
 import UpgradeSection from "./dashboard/UpgradeSection";
 import DashboardSkeleton from "./dashboard/DashboardSkeleton";
 import FooterLinks from "./dashboard/FooterLinks";
@@ -17,12 +16,14 @@ import { AnimatedCard } from "@/components/ui/animated-card";
 import { SmoothButton } from "@/components/ui/smooth-button";
 import { PageTransition } from "@/components/ui/page-transition";
 import { playSuccessSound } from "@/utils/soundEffects";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const [selectedModule, setSelectedModule] = useState<string>("");
   const [showModule, setShowModule] = useState(false);
   const [isFullyInitialized, setIsFullyInitialized] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [favoriteModules, setFavoriteModules] = useState<string[]>([]);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -34,7 +35,6 @@ const Dashboard = () => {
     const allSystemsReady = modulesInitialized && !subscriptionLoading && !usageLoading;
     
     if (allSystemsReady && !isFullyInitialized) {
-      // Add a small delay to ensure all state updates are complete
       const timer = setTimeout(() => {
         setIsFullyInitialized(true);
         playSuccessSound();
@@ -42,6 +42,35 @@ const Dashboard = () => {
       return () => clearTimeout(timer);
     }
   }, [modulesInitialized, subscriptionLoading, usageLoading, isFullyInitialized]);
+
+  useEffect(() => {
+    if (user) {
+      loadFavoriteModules();
+    }
+  }, [user]);
+
+  const loadFavoriteModules = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('favorite_modules')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading favorites:', error);
+        return;
+      }
+
+      if (data?.favorite_modules) {
+        setFavoriteModules(data.favorite_modules);
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
 
   const handleModuleSelect = (moduleId: string) => {
     const module = modules.find(m => m.id === moduleId);
@@ -73,6 +102,9 @@ const Dashboard = () => {
   }
 
   const totalUsage = Object.values(currentUsage).reduce((sum, val) => sum + val, 0);
+  const displayedModules = favoriteModules.length > 0 
+    ? modules.filter(m => favoriteModules.includes(m.id))
+    : modules.slice(0, 6); // Show first 6 modules if no favorites
 
   return (
     <PageTransition>
@@ -193,7 +225,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Updated Quick Stats - Removed AI Modules count */}
+          {/* Updated Quick Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {[
               { value: totalUsage, label: "Total Interactions", color: "text-orange-500", delay: 0 },
@@ -211,42 +243,55 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* AI Modules Section - Updated for mobile */}
+          {/* AI Modules Section */}
           <div className="space-y-6 animate-fade-in" style={{ animationDelay: '400ms' }}>
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">AI Modules</h2>
-              {!isSubscribed && (
+              <h2 className="text-2xl font-semibold">
+                {favoriteModules.length > 0 ? 'Your Favorite Modules' : 'Featured AI Modules'}
+              </h2>
+              <div className="flex items-center space-x-3">
                 <SmoothButton
-                  onClick={() => navigate('/pricing')}
-                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                  size="sm"
+                  onClick={() => navigate('/modules')}
+                  variant="outline"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
                 >
-                  <Crown className="w-4 h-4 mr-2" />
-                  Upgrade
+                  <Library className="w-4 h-4 mr-2" />
+                  Module Library
                 </SmoothButton>
-              )}
+                {!isSubscribed && (
+                  <SmoothButton
+                    onClick={() => navigate('/pricing')}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                    size="sm"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Upgrade
+                  </SmoothButton>
+                )}
+              </div>
             </div>
 
-            {isMobile ? (
-              <MobileModuleSelector
-                modules={modules}
-                onModuleSelect={handleModuleSelect}
-              />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-                {modules.map((module, index) => (
-                  <AnimatedCard
-                    key={module.id}
-                    delay={500 + index * 100}
-                    hoverEffect={false}
-                    className="p-0 border-0 bg-transparent"
-                  >
-                    <AIModuleCard
-                      module={module}
-                      onModuleClick={handleModuleSelect}
-                    />
-                  </AnimatedCard>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+              {displayedModules.map((module, index) => (
+                <AnimatedCard
+                  key={module.id}
+                  delay={500 + index * 100}
+                  hoverEffect={false}
+                  className="p-0 border-0 bg-transparent"
+                >
+                  <AIModuleCard
+                    module={module}
+                    onModuleClick={handleModuleSelect}
+                  />
+                </AnimatedCard>
+              ))}
+            </div>
+
+            {favoriteModules.length === 0 && (
+              <div className="text-center py-8">
+                <Library className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400">No favorite modules yet</p>
+                <p className="text-gray-500 text-sm">Visit the Module Library to discover and favorite AI modules</p>
               </div>
             )}
           </div>

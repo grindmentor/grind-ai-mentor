@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Play, Pause, RotateCcw, Plus, Minus, Timer, Zap, Trophy } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
+import { playSuccessSound, playNotificationSound } from "@/utils/soundEffects";
 
 interface WorkoutTimerProps {
   onBack: () => void;
@@ -23,7 +24,17 @@ const WorkoutTimer = ({ onBack }: WorkoutTimerProps) => {
     
     if (isRunning && currentTime > 0) {
       interval = setInterval(() => {
-        setCurrentTime(prev => prev - 1);
+        setCurrentTime(prev => {
+          // Play countdown sound for last 5 seconds
+          if (prev <= 5 && prev > 1) {
+            playNotificationSound();
+          }
+          // Play phase change sound when reaching 0
+          if (prev === 1) {
+            playSuccessSound();
+          }
+          return prev - 1;
+        });
       }, 1000);
     } else if (isRunning && currentTime === 0) {
       if (isWorkPhase) {
@@ -40,6 +51,9 @@ const WorkoutTimer = ({ onBack }: WorkoutTimerProps) => {
   }, [isRunning, currentTime, isWorkPhase, workTime, restTime]);
 
   const handleStartPause = () => {
+    if (!isRunning) {
+      playSuccessSound(); // Play sound when starting
+    }
     setIsRunning(!isRunning);
   };
 
@@ -100,12 +114,16 @@ const WorkoutTimer = ({ onBack }: WorkoutTimerProps) => {
           <AnimatedCard className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700 overflow-hidden">
             <CardHeader className="text-center pb-2">
               <div className="relative">
-                <div className={`text-6xl md:text-7xl font-bold font-mono ${isWorkPhase ? 'text-green-400' : 'text-orange-400'} mb-4`}>
+                <div className={`text-6xl md:text-7xl font-bold font-mono mb-4 transition-colors duration-300 ${
+                  currentTime <= 5 && isRunning ? 'text-red-400 animate-pulse' : 
+                  isWorkPhase ? 'text-green-400' : 'text-orange-400'
+                }`}>
                   {formatTime(currentTime)}
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
                   <div
                     className={`h-2 rounded-full transition-all duration-1000 ${
+                      currentTime <= 5 && isRunning ? 'bg-gradient-to-r from-red-400 to-red-600' :
                       isWorkPhase ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-orange-400 to-orange-600'
                     }`}
                     style={{ width: `${progressPercentage}%` }}

@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, ArrowLeft, Search, Filter, Play, Target, Dumbbell, Clock, BookOpen } from "lucide-react";
+import { BarChart3, ArrowLeft, Search, Filter, Play, Target, Dumbbell, Clock, BookOpen, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface WorkoutLibraryProps {
   onBack: () => void;
@@ -19,6 +20,8 @@ interface Exercise {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   description: string;
   instructions: string[];
+  tips?: string[];
+  videoUrl?: string;
 }
 
 const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
@@ -26,6 +29,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +48,11 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
           'Lower your body until chest nearly touches the floor',
           'Push back up to starting position',
           'Keep your body in a straight line throughout'
+        ],
+        tips: [
+          'Keep core engaged throughout the movement',
+          'Don\'t let hips sag or rise',
+          'Control the descent - don\'t drop down quickly'
         ]
       },
       {
@@ -59,13 +68,18 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
           'Lower your body by pushing hips back and bending knees',
           'Keep chest up and weight on heels',
           'Push through heels to return to standing'
+        ],
+        tips: [
+          'Go as low as your mobility allows',
+          'Keep knees tracking over toes',
+          'Maintain neutral spine throughout'
         ]
       },
       {
         id: '3',
         name: 'Deadlifts',
         category: 'back',
-        muscle_groups: ['hamstrings', 'glutes', 'lower back'],
+        muscle_groups: ['hamstrings', 'glutes', 'lower back', 'traps'],
         equipment: 'barbell',
         difficulty: 'intermediate',
         description: 'Compound movement targeting posterior chain muscles.',
@@ -75,6 +89,51 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
           'Keep chest up and back straight',
           'Drive through heels to lift the bar',
           'Reverse the movement to lower the bar'
+        ],
+        tips: [
+          'Keep the bar close to your body',
+          'Lead with your hips, not your back',
+          'Maintain neutral spine throughout the lift'
+        ]
+      },
+      {
+        id: '4',
+        name: 'Pull-ups',
+        category: 'back',
+        muscle_groups: ['lats', 'rhomboids', 'biceps'],
+        equipment: 'pull-up bar',
+        difficulty: 'intermediate',
+        description: 'Upper body pulling exercise for back and arm strength.',
+        instructions: [
+          'Hang from bar with hands shoulder-width apart',
+          'Pull your body up until chin clears the bar',
+          'Lower yourself back to starting position with control',
+          'Keep core engaged throughout'
+        ],
+        tips: [
+          'Use full range of motion',
+          'Avoid swinging or kipping',
+          'Focus on pulling with your back muscles'
+        ]
+      },
+      {
+        id: '5',
+        name: 'Planks',
+        category: 'core',
+        muscle_groups: ['core', 'shoulders', 'glutes'],
+        equipment: 'bodyweight',
+        difficulty: 'beginner',
+        description: 'Isometric core strengthening exercise.',
+        instructions: [
+          'Start in push-up position on forearms',
+          'Keep body in straight line from head to heels',
+          'Hold position while breathing normally',
+          'Maintain tension in core and glutes'
+        ],
+        tips: [
+          'Don\'t let hips sag or pike up',
+          'Keep breathing steady',
+          'Start with shorter holds and build up'
         ]
       }
     ];
@@ -104,9 +163,13 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
     }
   };
 
+  const handleViewExercise = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-violet-900 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-black via-violet-900/20 to-violet-700 text-white flex items-center justify-center animate-fade-in">
         <div className="flex items-center space-x-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-400"></div>
           <span className="text-slate-400">Loading workout library...</span>
@@ -116,7 +179,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-violet-900 text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-black via-violet-900/20 to-violet-700 text-white p-6 animate-fade-in">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -130,7 +193,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
               Dashboard
             </Button>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-violet-500 to-violet-700 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-500/25 border border-violet-400/20">
+              <div className="w-16 h-16 bg-gradient-to-r from-violet-500/20 to-violet-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl shadow-violet-500/25 border border-violet-400/20">
                 <BookOpen className="w-8 h-8 text-white" />
               </div>
               <div>
@@ -149,7 +212,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
         </div>
 
         {/* Search and Filter Bar */}
-        <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+        <Card className="bg-slate-900/20 border-slate-700/50 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
@@ -159,7 +222,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                     placeholder="Search exercises or muscle groups..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-slate-800/50 border-slate-600/50 text-white focus:border-violet-500"
+                    className="pl-10 bg-slate-800/30 border-slate-600/50 text-white focus:border-violet-500 backdrop-blur-sm"
                   />
                 </div>
               </div>
@@ -168,10 +231,10 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-3 bg-slate-800/50 border border-slate-600/50 text-white rounded-lg focus:border-violet-500"
+                  className="w-full p-3 bg-slate-800/30 border border-slate-600/50 text-white rounded-lg focus:border-violet-500 backdrop-blur-sm"
                 >
                   {categories.map(category => (
-                    <option key={category} value={category}>
+                    <option key={category} value={category} className="bg-slate-800">
                       {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
                     </option>
                   ))}
@@ -182,10 +245,10 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                 <select
                   value={selectedDifficulty}
                   onChange={(e) => setSelectedDifficulty(e.target.value)}
-                  className="w-full p-3 bg-slate-800/50 border border-slate-600/50 text-white rounded-lg focus:border-violet-500"
+                  className="w-full p-3 bg-slate-800/30 border border-slate-600/50 text-white rounded-lg focus:border-violet-500 backdrop-blur-sm"
                 >
                   {difficulties.map(difficulty => (
-                    <option key={difficulty} value={difficulty}>
+                    <option key={difficulty} value={difficulty} className="bg-slate-800">
                       {difficulty === 'all' ? 'All Levels' : difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
                     </option>
                   ))}
@@ -198,7 +261,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
         {/* Exercise Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredExercises.map((exercise) => (
-            <Card key={exercise.id} className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm hover:bg-slate-800/50 transition-all duration-300 hover:scale-105">
+            <Card key={exercise.id} className="bg-slate-900/20 border-slate-700/50 backdrop-blur-sm hover:bg-slate-800/30 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
@@ -242,7 +305,8 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full border-slate-600/50 text-slate-300 hover:bg-slate-700/50"
+                  className="w-full border-slate-600/50 text-slate-300 hover:bg-slate-700/50 hover:border-violet-500/50 backdrop-blur-sm"
+                  onClick={() => handleViewExercise(exercise)}
                 >
                   <Play className="w-4 h-4 mr-2" />
                   View Full Exercise
@@ -254,7 +318,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
 
         {filteredExercises.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-slate-500" />
             </div>
             <h3 className="text-white font-semibold text-lg mb-2">No exercises found</h3>
@@ -270,7 +334,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
             { label: "Equipment Types", value: "12+", icon: BarChart3 },
             { label: "Difficulty Levels", value: 3, icon: Clock }
           ].map((stat, index) => (
-            <Card key={index} className="bg-slate-900/30 border-slate-700/30 backdrop-blur-sm">
+            <Card key={index} className="bg-slate-900/20 border-slate-700/30 backdrop-blur-sm">
               <CardContent className="p-4 text-center">
                 <stat.icon className="w-6 h-6 text-violet-400 mx-auto mb-2" />
                 <div className="text-xl font-bold text-white">{stat.value}</div>
@@ -280,6 +344,82 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
           ))}
         </div>
       </div>
+
+      {/* Exercise Detail Modal */}
+      <Dialog open={!!selectedExercise} onOpenChange={() => setSelectedExercise(null)}>
+        <DialogContent className="max-w-2xl bg-slate-900/95 border-slate-700 text-white backdrop-blur-lg">
+          {selectedExercise && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <DialogTitle className="text-2xl font-bold text-white">
+                      {selectedExercise.name}
+                    </DialogTitle>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Badge className={getDifficultyColor(selectedExercise.difficulty)}>
+                        {selectedExercise.difficulty}
+                      </Badge>
+                      <Badge className="bg-violet-600/20 text-violet-300 border-violet-500/30">
+                        {selectedExercise.equipment}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedExercise(null)}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                <p className="text-slate-300 text-lg">{selectedExercise.description}</p>
+                
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-3">Target Muscles</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedExercise.muscle_groups.map((muscle) => (
+                      <Badge key={muscle} className="bg-violet-600/20 text-violet-300 border-violet-500/30">
+                        {muscle}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-white font-semibold text-lg mb-3">Instructions</h3>
+                  <ol className="space-y-2">
+                    {selectedExercise.instructions.map((instruction, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-violet-400 font-medium mr-3 min-w-[1.5rem]">{index + 1}.</span>
+                        <span className="text-slate-300">{instruction}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {selectedExercise.tips && selectedExercise.tips.length > 0 && (
+                  <div>
+                    <h3 className="text-white font-semibold text-lg mb-3">Pro Tips</h3>
+                    <ul className="space-y-2">
+                      {selectedExercise.tips.map((tip, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-violet-400 mr-3">•</span>
+                          <span className="text-slate-300">{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

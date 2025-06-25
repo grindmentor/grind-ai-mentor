@@ -8,7 +8,8 @@ import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import FormattedAIResponse from "@/components/FormattedAIResponse";
 
 interface RecoveryCoachProps {
   onBack: () => void;
@@ -19,7 +20,6 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { canUseFeature, incrementUsage } = useUsageTracking();
-  const { toast } = useToast();
 
   const examplePrompts = [
     {
@@ -58,29 +58,37 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
     setIsLoading(true);
     
     try {
+      const recoveryPrompt = `Create a comprehensive recovery plan based on this request: ${input}
+
+Please provide:
+1. Sleep optimization strategies
+2. Recovery protocols and techniques  
+3. Stress management recommendations
+4. Nutrition for recovery
+5. Active recovery suggestions
+6. Lifestyle modifications
+
+Base all recommendations on current sleep science and recovery research from 2024. Include specific, actionable steps and cite relevant studies where applicable.`;
+
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
-          type: 'recovery',
-          userInput: input
+          prompt: recoveryPrompt,
+          feature: 'coach_gpt_queries'
         }
       });
 
       if (error) throw error;
-      setResponse(data.response);
       
-      toast({
-        title: "Recovery Plan Generated!",
-        description: "Your personalized recovery protocol is ready with research citations.",
-      });
+      if (data.response) {
+        setResponse(data.response);
+        toast.success('Recovery plan generated successfully!');
+      } else {
+        throw new Error('No response received');
+      }
     } catch (error) {
       console.error('Error getting recovery advice:', error);
       setResponse('Sorry, there was an error generating your recovery plan. Please try again.');
-      
-      toast({
-        title: "Error generating recovery plan",
-        description: "Please try again in a moment.",
-        variant: "destructive",
-      });
+      toast.error('Failed to generate recovery plan');
     } finally {
       setIsLoading(false);
     }
@@ -95,14 +103,11 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
     element.click();
     document.body.removeChild(element);
     
-    toast({
-      title: "Recovery Plan Downloaded!",
-      description: "Your plan has been saved to your device.",
-    });
+    toast.success('Recovery plan downloaded successfully!');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-black to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-black via-indigo-900/20 to-blue-700 animate-fade-in">
       <div className="p-6">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
@@ -117,7 +122,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
                 Dashboard
               </Button>
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500/20 to-blue-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/20">
                   <Moon className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -143,7 +148,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
           {/* Main Content */}
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Input Panel */}
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-xl flex items-center">
                   <MessageCircle className="w-5 h-5 mr-3 text-indigo-400" />
@@ -165,7 +170,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
                       <button
                         key={index}
                         onClick={() => handleExampleClick(example.prompt)}
-                        className="text-left p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-200 group"
+                        className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-200 group backdrop-blur-sm"
                       >
                         <div className="flex items-center space-x-3 mb-2">
                           <div className="text-indigo-400 group-hover:text-indigo-300 transition-colors">
@@ -185,13 +190,13 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
                     placeholder="Tell me about your sleep quality, recovery challenges, stress levels, training intensity..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="bg-slate-800/50 border-slate-600 text-white min-h-32 focus:border-indigo-500 transition-colors resize-none"
+                    className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-indigo-500 transition-colors resize-none backdrop-blur-sm"
                     disabled={!canUseFeature('coach_gpt_queries')}
                   />
                   <Button 
                     type="submit" 
                     disabled={!input.trim() || isLoading || !canUseFeature('coach_gpt_queries')}
-                    className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/25"
+                    className="w-full bg-gradient-to-r from-indigo-500/80 to-blue-600/80 hover:from-indigo-600/80 hover:to-blue-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/25 backdrop-blur-sm"
                   >
                     {isLoading ? (
                       <>
@@ -210,7 +215,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
             </Card>
 
             {/* Results Panel */}
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-xl flex items-center">
                   <Sparkles className="w-5 h-5 mr-3 text-indigo-400" />
@@ -233,7 +238,7 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
                         onClick={handleDownload}
                         variant="outline" 
                         size="sm"
-                        className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-indigo-500"
+                        className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-indigo-500/50 backdrop-blur-sm"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         Download Plan
@@ -241,13 +246,13 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
                     </div>
 
                     {/* Response Content */}
-                    <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto">
-                      <pre className="whitespace-pre-wrap text-slate-300 text-sm leading-relaxed">{response}</pre>
+                    <div className="bg-slate-800/20 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto backdrop-blur-sm">
+                      <FormattedAIResponse content={response} />
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-16">
-                    <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <Moon className="w-8 h-8 text-slate-500" />
                     </div>
                     <h3 className="text-white font-medium mb-2">Ready to Optimize Recovery</h3>

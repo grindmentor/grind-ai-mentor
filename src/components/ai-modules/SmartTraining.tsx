@@ -10,6 +10,7 @@ import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/contexts/UserDataContext";
 import FormattedAIResponse from "@/components/FormattedAIResponse";
+import { toast } from "sonner";
 
 interface SmartTrainingProps {
   onBack: () => void;
@@ -60,29 +61,45 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
     
     try {
       const userContext = getCleanUserContext();
-      const enhancedInput = `${input}
+      const enhancedInput = `Create a comprehensive training program based on the following request: ${input}
 
-${userContext}`;
+User Context: ${userContext}
+
+Please provide:
+1. Program overview and goals
+2. Weekly schedule breakdown
+3. Exercise selection with sets, reps, and progression
+4. Rest periods and training tips
+5. Progress tracking recommendations
+
+Base all recommendations on current exercise science research and progressive overload principles.`;
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
-          type: 'training',
-          userInput: enhancedInput
+          prompt: enhancedInput,
+          feature: 'training_programs'
         }
       });
 
       if (error) throw error;
-      setResponse(data.response);
+      
+      if (data.response) {
+        setResponse(data.response);
+        toast.success('Training program generated successfully!');
+      } else {
+        throw new Error('No response received');
+      }
     } catch (error) {
       console.error('Error generating training program:', error);
       setResponse('Sorry, there was an error generating your training program. Please try again.');
+      toast.error('Failed to generate training program');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-indigo-900">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-purple-700 animate-fade-in">
       <div className="p-6">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
@@ -97,7 +114,7 @@ ${userContext}`;
                 Dashboard
               </Button>
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-purple-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25 border border-purple-400/20">
                   <Dumbbell className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -123,7 +140,7 @@ ${userContext}`;
           {/* Main Content */}
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Input Panel */}
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-xl flex items-center">
                   <MessageCircle className="w-5 h-5 mr-3 text-purple-400" />
@@ -145,7 +162,7 @@ ${userContext}`;
                       <button
                         key={index}
                         onClick={() => handleExampleClick(example.prompt)}
-                        className="text-left p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all duration-200 group"
+                        className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all duration-200 group backdrop-blur-sm"
                       >
                         <div className="flex items-center space-x-3 mb-2">
                           <div className="text-purple-400 group-hover:text-purple-300 transition-colors">
@@ -165,13 +182,13 @@ ${userContext}`;
                     placeholder="Describe your training goals, experience level, available equipment, and time commitment..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="bg-slate-800/50 border-slate-600 text-white min-h-32 focus:border-purple-500 transition-colors resize-none"
+                    className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-purple-500 transition-colors resize-none backdrop-blur-sm"
                     disabled={!canUseFeature('training_programs')}
                   />
                   <Button 
                     type="submit" 
                     disabled={!input.trim() || isLoading || !canUseFeature('training_programs')}
-                    className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25"
+                    className="w-full bg-gradient-to-r from-purple-500/80 to-indigo-600/80 hover:from-purple-600/80 hover:to-indigo-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 backdrop-blur-sm"
                   >
                     {isLoading ? (
                       <>
@@ -190,7 +207,7 @@ ${userContext}`;
             </Card>
 
             {/* Results Panel */}
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-xl flex items-center">
                   <Play className="w-5 h-5 mr-3 text-purple-400" />
@@ -218,10 +235,11 @@ ${userContext}`;
                           document.body.appendChild(element);
                           element.click();
                           document.body.removeChild(element);
+                          toast.success('Training program downloaded!');
                         }}
                         variant="outline" 
                         size="sm"
-                        className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-purple-500"
+                        className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-purple-500/50 backdrop-blur-sm"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         Download Program
@@ -229,13 +247,13 @@ ${userContext}`;
                     </div>
 
                     {/* Response Content */}
-                    <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto">
+                    <div className="bg-slate-800/20 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto backdrop-blur-sm">
                       <FormattedAIResponse content={response} />
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-16">
-                    <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <Dumbbell className="w-8 h-8 text-slate-500" />
                     </div>
                     <h3 className="text-white font-medium mb-2">Ready to Build Your Program</h3>

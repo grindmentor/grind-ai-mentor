@@ -1,346 +1,447 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Calculator, ArrowLeft, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Calculator, ArrowLeft, Download, Save, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useUsageTracking } from '@/hooks/useUsageTracking';
+import UsageIndicator from '@/components/UsageIndicator';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSmartUserData } from '@/hooks/useSmartUserData';
-import { SmartInput } from '@/components/ui/smart-input';
+import { toast } from 'sonner';
 
 interface TDEECalculatorProps {
   onBack: () => void;
 }
 
-const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
+interface TDEEResult {
+  bmr: number;
+  tdee: number;
+  maintain: number;
+  cut: number;
+  bulk: number;
+  ffmi?: number;
+  bodyFatPercentage?: number;
+}
+
+const TDEECalculator: React.FC<TDEECalculatorProps> = ({ onBack }) => {
   const { user } = useAuth();
-  const { smartData, getPrefillData, refreshData } = useSmartUserData();
+  const { canUseFeature, incrementUsage } = useUsageTracking();
   
-  const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [age, setAge] = useState('');
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [activityLevel, setActivityLevel] = useState<'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active'>('sedentary');
-  const [goal, setGoal] = useState<'lose_weight' | 'maintain_weight' | 'gain_weight' | 'build_muscle' | 'improve_fitness' | 'cut' | 'bulk' | 'recomp'>('maintain_weight');
-  const [bodyFatPercentage, setBodyFatPercentage] = useState('');
-  const [results, setResults] = useState<{ bmr: number; tdee: number; recommendedCalories: number } | null>(null);
-  const [prefillApplied, setPrefillApplied] = useState(false);
+  const [formData, setFormData] = useState({
+    age: '',
+    gender: '',
+    height: '',
+    weight: '',
+    activityLevel: '',
+    bodyFat: '',
+    goal: 'maintain'
+  });
+  
+  const [results, setResults] = useState<TDEEResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Get prefill data
-  const prefillData = getPrefillData({ includePersonal: true, includeFitness: true });
+  const activityLevels = [
+    { value: '1.2', label: 'Sedentary (desk job, no exercise)' },
+    { value: '1.375', label: 'Lightly active (light exercise 1-3 days/week)' },
+    { value: '1.55', label: 'Moderately active (moderate exercise 3-5 days/week)' },
+    { value: '1.725', label: 'Very active (hard exercise 6-7 days/week)' },
+    { value: '1.9', label: 'Extremely active (physical job + exercise)' }
+  ];
 
-  // Auto-prefill when component loads and data is available
-  useEffect(() => {
-    if (smartData && !prefillApplied) {
-      if (prefillData.age && !age) setAge(String(prefillData.age));
-      if (prefillData.weight && !weight) setWeight(String(prefillData.weight));
-      if (prefillData.height && !height) setHeight(String(prefillData.height));
-      if (prefillData.gender && gender === 'male') setGender(prefillData.gender as 'male' | 'female');
-      if (prefillData.activityLevel && activityLevel === 'sedentary') {
-        setActivityLevel(prefillData.activityLevel as any);
-      }
-      if (prefillData.fitnessGoals && goal === 'maintain_weight') {
-        setGoal(prefillData.fitnessGoals as any);
-      }
-      if (prefillData.bodyFatPercentage && !bodyFatPercentage) {
-        setBodyFatPercentage(String(prefillData.bodyFatPercentage));
-      }
-      setPrefillApplied(true);
-    }
-  }, [smartData, prefillData, prefillApplied]);
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-  const calculateTDEE = () => {
-    const weightNum = parseFloat(weight);
-    const heightNum = parseFloat(height);
-    const ageNum = parseInt(age);
-    
-    if (!weightNum || !heightNum || !ageNum) {
+  const calculateTDEE = async () => {
+    if (!formData.age || !formData.gender || !formData.height || !formData.weight || !formData.activityLevel) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    let bmr: number;
+    if (!canUseFeature('tdee_calculations')) return;
     
-    // Use Katch-McArdle formula if body fat is provided (more accurate)
-    const bodyFatNum = parseFloat(bodyFatPercentage);
-    if (bodyFatNum && bodyFatNum > 0 && bodyFatNum < 50) {
-      const leanBodyMass = weightNum * (1 - bodyFatNum / 100);
-      bmr = 370 + (21.6 * leanBodyMass);
-    } else {
-      // Use Mifflin-St Jeor equation as fallback
-      if (gender === 'male') {
-        bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum + 5;
-      } else {
-        bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum - 161;
-      }
-    }
+    const success = await incrementUsage('tdee_calculations');
+    if (!success) return;
 
-    const activityMultipliers = {
-      sedentary: 1.2,
-      lightly_active: 1.375,
-      moderately_active: 1.55,
-      very_active: 1.725,
-      extremely_active: 1.9
-    };
-
-    const tdee = bmr * activityMultipliers[activityLevel];
-    
-    let recommendedCalories = tdee;
-    if (goal === 'lose_weight' || goal === 'cut') {
-      recommendedCalories = tdee * 0.8; // 20% deficit
-    } else if (goal === 'gain_weight' || goal === 'bulk') {
-      recommendedCalories = tdee * 1.1; // 10% surplus
-    }
-
-    setResults({
-      bmr: Math.round(bmr),
-      tdee: Math.round(tdee),
-      recommendedCalories: Math.round(recommendedCalories)
-    });
-
-    // Save to database
-    saveTDEECalculation(bmr, tdee, recommendedCalories);
-  };
-
-  const saveTDEECalculation = async (bmr: number, tdee: number, recommendedCalories: number) => {
-    if (!user) return;
+    setIsLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('tdee_calculations')
-        .insert({
-          user_id: user.id,
-          bmr,
-          tdee,
-          recommended_calories: recommendedCalories,
-          activity_level: activityLevel,
-          gender,
-          age: parseInt(age),
-          weight: parseFloat(weight),
-          height: parseFloat(height),
-          goal
-        });
+      const age = parseFloat(formData.age);
+      const height = parseFloat(formData.height);
+      const weight = parseFloat(formData.weight);
+      const activityMultiplier = parseFloat(formData.activityLevel);
+      const bodyFat = formData.bodyFat ? parseFloat(formData.bodyFat) : null;
 
-      if (error) {
-        console.error('Error saving TDEE calculation:', error);
-        toast.error('Failed to save TDEE calculation');
+      // Calculate BMR using Mifflin-St Jeor Equation
+      let bmr: number;
+      if (formData.gender === 'male') {
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
       } else {
-        toast.success('TDEE calculation saved!');
-        // Refresh smart data to include new calculation
-        setTimeout(() => refreshData(), 500);
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
       }
+
+      const tdee = bmr * activityMultiplier;
+      
+      // Calculate FFMI if body fat is provided
+      let ffmi: number | undefined;
+      if (bodyFat && bodyFat > 0 && bodyFat < 50) {
+        const leanMass = weight * (1 - bodyFat / 100);
+        const heightInMeters = height / 100;
+        ffmi = leanMass / (heightInMeters * heightInMeters);
+      }
+
+      const calculatedResults: TDEEResult = {
+        bmr: Math.round(bmr),
+        tdee: Math.round(tdee),
+        maintain: Math.round(tdee),
+        cut: Math.round(tdee - 500), // 500 calorie deficit
+        bulk: Math.round(tdee + 300), // 300 calorie surplus
+        ffmi: ffmi ? Math.round(ffmi * 10) / 10 : undefined,
+        bodyFatPercentage: bodyFat || undefined
+      };
+
+      setResults(calculatedResults);
+      
+      // Save to database
+      if (user) {
+        await supabase.from('tdee_calculations').insert({
+          user_id: user.id,
+          age,
+          gender: formData.gender,
+          height,
+          weight,
+          activity_level: activityMultiplier,
+          body_fat_percentage: bodyFat,
+          bmr: calculatedResults.bmr,
+          tdee: calculatedResults.tdee,
+          ffmi: calculatedResults.ffmi
+        });
+      }
+
+      toast.success('TDEE calculated successfully!');
     } catch (error) {
-      console.error('Error saving TDEE calculation:', error);
-      toast.error('Failed to save TDEE calculation');
+      console.error('Error calculating TDEE:', error);
+      toast.error('Error calculating TDEE. Please check your inputs.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleReset = () => {
-    setGender('male');
-    setAge('');
-    setWeight('');
-    setHeight('');
-    setActivityLevel('sedentary');
-    setGoal('maintain_weight');
-    setBodyFatPercentage('');
-    setResults(null);
-    setPrefillApplied(false);
-  };
-
-  const handleSmartFill = () => {
-    if (prefillData.age) setAge(String(prefillData.age));
-    if (prefillData.weight) setWeight(String(prefillData.weight));
-    if (prefillData.height) setHeight(String(prefillData.height));
-    if (prefillData.gender) setGender(prefillData.gender as 'male' | 'female');
-    if (prefillData.activityLevel) setActivityLevel(prefillData.activityLevel as any);
-    if (prefillData.fitnessGoals) setGoal(prefillData.fitnessGoals as any);
-    if (prefillData.bodyFatPercentage) setBodyFatPercentage(String(prefillData.bodyFatPercentage));
+  const downloadResults = () => {
+    if (!results) return;
     
-    toast.success('Form pre-filled with your saved data!');
+    const resultText = `TDEE Calculation Results
+=========================
+
+Personal Information:
+- Age: ${formData.age} years
+- Gender: ${formData.gender}
+- Height: ${formData.height} cm
+- Weight: ${formData.weight} kg
+- Activity Level: ${activityLevels.find(al => al.value === formData.activityLevel)?.label}
+${formData.bodyFat ? `- Body Fat: ${formData.bodyFat}%` : ''}
+
+Calculations:
+- BMR (Basal Metabolic Rate): ${results.bmr} calories
+- TDEE (Total Daily Energy Expenditure): ${results.tdee} calories
+
+Calorie Goals:
+- Maintain Weight: ${results.maintain} calories
+- Weight Loss (Cut): ${results.cut} calories (-500 cal deficit)
+- Weight Gain (Bulk): ${results.bulk} calories (+300 cal surplus)
+
+${results.ffmi ? `Additional Metrics:
+- FFMI (Fat-Free Mass Index): ${results.ffmi}
+${results.ffmi < 16 ? '- FFMI Category: Below average' : 
+  results.ffmi < 17 ? '- FFMI Category: Average' :
+  results.ffmi < 18 ? '- FFMI Category: Above average' :
+  results.ffmi < 20 ? '- FFMI Category: Excellent' :
+  '- FFMI Category: Superior'}` : ''}
+
+Generated on: ${new Date().toLocaleDateString()}
+`;
+
+    const element = document.createElement('a');
+    const file = new Blob([resultText], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'tdee-results.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    toast.success('Results downloaded successfully!');
   };
-
-  const activityOptions = [
-    { value: 'sedentary', label: 'Sedentary (little to no exercise)' },
-    { value: 'lightly_active', label: 'Lightly Active (1-3 days/week)' },
-    { value: 'moderately_active', label: 'Moderately Active (3-5 days/week)' },
-    { value: 'very_active', label: 'Very Active (6-7 days/week)' },
-    { value: 'extremely_active', label: 'Extremely Active (2x/day)' }
-  ];
-
-  const goalOptions = [
-    { value: 'lose_weight', label: 'Lose Weight' },
-    { value: 'maintain_weight', label: 'Maintain Weight' },
-    { value: 'gain_weight', label: 'Gain Weight' },
-    { value: 'build_muscle', label: 'Build Muscle' },
-    { value: 'improve_fitness', label: 'Improve Fitness' },
-    { value: 'cut', label: 'Cut (lose fat, keep muscle)' },
-    { value: 'bulk', label: 'Bulk (gain muscle)' },
-    { value: 'recomp', label: 'Recomp (lose fat, gain muscle)' }
-  ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-4">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-            <Calculator className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white animate-fade-in">
+      <div className="p-6">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                onClick={onBack} 
+                className="text-orange-200 hover:text-white hover:bg-orange-800/50"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Dashboard
+              </Button>
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-orange-500/20 to-orange-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/25 border border-orange-400/20">
+                  <Calculator className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-300 to-orange-100 bg-clip-text text-transparent">
+                    TDEE & FFMI Calculator
+                  </h1>
+                  <p className="text-orange-200 text-lg">Calculate your daily energy needs and body composition</p>
+                </div>
+              </div>
+            </div>
+            
+            <UsageIndicator featureKey="tdee_calculations" featureName="TDEE Calculations" compact />
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">TDEE Calculator</h1>
-            <p className="text-gray-400">Calculate your Total Daily Energy Expenditure</p>
+
+          {/* Status Badge */}
+          <div className="flex justify-center">
+            <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-2 text-sm">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Using Mifflin-St Jeor equation for accuracy
+            </Badge>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Input Form */}
+            <Card className="bg-orange-900/20 border-orange-600/30 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white text-xl">Personal Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="age" className="text-orange-200">Age *</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      placeholder="25"
+                      value={formData.age}
+                      onChange={(e) => handleInputChange('age', e.target.value)}
+                      className="bg-orange-800/20 border-orange-600/50 text-white focus:border-orange-500 backdrop-blur-sm"
+                      min="10"
+                      max="100"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="gender" className="text-orange-200">Gender *</Label>
+                    <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                      <SelectTrigger className="bg-orange-800/20 border-orange-600/50 text-white focus:border-orange-500 backdrop-blur-sm">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="height" className="text-orange-200">Height (cm) *</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      placeholder="175"
+                      value={formData.height}
+                      onChange={(e) => handleInputChange('height', e.target.value)}
+                      className="bg-orange-800/20 border-orange-600/50 text-white focus:border-orange-500 backdrop-blur-sm"
+                      min="100"
+                      max="250"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="weight" className="text-orange-200">Weight (kg) *</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      placeholder="70"
+                      value={formData.weight}
+                      onChange={(e) => handleInputChange('weight', e.target.value)}
+                      className="bg-orange-800/20 border-orange-600/50 text-white focus:border-orange-500 backdrop-blur-sm"
+                      min="30"
+                      max="300"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="activity" className="text-orange-200">Activity Level *</Label>
+                  <Select value={formData.activityLevel} onValueChange={(value) => handleInputChange('activityLevel', value)}>
+                    <SelectTrigger className="bg-orange-800/20 border-orange-600/50 text-white focus:border-orange-500 backdrop-blur-sm">
+                      <SelectValue placeholder="Select activity level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activityLevels.map((level) => (
+                        <SelectItem key={level.value} value={level.value}>
+                          {level.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bodyFat" className="text-orange-200">Body Fat % (Optional)</Label>
+                  <Input
+                    id="bodyFat"
+                    type="number"
+                    placeholder="15"
+                    value={formData.bodyFat}
+                    onChange={(e) => handleInputChange('bodyFat', e.target.value)}
+                    className="bg-orange-800/20 border-orange-600/50 text-white focus:border-orange-500 backdrop-blur-sm"
+                    min="5"
+                    max="50"
+                    step="0.1"
+                  />
+                </div>
+
+                <Button 
+                  onClick={calculateTDEE}
+                  disabled={isLoading || !canUseFeature('tdee_calculations')}
+                  className="w-full bg-gradient-to-r from-orange-500/80 to-orange-700/80 hover:from-orange-600/80 hover:to-orange-800/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-orange-500/25 backdrop-blur-sm"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Calculating...
+                    </>
+                  ) : (
+                    <>
+                      <Calculator className="w-4 h-4 mr-2" />
+                      Calculate TDEE
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Results */}
+            <Card className="bg-orange-900/20 border-orange-600/30 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white text-xl">Your Results</CardTitle>
+                  {results && (
+                    <Button
+                      onClick={downloadResults}
+                      variant="outline"
+                      size="sm"
+                      className="border-orange-600/50 text-orange-300 hover:bg-orange-800/50 hover:border-orange-500/50 backdrop-blur-sm"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {results ? (
+                  <div className="space-y-6">
+                    {/* Basic Calculations */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-orange-800/20 backdrop-blur-sm rounded-xl p-4 border border-orange-600/30">
+                        <h3 className="text-orange-300 font-medium mb-2">BMR</h3>
+                        <p className="text-2xl font-bold text-white">{results.bmr}</p>
+                        <p className="text-sm text-orange-200">calories/day</p>
+                      </div>
+                      <div className="bg-orange-800/20 backdrop-blur-sm rounded-xl p-4 border border-orange-600/30">
+                        <h3 className="text-orange-300 font-medium mb-2">TDEE</h3>
+                        <p className="text-2xl font-bold text-white">{results.tdee}</p>
+                        <p className="text-sm text-orange-200">calories/day</p>
+                      </div>
+                    </div>
+
+                    {/* Goal-based Calories */}
+                    <div className="space-y-4">
+                      <h3 className="text-white font-semibold text-lg">Calorie Goals</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-4 bg-orange-800/20 backdrop-blur-sm rounded-xl border border-orange-600/30">
+                          <div>
+                            <h4 className="text-white font-medium">Maintain Weight</h4>
+                            <p className="text-orange-200 text-sm">Current TDEE</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-white">{results.maintain}</p>
+                            <p className="text-orange-200 text-sm">cal/day</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center p-4 bg-orange-800/20 backdrop-blur-sm rounded-xl border border-orange-600/30">
+                          <div>
+                            <h4 className="text-white font-medium">Cut (Weight Loss)</h4>
+                            <p className="text-orange-200 text-sm">500 cal deficit</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-white">{results.cut}</p>
+                            <p className="text-orange-200 text-sm">cal/day</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center p-4 bg-orange-800/20 backdrop-blur-sm rounded-xl border border-orange-600/30">
+                          <div>
+                            <h4 className="text-white font-medium">Bulk (Weight Gain)</h4>
+                            <p className="text-orange-200 text-sm">300 cal surplus</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-white">{results.bulk}</p>
+                            <p className="text-orange-200 text-sm">cal/day</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* FFMI Results */}
+                    {results.ffmi && (
+                      <div className="space-y-4">
+                        <h3 className="text-white font-semibold text-lg">Body Composition</h3>
+                        <div className="bg-orange-800/20 backdrop-blur-sm rounded-xl p-4 border border-orange-600/30">
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-white font-medium">FFMI (Fat-Free Mass Index)</h4>
+                            <p className="text-xl font-bold text-white">{results.ffmi}</p>
+                          </div>
+                          <p className="text-orange-200 text-sm">
+                            {results.ffmi < 16 ? 'Below average' : 
+                             results.ffmi < 17 ? 'Average' :
+                             results.ffmi < 18 ? 'Above average' :
+                             results.ffmi < 20 ? 'Excellent' : 'Superior'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 bg-orange-800/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Calculator className="w-8 h-8 text-orange-500" />
+                    </div>
+                    <h3 className="text-white font-medium mb-2">Ready to Calculate</h3>
+                    <p className="text-orange-200 text-sm">
+                      Fill in your information to get your TDEE and calorie goals
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-foreground">Personal Information</CardTitle>
-              <CardDescription>Enter your details for accurate calculations</CardDescription>
-            </div>
-            {smartData && Object.keys(prefillData).length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSmartFill}
-                className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Smart Fill
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="gender" className="text-foreground">Gender</Label>
-            <Select value={gender} onValueChange={(value) => setGender(value as 'male' | 'female')}>
-              <SelectTrigger className="bg-input border-border text-foreground">
-                <SelectValue placeholder="Select gender" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover text-popover-foreground">
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <SmartInput
-            label="Age (years)"
-            value={age}
-            onChange={setAge}
-            prefillValue={prefillData.age}
-            type="number"
-            placeholder="e.g., 30"
-          />
-
-          <SmartInput
-            label={`Weight (${smartData?.weightUnit || 'kg'})`}
-            value={weight}
-            onChange={setWeight}
-            prefillValue={prefillData.weight}
-            type="number"
-            placeholder="e.g., 75"
-          />
-
-          <SmartInput
-            label={`Height (${smartData?.heightUnit === 'ft-in' ? 'inches' : smartData?.heightUnit || 'cm'})`}
-            value={height}
-            onChange={setHeight}
-            prefillValue={prefillData.height}
-            type="number"
-            placeholder="e.g., 180"
-          />
-          
-          <SmartInput
-            label="Body Fat Percentage (optional)"
-            value={bodyFatPercentage}
-            onChange={setBodyFatPercentage}
-            prefillValue={prefillData.bodyFatPercentage}
-            type="number"
-            placeholder="e.g., 15"
-          />
-
-          <div>
-            <Label htmlFor="activity" className="text-foreground">Activity Level</Label>
-            <Select value={activityLevel} onValueChange={(value) => setActivityLevel(value as any)}>
-              <SelectTrigger className="bg-input border-border text-foreground">
-                <SelectValue placeholder="Select activity level" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover text-popover-foreground">
-                {activityOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="goal" className="text-foreground">Fitness Goal</Label>
-            <Select value={goal} onValueChange={(value) => setGoal(value as any)}>
-              <SelectTrigger className="bg-input border-border text-foreground">
-                <SelectValue placeholder="Select fitness goal" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover text-popover-foreground">
-                {goalOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button 
-            onClick={calculateTDEE} 
-            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            disabled={!weight || !height || !age}
-          >
-            <Calculator className="w-4 h-4 mr-2" />
-            Calculate TDEE
-          </Button>
-        </CardContent>
-      </Card>
-
-      {results && (
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-foreground">Results</CardTitle>
-            <CardDescription>Your estimated daily energy expenditure</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Basal Metabolic Rate (BMR)</h3>
-                <p className="text-muted-foreground">
-                  {results.bmr} calories/day
-                </p>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Total Daily Energy Expenditure (TDEE)</h3>
-                <p className="text-muted-foreground">
-                  {results.tdee} calories/day
-                </p>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Recommended Daily Calories</h3>
-              <p className="text-muted-foreground">
-                {results.recommendedCalories} calories/day
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleReset} className="w-full border-border hover:bg-accent text-foreground">
-              Reset
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

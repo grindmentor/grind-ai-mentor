@@ -78,6 +78,22 @@ const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     }
   };
 
+  const checkForRedirects = (userInput: string): string | null => {
+    const lowerInput = userInput.toLowerCase();
+    
+    if (lowerInput.includes('workout plan') || lowerInput.includes('training program') || 
+        lowerInput.includes('exercise routine') || lowerInput.includes('workout routine')) {
+      return "I'd love to help with workout planning! However, for creating comprehensive training programs, I recommend using our **Smart Training** module. It's specifically designed to generate science-backed workout programs based on your goals, experience level, and available equipment. You can find it in your dashboard. Is there anything else about your current training or progress I can help you analyze instead?";
+    }
+    
+    if (lowerInput.includes('meal plan') || lowerInput.includes('diet plan') || 
+        lowerInput.includes('nutrition plan') || lowerInput.includes('eating plan')) {
+      return "For creating detailed meal plans, our **MealPlan AI** module is perfect for that! It generates personalized nutrition plans based on your dietary preferences, goals, and restrictions. You can access it from your dashboard. I'm here to help analyze your current nutrition habits or answer specific questions about your fitness journey. What would you like to know?";
+    }
+    
+    return null;
+  };
+
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading || !user) return;
 
@@ -96,6 +112,22 @@ const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     await saveMessage('user', inputMessage);
 
     try {
+      // Check for redirects first
+      const redirectResponse = checkForRedirects(inputMessage);
+      if (redirectResponse) {
+        const assistantMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: redirectResponse,
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+        await saveMessage('assistant', redirectResponse);
+        setIsLoading(false);
+        return;
+      }
+
       // Get conversation history for context
       const conversationHistory = messages
         .slice(-6) // Last 6 messages for context
@@ -115,12 +147,18 @@ ${inputMessage}
 
 **Instructions**: You are an expert fitness coach with access to the user's complete fitness journey data. Provide personalized, science-based coaching that references their specific data when relevant. Use recent 2024 research and studies to support your recommendations. Be encouraging, specific, and actionable. Always maintain context from previous conversations and their tracked data.
 
+**IMPORTANT BOUNDARIES**: 
+- Do NOT create workout plans or training programs - redirect users to Smart Training module
+- Do NOT create meal plans or diet plans - redirect users to MealPlan AI module
+- Focus on coaching advice, progress analysis, motivation, and answering specific fitness questions
+
 Focus areas:
-- Evidence-based training advice (cite 2024 studies when relevant)
-- Personalized nutrition guidance based on their food logs
-- Progress analysis using their tracked workouts
-- Goal-specific recommendations
+- Evidence-based fitness coaching advice (cite 2024 studies when relevant)
+- Progress analysis using their tracked workouts and nutrition
+- Goal-specific recommendations and adjustments
 - Motivation and accountability
+- Technique and form guidance
+- Recovery and lifestyle optimization
 
 Respond in a professional, encouraging tone that shows you understand their complete fitness journey.`;
 
@@ -147,6 +185,13 @@ Respond in a professional, encouraging tone that shows you understand their comp
 
     } catch (error) {
       console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error. Please try again in a moment.',
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMessage]);
       toast.error('Failed to get coach response');
     } finally {
       setIsLoading(false);
@@ -159,7 +204,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white" style={{fontFamily: 'Inter, system-ui, sans-serif'}}>
+    <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/20 to-blue-700 text-white animate-fade-in" style={{fontFamily: 'Inter, system-ui, sans-serif'}}>
       <div className="p-6">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -174,7 +219,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
                 Dashboard
               </Button>
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/25">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-blue-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/25 border border-blue-400/20">
                   <Brain className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -189,7 +234,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
             <Button
               onClick={refreshContext}
               disabled={contextLoading}
-              className="bg-blue-600 hover:bg-blue-700 border-0"
+              className="bg-blue-600/20 hover:bg-blue-700/30 border border-blue-500/30 backdrop-blur-sm"
             >
               {contextLoading ? (
                 <RefreshCw className="w-4 h-4 animate-spin mr-2" />
@@ -202,7 +247,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
 
           {/* Context Summary */}
           {userContext && (
-            <div className="mb-6 p-4 bg-blue-800/30 backdrop-blur-sm rounded-2xl border border-blue-600/30">
+            <div className="mb-6 p-4 bg-blue-800/20 backdrop-blur-sm rounded-2xl border border-blue-600/30">
               <div className="text-sm text-blue-200">
                 <strong className="text-blue-300">🧠 Active Context:</strong>
                 {userContext.profile?.display_name && ` ${userContext.profile.display_name} | `}
@@ -213,9 +258,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
             </div>
           )}
 
-          {/* Messages Container */}
-          <Card className="bg-blue-900/50 border-blue-600/30 backdrop-blur-sm min-h-[600px] flex flex-col">
-            {/* Messages */}
+          <Card className="bg-blue-900/20 border-blue-600/30 backdrop-blur-sm min-h-[600px] flex flex-col">
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {messages.length === 0 ? (
                 <div className="text-center py-12">
@@ -231,7 +274,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
                     {[
                       { text: "📊 Analyze my progress", prompt: "Analyze my recent workout progress and suggest improvements" },
                       { text: "🥗 Review my nutrition", prompt: "Review my nutrition and suggest optimizations" },
-                      { text: "💪 Plan my workouts", prompt: "Create a workout plan based on my goals and experience" },
+                      { text: "💡 Optimize my training", prompt: "Help me optimize my current training approach" },
                       { text: "🚀 Break plateaus", prompt: "Help me break through a training plateau" }
                     ].map((suggestion, index) => (
                       <Button
@@ -248,7 +291,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
               ) : (
                 messages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] ${message.role === 'user' ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-blue-800/50 backdrop-blur-sm'} rounded-2xl p-6 shadow-lg`}>
+                    <div className={`max-w-[80%] ${message.role === 'user' ? 'bg-gradient-to-r from-blue-600/80 to-blue-700/80' : 'bg-blue-800/30 backdrop-blur-sm'} rounded-2xl p-6 shadow-lg border border-blue-600/20`}>
                       {message.role === 'assistant' ? (
                         <FormattedAIResponse content={message.content} />
                       ) : (
@@ -264,7 +307,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
               
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-blue-800/50 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
+                  <div className="bg-blue-800/30 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-blue-600/20">
                     <div className="flex items-center space-x-3">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
                       <span className="text-blue-200">🧠 Coach is analyzing...</span>
@@ -274,14 +317,13 @@ Respond in a professional, encouraging tone that shows you understand their comp
               )}
             </div>
 
-            {/* Input */}
             <div className="p-6 border-t border-blue-600/30">
               <div className="flex space-x-4">
                 <Textarea
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   placeholder="Ask your coach anything... I remember your workouts, nutrition, and goals!"
-                  className="bg-blue-800/50 border-blue-600/50 text-white resize-none focus:border-blue-500 backdrop-blur-sm"
+                  className="bg-blue-800/30 border-blue-600/50 text-white resize-none focus:border-blue-500 backdrop-blur-sm"
                   rows={2}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -293,7 +335,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
                 <Button
                   onClick={sendMessage}
                   disabled={isLoading || !inputMessage.trim()}
-                  className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 border-0 px-6"
+                  className="bg-gradient-to-r from-blue-500/80 to-blue-700/80 hover:from-blue-600/80 hover:to-blue-800/80 border-0 px-6 backdrop-blur-sm"
                 >
                   <Send className="w-5 h-5" />
                 </Button>

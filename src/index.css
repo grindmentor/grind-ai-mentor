@@ -7,34 +7,6 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 9% 83.9%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     --card: 240 10% 3.9%;
@@ -59,6 +31,30 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --radius: 0.5rem;
+  }
+
+  /* Force dark mode by removing light mode variables */
+  .light {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 }
 
@@ -66,6 +62,11 @@
   * {
     @apply border-border;
   }
+  
+  html {
+    color-scheme: dark;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -74,6 +75,8 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #000000 !important;
+    color: #ffffff !important;
   }
 
   /* Enhanced typography */
@@ -89,10 +92,12 @@
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.025em;
+    color: #ffffff !important;
   }
 
   p {
     line-height: 1.6;
+    color: #ffffff !important;
   }
 }
 
@@ -118,6 +123,9 @@
     transform: translateZ(0);
     -webkit-appearance: none;
     border-radius: 8px;
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    border-color: #374151 !important;
   }
   
   /* Ultra-smooth scrolling for iOS */
@@ -166,6 +174,9 @@
     font-size: 16px;
     padding: 12px 16px;
     border-radius: 12px;
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    border-color: #374151 !important;
   }
   
   .mobile-button {
@@ -186,15 +197,17 @@
   .space-y-4 > * + * { margin-top: 1rem; }
 }
 
-/* Logo styling */
+/* Enhanced logo styling for GrindMentor */
 .logo-text {
   font-family: "Orbitron", monospace;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 1.5rem;
   background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 30px rgba(249, 115, 22, 0.3);
+  letter-spacing: -0.02em;
 }
 
 /* Professional transitions and animations */
@@ -250,20 +263,36 @@
   animation: pulse-glow 2s infinite;
 }
 
-/* Enhanced PWA install button */
-.pwa-install-btn {
-  background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.3);
-  border-radius: 12px;
-  padding: 12px 24px;
-  font-weight: 600;
-  transform: translateZ(0);
-  transition: all 0.2s ease;
+/* Dark mode UI fixes */
+[data-radix-select-content] {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #ffffff !important;
 }
 
-.pwa-install-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4);
+[data-radix-select-item] {
+  color: #ffffff !important;
+}
+
+[data-radix-select-item]:hover {
+  background-color: #374151 !important;
+}
+
+/* Button UI improvements for better readability */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease;
+  transform: translateZ(0);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 /* Custom scrollbar with enhanced styling */
@@ -292,7 +321,7 @@ input:focus,
 textarea:focus,
 select:focus,
 button:focus {
-  outline: 2px solid #f97316;
+  outline: 2px solid #f97316 !important;
   outline-offset: 2px;
   ring: 2px;
   ring-color: #f97316;
@@ -301,9 +330,9 @@ button:focus {
 
 /* Professional glass morphism effects */
 .glass-card {
-  background: rgba(17, 24, 39, 0.8);
+  background: rgba(17, 24, 39, 0.8) !important;
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(249, 115, 22, 0.2);
+  border: 1px solid rgba(249, 115, 22, 0.2) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -316,30 +345,4 @@ button:focus {
 ::-moz-selection {
   background: rgba(249, 115, 22, 0.3);
   color: white;
-}
-
-/* PWA splash screen styles */
-.pwa-splash {
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  color: white;
-}
-
-/* Enhanced button hover effects */
-.btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
-  transition: all 0.2s ease;
-  transform: translateZ(0);
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
 }

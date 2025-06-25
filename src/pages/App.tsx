@@ -1,15 +1,27 @@
 
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import PaymentSetup from "@/components/PaymentSetup";
-import Dashboard from "@/components/Dashboard";
-import WelcomeBack from "@/components/WelcomeBack";
-import EmailVerificationPrompt from "@/components/EmailVerificationPrompt";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
-import { Dumbbell, Home, Settings, LogOut, Menu, X } from "lucide-react";
+import { Dumbbell, Home, Settings, LogOut, Menu, X, HelpCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+// Lazy load components for better performance
+const Dashboard = lazy(() => import("@/components/Dashboard"));
+const WelcomeBack = lazy(() => import("@/components/WelcomeBack"));
+const EmailVerificationPrompt = lazy(() => import("@/components/EmailVerificationPrompt"));
+
+const LoadingSpinner = () => (
+  <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center animate-pulse">
+        <Dumbbell className="w-7 h-7 text-white" />
+      </div>
+      <div className="text-xl">Loading...</div>
+    </div>
+  </div>
+);
 
 const App = () => {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
@@ -47,16 +59,7 @@ const App = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center animate-pulse">
-            <Dumbbell className="w-7 h-7 text-white" />
-          </div>
-          <div className="text-xl">Loading...</div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!user) {
@@ -66,10 +69,12 @@ const App = () => {
   // Show email verification prompt for unconfirmed emails
   if (isEmailUnconfirmed) {
     return (
-      <EmailVerificationPrompt 
-        userEmail={user.email || ''} 
-        onContinue={handleEmailVerificationContinue}
-      />
+      <Suspense fallback={<LoadingSpinner />}>
+        <EmailVerificationPrompt 
+          userEmail={user.email || ''} 
+          onContinue={handleEmailVerificationContinue}
+        />
+      </Suspense>
     );
   }
 
@@ -78,27 +83,29 @@ const App = () => {
       <div className="min-h-screen bg-black text-white ios-safe-area">
         {/* Welcome Back Modal */}
         {showWelcomeBack && (
-          <WelcomeBack 
-            userEmail={user.email || ''} 
-            onContinue={handleWelcomeBackContinue}
-          />
+          <Suspense fallback={null}>
+            <WelcomeBack 
+              userEmail={user.email || ''} 
+              onContinue={handleWelcomeBackContinue}
+            />
+          </Suspense>
         )}
 
         {/* Mobile Header with proper safe area */}
         {isMobile && (
-          <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
+          <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px) + 0.5rem, 1rem)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
                   <Dumbbell className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-lg font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">GrindMentor</span>
+                <span className="text-lg font-bold logo-text">GrindMentor</span>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="text-white hover:bg-gray-800"
+                className="text-white hover:bg-gray-800 min-h-[48px] min-w-[48px]"
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
@@ -111,14 +118,14 @@ const App = () => {
           isMobile 
             ? `w-64 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
             : 'w-64 translate-x-0'
-        }`} style={{ paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 5rem)' : '1.5rem' }}>
+        }`} style={{ paddingTop: isMobile ? 'calc(env(safe-area-inset-top, 0px) + 5rem)' : '2rem' }}>
           {/* Logo - only show on desktop */}
           {!isMobile && (
             <div className="flex items-center space-x-3 mb-8">
               <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
                 <Dumbbell className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">GrindMentor</span>
+              <span className="text-xl font-bold logo-text">GrindMentor</span>
             </div>
           )}
 
@@ -126,7 +133,7 @@ const App = () => {
           <nav className="space-y-2">
             <Button 
               variant="ghost" 
-              className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors"
+              className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors min-h-[48px]"
               onClick={() => {
                 if (isMobile) setSidebarOpen(false);
               }}
@@ -136,7 +143,7 @@ const App = () => {
             </Button>
             <Button 
               variant="ghost" 
-              className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors"
+              className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors min-h-[48px]"
               onClick={() => {
                 navigate('/settings');
                 if (isMobile) setSidebarOpen(false);
@@ -147,7 +154,18 @@ const App = () => {
             </Button>
             <Button 
               variant="ghost" 
-              className="w-full justify-start text-white hover:bg-gray-800 hover:text-red-400 transition-colors"
+              className="w-full justify-start text-white hover:bg-gray-800 hover:text-orange-400 transition-colors min-h-[48px]"
+              onClick={() => {
+                navigate('/support');
+                if (isMobile) setSidebarOpen(false);
+              }}
+            >
+              <HelpCircle className="w-5 h-5 mr-3" />
+              Support
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-white hover:bg-gray-800 hover:text-red-400 transition-colors min-h-[48px]"
               onClick={() => {
                 handleSignOut();
                 if (isMobile) setSidebarOpen(false);
@@ -159,7 +177,7 @@ const App = () => {
           </nav>
 
           {/* User Info */}
-          <div className="absolute bottom-6 left-6 right-6" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="absolute bottom-6 left-6 right-6" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1rem)' }}>
             <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
               <div className="text-white text-sm font-medium mb-1">Signed in as:</div>
               <div className="text-gray-400 text-xs truncate">{user.email}</div>
@@ -180,8 +198,10 @@ const App = () => {
           isMobile 
             ? 'pt-20' 
             : 'ml-64'
-        }`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <Dashboard />
+        }`} style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1rem)' }}>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Dashboard />
+          </Suspense>
         </div>
       </div>
     </UserDataProvider>

@@ -1,59 +1,43 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Smartphone } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 const AppPreferences = () => {
   const { preferences, updatePreference } = usePreferences();
 
-  const handlePreferenceChange = async (field: string, value: boolean) => {
-    try {
-      await updatePreference(field as any, value);
-    } catch (error) {
-      console.error(`Failed to update ${field}:`, error);
-    }
-  };
-
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-gray-900 border-gray-800">
       <CardHeader>
-        <CardTitle className="text-foreground">App Preferences</CardTitle>
+        <CardTitle className="text-white flex items-center">
+          <Smartphone className="w-5 h-5 mr-2 text-orange-500" />
+          App Preferences
+        </CardTitle>
         <CardDescription>
           Customize your app experience
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label className="text-foreground">Push Notifications</Label>
-            <p className="text-sm text-muted-foreground">Receive workout reminders</p>
+          <div>
+            <p className="text-white font-medium">Sound Effects</p>
+            <p className="text-sm text-gray-400">Play sound effects for interactions</p>
           </div>
-          <Switch 
-            checked={preferences.notifications}
-            onCheckedChange={(checked) => handlePreferenceChange('notifications', checked)}
+          <Switch
+            checked={preferences.sound_enabled}
+            onCheckedChange={(checked) => updatePreference('sound_enabled', checked)}
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label className="text-foreground">Email Updates</Label>
-            <p className="text-sm text-muted-foreground">Newsletter & progress reports</p>
+          <div>
+            <p className="text-white font-medium">Push Notifications</p>
+            <p className="text-sm text-gray-400">Receive daily workout reminders</p>
           </div>
-          <Switch 
-            checked={preferences.email_updates}
-            onCheckedChange={(checked) => handlePreferenceChange('email_updates', checked)}
-          />
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label className="text-foreground">Dark Mode</Label>
-            <p className="text-sm text-muted-foreground">App theme preference</p>
-          </div>
-          <Switch 
-            checked={preferences.dark_mode}
-            onCheckedChange={(checked) => handlePreferenceChange('dark_mode', checked)}
+          <Switch
+            checked={preferences.notifications_enabled}
+            onCheckedChange={(checked) => updatePreference('notifications_enabled', checked)}
           />
         </div>
       </CardContent>

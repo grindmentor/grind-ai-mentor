@@ -185,7 +185,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-black text-white ios-safe-area">
-      <div className="p-4 sm:p-6" style={{ paddingTop: 'max(env(safe-area-inset-top) + 1rem, 2rem)' }}>
+      <div className="p-4 sm:p-6" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px) + 1rem, 2rem)' }}>
         <div className="max-w-4xl mx-auto">
           {/* Header with proper mobile spacing */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 mb-8">
@@ -194,7 +194,7 @@ const Settings = () => {
                 variant="ghost" 
                 onClick={() => navigate('/app')} 
                 className="text-white hover:bg-gray-800 hover:text-orange-400 transition-colors w-fit min-h-[48px] px-4"
-                style={{ marginTop: 'max(env(safe-area-inset-top, 0px) + 1rem, 1rem)' }}
+                style={{ marginTop: isMobile ? '1rem' : '0' }}
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to Dashboard

@@ -9,6 +9,7 @@ import {
 import { AuthProvider } from "./contexts/AuthContext";
 import { ModulesProvider } from "./contexts/ModulesContext";
 import { PreferencesProvider } from "./contexts/PreferencesContext";
+import { UserDataProvider } from "./contexts/UserDataContext";
 import { SoundEffects } from "./utils/soundEffects";
 import Index from "./pages/Index";
 import Pricing from "./pages/Pricing";
@@ -80,27 +81,29 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <PreferencesProvider>
-          <ModulesProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/app" element={<AuthenticatedApp />} />
-              <Route path="/modules" element={<ModuleLibrary />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ModulesProvider>
-        </PreferencesProvider>
+        <UserDataProvider>
+          <PreferencesProvider>
+            <ModulesProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/app" element={<AuthenticatedApp />} />
+                <Route path="/modules" element={<ModuleLibrary />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ModulesProvider>
+          </PreferencesProvider>
+        </UserDataProvider>
       </AuthProvider>
     </Router>
   );

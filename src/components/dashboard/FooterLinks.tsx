@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { SmoothButton } from "@/components/ui/smooth-button";
 
@@ -14,7 +13,7 @@ export const FooterLinks: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={() => navigate('/about')}
-          className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+          className="text-gray-400 hover:text-orange-400 hover:bg-gray-800/50 transition-colors p-2 h-auto font-normal"
         >
           About
         </SmoothButton>
@@ -22,7 +21,7 @@ export const FooterLinks: React.FC = () => {
           variant="ghost" 
           size="sm"
           onClick={() => navigate('/privacy')}
-          className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+          className="text-gray-400 hover:text-orange-400 hover:bg-gray-800/50 transition-colors p-2 h-auto font-normal"
         >
           Privacy Policy
         </SmoothButton>
@@ -30,7 +29,7 @@ export const FooterLinks: React.FC = () => {
           variant="ghost"
           size="sm" 
           onClick={() => navigate('/terms')}
-          className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+          className="text-gray-400 hover:text-orange-400 hover:bg-gray-800/50 transition-colors p-2 h-auto font-normal"
         >
           Terms of Service
         </SmoothButton>
@@ -38,7 +37,7 @@ export const FooterLinks: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={() => navigate('/support')}
-          className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+          className="text-gray-400 hover:text-orange-400 hover:bg-gray-800/50 transition-colors p-2 h-auto font-normal"
         >
           Support
         </SmoothButton>

@@ -25,6 +25,7 @@ import NotFound from "./pages/NotFound";
 import SignIn from "./pages/SignIn";
 import AuthCallback from "./pages/AuthCallback";
 import AppPage from "./pages/App";
+import Profile from "./pages/Profile";
 import { useAuth } from "./contexts/AuthContext";
 import { PageTransition } from "@/components/ui/page-transition";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, TrendingUp, Brain, Zap, Target, ChevronRight, Settings, User, Bell, Menu, Library } from "lucide-react";
@@ -318,8 +317,13 @@ const Dashboard = () => {
                       className="p-0 border-0 bg-transparent"
                     >
                       <AIModuleCard
-                        module={module}
-                        onModuleClick={handleModuleSelect}
+                        id={module.id}
+                        title={module.title}
+                        description={module.description}
+                        icon={module.icon}
+                        gradient={module.gradient}
+                        isPremium={module.isPremium}
+                        onClick={() => handleModuleSelect(module.id)}
                       />
                     </AnimatedCard>
                   ))}

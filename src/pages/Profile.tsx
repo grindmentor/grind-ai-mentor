@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/contexts/UserDataContext";
 import { useSmartUserData } from "@/hooks/useSmartUserData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,25 +26,36 @@ interface ProfileStats {
   goalsAchieved: number;
 }
 
+interface UserProfile {
+  weight: number | null;
+  height: number | null;
+  age: number | null;
+  experience: string | null;
+  activity: string | null;
+  goal: string | null;
+  body_fat_percentage: number | null;
+  birthday: string | null;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userData } = useUserData();
-  const { smartData, isLoading } = useSmartUserData();
+  const { smartData, isLoading: smartDataLoading } = useSmartUserData();
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user && !isLoading) {
-      loadProfileStats();
-    } else if (!user && !isLoading) {
+    if (user && !smartDataLoading) {
+      loadUserProfile();
+    } else if (!user && !smartDataLoading) {
       setLoading(false);
       setError("User not authenticated");
     }
-  }, [user, isLoading]);
+  }, [user, smartDataLoading]);
 
-  const loadProfileStats = async () => {
+  const loadUserProfile = async () => {
     if (!user) {
       setError("User not authenticated");
       setLoading(false);
@@ -54,8 +64,68 @@ const Profile = () => {
 
     try {
       setError(null);
-      console.log('Loading profile stats for user:', user.id);
+      console.log('Loading profile for user:', user.id);
       
+      // Get user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.warn('Error fetching profile:', profileError);
+      }
+
+      let userProfileData: UserProfile = {
+        weight: null,
+        height: null,
+        age: null,
+        experience: null,
+        activity: null,
+        goal: null,
+        body_fat_percentage: null,
+        birthday: null
+      };
+
+      if (profile) {
+        // Calculate age from birthday
+        let age = null;
+        if (profile.birthday) {
+          const today = new Date();
+          const birthDate = new Date(profile.birthday);
+          age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+        }
+
+        userProfileData = {
+          weight: profile.weight || null,
+          height: profile.height || null,
+          age,
+          experience: profile.experience || null,
+          activity: profile.activity || null,
+          goal: profile.goal || null,
+          body_fat_percentage: profile.body_fat_percentage || null,
+          birthday: profile.birthday || null
+        };
+      }
+
+      setUserProfile(userProfileData);
+      await loadProfileStats(userProfileData);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      setError('Failed to load profile data');
+      setLoading(false);
+    }
+  };
+
+  const loadProfileStats = async (userData: UserProfile) => {
+    if (!user) return;
+
+    try {
       // Get workout sessions with error handling
       const { data: workoutSessions, error: workoutError } = await supabase
         .from('workout_sessions')
@@ -102,7 +172,7 @@ const Profile = () => {
       // Calculate percentiles and scores with safe fallbacks
       const experienceBonus = userData?.experience === 'advanced' ? 30 : userData?.experience === 'intermediate' ? 15 : 0;
       const strengthPercentile = Math.min(95, Math.max(5, totalWorkouts * 2 + experienceBonus));
-      const bodyFatPercentage = smartData?.bodyFatPercentage || userData?.bodyFatPercentage || 15;
+      const bodyFatPercentage = smartData?.bodyFatPercentage || userData?.body_fat_percentage || 15;
 
       // Calculate trait scores (0-100) with safe calculations
       const dedication = Math.min(100, (habitCompletions?.length || 0) * 5 + daysActive * 2);
@@ -134,7 +204,7 @@ const Profile = () => {
   };
 
   // Show loading state
-  if (loading || isLoading) {
+  if (loading || smartDataLoading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <PremiumLoader variant="minimal" message="Loading your profile..." />
@@ -163,7 +233,7 @@ const Profile = () => {
                   onClick={() => {
                     setError(null);
                     setLoading(true);
-                    loadProfileStats();
+                    loadUserProfile();
                   }}
                   className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
                 >

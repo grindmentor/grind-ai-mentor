@@ -104,7 +104,7 @@ const Dashboard = () => {
   const totalUsage = Object.values(currentUsage).reduce((sum, val) => sum + val, 0);
   const displayedModules = favoriteModules.length > 0 
     ? modules.filter(m => favoriteModules.includes(m.id))
-    : modules.slice(0, 6); // Show first 6 modules if no favorites
+    : [];
 
   return (
     <PageTransition>
@@ -243,55 +243,87 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* AI Modules Section */}
+          {/* Module Library Section */}
           <div className="space-y-6 animate-fade-in" style={{ animationDelay: '400ms' }}>
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">
-                {favoriteModules.length > 0 ? 'Your Favorite Modules' : 'Featured AI Modules'}
-              </h2>
-              <div className="flex items-center space-x-3">
+              <h2 className="text-2xl font-semibold">AI Modules</h2>
+              {!isSubscribed && (
                 <SmoothButton
-                  onClick={() => navigate('/modules')}
-                  variant="outline"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                  onClick={() => navigate('/pricing')}
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                  size="sm"
                 >
-                  <Library className="w-4 h-4 mr-2" />
-                  Module Library
+                  <Crown className="w-4 h-4 mr-2" />
+                  Upgrade
                 </SmoothButton>
-                {!isSubscribed && (
+              )}
+            </div>
+
+            {/* Module Library Card */}
+            <AnimatedCard className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700 hover:border-orange-500/30 transition-all duration-300" delay={500}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+                      <Library className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl text-white mb-2">Module Library</CardTitle>
+                      <p className="text-gray-400">
+                        Explore all AI-powered fitness modules. Browse, discover, and favorite the tools that work best for you.
+                      </p>
+                    </div>
+                  </div>
                   <SmoothButton
-                    onClick={() => navigate('/pricing')}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                    size="sm"
+                    onClick={() => navigate('/modules')}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-6 py-3"
                   >
-                    <Crown className="w-4 h-4 mr-2" />
-                    Upgrade
+                    Browse Modules
+                    <ChevronRight className="w-4 h-4 ml-2" />
                   </SmoothButton>
-                )}
-              </div>
-            </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-700">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-500">{modules.length}</div>
+                    <div className="text-sm text-gray-400">Total Modules</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-500">{favoriteModules.length}</div>
+                    <div className="text-sm text-gray-400">Favorites</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-500">4</div>
+                    <div className="text-sm text-gray-400">Categories</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-500">Free</div>
+                    <div className="text-sm text-gray-400">Access</div>
+                  </div>
+                </div>
+              </CardContent>
+            </AnimatedCard>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-              {displayedModules.map((module, index) => (
-                <AnimatedCard
-                  key={module.id}
-                  delay={500 + index * 100}
-                  hoverEffect={false}
-                  className="p-0 border-0 bg-transparent"
-                >
-                  <AIModuleCard
-                    module={module}
-                    onModuleClick={handleModuleSelect}
-                  />
-                </AnimatedCard>
-              ))}
-            </div>
-
-            {favoriteModules.length === 0 && (
-              <div className="text-center py-8">
-                <Library className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400">No favorite modules yet</p>
-                <p className="text-gray-500 text-sm">Visit the Module Library to discover and favorite AI modules</p>
+            {/* Favorite Modules Display */}
+            {displayedModules.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-white">Your Favorite Modules</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+                  {displayedModules.map((module, index) => (
+                    <AnimatedCard
+                      key={module.id}
+                      delay={600 + index * 100}
+                      hoverEffect={false}
+                      className="p-0 border-0 bg-transparent"
+                    >
+                      <AIModuleCard
+                        module={module}
+                        onModuleClick={handleModuleSelect}
+                      />
+                    </AnimatedCard>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -316,7 +348,7 @@ const Dashboard = () => {
                 {[
                   { id: 'coach-gpt', icon: Brain, title: 'Ask CoachGPT', subtitle: 'Get instant answers', color: 'text-blue-500' },
                   { id: 'meal-plan-ai', icon: Target, title: 'Create Meal Plan', subtitle: 'Nutrition planning', color: 'text-green-500' },
-                  { id: 'physique-ai', icon: TrendingUp, title: 'Track Progress', subtitle: 'Physique analysis', color: 'text-indigo-500' }
+                  { id: 'progress-ai', icon: TrendingUp, title: 'Track Progress', subtitle: 'Workout analysis', color: 'text-indigo-500' }
                 ].map((action, index) => (
                   <SmoothButton
                     key={action.id}

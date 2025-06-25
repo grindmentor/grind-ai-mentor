@@ -1,398 +1,302 @@
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Dumbbell, Target, TrendingUp, Clock, Users, Star, Check, Brain, Calculator, Utensils, Camera, Heart, Timer } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { SoundButton } from "@/components/SoundButton";
+import { Badge } from "@/components/ui/badge";
+import { Brain, Target, TrendingUp, Timer, Utensils, Camera, Dumbbell, Crown, ArrowRight, CheckCircle, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
+import Logo from "@/components/ui/logo";
+import { AnimatedCard } from "@/components/ui/animated-card";
+import { SmoothButton } from "@/components/ui/smooth-button";
+import { PageTransition } from "@/components/ui/page-transition";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading, isNewUser } = useAuth();
+  const { user } = useAuth();
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // If user is logged in, redirect them appropriately
-    if (!loading && user) {
-      if (isNewUser) {
-        navigate("/onboarding");
-      } else {
-        navigate("/app");
-      }
-    }
-  }, [user, loading, isNewUser, navigate]);
+    setIsVisible(true);
+  }, []);
 
-  // Don't render the landing page if user is logged in
-  if (!loading && user) {
-    return null;
-  }
-
-  const featuredAIModules = [
+  const features = [
     {
-      title: "CoachGPT",
-      description: "24/7 AI fitness coaching with research citations and personalized guidance.",
       icon: Brain,
-      color: "bg-blue-500"
+      title: "CoachGPT",
+      description: "AI-powered fitness coach for personalized guidance",
+      isPremium: false,
+      color: "from-blue-500 to-blue-600"
     },
     {
-      title: "MealPlanAI", 
-      description: "Custom meal plans and nutrition guidance optimized for your goals.",
       icon: Utensils,
-      color: "bg-green-500"
+      title: "Meal Plan AI",
+      description: "Custom nutrition plans based on your goals",
+      isPremium: true,
+      color: "from-green-500 to-green-600"
     },
     {
-      title: "Smart Training",
-      description: "AI-generated personalized weight training programs.",
-      icon: Dumbbell,
-      color: "bg-red-500"
+      icon: TrendingUp,
+      title: "Progress Tracking",
+      description: "AI-powered physique analysis and progress monitoring",
+      isPremium: true,
+      color: "from-purple-500 to-purple-600"
     },
     {
-      title: "ProgressAI",
-      description: "AI photo analysis and body composition tracking.",
-      icon: Camera,
-      color: "bg-purple-500"
+      icon: Timer,
+      title: "Workout Timer",
+      description: "Smart timing for your training sessions",
+      isPremium: false,
+      color: "from-orange-500 to-orange-600"
     },
     {
+      icon: Target,
       title: "TDEE Calculator",
-      description: "Calculate metabolic needs and muscle potential with advanced algorithms.",
-      icon: Calculator,
-      color: "bg-indigo-500"
+      description: "Precise calorie calculations for your metabolism",
+      isPremium: false,
+      color: "from-red-500 to-red-600"
     },
     {
-      title: "Smart Food Log",
-      description: "Photo-based food tracking and analysis with intelligent insights.",
       icon: Camera,
-      color: "bg-yellow-500"
+      title: "Food Photo Logger",
+      description: "Log meals with AI-powered photo analysis",
+      isPremium: true,
+      color: "from-pink-500 to-pink-600"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
-      <section className="relative py-16 md:py-24 lg:py-32 bg-gradient-to-b from-gray-900/50 to-black">
-        <div className="container mx-auto text-center px-4 sm:px-6">
-          {/* Logo */}
-          <div className="flex items-center justify-center space-x-3 mb-6 md:mb-8">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-              <Dumbbell className="w-6 h-6 md:w-7 md:h-7 text-white" />
-            </div>
-            <span className="text-2xl md:text-3xl font-bold">GrindMentor</span>
-          </div>
-          
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent leading-tight">
-            Science-Based AI Fitness Coach
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-3 md:mb-4 max-w-2xl mx-auto px-4">
-            Get personalized meal plans and training programs backed by research and tailored to your goals.
-          </p>
-          <p className="text-sm sm:text-base text-gray-500 mb-6 md:mb-8 max-w-xl mx-auto px-4">
-            Whether you're a seasoned lifter or just starting out, get results that actually work.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 px-4">
-            <SoundButton 
-              onClick={() => navigate("/signin")}
-              className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold rounded-lg py-3 md:py-4 px-6 md:px-8 transition-all hover:scale-105 shadow-xl text-sm md:text-base"
-            >
-              Start Your Transformation
-              <ArrowRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
-            </SoundButton>
-            <Link 
-              to="/pricing" 
-              className="w-full sm:w-auto text-center text-gray-300 hover:text-white transition-colors font-medium border border-gray-700 hover:border-gray-500 rounded-lg py-3 md:py-4 px-6 md:px-8 text-sm md:text-base"
-            >
-              View Pricing
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured AI Modules */}
-      <section className="py-16 md:py-20 bg-gray-950/50">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-              Most Powerful AI Fitness Tools
-            </h2>
-            <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto px-4">
-              Our most popular AI tools designed by fitness experts and backed by scientific research
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
-            {featuredAIModules.map((module, index) => (
-              <Card key={index} className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-                <CardHeader className="p-4 md:p-6">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 md:w-12 md:h-12 ${module.color} rounded-lg flex items-center justify-center text-white`}>
-                      <module.icon className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                    <CardTitle className="text-white text-lg md:text-xl">{module.title}</CardTitle>
+    <PageTransition>
+      <div className="min-h-screen bg-black text-white">
+        {/* Navigation */}
+        <nav className="border-b border-gray-800 bg-black/95 backdrop-blur-md sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <Logo size="md" />
+              
+              <div className="flex items-center space-x-4">
+                <SmoothButton
+                  variant="ghost"
+                  onClick={() => navigate('/about')}
+                  className="text-gray-300 hover:text-white"
+                >
+                  About
+                </SmoothButton>
+                <SmoothButton
+                  variant="ghost"
+                  onClick={() => navigate('/pricing')}
+                  className="text-gray-300 hover:text-white"
+                >
+                  Pricing
+                </SmoothButton>
+                {user ? (
+                  <SmoothButton
+                    onClick={() => navigate('/app')}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                  >
+                    Dashboard
+                  </SmoothButton>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <SmoothButton
+                      variant="ghost"
+                      onClick={() => navigate('/signin')}
+                      className="text-gray-300 hover:text-white"
+                    >
+                      Sign In
+                    </SmoothButton>
+                    <SmoothButton
+                      onClick={() => navigate('/signin')}
+                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                    >
+                      Get Started
+                    </SmoothButton>
                   </div>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6 pt-0">
-                  <CardDescription className="text-gray-400 text-sm md:text-base">
-                    {module.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-16 md:py-20 bg-black">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-              Unlock Your Potential with AI-Powered Coaching
-            </h2>
-            <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto px-4">
-              Every recommendation is backed by scientific research and tailored to your unique goals
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader className="p-4 md:p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center text-white">
-                    <Dumbbell className="w-5 h-5 md:w-6 md:h-6" />
-                  </div>
-                  <CardTitle className="text-white text-lg md:text-xl">Personalized Workouts</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6 pt-0">
-                <CardDescription className="text-gray-400 text-sm md:text-base">
-                  AI-driven workout plans tailored to your goals, experience level, and available equipment. Every exercise is optimized for maximum gains.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader className="p-4 md:p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-red-600 to-pink-600 rounded-lg flex items-center justify-center text-white">
-                    <Target className="w-5 h-5 md:w-6 md:h-6" />
-                  </div>
-                  <CardTitle className="text-white text-lg md:text-xl">Custom Meal Plans</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6 pt-0">
-                <CardDescription className="text-gray-400 text-sm md:text-base">
-                  Science-backed nutrition plans designed to optimize your metabolism and support muscle growth or fat loss goals. Fuel your transformation.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader className="p-4 md:p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white">
-                    <TrendingUp className="w-5 h-5 md:w-6 md:h-6" />
-                  </div>
-                  <CardTitle className="text-white text-lg md:text-xl">Progress Tracking</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6 pt-0">
-                <CardDescription className="text-gray-400 text-sm md:text-base">
-                  Detailed analytics and insights to monitor your progress and stay motivated on your fitness journey. Track those gains!
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader className="p-4 md:p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white">
-                    <Clock className="w-5 h-5 md:w-6 md:h-6" />
-                  </div>
-                  <CardTitle className="text-white text-lg md:text-xl">Time-Efficient Training</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6 pt-0">
-                <CardDescription className="text-gray-400 text-sm md:text-base">
-                  Maximize results in minimal time with scientifically optimized workout routines and efficient meal strategies.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader className="p-4 md:p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-purple-500 to-violet-500 rounded-lg flex items-center justify-center text-white">
-                    <Users className="w-5 h-5 md:w-6 md:h-6" />
-                  </div>
-                  <CardTitle className="text-white text-lg md:text-xl">Community Support</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6 pt-0">
-                <CardDescription className="text-gray-400 text-sm md:text-base">
-                  Connect with like-minded individuals, share your journey, and get motivation from our supportive community.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:scale-105">
-              <CardHeader className="p-4 md:p-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center text-white">
-                    <Star className="w-5 h-5 md:w-6 md:h-6" />
-                  </div>
-                  <CardTitle className="text-white text-lg md:text-xl">Expert Guidance</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6 pt-0">
-                <CardDescription className="text-gray-400 text-sm md:text-base">
-                  Access expert tips, research-backed advice, and proven strategies to accelerate your fitness transformation.
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Science-Based Facts Section */}
-      <section className="py-16 md:py-20 bg-gray-950/50">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
-              Built on Scientific Evidence
-            </h2>
-            <p className="text-gray-400 text-base md:text-lg px-4">
-              Our AI recommendations are based on peer-reviewed research and proven methodologies
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
-            <Card className="bg-gray-900/80 border-gray-800">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold text-base md:text-lg">Progressive Overload</p>
-                    <p className="text-gray-400 text-sm md:text-base">Scientific Principle</p>
-                  </div>
-                </div>
-                <p className="text-gray-300 text-sm md:text-lg leading-relaxed mb-4">
-                  Our training algorithms follow the principle of progressive overload, gradually increasing training stimulus to maximize muscle growth and strength gains based on exercise science research.
-                </p>
-                <div className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
-                  <span className="text-green-400 font-medium text-sm md:text-base">Research-Backed Method</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold text-base md:text-lg">Caloric Balance</p>
-                    <p className="text-gray-400 text-sm md:text-base">Nutrition Science</p>
-                  </div>
-                </div>
-                <p className="text-gray-300 text-sm md:text-lg leading-relaxed mb-4">
-                  Our meal planning AI uses thermodynamics and metabolic research to create precise caloric and macronutrient targets for optimal body composition changes.
-                </p>
-                <div className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
-                  <span className="text-green-400 font-medium text-sm md:text-base">Evidence-Based Nutrition</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold text-base md:text-lg">Recovery Optimization</p>
-                    <p className="text-gray-400 text-sm md:text-base">Sports Science</p>
-                  </div>
-                </div>
-                <p className="text-gray-300 text-sm md:text-lg leading-relaxed mb-4">
-                  Rest periods, sleep recommendations, and recovery protocols are based on exercise physiology research to maximize adaptation and prevent overtraining.
-                </p>
-                <div className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
-                  <span className="text-green-400 font-medium text-sm md:text-base">Scientifically Optimized</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900/80 border-gray-800">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold text-base md:text-lg">Individualization</p>
-                    <p className="text-gray-400 text-sm md:text-base">Personalized Approach</p>
-                  </div>
-                </div>
-                <p className="text-gray-300 text-sm md:text-lg leading-relaxed mb-4">
-                  Our AI considers individual differences in genetics, training history, and lifestyle factors to create truly personalized fitness and nutrition recommendations.
-                </p>
-                <div className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
-                  <span className="text-green-400 font-medium text-sm md:text-base">Tailored to You</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-t from-gray-900 to-black">
-        <div className="container mx-auto text-center px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 md:mb-6">
-            Ready to Start Your Transformation?
-          </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-8 md:mb-12 max-w-2xl mx-auto px-4">
-            Join thousands who have already transformed their lives with science-based fitness coaching.
-          </p>
-          <SoundButton 
-            onClick={() => navigate("/signin")}
-            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold rounded-lg py-3 md:py-4 px-6 md:px-8 transition-all hover:scale-105 shadow-xl text-base md:text-lg"
-          >
-            Get Started Now <ArrowRight className="ml-2 w-5 h-5 md:w-6 md:h-6" />
-          </SoundButton>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 md:py-12 bg-black border-t border-gray-800">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-3 mb-4 md:mb-6">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                <Dumbbell className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                )}
               </div>
-              <span className="text-lg md:text-xl font-bold text-white">GrindMentor</span>
-            </div>
-            <p className="text-gray-500 text-xs md:text-sm mb-4 md:mb-6">
-              &copy; {new Date().getFullYear()} GrindMentor. All rights reserved.
-            </p>
-            <div className="flex justify-center space-x-4 md:space-x-8 text-xs md:text-sm flex-wrap gap-2">
-              <Link to="/about" className="text-gray-400 hover:text-white transition-colors">About</Link>
-              <Link to="/terms" className="text-gray-400 hover:text-white transition-colors">Terms</Link>
-              <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link>
-              <Link to="/support" className="text-gray-400 hover:text-white transition-colors">Support</Link>
             </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </nav>
+
+        {/* Hero Section */}
+        <section className="pt-20 pb-32 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto text-center">
+            <div className="animate-fade-in">
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 mb-6 animate-pulse-glow">
+                <Sparkles className="w-3 h-3 mr-1" />
+                AI-Powered Fitness Coach
+              </Badge>
+              
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent">
+                Your Personal{" "}
+                <span className="font-orbitron bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                  AI Fitness
+                </span>{" "}
+                Coach
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Science-backed fitness guidance powered by AI. Get personalized workouts, nutrition plans, and expert advice 24/7.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                <SmoothButton
+                  size="lg"
+                  onClick={() => navigate(user ? '/app' : '/signin')}
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-8 py-4 hover-glow"
+                >
+                  {user ? 'Go to Dashboard' : 'Start Free Trial'}
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </SmoothButton>
+                
+                <SmoothButton
+                  variant="outline"
+                  size="lg"
+                  onClick={() => navigate('/pricing')}
+                  className="border-gray-600 text-white hover:bg-gray-800 text-lg px-8 py-4"
+                >
+                  View Pricing
+                </SmoothButton>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                  Science-Based
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                  24/7 AI Support
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                  Personalized Plans
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                  No Equipment Required
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/50">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16 animate-fade-in" style={{ animationDelay: '200ms' }}>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                AI-Powered Fitness Modules
+              </h2>
+              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                Choose from our comprehensive suite of AI tools designed to accelerate your fitness journey
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-animation">
+              {features.map((feature, index) => (
+                <AnimatedCard
+                  key={feature.title}
+                  delay={300 + index * 100}
+                  className="group p-0 border-0 bg-transparent"
+                >
+                  <Card className={`h-full bg-gradient-to-br ${feature.color} border-0 text-white hover:scale-[1.02] transition-all duration-300 hover:shadow-2xl`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
+                          <feature.icon className="w-6 h-6 text-white" />
+                        </div>
+                        {feature.isPremium && (
+                          <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
+                            <Crown className="w-3 h-3 mr-1" />
+                            Premium
+                          </Badge>
+                        )}
+                      </div>
+                      <CardTitle className="text-white text-lg">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-white/80">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </AnimatedCard>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <AnimatedCard delay={600} className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/20">
+              <CardContent className="p-12">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  Ready to Transform Your Fitness?
+                </h2>
+                <p className="text-xl text-gray-400 mb-8">
+                  Join thousands of users who are already achieving their fitness goals with AI-powered guidance.
+                </p>
+                <SmoothButton
+                  size="lg"
+                  onClick={() => navigate(user ? '/app' : '/signin')}
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-8 py-4 hover-glow"
+                >
+                  {user ? 'Access Dashboard' : 'Start Your Journey'}
+                  <Dumbbell className="w-5 h-5 ml-2" />
+                </SmoothButton>
+              </CardContent>
+            </AnimatedCard>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t border-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <Logo size="sm" />
+              
+              <div className="flex flex-wrap justify-center gap-6 mt-6 md:mt-0">
+                <SmoothButton
+                  variant="ghost"
+                  onClick={() => navigate('/about')}
+                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+                >
+                  About
+                </SmoothButton>
+                <SmoothButton
+                  variant="ghost"
+                  onClick={() => navigate('/privacy')}
+                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+                >
+                  Privacy Policy
+                </SmoothButton>
+                <SmoothButton
+                  variant="ghost"
+                  onClick={() => navigate('/terms')}
+                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+                >
+                  Terms of Service
+                </SmoothButton>
+                <SmoothButton
+                  variant="ghost"
+                  onClick={() => navigate('/support')}
+                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
+                >
+                  Support
+                </SmoothButton>
+              </div>
+            </div>
+            
+            <div className="text-center mt-8 text-sm text-gray-500">
+              © 2025 GrindMentor. All rights reserved.
+            </div>
+          </div>
+        </footer>
+      </div>
+    </PageTransition>
   );
 };
 

@@ -52,7 +52,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       '25 Smart Food Log analyses',
       '10 TDEE calculations',
       '5 Smart Training programs',
-      '5 Physique AI analyses', // Updated name
+      '5 Physique AI analyses',
       '100 Habit checks',
       'Science-backed recommendations'
     ],
@@ -62,7 +62,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       food_log_analyses: 25,
       tdee_calculations: 10,
       habit_checks: 100,
-      training_programs: 5, // Increased from 0 to allow Basic tier access
+      training_programs: 5,
       progress_analyses: 5,
       cut_calc_uses: 10,
       workout_timer_sessions: 25,
@@ -73,11 +73,11 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
     name: 'Premium',
     price: 15,
     features: [
-      'Unlimited queries',
+      'Unlimited CoachGPT queries',
       'Unlimited meal plans', 
       'Unlimited food logging',
       'Unlimited Smart Training',
-      'Unlimited Physique AI', // Updated name
+      'Unlimited Physique AI',
       'Priority support',
       'All future features'
     ],
@@ -91,7 +91,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       progress_analyses: -1,
       cut_calc_uses: -1,
       workout_timer_sessions: -1,
-      food_photo_analyses: 20
+      food_photo_analyses: -1
     }
   }
 };
@@ -100,6 +100,7 @@ export const useSubscription = () => {
   const { user } = useAuth();
   const [currentTier, setCurrentTier] = useState<string>('free');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const lastCheckRef = useRef<number>(0);
   const cacheRef = useRef<{ tier: string; end: string | null } | null>(null);
   const initRef = useRef<boolean>(false);
@@ -108,14 +109,14 @@ export const useSubscription = () => {
     if (user && !initRef.current) {
       initRef.current = true;
       
-      // Set cached data immediately
+      // Set cached data immediately if available
       const cached = cacheRef.current;
       if (cached) {
         setCurrentTier(cached.tier);
         setSubscriptionEnd(cached.end);
       }
       
-      // Check subscription status in background
+      // Check subscription status
       checkSubscription();
     } else if (!user) {
       setCurrentTier('free');
@@ -129,6 +130,8 @@ export const useSubscription = () => {
     if (!user) return;
 
     try {
+      setIsLoading(true);
+
       // Special handling for emilbelq@gmail.com
       if (user.email === 'emilbelq@gmail.com') {
         const newStatus = { tier: 'premium', end: null };
@@ -139,9 +142,9 @@ export const useSubscription = () => {
         return;
       }
 
-      // Check cache freshness (30 seconds)
+      // Check cache freshness (10 seconds for more responsive updates)
       const now = Date.now();
-      if (cacheRef.current && (now - lastCheckRef.current) < 30000) {
+      if (cacheRef.current && (now - lastCheckRef.current) < 10000) {
         return;
       }
 
@@ -176,16 +179,15 @@ export const useSubscription = () => {
         }
       }
 
-      // Only update if changed to prevent flickering
-      if (newTier !== currentTier || newEnd !== subscriptionEnd) {
-        setCurrentTier(newTier);
-        setSubscriptionEnd(newEnd);
-        cacheRef.current = { tier: newTier, end: newEnd };
-      }
-      
+      // Update state and cache
+      setCurrentTier(newTier);
+      setSubscriptionEnd(newEnd);
+      cacheRef.current = { tier: newTier, end: newEnd };
       lastCheckRef.current = now;
     } catch (error) {
       console.error('Error checking subscription:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -197,7 +199,7 @@ export const useSubscription = () => {
     currentTierData,
     subscriptionEnd,
     isSubscribed,
-    isLoading: false, // Always false to eliminate loading states
+    isLoading,
     refreshSubscription: checkSubscription
   };
 };

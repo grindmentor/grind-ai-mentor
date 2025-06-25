@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Crown, TrendingUp, Activity, Brain, Zap, Calendar, Target, Users, BookOpen, ChevronRight } from "lucide-react";
+import { Crown, TrendingUp, Brain, Zap, Target, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
@@ -12,7 +11,7 @@ import { useModules } from "@/contexts/ModulesContext";
 import AIModuleCard from "./dashboard/AIModuleCard";
 import MobileModuleSelector from "./dashboard/MobileModuleSelector";
 import UpgradeSection from "./dashboard/UpgradeSection";
-import LoadingSpinner from "./LoadingSpinner";
+import DashboardSkeleton from "./dashboard/DashboardSkeleton";
 
 const Dashboard = () => {
   const [selectedModule, setSelectedModule] = useState<string>("");
@@ -24,12 +23,13 @@ const Dashboard = () => {
   const { currentUsage } = useUsageTracking();
   const { modules, isInitialized } = useModules();
 
-  // Initialize dashboard
+  // Initialize dashboard with proper timing
   useEffect(() => {
     if (isInitialized) {
+      // Short delay to prevent flickering
       const timer = setTimeout(() => {
         setIsInitializing(false);
-      }, 500);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [isInitialized]);
@@ -47,12 +47,9 @@ const Dashboard = () => {
     setSelectedModule("");
   };
 
+  // Show skeleton while initializing
   if (isInitializing || !isInitialized) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Loading your dashboard..." />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (showModule && selectedModule) {

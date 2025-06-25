@@ -4,19 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Sparkles } from 'lucide-react';
 import { SmoothButton } from '@/components/ui/smooth-button';
-
-interface ModuleData {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  gradient: string;
-  category: string;
-  isPremium: boolean;
-}
+import { AIModule } from './AIModuleData';
 
 interface MobileModuleSelectorProps {
-  modules: ModuleData[];
+  modules: AIModule[];
   onModuleSelect: (moduleId: string) => void;
 }
 
@@ -63,7 +54,7 @@ const MobileModuleSelector: React.FC<MobileModuleSelectorProps> = ({
               <div className="flex items-center space-x-2">
                 <Sparkles className="w-4 h-4 text-white/60" />
                 <span className="text-white/80 text-xs font-medium">
-                  {module.category}
+                  AI Module
                 </span>
               </div>
               

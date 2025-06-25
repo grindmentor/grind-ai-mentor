@@ -25,54 +25,43 @@ const MobileModuleSelector: React.FC<MobileModuleSelectorProps> = ({
     }));
   };
 
-  // Group modules by category
+  // Group modules by category with new organization
   const groupedModules = {
-    'Training & Workouts': modules.filter(m => 
-      ['smart-training', 'workout-timer', 'workout-library', 'recovery-coach'].includes(m.id)
+    'Workouts': modules.filter(m => 
+      ['smart-training', 'workout-timer', 'workout-library'].includes(m.id)
     ),
-    'Nutrition & Food': modules.filter(m => 
+    'Nutrition and Food': modules.filter(m => 
       ['meal-plan-ai', 'food-photo-logger', 'smart-food-log'].includes(m.id)
     ),
-    'Calculators & Tools': modules.filter(m => 
-      ['tdee-calculator', 'cut-calc-pro'].includes(m.id)
+    'Calculators and Tools': modules.filter(m => 
+      ['tdee-calculator', 'cut-calc-pro', 'habit-tracker', 'physique-ai'].includes(m.id)
     ),
-    'Progress & Analytics': modules.filter(m => 
-      ['physique-ai', 'habit-tracker'].includes(m.id)
-    ),
-    'AI Coaching': modules.filter(m => 
-      ['coach-gpt'].includes(m.id)
+    'Coaches': modules.filter(m => 
+      ['coach-gpt', 'recovery-coach'].includes(m.id)
     )
   };
 
-  const groupGradients: Record<string, string> = {
-    'Training & Workouts': 'from-purple-600 to-purple-800',
-    'Nutrition & Food': 'from-green-600 to-green-800', 
-    'Calculators & Tools': 'from-orange-600 to-orange-800',
-    'Progress & Analytics': 'from-blue-600 to-blue-800',
-    'AI Coaching': 'from-red-600 to-red-800'
-  };
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
       {Object.entries(groupedModules).map(([groupName, groupModules]) => (
         <Card 
           key={groupName}
-          className={`bg-gradient-to-br ${groupGradients[groupName]} border-0 shadow-lg overflow-hidden`}
+          className="bg-gray-900 border-gray-800 shadow-lg"
         >
           <Collapsible
             open={openGroups[groupName]}
             onOpenChange={() => toggleGroup(groupName)}
           >
             <CollapsibleTrigger asChild>
-              <div className="w-full p-4 cursor-pointer hover:bg-white/10 transition-colors">
+              <div className="w-full p-4 cursor-pointer hover:bg-gray-800/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                      {groupModules[0]?.icon && React.createElement(groupModules[0].icon, { className: "w-5 h-5 text-white" })}
+                    <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                      {groupModules[0]?.icon && React.createElement(groupModules[0].icon, { className: "w-5 h-5 text-gray-300" })}
                     </div>
                     <div>
                       <h3 className="text-white font-semibold text-lg">{groupName}</h3>
-                      <p className="text-white/80 text-sm">{groupModules.length} modules</p>
+                      <p className="text-gray-400 text-sm">{groupModules.length} modules</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -83,9 +72,9 @@ const MobileModuleSelector: React.FC<MobileModuleSelectorProps> = ({
                       </Badge>
                     )}
                     {openGroups[groupName] ? (
-                      <ChevronUp className="w-5 h-5 text-white/60" />
+                      <ChevronUp className="w-5 h-5 text-gray-400" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-white/60" />
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
                     )}
                   </div>
                 </div>

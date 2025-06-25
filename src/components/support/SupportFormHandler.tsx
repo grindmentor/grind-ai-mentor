@@ -64,9 +64,11 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Starting support form submission...');
+    console.log('=== SUPPORT FORM SUBMISSION START ===');
+    console.log('Form data:', formData);
     
     if (!validateForm()) {
+      console.log('Form validation failed');
       toast({
         title: "Validation Error",
         description: "Please check all required fields.",
@@ -78,6 +80,19 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     setIsSubmitting(true);
 
     try {
+      // Check current user session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current session:', sessionData?.session ? 'User logged in' : 'Anonymous user');
+      console.log('Session error:', sessionError);
+
+      // Check if we can read from the table (this should fail with our current policies)
+      console.log('Testing table access...');
+      const { data: testRead, error: readError } = await supabase
+        .from('support_requests')
+        .select('id')
+        .limit(1);
+      console.log('Read test result:', { testRead, readError });
+
       // Sanitize form data
       const sanitizedData = {
         name: sanitizeText(formData.name),
@@ -87,16 +102,23 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
         file_url: null
       };
 
-      console.log('Submitting support request:', sanitizedData);
+      console.log('Sanitized data to submit:', sanitizedData);
+      console.log('Attempting insert to support_requests table...');
 
-      // Submit to Supabase
+      // Submit to Supabase with detailed error logging
       const { data, error } = await supabase
         .from('support_requests')
         .insert([sanitizedData])
         .select();
 
+      console.log('Insert result:', { data, error });
+
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Supabase insertion error details:');
+        console.error('- Error code:', error.code);
+        console.error('- Error message:', error.message);
+        console.error('- Error details:', error.details);
+        console.error('- Error hint:', error.hint);
         throw new Error(`Database error: ${error.message}`);
       }
 
@@ -115,7 +137,10 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       onSuccess();
       
     } catch (error: any) {
-      console.error('Error submitting support request:', error);
+      console.error('=== SUBMISSION ERROR ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       
       toast({
         title: "Submission Failed",
@@ -124,6 +149,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       });
     } finally {
       setIsSubmitting(false);
+      console.log('=== SUPPORT FORM SUBMISSION END ===');
     }
   };
 

@@ -34,47 +34,70 @@ const Profile = () => {
   const { smartData, isLoading } = useSmartUserData();
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && !isLoading) {
       loadProfileStats();
+    } else if (!user && !isLoading) {
+      setLoading(false);
+      setError("User not authenticated");
     }
   }, [user, isLoading]);
 
   const loadProfileStats = async () => {
-    if (!user) return;
+    if (!user) {
+      setError("User not authenticated");
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Get workout sessions
-      const { data: workoutSessions } = await supabase
+      setError(null);
+      
+      // Get workout sessions with error handling
+      const { data: workoutSessions, error: workoutError } = await supabase
         .from('workout_sessions')
         .select('*')
         .eq('user_id', user.id);
 
-      // Get recovery data
-      const { data: recoveryData } = await supabase
+      if (workoutError) {
+        console.warn('Error fetching workout sessions:', workoutError);
+      }
+
+      // Get recovery data with error handling
+      const { data: recoveryData, error: recoveryError } = await supabase
         .from('recovery_data')
         .select('*')
         .eq('user_id', user.id);
 
-      // Get habit completions
-      const { data: habitCompletions } = await supabase
+      if (recoveryError) {
+        console.warn('Error fetching recovery data:', recoveryError);
+      }
+
+      // Get habit completions with error handling
+      const { data: habitCompletions, error: habitError } = await supabase
         .from('habit_completions')
         .select('*')
         .eq('user_id', user.id);
 
-      // Calculate stats
+      if (habitError) {
+        console.warn('Error fetching habit completions:', habitError);
+      }
+
+      // Calculate stats with safe defaults
       const totalWorkouts = workoutSessions?.length || 0;
-      const daysActive = new Set(workoutSessions?.map(w => w.session_date)).size;
+      const daysActive = workoutSessions?.length ? new Set(workoutSessions.map(w => w.session_date)).size : 0;
       const avgSleep = recoveryData?.length 
         ? recoveryData.reduce((sum, r) => sum + (r.sleep_hours || 0), 0) / recoveryData.length
-        : 0;
+        : 7.5; // Default average sleep
 
-      // Calculate percentiles and scores (simplified for demo)
-      const strengthPercentile = Math.min(95, Math.max(5, totalWorkouts * 2 + (userData.experience === 'advanced' ? 30 : userData.experience === 'intermediate' ? 15 : 0)));
+      // Calculate percentiles and scores with safe fallbacks
+      const experienceBonus = userData.experience === 'advanced' ? 30 : userData.experience === 'intermediate' ? 15 : 0;
+      const strengthPercentile = Math.min(95, Math.max(5, totalWorkouts * 2 + experienceBonus));
       const bodyFatPercentage = smartData?.bodyFatPercentage || userData.bodyFatPercentage || 15;
 
-      // Calculate trait scores (0-100)
+      // Calculate trait scores (0-100) with safe calculations
       const dedication = Math.min(100, (habitCompletions?.length || 0) * 5 + daysActive * 2);
       const strength = Math.min(100, strengthPercentile);
       const recovery = Math.min(100, avgSleep * 12 + (recoveryData?.length || 0) * 3);
@@ -94,33 +117,13 @@ const Profile = () => {
       });
     } catch (error) {
       console.error('Error loading profile stats:', error);
+      setError('Failed to load profile data');
     } finally {
       setLoading(false);
     }
   };
 
-  const radarData = profileStats ? [
-    { trait: 'Dedication', value: profileStats.dedication },
-    { trait: 'Strength', value: profileStats.strength },
-    { trait: 'Recovery', value: profileStats.recovery },
-    { trait: 'Consistency', value: profileStats.consistency },
-  ] : [];
-
-  const getPercentileColor = (percentile: number) => {
-    if (percentile >= 90) return 'from-yellow-400 to-orange-500';
-    if (percentile >= 75) return 'from-green-400 to-emerald-500';
-    if (percentile >= 50) return 'from-blue-400 to-cyan-500';
-    return 'from-gray-400 to-gray-500';
-  };
-
-  const getBodyFatCategory = (bf: number) => {
-    if (bf < 10) return { category: 'Elite Athlete', color: 'text-yellow-400' };
-    if (bf < 15) return { category: 'Athletic', color: 'text-green-400' };
-    if (bf < 20) return { category: 'Fit', color: 'text-blue-400' };
-    if (bf < 25) return { category: 'Average', color: 'text-orange-400' };
-    return { category: 'Above Average', color: 'text-red-400' };
-  };
-
+  // Show loading state
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -129,6 +132,42 @@ const Profile = () => {
     );
   }
 
+  // Show error state
+  if (error) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-black text-white p-4">
+          <div className="max-w-md mx-auto">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/app')}
+              className="mb-6 text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <Card className="bg-gray-900 border-gray-800">
+              <CardContent className="p-8 text-center">
+                <p className="text-red-400 mb-4">Error: {error}</p>
+                <Button 
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    loadProfileStats();
+                  }}
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                >
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // Show no data state
   if (!profileStats) {
     return (
       <PageTransition>
@@ -153,6 +192,29 @@ const Profile = () => {
       </PageTransition>
     );
   }
+
+  // Prepare radar chart data with validation
+  const radarData = [
+    { trait: 'Dedication', value: Math.max(0, Math.min(100, profileStats.dedication)) },
+    { trait: 'Strength', value: Math.max(0, Math.min(100, profileStats.strength)) },
+    { trait: 'Recovery', value: Math.max(0, Math.min(100, profileStats.recovery)) },
+    { trait: 'Consistency', value: Math.max(0, Math.min(100, profileStats.consistency)) },
+  ];
+
+  const getPercentileColor = (percentile: number) => {
+    if (percentile >= 90) return 'from-yellow-400 to-orange-500';
+    if (percentile >= 75) return 'from-green-400 to-emerald-500';
+    if (percentile >= 50) return 'from-blue-400 to-cyan-500';
+    return 'from-gray-400 to-gray-500';
+  };
+
+  const getBodyFatCategory = (bf: number) => {
+    if (bf < 10) return { category: 'Elite Athlete', color: 'text-yellow-400' };
+    if (bf < 15) return { category: 'Athletic', color: 'text-green-400' };
+    if (bf < 20) return { category: 'Fit', color: 'text-blue-400' };
+    if (bf < 25) return { category: 'Average', color: 'text-orange-400' };
+    return { category: 'Above Average', color: 'text-red-400' };
+  };
 
   const bodyFatInfo = getBodyFatCategory(profileStats.bodyFatPercentage);
 

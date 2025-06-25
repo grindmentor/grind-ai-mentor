@@ -91,9 +91,9 @@ const App = () => {
           </Suspense>
         )}
 
-        {/* Mobile Header with proper safe area */}
+        {/* Sticky Mobile Header */}
         {isMobile && (
-          <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px) + 0.5rem, 1rem)' }}>
+          <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px) + 0.5rem, 1rem)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
@@ -113,7 +113,7 @@ const App = () => {
           </div>
         )}
 
-        {/* Sidebar with proper safe area */}
+        {/* Sidebar */}
         <div className={`fixed left-0 top-0 h-full bg-gray-900/95 backdrop-blur border-r border-gray-800 p-6 transition-transform duration-300 z-40 ${
           isMobile 
             ? `w-64 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
@@ -193,10 +193,10 @@ const App = () => {
           />
         )}
 
-        {/* Main Content */}
+        {/* Main Content with adjusted padding for sticky header */}
         <div className={`min-h-screen transition-all duration-300 ${
           isMobile 
-            ? 'pt-20' 
+            ? 'pt-0' // Remove extra padding since header is now sticky
             : 'ml-64'
         }`} style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1rem)' }}>
           <Suspense fallback={<LoadingSpinner />}>

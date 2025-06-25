@@ -87,20 +87,22 @@ const Support = () => {
 
   return (
     <div className="min-h-screen bg-black text-white ios-safe-area">
-      {/* Header */}
-      <nav className="container mx-auto px-6 py-4 flex items-center justify-between border-b border-gray-800" style={{ paddingTop: 'max(env(safe-area-inset-top) + 1rem, 1rem)' }}>
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-            <span className="font-bold text-white text-sm">GM</span>
-          </div>
-          <span className="text-xl font-bold logo-text">GrindMentor</span>
-        </Link>
-        <Link to="/app">
-          <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px]">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to App
-          </Button>
-        </Link>
+      {/* Fixed Header */}
+      <nav className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800 px-6 py-4" style={{ paddingTop: 'max(env(safe-area-inset-top) + 1rem, 1rem)' }}>
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+              <span className="font-bold text-white text-sm">GM</span>
+            </div>
+            <span className="text-xl font-bold logo-text">GrindMentor</span>
+          </Link>
+          <Link to="/app">
+            <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px]">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to App
+            </Button>
+          </Link>
+        </div>
       </nav>
 
       <div className="container mx-auto px-6 py-12 max-w-6xl">
@@ -156,25 +158,17 @@ const Support = () => {
               <CardHeader>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-6 h-6 text-blue-500" />
-                  <CardTitle className="text-white">Contact Information</CardTitle>
+                  <CardTitle className="text-white">Response Time</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-gray-400">General Support</p>
-                  <p className="text-white font-medium">support@grindmentor.com</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Technical Issues</p>
-                  <p className="text-white font-medium">tech@grindmentor.com</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Billing Questions</p>
-                  <p className="text-white font-medium">billing@grindmentor.com</p>
+                  <p className="text-sm text-gray-400">Average Response Time</p>
+                  <p className="text-white font-medium">Within 7 days</p>
                 </div>
                 <div className="pt-2">
-                  <p className="text-sm text-gray-400">Response Time</p>
-                  <p className="text-white font-medium">Within 24 hours</p>
+                  <p className="text-sm text-gray-400">Support Hours</p>
+                  <p className="text-white font-medium">Monday - Friday, 9 AM - 5 PM EST</p>
                 </div>
               </CardContent>
             </Card>
@@ -188,7 +182,7 @@ const Support = () => {
                 <CardTitle className="text-white">Contact Support</CardTitle>
               </div>
               <CardDescription className="text-gray-400">
-                Send us a message and we'll get back to you within 24 hours.
+                Send us a message and we'll get back to you within 7 days.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -196,7 +190,7 @@ const Support = () => {
                 <div className="text-center py-8">
                   <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">Message Sent!</h3>
-                  <p className="text-gray-400">We've received your request. Our team will get back to you within 24 hours.</p>
+                  <p className="text-gray-400">We've received your request. Our team will get back to you within 7 days.</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">

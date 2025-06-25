@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, User, HelpCircle } from "lucide-react";
@@ -44,6 +45,8 @@ const Settings = () => {
 
   useEffect(() => {
     if (userData) {
+      console.log('Settings: userData loaded', userData);
+      
       // Calculate age if birthday exists
       let age = null;
       if (userData.birthday) {
@@ -81,9 +84,10 @@ const Settings = () => {
         }));
       }
     }
-  }, [userData, preferences.height_unit]);
+  }, [userData, preferences?.height_unit]);
 
   const handleInputChange = async (field: string, value: string) => {
+    console.log('Settings: handleInputChange', field, value);
     setProfile(prev => ({ ...prev, [field]: value }));
 
     // Save to database for specific fields
@@ -95,6 +99,7 @@ const Settings = () => {
           .eq('id', user?.id);
         
         await refreshUserData();
+        console.log('Settings: Field saved successfully', field);
       } catch (error) {
         console.error('Error saving profile:', error);
         toast({
@@ -107,13 +112,14 @@ const Settings = () => {
   };
 
   const handleWeightChange = async (value: string) => {
+    console.log('Settings: handleWeightChange', value);
     setProfile(prev => ({ ...prev, weight: value }));
     
     if (value && user) {
       try {
         // Convert to lbs for storage (database stores in lbs)
         let weightInLbs = parseFloat(value);
-        if (preferences.weight_unit === 'kg') {
+        if (preferences?.weight_unit === 'kg') {
           weightInLbs = weightInLbs * 2.20462;
         }
 
@@ -123,6 +129,7 @@ const Settings = () => {
           .eq('id', user.id);
         
         await refreshUserData();
+        console.log('Settings: Weight saved successfully');
       } catch (error) {
         console.error('Error saving weight:', error);
         toast({
@@ -135,13 +142,14 @@ const Settings = () => {
   };
 
   const handleHeightChange = async (value: string) => {
+    console.log('Settings: handleHeightChange', value);
     setProfile(prev => ({ ...prev, height: value }));
     
     if (value && user) {
       try {
         // Convert to inches for storage (database stores in inches)
         let heightInInches = parseFloat(value);
-        if (preferences.height_unit === 'cm') {
+        if (preferences?.height_unit === 'cm') {
           heightInInches = heightInInches / 2.54;
         }
 
@@ -151,6 +159,7 @@ const Settings = () => {
           .eq('id', user.id);
         
         await refreshUserData();
+        console.log('Settings: Height saved successfully');
       } catch (error) {
         console.error('Error saving height:', error);
         toast({
@@ -183,6 +192,14 @@ const Settings = () => {
   if (!user) {
     return null;
   }
+
+  // Debug output
+  console.log('Settings: Rendering with', {
+    user: !!user,
+    userData: !!userData,
+    preferences: !!preferences,
+    profile
+  });
 
   return (
     <div className="min-h-screen bg-black text-white ios-safe-area">
@@ -222,16 +239,18 @@ const Settings = () => {
 
           {/* Settings Sections */}
           <div className="grid gap-6 lg:gap-8">
-            <BasicInformation 
-              profile={profile}
-              preferences={preferences}
-              calculatedAge={calculatedAge}
-              onInputChange={handleInputChange}
-              onWeightChange={handleWeightChange}
-              onHeightChange={handleHeightChange}
-              getWeightDisplay={getWeightDisplay}
-              getHeightDisplay={getHeightDisplay}
-            />
+            {preferences && (
+              <BasicInformation 
+                profile={profile}
+                preferences={preferences}
+                calculatedAge={calculatedAge}
+                onInputChange={handleInputChange}
+                onWeightChange={handleWeightChange}
+                onHeightChange={handleHeightChange}
+                getWeightDisplay={getWeightDisplay}
+                getHeightDisplay={getHeightDisplay}
+              />
+            )}
             <FitnessProfile 
               profile={profile}
               onInputChange={handleInputChange}

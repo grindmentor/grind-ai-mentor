@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,22 +86,22 @@ const Dashboard = () => {
 
           {/* Minimal Upgrade Prompt - Only show for free users */}
           {currentTier === 'free' && (
-            <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 mb-6">
-              <CardContent className="p-4 sm:p-6">
+            <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 mb-4 sm:mb-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-white" />
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                      <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="text-lg font-semibold text-white">Unlock Premium Features</h3>
-                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                          <Star className="w-3 h-3 mr-1" />
+                        <h3 className="text-base sm:text-lg font-semibold text-white">Unlock Premium</h3>
+                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">
+                          <Star className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
                           Popular
                         </Badge>
                       </div>
-                      <p className="text-gray-400 text-sm">Unlimited AI queries, meal plans, and advanced analytics</p>
+                      <p className="text-gray-400 text-xs sm:text-sm">Unlimited AI queries & meal plans</p>
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
@@ -108,14 +109,14 @@ const Dashboard = () => {
                       onClick={() => handleUpgrade('Basic', 10)}
                       variant="outline"
                       size="sm"
-                      className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 w-full sm:w-auto"
+                      className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 w-full sm:w-auto text-xs sm:text-sm"
                     >
                       Basic $10/mo
                     </Button>
                     <Button 
                       onClick={() => handleUpgrade('Premium', 15)}
                       size="sm"
-                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto"
+                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto text-xs sm:text-sm"
                     >
                       Premium $15/mo
                     </Button>
@@ -125,9 +126,10 @@ const Dashboard = () => {
             </Card>
           )}
 
-          <div className={`grid gap-4 sm:gap-6 ${
+          {/* Improved Mobile Grid Layout */}
+          <div className={`grid gap-3 sm:gap-6 ${
             isMobile 
-              ? 'grid-cols-1 sm:grid-cols-2' 
+              ? 'grid-cols-2' // Always 2 columns on mobile for cleaner look
               : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
           }`}>
             {aiModules.map((module) => (

@@ -8,11 +8,11 @@ import DashboardHeader from "./dashboard/DashboardHeader";
 import AIModuleCard from "./dashboard/AIModuleCard";
 import MobileModuleSelector from "./dashboard/MobileModuleSelector";
 import { useModules } from "@/contexts/ModulesContext";
-import { ArrowLeft, Star, Zap } from "lucide-react";
+import { ArrowLeft, Star, Zap, FileText, Shield, Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserData } from "@/contexts/UserDataContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
@@ -137,6 +137,36 @@ const Dashboard = () => {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Footer Links */}
+      <div className="border-t border-gray-800 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to="/about">
+              <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 flex items-center">
+                <Info className="w-4 h-4 mr-2" />
+                About
+              </Button>
+            </Link>
+            <Link to="/terms">
+              <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Terms
+              </Button>
+            </Link>
+            <Link to="/privacy">
+              <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 flex items-center">
+                <Shield className="w-4 h-4 mr-2" />
+                Privacy
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="text-center text-gray-500 mt-6 pt-6 border-t border-gray-800">
+            <p>&copy; 2025 GrindMentor. All rights reserved. Your fitness journey starts here.</p>
+          </div>
         </div>
       </div>
     </div>

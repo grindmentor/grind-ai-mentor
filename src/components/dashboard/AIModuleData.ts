@@ -61,7 +61,7 @@ export const aiModules = [
   {
     id: "cut-calc-pro",
     title: "CutCalc Pro",
-    description: "Advanced cutting calculator with body fat analysis",
+    description: "Advanced cutting calculator with comprehensive analysis",
     icon: Target,
     gradient: "from-red-500 to-red-700",
     component: CutCalcPro,
@@ -104,8 +104,8 @@ export const aiModules = [
   },
   {
     id: "progress-ai",
-    title: "Progress AI",
-    description: "AI analysis of your fitness progress",
+    title: "Physique AI",
+    description: "Photo analysis of your physique",
     icon: TrendingUp,
     gradient: "from-indigo-500 to-indigo-700",
     component: ProgressAI,

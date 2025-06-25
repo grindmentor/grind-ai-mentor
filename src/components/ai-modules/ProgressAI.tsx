@@ -114,7 +114,7 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
 
           toast({
             title: "Photo analyzed successfully!",
-            description: "Your body composition analysis is ready.",
+            description: "Your physique analysis is ready.",
           });
 
         } catch (error) {
@@ -175,22 +175,22 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
           Back to Dashboard
         </SoundButton>
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
             <Camera className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">ProgressAI</h1>
-            <p className="text-gray-400">AI-powered body composition analysis</p>
+            <h1 className="text-3xl font-bold text-white">Physique AI</h1>
+            <p className="text-gray-400">Photo analysis of your physique</p>
           </div>
         </div>
       </div>
 
       <div className="flex items-center space-x-4">
-        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+        <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
           <TrendingUp className="w-3 h-3 mr-1" />
-          Instant Body Analysis
+          Instant Physique Analysis
         </Badge>
-        <UsageIndicator featureKey="progress_analyses" featureName="Progress Analysis" compact />
+        <UsageIndicator featureKey="progress_analyses" featureName="Physique Analysis" compact />
         <SoundButton
           variant="outline"
           onClick={() => setShowHistory(!showHistory)}

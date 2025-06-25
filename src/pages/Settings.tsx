@@ -36,6 +36,7 @@ const SettingsContent = () => {
 
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -54,11 +55,19 @@ const SettingsContent = () => {
 
     try {
       setIsLoading(true);
-      const { data: profileData } = await supabase
+      setError(null);
+      
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
+
+      if (profileError) {
+        console.error('Error loading profile:', profileError);
+        setError('Failed to load profile data');
+        return;
+      }
 
       if (profileData) {
         console.log('Settings: userData loaded', profileData);
@@ -84,8 +93,18 @@ const SettingsContent = () => {
 
         // Convert height from inches to preferred unit
         let height = profileData.height;
+        let heightFeet = '';
+        let heightInches = '';
+
         if (height && preferences.height_unit === 'cm') {
           height = Math.round(height * 2.54);
+        } else if (height && preferences.height_unit === 'ft-in') {
+          const totalInches = height;
+          const feet = Math.floor(totalInches / 12);
+          const inches = totalInches % 12;
+          heightFeet = feet.toString();
+          heightInches = inches.toString();
+          height = totalInches; // Keep original for storage
         }
 
         // Set profile data
@@ -93,27 +112,16 @@ const SettingsContent = () => {
           weight: weight?.toString() || '',
           birthday: profileData.birthday || '',
           height: height?.toString() || '',
-          heightFeet: '',
-          heightInches: '',
+          heightFeet,
+          heightInches,
           experience: profileData.experience || '',
           activity: profileData.activity || '',
           goal: profileData.goal || ''
         });
-
-        // Convert height to feet/inches if using ft-in unit
-        if (profileData.height && preferences.height_unit === 'ft-in') {
-          const totalInches = profileData.height;
-          const feet = Math.floor(totalInches / 12);
-          const inches = totalInches % 12;
-          setProfile(prev => ({
-            ...prev,
-            heightFeet: feet.toString(),
-            heightInches: inches.toString()
-          }));
-        }
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
+      setError('Failed to load profile data');
       toast({
         title: "Error",
         description: "Failed to load profile data. Please try again.",
@@ -131,10 +139,12 @@ const SettingsContent = () => {
     // Save to database for specific fields
     if (['experience', 'activity', 'goal', 'birthday'].includes(field)) {
       try {
-        await supabase
+        const { error } = await supabase
           .from('profiles')
           .update({ [field]: value })
           .eq('id', user?.id);
+        
+        if (error) throw error;
         
         console.log('Settings: Field saved successfully', field);
         
@@ -172,10 +182,12 @@ const SettingsContent = () => {
           weightInLbs = weightInLbs * 2.20462;
         }
 
-        await supabase
+        const { error } = await supabase
           .from('profiles')
           .update({ weight: Math.round(weightInLbs) })
           .eq('id', user.id);
+        
+        if (error) throw error;
         
         console.log('Settings: Weight saved successfully');
       } catch (error) {
@@ -201,10 +213,12 @@ const SettingsContent = () => {
           heightInInches = heightInInches / 2.54;
         }
 
-        await supabase
+        const { error } = await supabase
           .from('profiles')
           .update({ height: Math.round(heightInInches) })
           .eq('id', user.id);
+        
+        if (error) throw error;
         
         console.log('Settings: Height saved successfully');
       } catch (error) {
@@ -224,7 +238,12 @@ const SettingsContent = () => {
   };
 
   const getHeightDisplay = () => {
-    if (!profile.height) return '';
+    if (preferences?.height_unit === 'ft-in') {
+      if (profile.heightFeet && profile.heightInches) {
+        return `${profile.heightFeet}'${profile.heightInches}"`;
+      }
+      return '';
+    }
     return profile.height;
   };
 
@@ -248,12 +267,16 @@ const SettingsContent = () => {
     );
   }
 
-  // Debug output
-  console.log('Settings: Rendering with', {
-    user: !!user,
-    preferences: !!preferences,
-    profile
-  });
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
+        <div className="text-center">
+          <div className="text-xl mb-4">Error loading settings</div>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white ios-safe-area">

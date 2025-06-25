@@ -3,8 +3,17 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Sparkles } from 'lucide-react';
-import { ModuleData } from '@/contexts/ModulesContext';
 import { SmoothButton } from '@/components/ui/smooth-button';
+
+interface ModuleData {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  gradient: string;
+  category: string;
+  isPremium: boolean;
+}
 
 interface MobileModuleSelectorProps {
   modules: ModuleData[];

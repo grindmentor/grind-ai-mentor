@@ -35,19 +35,22 @@ const goalOptions: GoalOption[] = [
   { id: 'lean_bulk', title: 'Lean Bulk', description: 'Gain muscle with minimal fat gain', icon: '📈', color: 'bg-green-500/20 border-green-500/30 text-green-400', category: 'physique' },
   { id: 'cut', title: 'Cutting Phase', description: 'Aggressive fat loss for competition prep', icon: '✂️', color: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400', category: 'physique' },
   { id: 'maintain', title: 'Maintain Physique', description: 'Preserve current muscle and body composition', icon: '🎯', color: 'bg-blue-500/20 border-blue-500/30 text-blue-400', category: 'physique' },
+  { id: 'shred', title: 'Get Shredded', description: 'Achieve extremely low body fat percentage', icon: '🗿', color: 'bg-slate-500/20 border-slate-500/30 text-slate-400', category: 'physique' },
   
   // Performance Goals
   { id: 'strength', title: 'Increase Strength', description: 'Maximize powerlifting and compound lifts', icon: '🏋️', color: 'bg-red-600/20 border-red-600/30 text-red-300', category: 'performance' },
   { id: 'endurance', title: 'Build Endurance', description: 'Improve cardiovascular and muscular endurance', icon: '🏃', color: 'bg-blue-600/20 border-blue-600/30 text-blue-300', category: 'performance' },
-  { id: 'athletic', title: 'Athletic Performance', description: 'Sport-specific training and conditioning', icon: '🏆', color: 'bg-gold/20 border-gold/30 text-yellow-300', category: 'performance' },
+  { id: 'athletic', title: 'Athletic Performance', description: 'Sport-specific training and conditioning', icon: '🏆', color: 'bg-yellow-600/20 border-yellow-600/30 text-yellow-300', category: 'performance' },
   { id: 'power', title: 'Explosive Power', description: 'Develop speed, agility, and explosive movement', icon: '⚡', color: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400', category: 'performance' },
   { id: 'flexibility', title: 'Mobility & Flexibility', description: 'Improve range of motion and movement quality', icon: '🤸', color: 'bg-teal-500/20 border-teal-500/30 text-teal-400', category: 'performance' },
+  { id: 'speed', title: 'Increase Speed', description: 'Get faster for sports and daily activities', icon: '💨', color: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400', category: 'performance' },
   
   // Health Goals
   { id: 'general_health', title: 'General Health', description: 'Overall wellness and disease prevention', icon: '❤️', color: 'bg-pink-500/20 border-pink-500/30 text-pink-400', category: 'health' },
   { id: 'rehab', title: 'Injury Rehabilitation', description: 'Recover from injury and prevent re-injury', icon: '🩹', color: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400', category: 'health' },
   { id: 'posture', title: 'Fix Posture', description: 'Correct postural imbalances and alignment', icon: '🧘', color: 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400', category: 'health' },
   { id: 'longevity', title: 'Longevity Training', description: 'Age gracefully with functional fitness', icon: '🌟', color: 'bg-violet-500/20 border-violet-500/30 text-violet-400', category: 'health' },
+  { id: 'pain_relief', title: 'Pain Management', description: 'Reduce chronic pain through movement', icon: '🌿', color: 'bg-green-600/20 border-green-600/30 text-green-300', category: 'health' },
   
   // Lifestyle Goals
   { id: 'stress_relief', title: 'Stress Management', description: 'Use fitness to reduce stress and anxiety', icon: '🧘‍♂️', color: 'bg-sky-500/20 border-sky-500/30 text-sky-400', category: 'lifestyle' },
@@ -61,7 +64,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const [formData, setFormData] = useState({
     // Personal Info
     age: '',
-    gender: '',
     height: '',
     weight: '',
     
@@ -80,7 +82,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   });
 
   const { updateUserData } = useUserData();
-  const { updatePreferences } = usePreferences();
+  const { updatePreference } = usePreferences();
 
   const totalSteps = 5;
 
@@ -107,25 +109,21 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
 
   const handleComplete = async () => {
     try {
-      // Update user data
+      // Update user data (removing gender as it's not in the UserData type)
       await updateUserData({
         age: parseInt(formData.age),
-        gender: formData.gender,
         height: parseFloat(formData.height),
         weight: parseFloat(formData.weight),
         experience: formData.experience,
         activity: formData.activity,
         goal: formData.goals.join(', '),
         injuries: formData.injuries,
-        preferences: formData.preferences,
-        onboardingCompleted: true
+        training_preferences: formData.preferences
       });
 
       // Update preferences
-      await updatePreferences({
-        weight_unit: formData.weightUnit,
-        height_unit: formData.heightUnit
-      });
+      await updatePreference('weight_unit', formData.weightUnit);
+      await updatePreference('height_unit', formData.heightUnit);
 
       onComplete();
     } catch (error) {
@@ -136,7 +134,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.age && formData.gender && formData.height && formData.weight;
+        return formData.age && formData.height && formData.weight;
       case 2:
         return formData.experience && formData.activity;
       case 3:
@@ -202,31 +200,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
               {/* Step 1: Personal Information */}
               {currentStep === 1 && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="age" className="text-white">Age</Label>
-                      <Input
-                        id="age"
-                        type="number"
-                        placeholder="25"
-                        value={formData.age}
-                        onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-                        className="bg-gray-800 border-gray-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="gender" className="text-white">Gender</Label>
-                      <Select value={formData.gender} onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div>
+                    <Label htmlFor="age" className="text-white">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      placeholder="25"
+                      value={formData.age}
+                      onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">

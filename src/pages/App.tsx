@@ -10,14 +10,14 @@ import { PageTransition } from "@/components/ui/page-transition";
 
 const AppPage = () => {
   const { user } = useAuth();
-  const { userData, loading } = useUserData();
+  const { userData, isLoading } = useUserData();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    if (user && !loading) {
-      // Check if user needs onboarding
-      if (!userData.onboardingCompleted) {
+    if (user && !isLoading) {
+      // Check if user needs onboarding - if they don't have basic info
+      if (!userData.age || !userData.weight || !userData.height) {
         setShowOnboarding(true);
       }
       
@@ -28,15 +28,19 @@ const AppPage = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [user, userData, loading]);
+  }, [user, userData, isLoading]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
   };
 
+  const handlePreloaderComplete = () => {
+    setIsInitializing(false);
+  };
+
   // Show preloader while initializing
-  if (loading || isInitializing) {
-    return <AppPreloader />;
+  if (isLoading || isInitializing) {
+    return <AppPreloader onComplete={handlePreloaderComplete} />;
   }
 
   // Show onboarding if user hasn't completed it

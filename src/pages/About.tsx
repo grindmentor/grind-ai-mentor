@@ -53,6 +53,19 @@ const About = () => {
         </p>
       </section>
 
+      {/* Transparency Statement */}
+      <section className="container mx-auto px-6 py-8">
+        <div className="bg-blue-900/20 border border-blue-600/30 rounded-2xl p-6 mb-16 backdrop-blur-sm">
+          <div className="flex items-center mb-4">
+            <Shield className="w-6 h-6 text-blue-400 mr-3" />
+            <h2 className="text-xl font-bold text-blue-400">Our Commitment to Transparency</h2>
+          </div>
+          <p className="text-gray-300 leading-relaxed">
+            <strong>We do not lie.</strong> Our AI can make mistakes, as all AI systems can. However, we have carefully prompted and trained it to use the best available information based on scientific research. We are transparent about our capabilities and limitations. We do not claim to have teams of PhD researchers or other credentials we don't possess. Our strength lies in our commitment to evidence-based recommendations and our honest approach to fitness guidance.
+          </p>
+        </div>
+      </section>
+
       {/* Trust Indicators */}
       <section className="container mx-auto px-6 py-16">
         <div className="grid md:grid-cols-4 gap-6 mb-16">
@@ -122,9 +135,9 @@ const About = () => {
             </div>
           </div>
           <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
-            <h4 className="text-xl font-bold mb-4">Fun Fact!</h4>
+            <h4 className="text-xl font-bold mb-4">Our Approach</h4>
             <p className="text-gray-300 mb-4">
-              Our AI has processed over 500 peer-reviewed studies on muscle protein synthesis, allowing it to optimize your nutrition timing down to the hour!
+              Our AI has been trained on hundreds of peer-reviewed studies covering exercise physiology, nutrition science, and behavioral psychology, allowing it to provide evidence-based recommendations tailored to your goals.
             </p>
             <Badge className="bg-orange-500/20 text-orange-400">
               Research-Powered

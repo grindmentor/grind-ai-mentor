@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,12 +81,14 @@ const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     const lowerInput = userInput.toLowerCase();
     
     if (lowerInput.includes('workout plan') || lowerInput.includes('training program') || 
-        lowerInput.includes('exercise routine') || lowerInput.includes('workout routine')) {
+        lowerInput.includes('exercise routine') || lowerInput.includes('workout routine') ||
+        lowerInput.includes('create workout') || lowerInput.includes('design workout')) {
       return "I'd love to help with workout planning! However, for creating comprehensive training programs, I recommend using our **Smart Training** module. It's specifically designed to generate science-backed workout programs based on your goals, experience level, and available equipment. You can find it in your dashboard. Is there anything else about your current training or progress I can help you analyze instead?";
     }
     
     if (lowerInput.includes('meal plan') || lowerInput.includes('diet plan') || 
-        lowerInput.includes('nutrition plan') || lowerInput.includes('eating plan')) {
+        lowerInput.includes('nutrition plan') || lowerInput.includes('eating plan') ||
+        lowerInput.includes('create meal') || lowerInput.includes('design meal')) {
       return "For creating detailed meal plans, our **MealPlan AI** module is perfect for that! It generates personalized nutrition plans based on your dietary preferences, goals, and restrictions. You can access it from your dashboard. I'm here to help analyze your current nutrition habits or answer specific questions about your fitness journey. What would you like to know?";
     }
     
@@ -145,7 +146,7 @@ ${conversationHistory}
 ## Current User Message
 ${inputMessage}
 
-**Instructions**: You are an expert fitness coach with access to the user's complete fitness journey data. Provide personalized, science-based coaching that references their specific data when relevant. Use recent 2024 research and studies to support your recommendations. Be encouraging, specific, and actionable. Always maintain context from previous conversations and their tracked data.
+**Instructions**: You are an expert fitness coach with access to the user's complete fitness journey data. Provide personalized, science-based coaching that references their specific data when relevant. Use recent research and studies to support your recommendations when possible. Be encouraging, specific, and actionable. Always maintain context from previous conversations and their tracked data.
 
 **IMPORTANT BOUNDARIES**: 
 - Do NOT create workout plans or training programs - redirect users to Smart Training module
@@ -153,7 +154,7 @@ ${inputMessage}
 - Focus on coaching advice, progress analysis, motivation, and answering specific fitness questions
 
 Focus areas:
-- Evidence-based fitness coaching advice (cite 2024 studies when relevant)
+- Evidence-based fitness coaching advice (cite studies when relevant)
 - Progress analysis using their tracked workouts and nutrition
 - Goal-specific recommendations and adjustments
 - Motivation and accountability
@@ -174,14 +175,14 @@ Respond in a professional, encouraging tone that shows you understand their comp
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.response,
+        content: data.response || 'I apologize, but I encountered an issue generating a response. Please try again.',
         timestamp: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
       
       // Save assistant message
-      await saveMessage('assistant', data.response);
+      await saveMessage('assistant', assistantMessage.content);
 
     } catch (error) {
       console.error('Error sending message:', error);

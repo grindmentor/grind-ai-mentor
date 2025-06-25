@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,8 +36,7 @@ const TDEECalculator: React.FC<TDEECalculatorProps> = ({ onBack }) => {
     height: '',
     weight: '',
     activityLevel: '',
-    bodyFat: '',
-    goal: 'maintain'
+    bodyFat: ''
   });
   
   const [results, setResults] = useState<TDEEResult | null>(null);
@@ -151,8 +149,8 @@ Calculations:
 
 Calorie Goals:
 - Maintain Weight: ${results.maintain} calories
-- Weight Loss (Cut): ${results.cut} calories (-500 cal deficit)
-- Weight Gain (Bulk): ${results.bulk} calories (+300 cal surplus)
+- Cut (Weight Loss): ${results.cut} calories (-500 cal deficit)
+- Bulk (Weight Gain): ${results.bulk} calories (+300 cal surplus)
 
 ${results.ffmi ? `Additional Metrics:
 - FFMI (Fat-Free Mass Index): ${results.ffmi}
@@ -368,7 +366,7 @@ Generated on: ${new Date().toLocaleDateString()}
                       </div>
                     </div>
 
-                    {/* Goal-based Calories */}
+                    {/* Goal-based Calories - Only 3 options */}
                     <div className="space-y-4">
                       <h3 className="text-white font-semibold text-lg">Calorie Goals</h3>
                       <div className="space-y-3">
@@ -385,7 +383,7 @@ Generated on: ${new Date().toLocaleDateString()}
                         
                         <div className="flex justify-between items-center p-4 bg-orange-800/20 backdrop-blur-sm rounded-xl border border-orange-600/30">
                           <div>
-                            <h4 className="text-white font-medium">Cut (Weight Loss)</h4>
+                            <h4 className="text-white font-medium">Cut</h4>
                             <p className="text-orange-200 text-sm">500 cal deficit</p>
                           </div>
                           <div className="text-right">
@@ -396,7 +394,7 @@ Generated on: ${new Date().toLocaleDateString()}
                         
                         <div className="flex justify-between items-center p-4 bg-orange-800/20 backdrop-blur-sm rounded-xl border border-orange-600/30">
                           <div>
-                            <h4 className="text-white font-medium">Bulk (Weight Gain)</h4>
+                            <h4 className="text-white font-medium">Bulk</h4>
                             <p className="text-orange-200 text-sm">300 cal surplus</p>
                           </div>
                           <div className="text-right">

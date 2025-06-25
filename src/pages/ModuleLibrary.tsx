@@ -52,13 +52,16 @@ const ModuleLibrary = () => {
     }
   };
 
-  const toggleFavorite = async (moduleId: string) => {
+  const toggleFavorite = async (moduleId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent module selection when clicking star
     if (!user) return;
 
-    const newFavorites = favorites.includes(moduleId)
+    const isFavorited = favorites.includes(moduleId);
+    const newFavorites = isFavorited
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
 
+    // Update local state immediately for instant feedback
     setFavorites(newFavorites);
     playSuccessSound();
 
@@ -73,12 +76,18 @@ const ModuleLibrary = () => {
       if (error) throw error;
 
       toast({
-        title: favorites.includes(moduleId) ? "Removed from favorites" : "Added to favorites",
-        description: `Module ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your dashboard`,
+        title: isFavorited ? "Removed from favorites" : "Added to favorites",
+        description: `Module ${isFavorited ? 'removed from' : 'added to'} your dashboard`,
       });
     } catch (error) {
       console.error('Error updating favorites:', error);
-      setFavorites(favorites); // Revert on error
+      // Revert local state on error
+      setFavorites(favorites);
+      toast({
+        title: "Error updating favorites",
+        description: "Please try again",
+        variant: "destructive"
+      });
     }
   };
 
@@ -110,7 +119,7 @@ const ModuleLibrary = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-black text-white p-4 md:p-6 lg:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white p-4 md:p-6 lg:p-8 animate-fade-in">
         <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           {/* Header */}
           <div className="flex items-center space-x-4 mb-8">
@@ -123,69 +132,96 @@ const ModuleLibrary = () => {
                 <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white">Module Library</h1>
-                <p className="text-gray-400 text-sm md:text-base">Discover AI modules</p>
+                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                  Module Library
+                </h1>
+                <p className="text-sm md:text-base text-gray-400">Discover all available fitness modules</p>
               </div>
             </div>
           </div>
 
-          {/* Modules Grid - Improved mobile layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+          {/* Modules Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {modules.map((module) => {
-              const IconComponent = module.icon;
               const isFavorited = favorites.includes(module.id);
-
+              
               return (
                 <Card 
-                  key={module.id}
-                  className={`bg-gradient-to-br ${module.gradient} border-0 text-white cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/20 group relative min-h-[140px] md:min-h-[160px]`}
+                  key={module.id} 
+                  className="bg-gray-900/30 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 cursor-pointer group hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/20"
+                  onClick={() => handleModuleSelect(module.id)}
                 >
-                  {/* Star Favorite Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(module.id);
-                    }}
-                    className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/20 hover:bg-black/40 transition-all duration-200"
-                  >
-                    <Star
-                      className={`w-4 h-4 md:w-5 md:h-5 transition-all duration-200 ${
-                        isFavorited ? 'text-yellow-400 fill-yellow-400' : 'text-white/60 hover:text-yellow-400'
-                      }`}
-                    />
-                  </button>
-
-                  <div onClick={() => handleModuleSelect(module.id)} className="h-full">
-                    <CardHeader className="pb-2 md:pb-3">
-                      <div className="flex items-start justify-between pr-8">
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 group-hover:bg-white/30 group-hover:scale-110">
-                          <IconComponent className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                        </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          {module.isNew && (
-                            <Badge className="bg-white/20 text-white text-xs animate-pulse">New</Badge>
-                          )}
-                          {module.isPremium && (
-                            <Badge className="bg-yellow-500/20 text-yellow-300 text-xs border-yellow-500/30">
-                              <Crown className="w-3 h-3 mr-1" />
-                              Pro
-                            </Badge>
-                          )}
-                        </div>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center ${module.gradient} shadow-lg backdrop-blur-sm border border-white/10`}>
+                        <module.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
                       </div>
-                      <CardTitle className="text-white text-base md:text-lg leading-tight transition-all duration-300 group-hover:text-orange-100">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={(e) => toggleFavorite(module.id, e)}
+                          className={`p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
+                            isFavorited 
+                              ? 'text-yellow-400 hover:text-yellow-300' 
+                              : 'text-gray-500 hover:text-yellow-400'
+                          }`}
+                        >
+                          <Star 
+                            className={`w-4 h-4 md:w-5 md:h-5 ${
+                              isFavorited ? 'fill-current' : ''
+                            }`} 
+                          />
+                        </button>
+                        {module.isPremium && (
+                          <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-2 py-1">
+                            <Crown className="w-3 h-3 mr-1" />
+                            PRO
+                          </Badge>
+                        )}
+                        {module.isNew && (
+                          <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-2 py-1">
+                            NEW
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <CardTitle className="text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors">
                         {module.title}
                       </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <CardDescription className="text-white/80 text-sm leading-relaxed line-clamp-2 md:line-clamp-3">
+                      <CardDescription className="text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors">
                         {module.description}
                       </CardDescription>
-                    </CardContent>
-                  </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                        {module.usageKey.replace(/_/g, ' ')}
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-400 flex items-center justify-center">
+                          <ArrowLeft className="w-3 h-3 rotate-180 text-gray-400" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
               );
             })}
+          </div>
+
+          {/* Info Section */}
+          <div className="mt-12 text-center">
+            <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-4">
+                🔬 Science-Backed Modules
+              </h2>
+              <p className="text-gray-400 max-w-3xl mx-auto leading-relaxed">
+                Each module is built on peer-reviewed research and evidence-based methodologies. 
+                Our AI provides recommendations grounded in exercise science, nutrition research, 
+                and behavioral psychology. Click the star to add modules to your dashboard favorites.
+              </p>
+            </div>
           </div>
         </div>
       </div>

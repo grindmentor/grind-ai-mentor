@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
@@ -70,7 +69,7 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, isMobile]);
 
-  // App initialization with performance tracking
+  // Faster app initialization for mobile
   useEffect(() => {
     const initializeApp = async () => {
       const startTime = performance.now();
@@ -155,14 +154,15 @@ const App = () => {
     }
   }, [performanceMetrics]);
 
+  // Faster loading completion
   if (loading || showPreloader || !appReady) {
     return showPreloader ? (
-      <AppPreloader onComplete={handlePreloaderComplete} />
+      <AppPreloader onComplete={handlePreloaderComplete} minDuration={400} />
     ) : (
       <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
         <PremiumLoader 
-          variant="detailed"
-          showMetrics={true}
+          variant="minimal"
+          showMetrics={false}
           progress={appReady ? 100 : 75}
         />
       </div>
@@ -321,9 +321,9 @@ const App = () => {
             <Suspense fallback={
               <div className="flex items-center justify-center min-h-screen">
                 <PremiumLoader 
-                  variant="detailed"
-                  message="Loading your personalized dashboard..."
-                  showMetrics={true}
+                  variant="minimal"
+                  message="Loading dashboard..."
+                  showMetrics={false}
                 />
               </div>
             }>

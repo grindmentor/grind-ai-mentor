@@ -9,7 +9,7 @@ interface AppPreloaderProps {
 
 const AppPreloader: React.FC<AppPreloaderProps> = ({ 
   onComplete, 
-  minDuration = 1000 
+  minDuration = 500 // Reduced from 1000ms
 }) => {
   const [progress, setProgress] = useState(0);
 
@@ -20,22 +20,29 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
     return isIOS && isStandalone;
   };
 
+  // Mobile detection
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
   useEffect(() => {
-    // Longer duration for iOS PWA to ensure proper initialization
-    const adjustedDuration = isIOSPWA() ? minDuration * 1.5 : minDuration;
+    // Much shorter duration for mobile devices
+    const baseDuration = isMobile() ? 400 : minDuration;
+    const adjustedDuration = isIOSPWA() ? baseDuration * 1.2 : baseDuration;
     
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          // Add delay for iOS PWA to ensure everything is ready
-          const completionDelay = isIOSPWA() ? 500 : 200;
+          // Minimal delay for completion
+          const completionDelay = isMobile() ? 100 : 200;
           setTimeout(onComplete, completionDelay);
           return 100;
         }
-        return prev + (isIOSPWA() ? 15 : 20); // Slower progress for iOS PWA
+        // Faster progress increments for mobile
+        return prev + (isMobile() ? 25 : 20);
       });
-    }, adjustedDuration / (isIOSPWA() ? 7 : 5));
+    }, adjustedDuration / (isMobile() ? 4 : 5));
 
     return () => clearInterval(interval);
   }, [minDuration, onComplete]);
@@ -54,14 +61,14 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
         {/* Progress Bar */}
         <div className="w-64 bg-gray-800 rounded-full h-2">
           <div 
-            className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full transition-all duration-300 ease-out"
+            className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full transition-all duration-200 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
         {/* Loading Text */}
         <p className="text-gray-400 text-sm">
-          {isIOSPWA() ? 'Optimizing for iOS...' : 'Initializing your AI fitness coach...'}
+          {isMobile() ? 'Optimizing for mobile...' : 'Initializing your AI fitness coach...'}
         </p>
       </div>
     </div>

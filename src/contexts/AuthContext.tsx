@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +38,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [canResendEmail, setCanResendEmail] = useState(true);
   const [authPending, setAuthPending] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+
+  // Mobile detection
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
 
   // iOS PWA detection
   const isIOSPWA = () => {
@@ -119,11 +123,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           checkOnboardingStatus(session.user.id);
         }
         
-        // Set loading to false after initialization
+        // Much faster loading completion for mobile
         if (mounted) {
+          const loadingDelay = isMobile() ? 200 : (isIOSPWA() ? 500 : 100);
           setTimeout(() => {
             setLoading(false);
-          }, isIOSPWA() ? 1000 : 100);
+          }, loadingDelay);
         }
         
         return () => {
@@ -209,8 +214,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Sign in error:', error);
       } else {
         console.log('Sign in successful');
-        if (isIOSPWA()) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+        // Faster completion for mobile
+        if (isMobile()) {
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
       

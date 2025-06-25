@@ -1,15 +1,20 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calculator } from "lucide-react";
+import { Calculator, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 
-const TDEECalculator = () => {
+interface TDEECalculatorProps {
+  onBack: () => void;
+}
+
+const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   const { user } = useAuth();
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [age, setAge] = useState<number | null>(null);
@@ -130,10 +135,21 @@ const TDEECalculator = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h2 className="text-3xl font-bold text-white">TDEE Calculator</h2>
-        <p className="text-muted-foreground">Calculate your Total Daily Energy Expenditure (TDEE)</p>
+    <div className="max-w-4xl mx-auto space-y-6 p-4">
+      <div className="flex items-center space-x-4">
+        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+            <Calculator className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">TDEE Calculator</h1>
+            <p className="text-gray-400">Calculate your Total Daily Energy Expenditure</p>
+          </div>
+        </div>
       </div>
 
       <Card className="bg-card border-border">

@@ -773,7 +773,7 @@ export type Database = {
     }
     Functions: {
       calculate_age: {
-        Args: { birthday: string }
+        Args: { birthdate: string }
         Returns: number
       }
       cleanup_expired_password_resets: {

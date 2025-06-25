@@ -4,37 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Zap, Check } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const UpgradeSection = () => {
   const { currentTier, isSubscribed } = useSubscription();
-  const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
 
-  const handleUpgrade = async (tier: 'basic' | 'premium') => {
-    setIsProcessing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: { tier }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast({
-        title: "Payment Error",
-        description: "Unable to process payment. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleUpgrade = () => {
+    navigate('/pricing');
   };
 
   if (isSubscribed) {
@@ -50,11 +27,10 @@ const UpgradeSection = () => {
       color: "bg-blue-600",
       hoverColor: "hover:bg-blue-700",
       features: [
-        "Increased usage limits",
+        "Higher usage limits",
         "Priority support",
         "Advanced AI features"
-      ],
-      tier: 'basic' as const
+      ]
     },
     {
       name: "Premium",
@@ -64,12 +40,11 @@ const UpgradeSection = () => {
       color: "bg-gradient-to-r from-orange-500 to-red-600",
       hoverColor: "hover:from-orange-600 hover:to-red-700",
       features: [
-        "Unlimited usage",
+        "Highest usage limits",
         "Premium AI models",
         "Custom meal plans",
         "Advanced analytics"
       ],
-      tier: 'premium' as const,
       popular: true
     }
   ];
@@ -111,12 +86,11 @@ const UpgradeSection = () => {
                   ))}
                 </ul>
                 <Button
-                  onClick={() => handleUpgrade(plan.tier)}
-                  disabled={isProcessing}
+                  onClick={handleUpgrade}
                   className={`w-full ${plan.color} ${plan.hoverColor} text-white text-sm`}
                 >
                   <IconComponent className="w-4 h-4 mr-2" />
-                  {isProcessing ? 'Processing...' : `Get ${plan.name}`}
+                  View Plans
                 </Button>
               </CardContent>
             </Card>

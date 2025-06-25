@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, X, Send, CheckCircle } from "lucide-react";
+import { Upload, X, Send } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SupportFormData {
   name: string;
@@ -27,6 +28,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<SupportFormData>>({});
+  const { toast } = useToast();
 
   const validateForm = (): boolean => {
     const newErrors: Partial<SupportFormData> = {};
@@ -89,6 +91,11 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     e.preventDefault();
     
     if (!validateForm()) {
+      toast({
+        title: "Validation Error",
+        description: "Please check all required fields.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -127,10 +134,20 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       setFormData({ name: '', email: '', subject: '', message: '' });
       setUploadedFiles([]);
       setErrors({});
+      
+      toast({
+        title: "Request Submitted",
+        description: "Your request has been received. Please allow up to 7 days for a reply.",
+      });
+      
       onSuccess();
     } catch (error) {
       console.error('Error submitting support request:', error);
-      alert('There was an error submitting your request. Please try again.');
+      toast({
+        title: "Submission Error",
+        description: "There was an error submitting your request. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +169,11 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     // Validate file size (max 10MB)
     const validFiles = files.filter(file => {
       if (file.size > 10 * 1024 * 1024) {
-        alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+        toast({
+          title: "File Too Large",
+          description: `File ${file.name} is too large. Maximum size is 10MB.`,
+          variant: "destructive",
+        });
         return false;
       }
       return true;

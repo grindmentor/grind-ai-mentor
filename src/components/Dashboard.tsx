@@ -11,6 +11,7 @@ import { ArrowLeft, Star, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserData } from "@/contexts/UserDataContext";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const { currentTier, isSubscribed } = useSubscription();
   const { refreshUserData } = useUserData();
+  const navigate = useNavigate();
 
   const handleModuleClick = (moduleId: string) => {
     setActiveModule(moduleId);
@@ -28,8 +30,8 @@ const Dashboard = () => {
     setSelectedPlan(null);
   };
 
-  const handleUpgrade = (planName: string, price: number) => {
-    setSelectedPlan({ name: planName, price: price });
+  const handleUpgrade = () => {
+    navigate('/pricing');
   };
 
   const handlePaymentSuccess = () => {
@@ -101,24 +103,16 @@ const Dashboard = () => {
                           Popular
                         </Badge>
                       </div>
-                      <p className="text-gray-400 text-xs sm:text-sm">Unlimited AI queries & meal plans</p>
+                      <p className="text-gray-400 text-xs sm:text-sm">Higher usage limits & meal plans</p>
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                     <Button 
-                      onClick={() => handleUpgrade('Basic', 10)}
-                      variant="outline"
-                      size="sm"
-                      className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 w-full sm:w-auto text-xs sm:text-sm"
-                    >
-                      Basic $10/mo
-                    </Button>
-                    <Button 
-                      onClick={() => handleUpgrade('Premium', 15)}
+                      onClick={handleUpgrade}
                       size="sm"
                       className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto text-xs sm:text-sm"
                     >
-                      Premium $15/mo
+                      View Plans
                     </Button>
                   </div>
                 </div>

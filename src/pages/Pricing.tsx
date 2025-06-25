@@ -69,14 +69,20 @@ const Pricing = () => {
             <Button
               variant={billingPeriod === 'monthly' ? 'default' : 'ghost'}
               onClick={() => setBillingPeriod('monthly')}
-              className="text-white"
+              className={billingPeriod === 'monthly' 
+                ? "bg-white text-black hover:bg-gray-200" 
+                : "text-gray-300 hover:text-white hover:bg-gray-800"
+              }
             >
               Monthly
             </Button>
             <Button
               variant={billingPeriod === 'annual' ? 'default' : 'ghost'}
               onClick={() => setBillingPeriod('annual')}
-              className="text-white relative"
+              className={`relative ${billingPeriod === 'annual' 
+                ? "bg-white text-black hover:bg-gray-200" 
+                : "text-gray-300 hover:text-white hover:bg-gray-800"
+              }`}
             >
               Annual
               {billingPeriod === 'annual' && (
@@ -93,7 +99,7 @@ const Pricing = () => {
             </Badge>
             {billingPeriod === 'annual' && (
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                Annual plans: ~2 months free
+                Annual plans: Save 17% compared to monthly
               </Badge>
             )}
           </div>

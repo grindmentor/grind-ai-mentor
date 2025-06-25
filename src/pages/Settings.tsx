@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/contexts/UserDataContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BasicInformation from "@/components/settings/BasicInformation";
@@ -20,6 +21,7 @@ const Settings = () => {
   const { userData, refreshUserData } = useUserData();
   const { preferences } = usePreferences();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Local state for form data
   const [profile, setProfile] = useState({

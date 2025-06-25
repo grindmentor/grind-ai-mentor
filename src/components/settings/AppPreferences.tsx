@@ -21,12 +21,12 @@ const AppPreferences = () => {
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white font-medium">Sound Effects</p>
-            <p className="text-sm text-gray-400">Play sound effects for interactions</p>
+            <p className="text-white font-medium">Email Updates</p>
+            <p className="text-sm text-gray-400">Receive email notifications and updates</p>
           </div>
           <Switch
-            checked={preferences.sound_enabled}
-            onCheckedChange={(checked) => updatePreference('sound_enabled', checked)}
+            checked={preferences.email_updates}
+            onCheckedChange={(checked) => updatePreference('email_updates', checked)}
           />
         </div>
 
@@ -36,8 +36,8 @@ const AppPreferences = () => {
             <p className="text-sm text-gray-400">Receive daily workout reminders</p>
           </div>
           <Switch
-            checked={preferences.notifications_enabled}
-            onCheckedChange={(checked) => updatePreference('notifications_enabled', checked)}
+            checked={preferences.notifications}
+            onCheckedChange={(checked) => updatePreference('notifications', checked)}
           />
         </div>
       </CardContent>

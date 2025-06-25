@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Moon, ArrowLeft, Download, MessageCircle } from "lucide-react";
+import { Moon, ArrowLeft, Download, MessageCircle, Sparkles, Brain, Heart, Zap } from "lucide-react";
 import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
@@ -22,10 +22,26 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
   const { toast } = useToast();
 
   const examplePrompts = [
-    "I sleep 5-6 hours per night and feel constantly tired, help optimize my recovery",
-    "High stress levels affecting my workouts, need recovery and stress management plan",
-    "Sore muscles after workouts, what's the best recovery protocol?",
-    "How to optimize sleep and recovery for shift work schedule?"
+    {
+      icon: <Moon className="w-4 h-4" />,
+      title: "Sleep Optimization",
+      prompt: "I sleep 5-6 hours per night and feel constantly tired, help optimize my recovery"
+    },
+    {
+      icon: <Brain className="w-4 h-4" />,
+      title: "Stress Management",
+      prompt: "High stress levels affecting my workouts, need recovery and stress management plan"
+    },
+    {
+      icon: <Heart className="w-4 h-4" />,
+      title: "Muscle Recovery",
+      prompt: "Sore muscles after workouts, what's the best recovery protocol?"
+    },
+    {
+      icon: <Zap className="w-4 h-4" />,
+      title: "Shift Work Recovery",
+      prompt: "How to optimize sleep and recovery for shift work schedule?"
+    }
   ];
 
   const handleExampleClick = (prompt: string) => {
@@ -52,7 +68,6 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
       if (error) throw error;
       setResponse(data.response);
       
-      // Show success toast
       toast({
         title: "Recovery Plan Generated!",
         description: "Your personalized recovery protocol is ready with research citations.",
@@ -61,7 +76,6 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
       console.error('Error getting recovery advice:', error);
       setResponse('Sorry, there was an error generating your recovery plan. Please try again.');
       
-      // Show error toast
       toast({
         title: "Error generating recovery plan",
         description: "Please try again in a moment.",
@@ -81,7 +95,6 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
     element.click();
     document.body.removeChild(element);
     
-    // Show download toast
     toast({
       title: "Recovery Plan Downloaded!",
       description: "Your plan has been saved to your device.",
@@ -89,114 +102,167 @@ const RecoveryCoach = ({ onBack }: RecoveryCoachProps) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
-            <Moon className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white">Recovery Coach</h1>
-            <p className="text-gray-400">Science-backed recovery and sleep optimization</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-4">
-        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-          All recovery protocols based on sleep science and recovery research
-        </Badge>
-        <UsageIndicator featureKey="coach_gpt_queries" featureName="Recovery Sessions" compact />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="bg-gray-900 border-gray-800">
-          <CardHeader>
-            <CardTitle className="text-white">Get Recovery Guidance</CardTitle>
-            <CardDescription className="text-gray-400">
-              Describe your recovery challenges, sleep patterns, and stress levels
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <h4 className="text-white font-medium flex items-center">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Example Recovery Questions
-              </h4>
-              <div className="grid grid-cols-1 gap-2">
-                {examplePrompts.map((prompt, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleExampleClick(prompt)}
-                    className="text-left p-3 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
-                  >
-                    "{prompt}"
-                  </button>
-                ))}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-black to-blue-900">
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                onClick={onBack} 
+                className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Dashboard
+              </Button>
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                  <Moon className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent">
+                    Recovery Coach
+                  </h1>
+                  <p className="text-slate-400 text-lg">Science-backed recovery and sleep optimization</p>
+                </div>
               </div>
             </div>
+            
+            <UsageIndicator featureKey="coach_gpt_queries" featureName="Recovery Sessions" compact />
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Textarea
-                placeholder="Tell me about your sleep quality, recovery challenges, stress levels, training intensity..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="bg-gray-800 border-gray-700 text-white min-h-32"
-                disabled={!canUseFeature('coach_gpt_queries')}
-              />
-              <Button 
-                type="submit" 
-                disabled={!input.trim() || isLoading || !canUseFeature('coach_gpt_queries')}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-              >
-                <Moon className="w-4 h-4 mr-2" />
-                {isLoading ? "Analyzing Recovery..." : "Get Recovery Plan"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+          {/* Status Badge */}
+          <div className="flex justify-center">
+            <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 px-4 py-2 text-sm">
+              <Sparkles className="w-4 h-4 mr-2" />
+              All recovery protocols based on sleep science and recovery research
+            </Badge>
+          </div>
 
-        <Card className="bg-gray-900 border-gray-800">
-          <CardHeader>
-            <CardTitle className="text-white">Your Recovery Protocol</CardTitle>
-            <CardDescription className="text-gray-400">
-              Evidence-based recovery strategies with research citations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {response ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    Recovery Plan Ready
-                  </Badge>
+          {/* Main Content */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Input Panel */}
+            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white text-xl flex items-center">
+                  <MessageCircle className="w-5 h-5 mr-3 text-indigo-400" />
+                  Get Recovery Guidance
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Describe your recovery challenges, sleep patterns, and stress levels
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Example Prompts */}
+                <div className="space-y-4">
+                  <h4 className="text-white font-medium flex items-center">
+                    <Brain className="w-4 h-4 mr-2 text-indigo-400" />
+                    Recovery Focus Areas
+                  </h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    {examplePrompts.map((example, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleExampleClick(example.prompt)}
+                        className="text-left p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-200 group"
+                      >
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                            {example.icon}
+                          </div>
+                          <span className="text-white font-medium">{example.title}</span>
+                        </div>
+                        <p className="text-slate-400 text-sm">"{example.prompt}"</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Input Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <Textarea
+                    placeholder="Tell me about your sleep quality, recovery challenges, stress levels, training intensity..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    className="bg-slate-800/50 border-slate-600 text-white min-h-32 focus:border-indigo-500 transition-colors resize-none"
+                    disabled={!canUseFeature('coach_gpt_queries')}
+                  />
                   <Button 
-                    onClick={handleDownload}
-                    variant="outline" 
-                    size="sm"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                    type="submit" 
+                    disabled={!input.trim() || isLoading || !canUseFeature('coach_gpt_queries')}
+                    className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/25"
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Analyzing Recovery...
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="w-4 h-4 mr-2" />
+                        Get Recovery Plan
+                      </>
+                    )}
                   </Button>
-                </div>
-                <div className="text-gray-300 space-y-4 max-h-96 overflow-y-auto">
-                  <pre className="whitespace-pre-wrap text-sm">{response}</pre>
-                </div>
-              </div>
-            ) : (
-              <div className="text-gray-500 text-center py-8">
-                <Moon className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <p>Enter your recovery concerns above to get your personalized plan</p>
-                <p className="text-sm mt-2">Science-backed sleep and recovery optimization</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Results Panel */}
+            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white text-xl flex items-center">
+                  <Sparkles className="w-5 h-5 mr-3 text-indigo-400" />
+                  Your Recovery Protocol
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Evidence-based recovery strategies with research citations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {response ? (
+                  <div className="space-y-6">
+                    {/* Action Button */}
+                    <div className="flex items-center justify-between">
+                      <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
+                        <Moon className="w-3 h-3 mr-1" />
+                        Recovery Plan Ready
+                      </Badge>
+                      <Button 
+                        onClick={handleDownload}
+                        variant="outline" 
+                        size="sm"
+                        className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:border-indigo-500"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Plan
+                      </Button>
+                    </div>
+
+                    {/* Response Content */}
+                    <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto">
+                      <pre className="whitespace-pre-wrap text-slate-300 text-sm leading-relaxed">{response}</pre>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Moon className="w-8 h-8 text-slate-500" />
+                    </div>
+                    <h3 className="text-white font-medium mb-2">Ready to Optimize Recovery</h3>
+                    <p className="text-slate-400 text-sm mb-2">
+                      Enter your recovery concerns to get your personalized plan
+                    </p>
+                    <p className="text-slate-500 text-xs">
+                      Science-backed sleep and recovery optimization
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

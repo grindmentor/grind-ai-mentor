@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Upload, Utensils, Zap, ArrowLeft } from "lucide-react";
+import { Camera, Upload, Utensils, Zap, ArrowLeft, Sparkles, Target, Clock, CheckCircle } from "lucide-react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { aiService } from "@/services/aiService";
@@ -134,147 +135,215 @@ Provide exact values using the most recent and accurate nutritional data availab
     return null;
   };
 
+  const features = [
+    {
+      icon: <Target className="w-4 h-4" />,
+      title: "2024 Databases",
+      description: "USDA Food Data Central, Matvaretabellen"
+    },
+    {
+      icon: <Sparkles className="w-4 h-4" />,
+      title: "Professional Accuracy",
+      description: "Evidence-based portion estimation"
+    },
+    {
+      icon: <CheckCircle className="w-4 h-4" />,
+      title: "Scientific Method",
+      description: "Cross-referenced nutritional data"
+    },
+    {
+      icon: <Clock className="w-4 h-4" />,
+      title: "Instant Analysis",
+      description: "Complete macro and micro breakdown"
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-black text-white p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header with Back Button */}
-        <div className="flex items-center space-x-4 mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={onBack} 
-            className="text-white hover:bg-gray-800 hover:text-orange-400 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-              <Camera className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Food Photo Analysis</h1>
-              <p className="text-gray-400">AI-powered nutrition analysis with 2024 scientific databases</p>
-            </div>
-          </div>
-        </div>
-
-        {!canUseFeature('food_photo_analyses') ? (
-          
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center space-x-2">
-                <Camera className="w-5 h-5" />
-                <span>Food Photo Analysis</span>
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Analyze food photos to automatically log nutritional information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Camera className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2">Food photo analysis limit reached</p>
-                <p className="text-gray-600 text-sm">Upgrade your plan to analyze more food photos</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center space-x-2">
-                <Camera className="w-5 h-5" />
-                <span>Food Photo Analysis</span>
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Take or upload a photo for professional nutritional analysis using 2024 databases
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-black to-emerald-900">
+      <div className="p-6">
+        <div className="max-w-5xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                onClick={onBack} 
+                className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Dashboard
+              </Button>
               <div className="flex items-center space-x-4">
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                  <Zap className="w-3 h-3 mr-1" />
-                  Latest 2024 Nutrition Databases
-                </Badge>
-                <UsageIndicator featureKey="food_photo_analyses" featureName="Food Photo Analysis" compact />
-              </div>
-
-              <div className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center hover:border-gray-600 transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="food-photo-upload"
-                />
-                <label htmlFor="food-photo-upload" className="cursor-pointer">
-                  <Camera className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                  <p className="text-white font-medium mb-1">Upload Food Photo</p>
-                  <p className="text-gray-400 text-sm">Professional analysis with latest nutrition databases</p>
-                </label>
-              </div>
-
-              {selectedFile && (
-                <div className="space-y-4">
-                  <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Utensils className="w-5 h-5 text-green-400" />
-                      <div>
-                        <p className="text-white font-medium">{selectedFile.name}</p>
-                        <p className="text-gray-400 text-sm">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Meal Type</label>
-                        <select
-                          value={mealType}
-                          onChange={(e) => setMealType(e.target.value as any)}
-                          className="w-full p-2 bg-gray-700 border border-gray-600 text-white rounded"
-                        >
-                          <option value="breakfast">Breakfast</option>
-                          <option value="lunch">Lunch</option>
-                          <option value="dinner">Dinner</option>
-                          <option value="snack">Snack</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Additional Context (optional)</label>
-                        <Input
-                          placeholder="e.g., homemade, restaurant meal, portion size, cooking method..."
-                          value={additionalNotes}
-                          onChange={(e) => setAdditionalNotes(e.target.value)}
-                          className="bg-gray-700 border-gray-600 text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleAnalyzeFood}
-                      disabled={isAnalyzing}
-                      className="w-full mt-4 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 disabled:opacity-50"
-                    >
-                      {isAnalyzing ? "🔍 Analyzing with 2024 Databases..." : "🔬 Professional Analysis & Log"}
-                    </Button>
-                  </div>
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25">
+                  <Camera className="w-8 h-8 text-white" />
                 </div>
-              )}
-
-              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                <h4 className="text-white font-medium mb-2">📸 Enhanced Analysis Features:</h4>
-                <ul className="text-gray-300 text-sm space-y-1">
-                  <li>• <strong>2024 Databases:</strong> USDA Food Data Central, Matvaretabellen</li>
-                  <li>• <strong>Professional Accuracy:</strong> Evidence-based portion estimation</li>
-                  <li>• <strong>Scientific Method:</strong> Cross-referenced nutritional data</li>
-                  <li>• <strong>Best Practice:</strong> Good lighting, top-down angle, include scale reference</li>
-                  <li>• <strong>Complete Analysis:</strong> Macros, micros, and dietary recommendations</li>
-                </ul>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+                    Food Photo Analysis
+                  </h1>
+                  <p className="text-slate-400 text-lg">AI-powered nutrition analysis with 2024 scientific databases</p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+            
+            <UsageIndicator featureKey="food_photo_analyses" featureName="Photo Analysis" compact />
+          </div>
+
+          {/* Status Badge */}
+          <div className="flex justify-center">
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm">
+              <Zap className="w-4 h-4 mr-2" />
+              Latest 2024 Nutrition Databases
+            </Badge>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {features.map((feature, index) => (
+              <Card key={index} className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+                <CardContent className="p-4 text-center">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <div className="text-green-400">
+                      {feature.icon}
+                    </div>
+                  </div>
+                  <h3 className="text-white font-medium text-sm mb-1">{feature.title}</h3>
+                  <p className="text-slate-400 text-xs">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {!canUseFeature('food_photo_analyses') ? (
+            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+              <CardContent className="text-center py-16">
+                <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Camera className="w-8 h-8 text-slate-500" />
+                </div>
+                <h3 className="text-white font-medium mb-2">Food Photo Analysis Limit Reached</h3>
+                <p className="text-slate-400 text-sm mb-4">Upgrade your plan to analyze more food photos</p>
+                <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+                  Upgrade Required
+                </Badge>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white text-xl flex items-center">
+                  <Camera className="w-5 h-5 mr-3 text-green-400" />
+                  Professional Food Analysis
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Take or upload a photo for professional nutritional analysis using 2024 databases
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Upload Area */}
+                <div className="border-2 border-dashed border-slate-600 hover:border-green-500/50 rounded-2xl p-8 text-center transition-all duration-200 bg-slate-800/30">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="food-photo-upload"
+                  />
+                  <label htmlFor="food-photo-upload" className="cursor-pointer">
+                    <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Camera className="w-8 h-8 text-green-400" />
+                    </div>
+                    <h3 className="text-white font-medium mb-2">Upload Food Photo</h3>
+                    <p className="text-slate-400 text-sm">Professional analysis with latest nutrition databases</p>
+                  </label>
+                </div>
+
+                {selectedFile && (
+                  <Card className="bg-slate-800/50 border-slate-700/50">
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                          <Utensils className="w-5 h-5 text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{selectedFile.name}</p>
+                          <p className="text-slate-400 text-sm">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">Meal Type</label>
+                          <select
+                            value={mealType}
+                            onChange={(e) => setMealType(e.target.value as any)}
+                            className="w-full p-3 bg-slate-700/50 border border-slate-600 text-white rounded-xl focus:border-green-500 transition-colors"
+                          >
+                            <option value="breakfast">🌅 Breakfast</option>
+                            <option value="lunch">☀️ Lunch</option>
+                            <option value="dinner">🌙 Dinner</option>
+                            <option value="snack">🥨 Snack</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">Additional Context</label>
+                          <Input
+                            placeholder="e.g., homemade, restaurant, portion size..."
+                            value={additionalNotes}
+                            onChange={(e) => setAdditionalNotes(e.target.value)}
+                            className="bg-slate-700/50 border-slate-600 text-white focus:border-green-500"
+                          />
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={handleAnalyzeFood}
+                        disabled={isAnalyzing}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            🔍 Analyzing with 2024 Databases...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            🔬 Professional Analysis & Log
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Tips */}
+                <Card className="bg-slate-800/30 border-slate-700/50">
+                  <CardContent className="p-4">
+                    <h4 className="text-white font-medium mb-3 flex items-center">
+                      <Target className="w-4 h-4 mr-2 text-green-400" />
+                      📸 Analysis Tips
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="text-slate-300">
+                        <span className="font-medium text-green-400">• Best Lighting:</span> Natural, overhead lighting
+                      </div>
+                      <div className="text-slate-300">
+                        <span className="font-medium text-green-400">• Angle:</span> Top-down view preferred
+                      </div>
+                      <div className="text-slate-300">
+                        <span className="font-medium text-green-400">• Reference:</span> Include utensils for scale
+                      </div>
+                      <div className="text-slate-300">
+                        <span className="font-medium text-green-400">• Quality:</span> Clear, focused images
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Dumbbell, Target, Zap, Heart, Users, Clock } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Target, Zap, Heart, Users, Clock, Sparkles, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserData } from '@/contexts/UserDataContext';
 import FormattedAIResponse from '../FormattedAIResponse';
@@ -16,6 +16,7 @@ interface ExerciseCategory {
   icon: React.ReactNode;
   description: string;
   examples: string[];
+  gradient: string;
 }
 
 const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
@@ -29,37 +30,43 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       name: 'Strength Training',
       icon: <Dumbbell className="w-5 h-5" />,
       description: 'Build muscle and strength with compound movements',
-      examples: ['Deadlifts', 'Squats', 'Bench Press', 'Pull-ups']
+      examples: ['Deadlifts', 'Squats', 'Bench Press', 'Pull-ups'],
+      gradient: 'from-red-500 to-orange-600'
     },
     {
       name: 'Cardio & Conditioning',
       icon: <Heart className="w-5 h-5" />,
       description: 'Improve cardiovascular health and endurance',
-      examples: ['HIIT', 'Running', 'Cycling', 'Rowing']
+      examples: ['HIIT', 'Running', 'Cycling', 'Rowing'],
+      gradient: 'from-pink-500 to-red-600'
     },
     {
       name: 'Functional Training',
       icon: <Target className="w-5 h-5" />,
       description: 'Movement patterns for daily life activities',
-      examples: ['Kettlebell Swings', 'Turkish Get-ups', 'Farmer Walks']
+      examples: ['Kettlebell Swings', 'Turkish Get-ups', 'Farmer Walks'],
+      gradient: 'from-blue-500 to-cyan-600'
     },
     {
       name: 'High-Intensity',
       icon: <Zap className="w-5 h-5" />,
       description: 'Time-efficient workouts for maximum results',
-      examples: ['Burpees', 'Mountain Climbers', 'Battle Ropes']
+      examples: ['Burpees', 'Mountain Climbers', 'Battle Ropes'],
+      gradient: 'from-yellow-500 to-orange-600'
     },
     {
       name: 'Group Workouts',
       icon: <Users className="w-5 h-5" />,
       description: 'Exercises perfect for training with others',
-      examples: ['Partner Exercises', 'Team Challenges', 'Circuit Training']
+      examples: ['Partner Exercises', 'Team Challenges', 'Circuit Training'],
+      gradient: 'from-purple-500 to-indigo-600'
     },
     {
       name: 'Quick Sessions',
       icon: <Clock className="w-5 h-5" />,
       description: '15-30 minute efficient workouts',
-      examples: ['Tabata', 'Quick HIIT', 'Express Strength']
+      examples: ['Tabata', 'Quick HIIT', 'Express Strength'],
+      gradient: 'from-green-500 to-emerald-600'
     }
   ];
 
@@ -124,97 +131,145 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
   };
 
   if (selectedCategory) {
+    const category = categories.find(c => c.name === selectedCategory);
     return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-3">
-          <Button 
-            variant="ghost" 
-            onClick={handleBackToCategories}
-            className="text-slate-400 hover:text-white hover:bg-slate-800"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Categories
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold text-white">{selectedCategory}</h2>
-            <p className="text-slate-400">Science-based exercise guide</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
+        <div className="p-6">
+          <div className="max-w-5xl mx-auto space-y-8">
+            {/* Header */}
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                onClick={handleBackToCategories}
+                className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back to Categories
+              </Button>
+              <div className="flex items-center space-x-4">
+                <div className={`w-16 h-16 bg-gradient-to-r ${category?.gradient} rounded-2xl flex items-center justify-center shadow-lg`}>
+                  <div className="text-white">
+                    {category?.icon}
+                  </div>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">{selectedCategory}</h1>
+                  <p className="text-slate-400">Science-based exercise guide</p>
+                </div>
+              </div>
+            </div>
+
+            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+              <CardContent className="p-8">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                      <h3 className="text-white font-medium mb-2">Generating Exercise Guide</h3>
+                      <p className="text-slate-400 text-sm">Analyzing latest 2024 research...</p>
+                    </div>
+                  </div>
+                ) : aiResponse ? (
+                  <FormattedAIResponse content={aiResponse} />
+                ) : (
+                  <div className="text-center py-16 text-slate-400">
+                    Select a category to view exercises
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
-
-        <Card className="bg-slate-900 border-slate-700">
-          <CardContent className="p-6">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                <span className="ml-3 text-slate-400">Generating exercise guide...</span>
-              </div>
-            ) : aiResponse ? (
-              <FormattedAIResponse content={aiResponse} />
-            ) : (
-              <div className="text-center py-8 text-slate-400">
-                Select a category to view exercises
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="text-slate-400 hover:text-white hover:bg-slate-800"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold text-white">Exercise Library</h2>
-          <p className="text-slate-400">Science-backed exercise guides and techniques</p>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((category) => (
-          <Card 
-            key={category.name}
-            className="bg-slate-900 border-slate-700 hover:border-slate-600 transition-all duration-200 cursor-pointer group"
-            onClick={() => handleCategorySelect(category)}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="text-white flex items-center space-x-3 text-lg group-hover:text-orange-400 transition-colors">
-                <div className="text-slate-400 group-hover:text-orange-400 transition-colors">
-                  {category.icon}
-                </div>
-                <span>{category.name}</span>
-              </CardTitle>
-              <CardDescription className="text-slate-400 text-sm">
-                {category.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex flex-wrap gap-1">
-                {category.examples.slice(0, 3).map((example, index) => (
-                  <span 
-                    key={index}
-                    className="text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-md"
-                  >
-                    {example}
-                  </span>
-                ))}
-                {category.examples.length > 3 && (
-                  <span className="text-xs text-slate-500 px-2 py-1">
-                    +{category.examples.length - 3} more
-                  </span>
-                )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              onClick={onBack}
+              className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Dashboard
+            </Button>
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/25">
+                <Brain className="w-8 h-8 text-white" />
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  Exercise Library
+                </h1>
+                <p className="text-slate-400 text-lg">Science-backed exercise guides and techniques</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Badge */}
+          <div className="flex justify-center">
+            <div className="bg-orange-500/20 text-orange-400 border border-orange-500/30 px-4 py-2 rounded-full text-sm flex items-center">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Research-backed exercise science from 2024
+            </div>
+          </div>
+
+          {/* Categories Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category) => (
+              <Card 
+                key={category.name}
+                className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-all duration-200 cursor-pointer group"
+                onClick={() => handleCategorySelect(category)}
+              >
+                <CardHeader className="pb-4">
+                  <div className={`w-14 h-14 bg-gradient-to-r ${category.gradient} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200`}>
+                    <div className="text-white">
+                      {category.icon}
+                    </div>
+                  </div>
+                  <CardTitle className="text-white text-xl group-hover:text-orange-400 transition-colors">
+                    {category.name}
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">
+                    {category.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <h4 className="text-white font-medium text-sm">Featured Exercises:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {category.examples.slice(0, 3).map((example, index) => (
+                        <span 
+                          key={index}
+                          className="text-xs bg-slate-800/50 text-slate-300 px-3 py-1 rounded-full border border-slate-700/50"
+                        >
+                          {example}
+                        </span>
+                      ))}
+                      {category.examples.length > 3 && (
+                        <span className="text-xs text-slate-500 px-3 py-1">
+                          +{category.examples.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                    <div className="pt-2">
+                      <div className="flex items-center text-orange-400 text-sm group-hover:text-orange-300 transition-colors">
+                        <span>Explore Exercises</span>
+                        <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

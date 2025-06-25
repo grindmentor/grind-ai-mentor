@@ -12,8 +12,24 @@ import WorkoutLibrary from "../ai-modules/WorkoutLibrary";
 import SmartFoodLog from "../ai-modules/SmartFoodLog";
 import HabitTracker from "../ai-modules/HabitTracker";
 import CutCalcPro from "../ai-modules/CutCalcPro";
+import React from "react";
 
-export const aiModules = [
+// Define a flexible component type that can handle different prop structures
+type ModuleComponent = React.ComponentType<any>;
+
+export interface AIModule {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  gradient: string;
+  component: ModuleComponent;
+  isNew: boolean;
+  isPremium: boolean;
+  usageKey: string;
+}
+
+export const aiModules: AIModule[] = [
   {
     id: "coach-gpt",
     title: "CoachGPT",

@@ -11,7 +11,7 @@ const preloadedModules = aiModules.map(module => ({
 }));
 
 interface ModulesContextType {
-  modules: typeof aiModules;
+  modules: typeof preloadedModules;
   isInitialized: boolean;
 }
 

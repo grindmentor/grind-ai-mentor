@@ -1,173 +1,205 @@
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import PaymentMethods from "./PaymentMethods";
-import DashboardHeader from "./dashboard/DashboardHeader";
-import AIModuleCard from "./dashboard/AIModuleCard";
-import MobileModuleSelector from "./dashboard/MobileModuleSelector";
-import { useModules } from "@/contexts/ModulesContext";
-import { ArrowLeft, Star, Zap, FileText, Shield, Info } from "lucide-react";
+import { Crown, TrendingUp, Activity, Brain, Zap, Calendar, Target, Users, BookOpen, ChevronRight } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useUserData } from "@/contexts/UserDataContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { useNavigate } from "react-router-dom";
+import { useModules } from "@/contexts/ModulesContext";
+import AIModuleCard from "./dashboard/AIModuleCard";
+import MobileModuleSelector from "./dashboard/MobileModuleSelector";
+import UpgradeSection from "./dashboard/UpgradeSection";
+import LoadingSpinner from "./LoadingSpinner";
 
 const Dashboard = () => {
-  const [activeModule, setActiveModule] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
-  const { modules, isInitialized } = useModules();
+  const [selectedModule, setSelectedModule] = useState<string>("");
+  const [showModule, setShowModule] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const isMobile = useIsMobile();
-  const { currentTier, isSubscribed, refreshSubscription } = useSubscription();
-  const { refreshUserData } = useUserData();
   const navigate = useNavigate();
+  const { currentTier, isSubscribed } = useSubscription();
+  const { currentUsage } = useUsageTracking();
+  const { modules, isInitialized } = useModules();
 
-  const handleModuleClick = (moduleId: string) => {
-    setActiveModule(moduleId);
+  // Initialize dashboard
+  useEffect(() => {
+    if (isInitialized) {
+      const timer = setTimeout(() => {
+        setIsInitializing(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized]);
+
+  const handleModuleSelect = (moduleId: string) => {
+    const module = modules.find(m => m.id === moduleId);
+    if (module) {
+      setSelectedModule(moduleId);
+      setShowModule(true);
+    }
   };
 
-  const handleBack = () => {
-    setActiveModule(null);
-    setSelectedPlan(null);
+  const handleBackToDashboard = () => {
+    setShowModule(false);
+    setSelectedModule("");
   };
 
-  const handleUpgrade = () => {
-    navigate('/pricing');
-  };
-
-  const handlePaymentSuccess = async () => {
-    setSelectedPlan(null);
-    await refreshSubscription();
-    refreshUserData();
-  };
-
-  const handleFoodLogged = () => {
-    refreshUserData();
-  };
-
-  if (selectedPlan) {
+  if (isInitializing || !isInitialized) {
     return (
-      <div className="min-h-screen bg-black text-white p-4 sm:p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 md:mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={handleBack} 
-              className="text-white hover:bg-gray-800 hover:text-orange-400 w-fit"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-xl md:text-2xl font-bold text-white">Complete Your Purchase</h1>
-          </div>
-
-          <PaymentMethods
-            planName={selectedPlan.name}
-            amount={selectedPlan.price}
-            onSuccess={handlePaymentSuccess}
-          />
-        </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading your dashboard..." />
       </div>
     );
   }
 
-  if (activeModule && isInitialized) {
-    const module = modules.find(m => m.id === activeModule);
+  if (showModule && selectedModule) {
+    const module = modules.find(m => m.id === selectedModule);
     if (module) {
       const ModuleComponent = module.component;
-      return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
+      return <ModuleComponent onBack={handleBackToDashboard} />;
     }
   }
 
+  const totalUsage = Object.values(currentUsage).reduce((sum, val) => sum + val, 0);
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto">
-          <DashboardHeader />
+    <div className="min-h-screen bg-black text-white p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+        {/* Header Section */}
+        <div className="text-center md:text-left">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            Your <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">AI Coach</span> Dashboard
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Science-backed fitness guidance powered by AI
+          </p>
+        </div>
 
-          {/* Minimal Upgrade Prompt - Only show for free users */}
-          {currentTier === 'free' && (
-            <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 mb-4 sm:mb-6">
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                      <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h3 className="text-base sm:text-lg font-semibold text-white">Unlock Premium</h3>
-                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">
-                          <Star className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
-                          Popular
-                        </Badge>
-                      </div>
-                      <p className="text-gray-400 text-xs sm:text-sm">Higher usage limits & meal plans</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                    <Button 
-                      onClick={handleUpgrade}
-                      size="sm"
-                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto text-xs sm:text-sm"
-                    >
-                      View Plans
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-orange-500 mb-1">{totalUsage}</div>
+              <p className="text-gray-400 text-sm">Total Interactions</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-500 mb-1">{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</div>
+              <p className="text-gray-400 text-sm">Current Plan</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-500 mb-1">{modules.length}</div>
+              <p className="text-gray-400 text-sm">AI Modules</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-purple-500 mb-1">24/7</div>
+              <p className="text-gray-400 text-sm">AI Support</p>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Mobile: Dropdown Selector, Desktop: Grid Layout */}
+        {/* AI Modules Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">AI Modules</h2>
+            {!isSubscribed && (
+              <Button
+                onClick={() => navigate('/pricing')}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                size="sm"
+              >
+                <Crown className="w-4 h-4 mr-2" />
+                Upgrade
+              </Button>
+            )}
+          </div>
+
           {isMobile ? (
             <MobileModuleSelector
               modules={modules}
-              onModuleSelect={handleModuleClick}
+              onModuleSelect={handleModuleSelect}
             />
           ) : (
-            <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {modules.map((module) => (
                 <AIModuleCard
                   key={module.id}
                   module={module}
-                  onModuleClick={handleModuleClick}
+                  onModuleClick={handleModuleSelect}
                 />
               ))}
             </div>
           )}
         </div>
-      </div>
 
-      {/* Footer Links */}
-      <div className="border-t border-gray-800 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/about">
-              <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 flex items-center">
-                <Info className="w-4 h-4 mr-2" />
-                About
+        {/* Upgrade Section - Only show for non-subscribers */}
+        {!isSubscribed && <UpgradeSection />}
+
+        {/* Quick Actions */}
+        <Card className="bg-gray-900 border-gray-800">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Zap className="w-5 h-5 mr-2 text-orange-500" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Button
+                variant="ghost"
+                className="h-auto p-4 justify-start hover:bg-gray-800"
+                onClick={() => handleModuleSelect('coach-gpt')}
+              >
+                <div className="flex items-center space-x-3">
+                  <Brain className="w-8 h-8 text-blue-500" />
+                  <div className="text-left">
+                    <div className="font-medium">Ask CoachGPT</div>
+                    <div className="text-sm text-gray-400">Get instant answers</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 ml-auto" />
               </Button>
-            </Link>
-            <Link to="/terms">
-              <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                Terms
+              
+              <Button
+                variant="ghost"
+                className="h-auto p-4 justify-start hover:bg-gray-800"
+                onClick={() => handleModuleSelect('meal-plan-ai')}
+              >
+                <div className="flex items-center space-x-3">
+                  <Target className="w-8 h-8 text-green-500" />
+                  <div className="text-left">
+                    <div className="font-medium">Create Meal Plan</div>
+                    <div className="text-sm text-gray-400">Nutrition planning</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 ml-auto" />
               </Button>
-            </Link>
-            <Link to="/privacy">
-              <Button variant="ghost" className="text-gray-400 hover:text-white hover:bg-gray-800 flex items-center">
-                <Shield className="w-4 h-4 mr-2" />
-                Privacy
+              
+              <Button
+                variant="ghost"
+                className="h-auto p-4 justify-start hover:bg-gray-800"
+                onClick={() => handleModuleSelect('physique-ai')}
+              >
+                <div className="flex items-center space-x-3">
+                  <TrendingUp className="w-8 h-8 text-purple-500" />
+                  <div className="text-left">
+                    <div className="font-medium">Track Progress</div>
+                    <div className="text-sm text-gray-400">Physique analysis</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 ml-auto" />
               </Button>
-            </Link>
-          </div>
-          
-          <div className="text-center text-gray-500 mt-6 pt-6 border-t border-gray-800">
-            <p>&copy; 2025 GrindMentor. All rights reserved. Your fitness journey starts here.</p>
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

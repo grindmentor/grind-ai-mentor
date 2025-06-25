@@ -1,94 +1,152 @@
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ChevronRight, CheckCircle, Zap, Target, Brain, Utensils } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import Logo from "@/components/ui/logo";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Brain, 
+  Target, 
+  TrendingUp, 
+  Utensils, 
+  ChevronRight, 
+  ChevronLeft,
+  CheckCircle,
+  Sparkles,
+  Dumbbell
+} from 'lucide-react';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
 }
 
-const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const { user } = useAuth();
 
   const steps = [
     {
-      title: "Welcome to GrindMentor",
-      description: "Your science-based AI fitness coach is ready to help you achieve your goals.",
+      title: "Welcome to GrindMentor!",
+      subtitle: "Your AI-Powered Fitness Coach",
+      icon: Sparkles,
+      content: (
+        <div className="text-center space-y-6">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+            <Dumbbell className="w-10 h-10 text-white" />
+          </div>
+          <div className="space-y-3">
+            <p className="text-lg text-gray-300">
+              Get personalized, science-based fitness and nutrition guidance powered by AI
+            </p>
+            <p className="text-gray-400">
+              Whether you're building muscle, losing fat, or improving performance, we've got you covered
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Meet Your AI Modules",
+      subtitle: "Specialized tools for every goal",
       icon: Brain,
       content: (
-        <div className="text-center space-y-4">
-          <Logo size="lg" className="justify-center" />
-          <p className="text-gray-400">
-            GrindMentor uses evidence-based fitness science to provide personalized coaching, 
-            meal planning, and workout programs tailored specifically for you.
-          </p>
-        </div>
-      )
-    },
-    {
-      title: "AI-Powered Modules",
-      description: "Explore our comprehensive suite of fitness tools.",
-      icon: Zap,
-      content: (
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
-            <Brain className="w-5 h-5 text-orange-400" />
-            <div>
-              <div className="font-medium text-white">CoachGPT</div>
-              <div className="text-sm text-gray-400">Personalized fitness coaching</div>
+        <div className="space-y-4">
+          <div className="grid gap-3">
+            <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+              <Brain className="w-6 h-6 text-blue-500" />
+              <div>
+                <h4 className="font-medium">CoachGPT</h4>
+                <p className="text-sm text-gray-400">24/7 AI fitness coaching with research citations</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
-            <Utensils className="w-5 h-5 text-green-400" />
-            <div>
-              <div className="font-medium text-white">MealPlanAI</div>
-              <div className="text-sm text-gray-400">Custom nutrition planning</div>
+            <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+              <Utensils className="w-6 h-6 text-green-500" />
+              <div>
+                <h4 className="font-medium">MealPlan AI</h4>
+                <p className="text-sm text-gray-400">Custom meal plans optimized for your goals</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
-            <Target className="w-5 h-5 text-blue-400" />
-            <div>
-              <div className="font-medium text-white">Smart Training</div>
-              <div className="text-sm text-gray-400">Adaptive workout programs</div>
+            <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-purple-500" />
+              <div>
+                <h4 className="font-medium">Physique AI</h4>
+                <p className="text-sm text-gray-400">AI-powered progress tracking and analysis</p>
+              </div>
             </div>
           </div>
         </div>
       )
     },
     {
-      title: "Get Started",
-      description: "You're all set! Start exploring your AI fitness modules.",
-      icon: CheckCircle,
+      title: "Science-Based Approach",
+      subtitle: "Every recommendation backed by research",
+      icon: Target,
       content: (
-        <div className="text-center space-y-4">
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Setup Complete
-          </Badge>
-          <p className="text-gray-400">
-            Click below to start your fitness journey with GrindMentor. 
-            You can access all available features based on your current plan.
-          </p>
+        <div className="space-y-4">
+          <div className="grid gap-3">
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="w-5 h-5 text-green-500 mt-1" />
+              <div>
+                <h4 className="font-medium">Research-Backed</h4>
+                <p className="text-sm text-gray-400">All advice based on peer-reviewed studies</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="w-5 h-5 text-green-500 mt-1" />
+              <div>
+                <h4 className="font-medium">Personalized</h4>
+                <p className="text-sm text-gray-400">Tailored to your unique goals and preferences</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <CheckCircle className="w-5 h-5 text-green-500 mt-1" />
+              <div>
+                <h4 className="font-medium">Continuously Updated</h4>
+                <p className="text-sm text-gray-400">AI learns and adapts with new research</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Ready to Transform?",
+      subtitle: "Let's start your fitness journey",
+      icon: TrendingUp,
+      content: (
+        <div className="text-center space-y-6">
+          <div className="space-y-3">
+            <p className="text-lg text-gray-300">
+              You're all set to begin your transformation with GrindMentor
+            </p>
+            <div className="flex justify-center">
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Science-Powered Results
+              </Badge>
+            </div>
+            <p className="text-gray-400">
+              Start with any AI module or ask CoachGPT your first question
+            </p>
+          </div>
         </div>
       )
     }
   ];
 
   const currentStepData = steps[currentStep];
-  const StepIcon = currentStepData.icon;
+  const IconComponent = currentStepData.icon;
+  const isLastStep = currentStep === steps.length - 1;
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
+    if (isLastStep) {
       localStorage.setItem('grindmentor_onboarding_completed', 'true');
       onComplete();
+    } else {
+      setCurrentStep(prev => prev + 1);
     }
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(0, prev - 1));
   };
 
   const handleSkip = () => {
@@ -97,58 +155,71 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg bg-gray-900 border-gray-800">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <StepIcon className="w-8 h-8 text-orange-400" />
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+        <CardHeader className="text-center pb-4">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+              <IconComponent className="w-6 h-6 text-white" />
+            </div>
           </div>
-          <CardTitle className="text-2xl text-white">{currentStepData.title}</CardTitle>
-          <CardDescription className="text-gray-400">
-            {currentStepData.description}
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {currentStepData.content}
-
-          {/* Progress indicator */}
-          <div className="flex justify-center space-x-2">
+          <CardTitle className="text-xl text-white">{currentStepData.title}</CardTitle>
+          <p className="text-gray-400 text-sm">{currentStepData.subtitle}</p>
+          
+          {/* Progress Indicator */}
+          <div className="flex justify-center space-x-2 mt-4">
             {steps.map((_, index) => (
               <div
                 key={index}
                 className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentStep 
-                    ? 'bg-orange-500' 
-                    : index < currentStep 
-                    ? 'bg-green-500' 
-                    : 'bg-gray-600'
+                  index <= currentStep ? 'bg-orange-500' : 'bg-gray-700'
                 }`}
               />
             ))}
           </div>
-
-          <div className="flex justify-between">
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {currentStepData.content}
+          
+          <div className="flex justify-between items-center pt-4">
             <Button
               variant="ghost"
               onClick={handleSkip}
               className="text-gray-400 hover:text-white"
             >
-              Skip
+              Skip Tour
             </Button>
-            <Button
-              onClick={handleNext}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-            >
-              {currentStep < steps.length - 1 ? (
-                <>
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </>
-              ) : (
-                "Get Started"
+            
+            <div className="flex space-x-2">
+              {currentStep > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  className="border-gray-700 hover:bg-gray-800"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Back
+                </Button>
               )}
-            </Button>
+              
+              <Button
+                onClick={handleNext}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              >
+                {isLastStep ? (
+                  <>
+                    Get Started
+                    <Sparkles className="w-4 h-4 ml-1" />
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

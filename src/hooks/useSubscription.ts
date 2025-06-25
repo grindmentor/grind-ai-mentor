@@ -52,7 +52,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       '25 Smart Food Log analyses',
       '10 TDEE calculations',
       '5 Smart Training programs',
-      '5 Progress photo analyses',
+      '5 Physique AI analyses', // Updated name
       '100 Habit checks',
       'Science-backed recommendations'
     ],
@@ -62,7 +62,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       food_log_analyses: 25,
       tdee_calculations: 10,
       habit_checks: 100,
-      training_programs: 5,
+      training_programs: 5, // Increased from 0 to allow Basic tier access
       progress_analyses: 5,
       cut_calc_uses: 10,
       workout_timer_sessions: 25,
@@ -77,7 +77,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       'Unlimited meal plans', 
       'Unlimited food logging',
       'Unlimited Smart Training',
-      '20 photos/month',
+      'Unlimited Physique AI', // Updated name
       'Priority support',
       'All future features'
     ],

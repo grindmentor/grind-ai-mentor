@@ -6,7 +6,7 @@ import TDEECalculator from "../ai-modules/TDEECalculator";
 import FoodPhotoLogger from "../ai-modules/FoodPhotoLogger";
 import WorkoutTimer from "../ai-modules/WorkoutTimer";
 import SmartTraining from "../ai-modules/SmartTraining";
-import ProgressAI from "../ai-modules/ProgressAI";
+import PhysiqueAI from "../ai-modules/ProgressAI"; // Renamed import to match requested "Physique AI"
 import RecoveryCoach from "../ai-modules/RecoveryCoach";
 import WorkoutLibrary from "../ai-modules/WorkoutLibrary";
 import SmartFoodLog from "../ai-modules/SmartFoodLog";
@@ -49,7 +49,7 @@ export const aiModules: AIModule[] = [
     gradient: "from-purple-500 to-purple-700",
     component: SmartTraining,
     isNew: false,
-    isPremium: true, // Premium only feature
+    isPremium: false, // Changed to false to allow Basic tier access
     usageKey: "training_programs" as const
   },
   {
@@ -119,14 +119,14 @@ export const aiModules: AIModule[] = [
     usageKey: "workout_timer_sessions" as const
   },
   {
-    id: "progress-ai",
-    title: "Physique AI",
-    description: "Photo analysis of your physique",
+    id: "physique-ai", // Changed ID to match the naming request
+    title: "Physique AI", // Changed title as requested
+    description: "AI-powered physique analysis and progress tracking",
     icon: TrendingUp,
     gradient: "from-indigo-500 to-indigo-700",
-    component: ProgressAI,
+    component: PhysiqueAI,
     isNew: false,
-    isPremium: false,
+    isPremium: false, // Available to Basic tier but with limits
     usageKey: "progress_analyses" as const
   },
   {

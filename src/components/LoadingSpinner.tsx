@@ -1,31 +1,36 @@
 
-import { Dumbbell } from "lucide-react";
+import React from 'react';
+import { Dumbbell } from 'lucide-react';
 
 interface LoadingSpinnerProps {
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   text?: string;
-  className?: string;
 }
 
-const LoadingSpinner = ({ 
-  size = "md", 
-  text = "Loading...", 
-  className = "" 
-}: LoadingSpinnerProps) => {
-  const sizeMap = {
-    sm: { container: "w-8 h-8", icon: "w-4 h-4", text: "text-sm" },
-    md: { container: "w-12 h-12", icon: "w-7 h-7", text: "text-xl" },
-    lg: { container: "w-16 h-16", icon: "w-9 h-9", text: "text-2xl" }
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
+  size = 'md', 
+  text = 'Loading...' 
+}) => {
+  const sizeClasses = {
+    sm: 'w-6 h-6',
+    md: 'w-8 h-8', 
+    lg: 'w-12 h-12'
   };
 
-  const sizes = sizeMap[size];
+  const containerSizes = {
+    sm: 'w-10 h-10',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16'
+  };
 
   return (
-    <div className={`flex flex-col items-center space-y-4 ${className}`}>
-      <div className={`${sizes.container} bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center animate-pulse`}>
-        <Dumbbell className={`${sizes.icon} text-white`} />
+    <div className="flex flex-col items-center justify-center space-y-4">
+      <div className={`${containerSizes[size]} bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center animate-pulse`}>
+        <Dumbbell className={`${sizeClasses[size]} text-white animate-bounce`} />
       </div>
-      <div className={`${sizes.text} text-white font-medium`}>{text}</div>
+      {text && (
+        <p className="text-gray-400 text-sm font-medium">{text}</p>
+      )}
     </div>
   );
 };

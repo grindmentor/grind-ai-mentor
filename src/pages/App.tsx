@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
 import OnboardingFlow from "@/components/OnboardingFlow";
+import AppPreloader from "@/components/AppPreloader";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Logo from "@/components/ui/logo";
 
@@ -19,6 +20,7 @@ const WelcomeBack = lazy(() => import("@/components/WelcomeBack"));
 const App = () => {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -84,8 +86,14 @@ const App = () => {
     setShowOnboarding(false);
   };
 
-  if (loading) {
-    return (
+  const handlePreloaderComplete = () => {
+    setShowPreloader(false);
+  };
+
+  if (loading || showPreloader) {
+    return showPreloader ? (
+      <AppPreloader onComplete={handlePreloaderComplete} />
+    ) : (
       <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
         <LoadingSpinner size="lg" text="Loading GrindMentor..." />
       </div>

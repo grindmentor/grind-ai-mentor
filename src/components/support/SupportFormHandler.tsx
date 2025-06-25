@@ -67,14 +67,21 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       const filePath = `support/${fileName}`;
 
+      console.log('Uploading file:', fileName);
+
       const { error: uploadError } = await supabase.storage
         .from('support-files')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error('File upload error:', uploadError);
         throw uploadError;
       }
+
+      console.log('File uploaded successfully:', filePath);
 
       const { data: { publicUrl } } = supabase.storage
         .from('support-files')
@@ -89,6 +96,8 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Starting form submission...');
     
     if (!validateForm()) {
       toast({
@@ -105,10 +114,12 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       // Upload file if present
       let fileUrl: string | null = null;
       if (uploadedFiles.length > 0) {
+        console.log('Uploading file...');
         fileUrl = await uploadFile(uploadedFiles[0]);
         if (!fileUrl) {
           throw new Error('Failed to upload file');
         }
+        console.log('File uploaded, URL:', fileUrl);
       }
 
       // Sanitize form data
@@ -120,15 +131,20 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
         file_url: fileUrl
       };
 
-      // Insert into Supabase
-      const { error } = await supabase
+      console.log('Submitting sanitized data:', sanitizedData);
+
+      // Insert into Supabase with explicit error handling
+      const { data, error } = await supabase
         .from('support_requests')
-        .insert([sanitizedData]);
+        .insert([sanitizedData])
+        .select();
 
       if (error) {
-        console.error('Database error:', error);
+        console.error('Database insertion error:', error);
         throw error;
       }
+
+      console.log('Support request submitted successfully:', data);
 
       // Reset form and show success
       setFormData({ name: '', email: '', subject: '', message: '' });
@@ -136,16 +152,28 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       setErrors({});
       
       toast({
-        title: "Request Submitted",
-        description: "Your request has been received. Please allow up to 7 days for a reply.",
+        title: "Request Submitted Successfully",
+        description: "Your support request has been received. We'll get back to you within 7 days.",
       });
       
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting support request:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "There was an error submitting your request. Please try again.";
+      
+      if (error?.message?.includes('violates row-level security')) {
+        errorMessage = "Permission error occurred. Please try again or contact us directly.";
+      } else if (error?.message?.includes('network')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (error?.message?.includes('file')) {
+        errorMessage = "File upload failed. Please try with a smaller file or contact us directly.";
+      }
+      
       toast({
-        title: "Submission Error",
-        description: "There was an error submitting your request. Please try again.",
+        title: "Submission Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -179,7 +207,23 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       return true;
     });
 
-    setUploadedFiles(validFiles.slice(0, 1)); // Max 1 file
+    // Validate file types
+    const allowedTypes = ['image/', 'application/pdf', 'text/', '.doc', '.docx'];
+    const typeValidFiles = validFiles.filter(file => {
+      const isAllowed = allowedTypes.some(type => 
+        file.type.startsWith(type) || file.name.toLowerCase().endsWith(type.replace('.', ''))
+      );
+      if (!isAllowed) {
+        toast({
+          title: "Invalid File Type",
+          description: `File ${file.name} is not supported. Please use images, PDFs, or documents.`,
+          variant: "destructive",
+        });
+      }
+      return isAllowed;
+    });
+
+    setUploadedFiles(typeValidFiles.slice(0, 1)); // Max 1 file
   };
 
   const removeFile = (index: number) => {
@@ -199,6 +243,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
             value={formData.name}
             onChange={handleChange}
             required
+            disabled={isSubmitting}
             className={`bg-gray-800 border-gray-700 text-white min-h-[48px] ${
               errors.name ? 'border-red-500' : ''
             }`}
@@ -217,6 +262,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
             value={formData.email}
             onChange={handleChange}
             required
+            disabled={isSubmitting}
             className={`bg-gray-800 border-gray-700 text-white min-h-[48px] ${
               errors.email ? 'border-red-500' : ''
             }`}
@@ -236,6 +282,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
           value={formData.subject}
           onChange={handleChange}
           required
+          disabled={isSubmitting}
           className={`bg-gray-800 border-gray-700 text-white min-h-[48px] ${
             errors.subject ? 'border-red-500' : ''
           }`}
@@ -255,6 +302,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
           onChange={handleChange}
           required
           rows={5}
+          disabled={isSubmitting}
           className={`bg-gray-800 border-gray-700 text-white resize-none ${
             errors.message ? 'border-red-500' : ''
           }`}
@@ -269,17 +317,23 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
           Attachment (optional)
         </label>
         <div className="space-y-2">
-          <label htmlFor="file-upload" className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 transition-colors">
+          <label 
+            htmlFor="file-upload" 
+            className={`flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 transition-colors ${
+              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
             <div className="text-center">
               <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
               <p className="text-sm text-gray-400">Click to upload screenshot or document</p>
-              <p className="text-xs text-gray-500">Max 1 file, 10MB</p>
+              <p className="text-xs text-gray-500">Max 1 file, 10MB (images, PDFs, documents)</p>
             </div>
             <input
               id="file-upload"
               type="file"
               accept="image/*,.pdf,.doc,.docx,.txt"
               onChange={handleFileUpload}
+              disabled={isSubmitting}
               className="hidden"
             />
           </label>
@@ -294,6 +348,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
                     variant="ghost"
                     size="sm"
                     onClick={() => removeFile(index)}
+                    disabled={isSubmitting}
                     className="text-gray-400 hover:text-red-400"
                   >
                     <X className="w-4 h-4" />
@@ -308,7 +363,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 min-h-[48px]"
+        className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 min-h-[48px] disabled:opacity-50"
       >
         {isSubmitting ? (
           <>

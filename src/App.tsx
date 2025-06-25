@@ -21,7 +21,9 @@ import About from "./pages/About";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
-import Dashboard from "./components/Dashboard";
+import SignIn from "./pages/SignIn";
+import AuthCallback from "./pages/AuthCallback";
+import AppPage from "./pages/App";
 import { useAuth } from "./contexts/AuthContext";
 import { PageTransition } from "@/components/ui/page-transition";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,7 +35,7 @@ const AuthenticatedApp = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/");
+      navigate("/signin");
     }
   }, [user, loading, navigate]);
 
@@ -49,7 +51,7 @@ const AuthenticatedApp = () => {
   }
 
   return user ? (
-    <Dashboard />
+    <AppPage />
   ) : null;
 };
 
@@ -82,6 +84,9 @@ const App = () => {
           <ModulesProvider>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/app" element={<AuthenticatedApp />} />
               <Route path="/modules" element={<ModuleLibrary />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/account" element={<Account />} />

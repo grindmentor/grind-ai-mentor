@@ -1,120 +1,61 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Crown, Lock, Zap } from "lucide-react";
-import { useFeatureAccess } from "@/hooks/useFeatureAccess";
-import { useMemo } from "react";
-import { AIModule } from "./AIModuleData";
-import { SmoothButton } from "@/components/ui/smooth-button";
-import { playSuccessSound, playErrorSound } from "@/utils/soundEffects";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Crown } from 'lucide-react';
 
 interface AIModuleCardProps {
-  module: AIModule;
-  onModuleClick: (moduleId: string) => void;
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  gradient: string;
+  isPremium?: boolean;
+  onClick: () => void;
 }
 
-const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
-  const IconComponent = module.icon;
-  const { canAccess, canUse, remaining, isUnlimited, tierRequired } = useFeatureAccess(module.usageKey);
-
-  const statusInfo = useMemo(() => {
-    if (!canAccess) {
-      return {
-        status: 'locked',
-        buttonText: 'Upgrade Required',
-        buttonIcon: Crown,
-        statusText: `${tierRequired.charAt(0).toUpperCase() + tierRequired.slice(1)} Required`,
-        buttonDisabled: true
-      };
-    }
-
-    if (!canUse && !isUnlimited) {
-      return {
-        status: 'limit-reached',
-        buttonText: 'Limit Reached',
-        buttonIcon: Lock,
-        statusText: '0 remaining',
-        buttonDisabled: true
-      };
-    }
-
-    return {
-      status: 'available',
-      buttonText: 'Launch',
-      buttonIcon: Zap,
-      statusText: isUnlimited ? 'Unlimited' : `${remaining} remaining`,
-      buttonDisabled: false
-    };
-  }, [canAccess, canUse, remaining, isUnlimited, tierRequired]);
-
-  const handleClick = () => {
-    if (statusInfo.buttonDisabled) {
-      playErrorSound();
-      return;
-    }
-    playSuccessSound();
-    onModuleClick(module.id);
-  };
-
+const AIModuleCard: React.FC<AIModuleCardProps> = ({
+  title,
+  description,
+  icon: Icon,
+  gradient,
+  isPremium,
+  onClick
+}) => {
   return (
     <Card 
-      className={`bg-gradient-to-br ${module.gradient} border-0 text-white cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/20 group ${
-        statusInfo.buttonDisabled ? 'opacity-75' : ''
-      }`}
-      onClick={handleClick}
+      className={`bg-gradient-to-br ${gradient} backdrop-blur-sm border-0 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden`}
+      onClick={onClick}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 group-hover:bg-white/30 group-hover:scale-110">
-            {statusInfo.status === 'locked' ? (
-              <Lock className="w-6 h-6 text-white" />
-            ) : (
-              <IconComponent className="w-6 h-6 text-white" />
-            )}
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
+      </div>
+      
+      <CardContent className="p-6 relative z-10">
+        <div className="flex flex-col items-center text-center space-y-4">
+          {/* Icon */}
+          <div className="w-16 h-16 bg-black/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform duration-300">
+            <Icon className="w-8 h-8 text-white drop-shadow-lg" />
           </div>
-          <div className="flex flex-col items-end space-y-1">
-            {module.isNew && (
-              <Badge className="bg-white/20 text-white text-xs animate-pulse">New</Badge>
-            )}
-            {module.isPremium && (
-              <Badge className="bg-yellow-500/20 text-yellow-300 text-xs border-yellow-500/30">
-                <Crown className="w-3 h-3 mr-1" />
-                Premium
-              </Badge>
-            )}
-          </div>
-        </div>
-        <CardTitle className="text-white text-lg leading-tight transition-all duration-300 group-hover:text-orange-100">
-          {module.title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <CardDescription className="text-white/80 text-sm leading-relaxed">
-          {module.description}
-        </CardDescription>
-        
-        <div className="space-y-3">
-          <div className="text-center">
-            <span className="text-white/70 text-xs block transition-all duration-300 group-hover:text-white/90">
-              {statusInfo.statusText}
-            </span>
-          </div>
-          <SmoothButton 
-            variant="secondary" 
-            size="sm"
-            className={`w-full text-white border-0 min-h-[36px] transition-all duration-300 ${
-              statusInfo.status === 'locked' 
-                ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300' 
-                : statusInfo.status === 'limit-reached'
-                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300'
-                : 'bg-white/20 hover:bg-white/30 group-hover:bg-white/40'
-            }`}
-            disabled={statusInfo.buttonDisabled}
-            soundEnabled={!statusInfo.buttonDisabled}
-          >
-            <statusInfo.buttonIcon className="w-3 h-3 mr-1 transition-transform duration-200 group-hover:scale-110" />
-            {statusInfo.buttonText}
-          </SmoothButton>
+          
+          {/* Title */}
+          <h3 className="text-white font-bold text-lg leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-shadow-lg">
+            {title}
+          </h3>
+          
+          {/* Description */}
+          <p className="text-white/90 text-sm leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-medium">
+            {description}
+          </p>
+          
+          {/* Premium Badge */}
+          {isPremium && (
+            <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
+              <Crown className="w-3 h-3 mr-1" />
+              Premium
+            </Badge>
+          )}
         </div>
       </CardContent>
     </Card>

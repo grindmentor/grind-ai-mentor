@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, HeadphonesIcon, Mail, MessageSquare, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, Home, HeadphonesIcon, Mail, MessageSquare, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -61,16 +61,24 @@ const Support = () => {
             </div>
             <span className="text-xl font-bold logo-text">GrindMentor</span>
           </Link>
-          <Link to="/app">
-            <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px]">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to App
-            </Button>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link to="/app">
+              <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px] touch-manipulation">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px] touch-manipulation">
+                <Home className="w-4 h-4 mr-2" />
+                Home
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-6 py-12 max-w-6xl">
+      <div className="container mx-auto px-6 py-12 max-w-6xl pb-32">
         <div className="text-center mb-12">
           <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-6">
             <HeadphonesIcon className="w-8 h-8 text-white" />
@@ -101,13 +109,13 @@ const Support = () => {
                     <CollapsibleTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="w-full justify-between text-left p-4 h-auto text-white hover:bg-gray-800"
+                        className="w-full justify-between text-left p-4 h-auto text-white hover:bg-gray-800 min-h-[56px] touch-manipulation"
                       >
-                        <span className="font-medium">{item.question}</span>
+                        <span className="font-medium text-sm sm:text-base">{item.question}</span>
                         {openFAQ === item.id ? (
-                          <ChevronDown className="w-4 h-4" />
+                          <ChevronDown className="w-4 h-4 flex-shrink-0" />
                         ) : (
-                          <ChevronRight className="w-4 h-4" />
+                          <ChevronRight className="w-4 h-4 flex-shrink-0" />
                         )}
                       </Button>
                     </CollapsibleTrigger>

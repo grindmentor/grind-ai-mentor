@@ -92,6 +92,16 @@ const App = () => {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/app" element={<AuthenticatedApp />} />
             <Route 
+              path="/profile" 
+              element={
+                <PreferencesProvider>
+                  <UserDataProvider>
+                    <Profile />
+                  </UserDataProvider>
+                </PreferencesProvider>
+              } 
+            />
+            <Route 
               path="/modules" 
               element={
                 <PreferencesProvider>

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +18,8 @@ const Index = () => {
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  console.log("Index page - User state:", user ? "logged in" : "not logged in");
 
   const features = [
     {

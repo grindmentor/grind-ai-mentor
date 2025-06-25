@@ -7,66 +7,66 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#000000",
-  "theme_color": "#000000",
+  "theme_color": "#F97316",
   "scope": "/",
   "lang": "en",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/favicon-16x16.png",
+      "src": "/icon.svg",
       "sizes": "16x16",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/favicon-32x32.png",
+      "src": "/icon.svg",
       "sizes": "32x32",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/apple-touch-icon.png",
+      "src": "/icon.svg",
       "sizes": "180x180",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
+      "src": "/icon.svg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icon-256.png",
+      "src": "/icon.svg",
       "sizes": "256x256",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-1024.png",
+      "src": "/icon.svg",
       "sizes": "1024x1024",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "/icon-512.png",
+      "src": "/icon.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "form_factor": "narrow",
       "label": "GrindMentor AI Fitness Coach"
     },
     {
-      "src": "/icon-1024.png",
+      "src": "/icon.svg",
       "sizes": "1024x1024",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "form_factor": "wide",
       "label": "GrindMentor Dashboard"
     }
@@ -78,14 +78,14 @@
       "short_name": "CoachGPT",
       "description": "AI-powered fitness coaching",
       "url": "/app?module=coachgpt",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     },
     {
       "name": "Workout Timer",
       "short_name": "Timer",
       "description": "Smart workout timing",
       "url": "/app?module=timer",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     }
   ],
   "display_override": ["standalone", "minimal-ui"],

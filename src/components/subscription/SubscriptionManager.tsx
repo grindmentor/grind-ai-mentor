@@ -2,13 +2,55 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SoundButton } from "@/components/SoundButton";
-import { Crown, Zap } from "lucide-react";
+import { Crown, Zap, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const SubscriptionManager = () => {
   const navigate = useNavigate();
   const { currentTier, isSubscribed } = useSubscription();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleManageSubscription = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) {
+        console.error('Error accessing customer portal:', error);
+        toast({
+          title: "Error",
+          description: "Unable to access subscription management. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.url) {
+        // Open Stripe customer portal in new tab
+        window.open(data.url, '_blank');
+      } else {
+        toast({
+          title: "Error",
+          description: "No subscription management URL received.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Subscription management error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to access subscription management. Please contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card className="bg-card border-border">
@@ -47,11 +89,22 @@ const SubscriptionManager = () => {
         {isSubscribed && (
           <SoundButton
             variant="outline"
-            onClick={() => navigate('/account')}
+            onClick={handleManageSubscription}
+            disabled={isLoading}
             className="w-full border-border hover:bg-accent text-foreground"
             soundType="click"
           >
-            Manage Subscription
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Manage Subscription
+              </>
+            )}
           </SoundButton>
         )}
       </CardContent>

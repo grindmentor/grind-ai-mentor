@@ -48,7 +48,7 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center animate-pulse">
             <Dumbbell className="w-7 h-7 text-white" />
@@ -75,7 +75,7 @@ const App = () => {
 
   return (
     <UserDataProvider>
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-black text-white ios-safe-area">
         {/* Welcome Back Modal */}
         {showWelcomeBack && (
           <WelcomeBack 
@@ -84,15 +84,15 @@ const App = () => {
           />
         )}
 
-        {/* Mobile Header */}
+        {/* Mobile Header with proper safe area */}
         {isMobile && (
-          <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4">
+          <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-4" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
                   <Dumbbell className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-lg font-bold">GrindMentor</span>
+                <span className="text-lg font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">GrindMentor</span>
               </div>
               <Button
                 variant="ghost"
@@ -106,19 +106,21 @@ const App = () => {
           </div>
         )}
 
-        {/* Sidebar */}
+        {/* Sidebar with proper safe area */}
         <div className={`fixed left-0 top-0 h-full bg-gray-900/95 backdrop-blur border-r border-gray-800 p-6 transition-transform duration-300 z-40 ${
           isMobile 
             ? `w-64 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
             : 'w-64 translate-x-0'
-        }`}>
-          {/* Logo */}
-          <div className="flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-              <Dumbbell className="w-6 h-6 text-white" />
+        }`} style={{ paddingTop: isMobile ? 'calc(env(safe-area-inset-top) + 5rem)' : '1.5rem' }}>
+          {/* Logo - only show on desktop */}
+          {!isMobile && (
+            <div className="flex items-center space-x-3 mb-8">
+              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+                <Dumbbell className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">GrindMentor</span>
             </div>
-            <span className="text-xl font-bold">GrindMentor</span>
-          </div>
+          )}
 
           {/* Navigation */}
           <nav className="space-y-2">
@@ -157,7 +159,7 @@ const App = () => {
           </nav>
 
           {/* User Info */}
-          <div className="absolute bottom-6 left-6 right-6">
+          <div className="absolute bottom-6 left-6 right-6" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
               <div className="text-white text-sm font-medium mb-1">Signed in as:</div>
               <div className="text-gray-400 text-xs truncate">{user.email}</div>
@@ -176,9 +178,9 @@ const App = () => {
         {/* Main Content */}
         <div className={`min-h-screen transition-all duration-300 ${
           isMobile 
-            ? 'pt-16' 
+            ? 'pt-20' 
             : 'ml-64'
-        }`}>
+        }`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <Dashboard />
         </div>
       </div>

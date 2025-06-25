@@ -196,8 +196,8 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Enhanced Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Enhanced Quick Stats - Better Grid Alignment */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {[
               { value: totalUsage, label: "Total Interactions", color: "text-orange-500", delay: 0 },
               { value: currentTier.charAt(0).toUpperCase() + currentTier.slice(1), label: "Current Plan", color: "text-blue-500", delay: 100 },
@@ -215,7 +215,7 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* AI Modules Section */}
+          {/* AI Modules Section - Improved Grid */}
           <div className="space-y-6 animate-fade-in" style={{ animationDelay: '400ms' }}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">AI Modules</h2>
@@ -237,7 +237,7 @@ const Dashboard = () => {
                 onModuleSelect={handleModuleSelect}
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
                 {modules.map((module, index) => (
                   <AnimatedCard
                     key={module.id}
@@ -275,7 +275,7 @@ const Dashboard = () => {
                 {[
                   { id: 'coach-gpt', icon: Brain, title: 'Ask CoachGPT', subtitle: 'Get instant answers', color: 'text-blue-500' },
                   { id: 'meal-plan-ai', icon: Target, title: 'Create Meal Plan', subtitle: 'Nutrition planning', color: 'text-green-500' },
-                  { id: 'physique-ai', icon: TrendingUp, title: 'Track Progress', subtitle: 'Physique analysis', color: 'text-purple-500' }
+                  { id: 'physique-ai', icon: TrendingUp, title: 'Track Progress', subtitle: 'Physique analysis', color: 'text-indigo-500' }
                 ].map((action, index) => (
                   <SmoothButton
                     key={action.id}

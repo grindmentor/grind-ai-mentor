@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, User, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserData } from "@/contexts/UserDataContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,11 +13,11 @@ import FitnessProfile from "@/components/settings/FitnessProfile";
 import UnitPreferences from "@/components/settings/UnitPreferences";
 import AppPreferences from "@/components/settings/AppPreferences";
 import AIMemoryReset from "@/components/settings/AIMemoryReset";
+import { UserDataProvider } from "@/contexts/UserDataContext";
 
-const Settings = () => {
+const SettingsContent = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { userData, refreshUserData } = useUserData();
   const { preferences } = usePreferences();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -36,6 +35,7 @@ const Settings = () => {
   });
 
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,47 +44,85 @@ const Settings = () => {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (userData) {
-      console.log('Settings: userData loaded', userData);
-      
-      // Calculate age if birthday exists
-      let age = null;
-      if (userData.birthday) {
-        const today = new Date();
-        const birthDate = new Date(userData.birthday);
-        age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
+    if (user && preferences) {
+      loadUserProfile();
+    }
+  }, [user, preferences]);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData) {
+        console.log('Settings: userData loaded', profileData);
+        
+        // Calculate age if birthday exists
+        let age = null;
+        if (profileData.birthday) {
+          const today = new Date();
+          const birthDate = new Date(profileData.birthday);
+          age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+        }
+        setCalculatedAge(age);
+
+        // Convert weight from lbs to preferred unit
+        let weight = profileData.weight;
+        if (weight && preferences.weight_unit === 'kg') {
+          weight = Math.round(weight * 0.453592);
+        }
+
+        // Convert height from inches to preferred unit
+        let height = profileData.height;
+        if (height && preferences.height_unit === 'cm') {
+          height = Math.round(height * 2.54);
+        }
+
+        // Set profile data
+        setProfile({
+          weight: weight?.toString() || '',
+          birthday: profileData.birthday || '',
+          height: height?.toString() || '',
+          heightFeet: '',
+          heightInches: '',
+          experience: profileData.experience || '',
+          activity: profileData.activity || '',
+          goal: profileData.goal || ''
+        });
+
+        // Convert height to feet/inches if using ft-in unit
+        if (profileData.height && preferences.height_unit === 'ft-in') {
+          const totalInches = profileData.height;
+          const feet = Math.floor(totalInches / 12);
+          const inches = totalInches % 12;
+          setProfile(prev => ({
+            ...prev,
+            heightFeet: feet.toString(),
+            heightInches: inches.toString()
+          }));
         }
       }
-      setCalculatedAge(age);
-
-      // Set profile data from userData
-      setProfile({
-        weight: userData.weight?.toString() || '',
-        birthday: userData.birthday || '',
-        height: userData.height?.toString() || '',
-        heightFeet: '',
-        heightInches: '',
-        experience: userData.experience || '',
-        activity: userData.activity || '',
-        goal: userData.goal || ''
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data. Please try again.",
+        variant: "destructive",
       });
-
-      // Convert height to feet/inches if using ft-in unit
-      if (userData.height && preferences.height_unit === 'ft-in') {
-        const totalInches = userData.height;
-        const feet = Math.floor(totalInches / 12);
-        const inches = totalInches % 12;
-        setProfile(prev => ({
-          ...prev,
-          heightFeet: feet.toString(),
-          heightInches: inches.toString()
-        }));
-      }
+    } finally {
+      setIsLoading(false);
     }
-  }, [userData, preferences?.height_unit]);
+  };
 
   const handleInputChange = async (field: string, value: string) => {
     console.log('Settings: handleInputChange', field, value);
@@ -98,8 +136,19 @@ const Settings = () => {
           .update({ [field]: value })
           .eq('id', user?.id);
         
-        await refreshUserData();
         console.log('Settings: Field saved successfully', field);
+        
+        // Recalculate age if birthday changed
+        if (field === 'birthday' && value) {
+          const today = new Date();
+          const birthDate = new Date(value);
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          setCalculatedAge(age);
+        }
       } catch (error) {
         console.error('Error saving profile:', error);
         toast({
@@ -128,7 +177,6 @@ const Settings = () => {
           .update({ weight: Math.round(weightInLbs) })
           .eq('id', user.id);
         
-        await refreshUserData();
         console.log('Settings: Weight saved successfully');
       } catch (error) {
         console.error('Error saving weight:', error);
@@ -158,7 +206,6 @@ const Settings = () => {
           .update({ height: Math.round(heightInInches) })
           .eq('id', user.id);
         
-        await refreshUserData();
         console.log('Settings: Height saved successfully');
       } catch (error) {
         console.error('Error saving height:', error);
@@ -181,7 +228,7 @@ const Settings = () => {
     return profile.height;
   };
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
         <div className="text-xl">Loading...</div>
@@ -190,13 +237,20 @@ const Settings = () => {
   }
 
   if (!user) {
-    return null;
+    return null; // Will redirect in useEffect
+  }
+
+  if (!preferences) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
+        <div className="text-xl">Loading preferences...</div>
+      </div>
+    );
   }
 
   // Debug output
   console.log('Settings: Rendering with', {
     user: !!user,
-    userData: !!userData,
     preferences: !!preferences,
     profile
   });
@@ -239,18 +293,16 @@ const Settings = () => {
 
           {/* Settings Sections */}
           <div className="grid gap-6 lg:gap-8">
-            {preferences && (
-              <BasicInformation 
-                profile={profile}
-                preferences={preferences}
-                calculatedAge={calculatedAge}
-                onInputChange={handleInputChange}
-                onWeightChange={handleWeightChange}
-                onHeightChange={handleHeightChange}
-                getWeightDisplay={getWeightDisplay}
-                getHeightDisplay={getHeightDisplay}
-              />
-            )}
+            <BasicInformation 
+              profile={profile}
+              preferences={preferences}
+              calculatedAge={calculatedAge}
+              onInputChange={handleInputChange}
+              onWeightChange={handleWeightChange}
+              onHeightChange={handleHeightChange}
+              getWeightDisplay={getWeightDisplay}
+              getHeightDisplay={getHeightDisplay}
+            />
             <FitnessProfile 
               profile={profile}
               onInputChange={handleInputChange}
@@ -262,6 +314,14 @@ const Settings = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Settings = () => {
+  return (
+    <UserDataProvider>
+      <SettingsContent />
+    </UserDataProvider>
   );
 };
 

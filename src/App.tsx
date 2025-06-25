@@ -34,40 +34,69 @@ const queryClient = new QueryClient({
   },
 });
 
+// Create a wrapper component for authenticated routes
+const AuthenticatedProviders = ({ children }: { children: React.ReactNode }) => (
+  <PreferencesProvider>
+    <UsageProvider>
+      <ModulesProvider>
+        <SmartPrefillProvider>
+          {children}
+        </SmartPrefillProvider>
+      </ModulesProvider>
+    </UsageProvider>
+  </PreferencesProvider>
+);
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <PreferencesProvider>
-          <UsageProvider>
-            <ModulesProvider>
-              <SmartPrefillProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/signin" element={<SignIn />} />
-                      <Route path="/app" element={<AppPage />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/account" element={<Account />} />
-                      <Route path="/notifications" element={<Notifications />} />
-                      <Route path="/onboarding" element={<Onboarding />} />
-                      <Route path="/about" element={<About />} />
-                      <Route path="/pricing" element={<Pricing />} />
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/support" element={<Support />} />
-                      <Route path="/auth/callback" element={<AuthCallback />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </BrowserRouter>
-                </TooltipProvider>
-              </SmartPrefillProvider>
-            </ModulesProvider>
-          </UsageProvider>
-        </PreferencesProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/app" element={
+                <AuthenticatedProviders>
+                  <AppPage />
+                </AuthenticatedProviders>
+              } />
+              <Route path="/settings" element={
+                <AuthenticatedProviders>
+                  <Settings />
+                </AuthenticatedProviders>
+              } />
+              <Route path="/account" element={
+                <AuthenticatedProviders>
+                  <Account />
+                </AuthenticatedProviders>
+              } />
+              <Route path="/notifications" element={
+                <AuthenticatedProviders>
+                  <Notifications />
+                </AuthenticatedProviders>
+              } />
+              <Route path="/onboarding" element={
+                <AuthenticatedProviders>
+                  <Onboarding />
+                </AuthenticatedProviders>
+              } />
+              <Route path="/about" element={<About />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/support" element={
+                <AuthenticatedProviders>
+                  <Support />
+                </AuthenticatedProviders>
+              } />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>

@@ -26,7 +26,7 @@ interface MobileModuleSelectorProps {
 
 const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorProps) => {
   const [selectedModule, setSelectedModule] = useState<AIModule | null>(null);
-  const { currentTier, isSubscribed, isLoading } = useSubscription();
+  const { isSubscribed } = useSubscription();
   const { canUseFeature, getRemainingUsage } = useUsageTracking();
 
   const handleModuleChange = (moduleId: string) => {
@@ -41,24 +41,14 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
   };
 
   const moduleStatus = useMemo(() => {
-    if (!selectedModule || isLoading) return null;
+    if (!selectedModule) return null;
     
     const canAccess = !selectedModule.isPremium || isSubscribed;
     const remaining = getRemainingUsage(selectedModule.usageKey as any);
     const canUse = canUseFeature(selectedModule.usageKey as any);
     
     return { canAccess, remaining, canUse };
-  }, [selectedModule, isSubscribed, isLoading]);
-
-  if (isLoading) {
-    return (
-      <Card className="bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-white text-lg">Loading modules...</CardTitle>
-        </CardHeader>
-      </Card>
-    );
-  }
+  }, [selectedModule, isSubscribed]);
 
   return (
     <div className="space-y-4">
@@ -133,7 +123,7 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
                 </CardDescription>
                 
                 {moduleStatus.canAccess ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="text-center">
                       <span className="text-white/70 text-sm">
                         {moduleStatus.remaining === -1 ? 'Unlimited usage' : `${moduleStatus.remaining} uses remaining`}
@@ -149,7 +139,7 @@ const MobileModuleSelector = ({ modules, onModuleSelect }: MobileModuleSelectorP
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="text-center">
                       <span className="text-white/70 text-sm">Premium Required</span>
                     </div>

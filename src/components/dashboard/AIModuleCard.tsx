@@ -45,7 +45,7 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
 
   return (
     <Card 
-      className={`bg-gradient-to-br ${module.gradient} border-0 text-white cursor-pointer hover:scale-105 ${
+      className={`bg-gradient-to-br ${module.gradient} border-0 text-white cursor-pointer hover:scale-[1.02] ${
         !moduleStatus.canAccess ? 'opacity-75' : ''
       }`}
       onClick={handleClick}
@@ -75,12 +75,12 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
         <CardTitle className="text-white text-lg">{module.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <CardDescription className="text-white/80 text-sm mb-6">
+        <CardDescription className="text-white/80 text-sm mb-4">
           {module.description}
         </CardDescription>
         
         {moduleStatus.canAccess ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="text-center">
               <span className="text-white/70 text-xs block">
                 {moduleStatus.remaining === -1 ? 'Unlimited' : `${moduleStatus.remaining} remaining`}
@@ -89,21 +89,21 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
             <Button 
               variant="secondary" 
               size="sm"
-              className="w-full bg-white/20 hover:bg-white/30 text-white border-0 mt-3"
+              className="w-full bg-white/20 hover:bg-white/30 text-white border-0"
               disabled={!moduleStatus.canUse}
             >
               {moduleStatus.canUse ? 'Launch' : 'Limit reached'}
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="text-center">
               <span className="text-white/70 text-xs block">Premium Required</span>
             </div>
             <Button 
               variant="secondary" 
               size="sm"
-              className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0 mt-3"
+              className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0"
             >
               <Crown className="w-3 h-3 mr-1" />
               Upgrade

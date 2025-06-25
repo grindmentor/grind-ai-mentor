@@ -1,13 +1,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PaymentMethods from "./PaymentMethods";
 import DashboardHeader from "./dashboard/DashboardHeader";
 import AIModuleCard from "./dashboard/AIModuleCard";
 import MobileModuleSelector from "./dashboard/MobileModuleSelector";
-import { aiModules } from "./dashboard/AIModuleData";
+import { useModules } from "@/contexts/ModulesContext";
 import { ArrowLeft, Star, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
+  const { modules, isInitialized } = useModules();
   const isMobile = useIsMobile();
   const { currentTier, isSubscribed, refreshSubscription } = useSubscription();
   const { refreshUserData } = useUserData();
@@ -71,8 +72,8 @@ const Dashboard = () => {
     );
   }
 
-  if (activeModule) {
-    const module = aiModules.find(m => m.id === activeModule);
+  if (activeModule && isInitialized) {
+    const module = modules.find(m => m.id === activeModule);
     if (module) {
       const ModuleComponent = module.component;
       return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
@@ -122,12 +123,12 @@ const Dashboard = () => {
           {/* Mobile: Dropdown Selector, Desktop: Grid Layout */}
           {isMobile ? (
             <MobileModuleSelector
-              modules={aiModules}
+              modules={modules}
               onModuleSelect={handleModuleClick}
             />
           ) : (
             <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {aiModules.map((module) => (
+              {modules.map((module) => (
                 <AIModuleCard
                   key={module.id}
                   module={module}

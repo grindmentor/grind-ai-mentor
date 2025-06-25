@@ -24,41 +24,24 @@ interface AIModuleCardProps {
 }
 
 const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
-  const { currentTier, isSubscribed, isLoading } = useSubscription();
+  const { currentTier, isSubscribed } = useSubscription();
   const { canUseFeature, getRemainingUsage } = useUsageTracking();
   const IconComponent = module.icon;
 
   const moduleStatus = useMemo(() => {
-    if (isLoading) return { canAccess: true, remaining: 0, canUse: false };
-    
     const canAccess = !module.isPremium || isSubscribed;
     const remaining = getRemainingUsage(module.usageKey as any);
     const canUse = canUseFeature(module.usageKey as any);
     
     return { canAccess, remaining, canUse };
-  }, [module.isPremium, module.usageKey, isSubscribed, isLoading]);
+  }, [module.isPremium, module.usageKey, isSubscribed]);
 
   const handleClick = () => {
     if (!moduleStatus.canAccess) {
-      // Show upgrade prompt or redirect to upgrade
       return;
     }
     onModuleClick(module.id);
   };
-
-  if (isLoading) {
-    return (
-      <Card className="bg-gray-800 border-gray-700 animate-pulse">
-        <CardHeader>
-          <div className="h-4 bg-gray-600 rounded w-3/4"></div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-3 bg-gray-600 rounded w-full mb-2"></div>
-          <div className="h-8 bg-gray-600 rounded"></div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card 
@@ -97,30 +80,30 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
         </CardDescription>
         
         {moduleStatus.canAccess ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="text-center">
-              <span className="text-white/70 text-xs block mb-2">
+              <span className="text-white/70 text-xs block">
                 {moduleStatus.remaining === -1 ? 'Unlimited' : `${moduleStatus.remaining} remaining`}
               </span>
             </div>
             <Button 
               variant="secondary" 
               size="sm"
-              className="w-full bg-white/20 hover:bg-white/30 text-white border-0"
+              className="w-full bg-white/20 hover:bg-white/30 text-white border-0 mt-3"
               disabled={!moduleStatus.canUse}
             >
               {moduleStatus.canUse ? 'Launch' : 'Limit reached'}
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="text-center">
-              <span className="text-white/70 text-xs block mb-2">Premium Required</span>
+              <span className="text-white/70 text-xs block">Premium Required</span>
             </div>
             <Button 
               variant="secondary" 
               size="sm"
-              className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0"
+              className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0 mt-3"
             >
               <Crown className="w-3 h-3 mr-1" />
               Upgrade

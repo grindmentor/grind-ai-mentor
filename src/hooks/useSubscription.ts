@@ -100,7 +100,6 @@ export const useSubscription = () => {
   const { user } = useAuth();
   const [currentTier, setCurrentTier] = useState<string>('free');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const lastCheckRef = useRef<number>(0);
   const cacheRef = useRef<{ tier: string; end: string | null } | null>(null);
   const initRef = useRef<boolean>(false);
@@ -109,22 +108,18 @@ export const useSubscription = () => {
     if (user && !initRef.current) {
       initRef.current = true;
       
-      // Check cache first for immediate display
+      // Set cached data immediately
       const cached = cacheRef.current;
       if (cached) {
         setCurrentTier(cached.tier);
         setSubscriptionEnd(cached.end);
-        setIsLoading(false);
-      } else {
-        setIsLoading(true);
       }
       
-      // Always check subscription status but don't show loading if cached
+      // Check subscription status in background
       checkSubscription();
     } else if (!user) {
       setCurrentTier('free');
       setSubscriptionEnd(null);
-      setIsLoading(false);
       cacheRef.current = null;
       initRef.current = false;
     }
@@ -141,16 +136,12 @@ export const useSubscription = () => {
         setSubscriptionEnd(null);
         cacheRef.current = newStatus;
         lastCheckRef.current = Date.now();
-        setIsLoading(false);
         return;
       }
 
-      // Check cache freshness (5 minutes)
+      // Check cache freshness (30 seconds)
       const now = Date.now();
-      if (cacheRef.current && (now - lastCheckRef.current) < 300000) {
-        setCurrentTier(cacheRef.current.tier);
-        setSubscriptionEnd(cacheRef.current.end);
-        setIsLoading(false);
+      if (cacheRef.current && (now - lastCheckRef.current) < 30000) {
         return;
       }
 
@@ -164,7 +155,6 @@ export const useSubscription = () => {
 
       if (error) {
         console.error('Error checking subscription:', error);
-        setIsLoading(false);
         return;
       }
 
@@ -186,15 +176,16 @@ export const useSubscription = () => {
         }
       }
 
-      // Update state and cache
-      setCurrentTier(newTier);
-      setSubscriptionEnd(newEnd);
-      cacheRef.current = { tier: newTier, end: newEnd };
+      // Only update if changed to prevent flickering
+      if (newTier !== currentTier || newEnd !== subscriptionEnd) {
+        setCurrentTier(newTier);
+        setSubscriptionEnd(newEnd);
+        cacheRef.current = { tier: newTier, end: newEnd };
+      }
+      
       lastCheckRef.current = now;
     } catch (error) {
       console.error('Error checking subscription:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -206,7 +197,7 @@ export const useSubscription = () => {
     currentTierData,
     subscriptionEnd,
     isSubscribed,
-    isLoading,
+    isLoading: false, // Always false to eliminate loading states
     refreshSubscription: checkSubscription
   };
 };

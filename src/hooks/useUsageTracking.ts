@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,14 +33,28 @@ interface CurrentUsage {
 export const useUsageTracking = () => {
   const { user } = useAuth();
   const { currentTierData, currentTier } = useSubscription();
-  const [currentUsage, setCurrentUsage] = useState<CurrentUsage | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [currentUsage, setCurrentUsage] = useState<CurrentUsage>({
+    coach_gpt_queries: 0,
+    meal_plan_generations: 0,
+    food_log_analyses: 0,
+    tdee_calculations: 0,
+    habit_checks: 0,
+    training_programs: 0,
+    progress_analyses: 0,
+    cut_calc_uses: 0,
+    workout_timer_sessions: 0,
+    food_photo_analyses: 0
+  });
+  const cacheRef = useRef<CurrentUsage | null>(null);
 
   useEffect(() => {
     if (user) {
+      // Set cached data immediately
+      if (cacheRef.current) {
+        setCurrentUsage(cacheRef.current);
+      }
+      // Fetch in background
       fetchUsageData();
-    } else {
-      setLoading(false);
     }
   }, [user]);
 
@@ -57,31 +71,28 @@ export const useUsageTracking = () => {
         return;
       }
 
-      if (data && data.length > 0) {
-        setCurrentUsage(data[0]);
-      } else {
-        setCurrentUsage({
-          coach_gpt_queries: 0,
-          meal_plan_generations: 0,
-          food_log_analyses: 0,
-          tdee_calculations: 0,
-          habit_checks: 0,
-          training_programs: 0,
-          progress_analyses: 0,
-          cut_calc_uses: 0,
-          workout_timer_sessions: 0,
-          food_photo_analyses: 0
-        });
-      }
+      const usage = data && data.length > 0 ? data[0] : {
+        coach_gpt_queries: 0,
+        meal_plan_generations: 0,
+        food_log_analyses: 0,
+        tdee_calculations: 0,
+        habit_checks: 0,
+        training_programs: 0,
+        progress_analyses: 0,
+        cut_calc_uses: 0,
+        workout_timer_sessions: 0,
+        food_photo_analyses: 0
+      };
+
+      setCurrentUsage(usage);
+      cacheRef.current = usage;
     } catch (error) {
       console.error('Error fetching usage:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const canUseFeature = (featureKey: keyof UsageLimits): boolean => {
-    if (!currentUsage || !currentTierData) return false;
+    if (!currentTierData) return false;
     
     const limit = currentTierData.limits[featureKey];
     
@@ -93,7 +104,7 @@ export const useUsageTracking = () => {
   };
 
   const incrementUsage = async (featureKey: keyof UsageLimits): Promise<boolean> => {
-    if (!user || !currentUsage) return false;
+    if (!user) return false;
 
     // Check if user can use this feature
     if (!canUseFeature(featureKey)) {
@@ -117,10 +128,13 @@ export const useUsageTracking = () => {
         return false;
       }
 
-      setCurrentUsage(prev => prev ? {
-        ...prev,
-        [featureKey]: prev[featureKey] + 1
-      } : null);
+      const newUsage = {
+        ...currentUsage,
+        [featureKey]: currentUsage[featureKey] + 1
+      };
+      
+      setCurrentUsage(newUsage);
+      cacheRef.current = newUsage;
 
       return true;
     } catch (error) {
@@ -130,7 +144,7 @@ export const useUsageTracking = () => {
   };
 
   const getRemainingUsage = (featureKey: keyof UsageLimits): number => {
-    if (!currentUsage || !currentTierData) return 0;
+    if (!currentTierData) return 0;
     
     const limit = currentTierData.limits[featureKey];
     
@@ -141,7 +155,7 @@ export const useUsageTracking = () => {
   };
 
   const getUsagePercentage = (featureKey: keyof UsageLimits): number => {
-    if (!currentUsage || !currentTierData) return 0;
+    if (!currentTierData) return 0;
     
     const limit = currentTierData.limits[featureKey];
     
@@ -153,7 +167,7 @@ export const useUsageTracking = () => {
 
   return {
     currentUsage,
-    loading,
+    loading: false, // Always false to eliminate loading states
     canUseFeature,
     incrementUsage,
     getRemainingUsage,

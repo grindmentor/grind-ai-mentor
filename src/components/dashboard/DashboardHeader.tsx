@@ -9,7 +9,7 @@ import { useState } from "react";
 
 const DashboardHeader = () => {
   const navigate = useNavigate();
-  const { currentTier, isSubscribed, isLoading } = useSubscription();
+  const { currentTier, isSubscribed } = useSubscription();
   const { user } = useAuth();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -21,11 +21,9 @@ const DashboardHeader = () => {
             Welcome back, {user?.email?.split('@')[0] || 'User'}!
           </h1>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            {!isLoading && (
-              <Badge className={`w-fit ${isSubscribed ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}`}>
-                {currentTier === 'free' ? 'Free Plan' : `${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Plan`}
-              </Badge>
-            )}
+            <Badge className={`w-fit ${isSubscribed ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}`}>
+              {currentTier === 'free' ? 'Free Plan' : `${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Plan`}
+            </Badge>
             <p className="text-gray-400 text-sm md:text-base">
               Choose an AI module to get started with your fitness journey.
             </p>

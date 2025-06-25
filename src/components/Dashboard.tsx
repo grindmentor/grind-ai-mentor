@@ -37,19 +37,11 @@ const Dashboard = () => {
 
   const handlePaymentSuccess = async () => {
     setSelectedPlan(null);
-    console.log('Payment successful! Refreshing subscription status...');
-    
-    // Refresh subscription status immediately after payment
     await refreshSubscription();
-    
-    // Also refresh user data
     refreshUserData();
-    
-    console.log('Premium features unlocked.');
   };
 
   const handleFoodLogged = () => {
-    // Refresh user data when food is logged
     refreshUserData();
   };
 
@@ -61,7 +53,7 @@ const Dashboard = () => {
             <Button 
               variant="ghost" 
               onClick={handleBack} 
-              className="text-white hover:bg-gray-800 hover:text-orange-400 transition-colors w-fit"
+              className="text-white hover:bg-gray-800 hover:text-orange-400 w-fit"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Dashboard
@@ -83,8 +75,6 @@ const Dashboard = () => {
     const module = aiModules.find(m => m.id === activeModule);
     if (module) {
       const ModuleComponent = module.component;
-      
-      // Always pass both props to all modules - let them use what they need
       return <ModuleComponent onBack={handleBack} onFoodLogged={handleFoodLogged} />;
     }
   }

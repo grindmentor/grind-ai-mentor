@@ -123,12 +123,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           checkOnboardingStatus(session.user.id);
         }
         
-        // Much faster loading completion for mobile
+        // Immediate loading completion
         if (mounted) {
-          const loadingDelay = isMobile() ? 200 : (isIOSPWA() ? 500 : 100);
-          setTimeout(() => {
-            setLoading(false);
-          }, loadingDelay);
+          setLoading(false);
         }
         
         return () => {

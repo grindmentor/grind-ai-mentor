@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +27,6 @@ const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [appReady, setAppReady] = useState(false);
   
   const navigate = useNavigate();
   const { user, loading, signOut, hasCompletedOnboarding, markOnboardingComplete } = useAuth();
@@ -69,11 +69,9 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, isMobile]);
 
-  // Faster app initialization for mobile
+  // Immediate app initialization
   useEffect(() => {
     const initializeApp = async () => {
-      const startTime = performance.now();
-      
       try {
         if (!loading && !user) {
           navigate('/signin');
@@ -93,11 +91,6 @@ const App = () => {
             }
           }
         }
-        
-        const endTime = performance.now();
-        console.log(`App initialization took ${endTime - startTime}ms`);
-        
-        setAppReady(true);
       } catch (error) {
         console.error('App initialization error:', error);
       }
@@ -154,27 +147,17 @@ const App = () => {
     }
   }, [performanceMetrics]);
 
-  // Faster loading completion
-  if (loading || showPreloader || !appReady) {
-    return showPreloader ? (
-      <AppPreloader onComplete={handlePreloaderComplete} minDuration={400} />
-    ) : (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center ios-safe-area">
-        <PremiumLoader 
-          variant="minimal"
-          showMetrics={false}
-          progress={appReady ? 100 : 75}
-        />
-      </div>
-    );
+  // Immediate loading - only show preloader briefly and only if really needed
+  if (loading && showPreloader) {
+    return <AppPreloader onComplete={handlePreloaderComplete} minDuration={50} />;
   }
 
-  if (!user) {
+  if (!user && !loading) {
     return null;
   }
 
   // Show mandatory onboarding for users who haven't completed it
-  if (!hasCompletedOnboarding) {
+  if (!hasCompletedOnboarding && user) {
     return (
       <EmailVerificationGuard userEmail={user.email || ''}>
         <div className="min-h-screen bg-black text-white ios-safe-area">
@@ -185,7 +168,7 @@ const App = () => {
   }
 
   return (
-    <EmailVerificationGuard userEmail={user.email || ''}>
+    <EmailVerificationGuard userEmail={user?.email || ''}>
       <UserDataProvider>
         <div 
           className="min-h-screen bg-black text-white ios-safe-area"
@@ -207,7 +190,7 @@ const App = () => {
           {showWelcomeBack && (
             <Suspense fallback={<PremiumLoader variant="minimal" />}>
               <WelcomeBack 
-                userEmail={user.email || ''} 
+                userEmail={user?.email || ''} 
                 onContinue={handleWelcomeBackContinue}
               />
             </Suspense>
@@ -286,8 +269,8 @@ const App = () => {
               <div className="mt-auto">
                 <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
                   <div className="text-white text-sm font-medium mb-1">Signed in as:</div>
-                  <div className="text-gray-400 text-xs truncate">{user.email}</div>
-                  {user.email_confirmed_at && (
+                  <div className="text-gray-400 text-xs truncate">{user?.email}</div>
+                  {user?.email_confirmed_at && (
                     <div className="text-green-400 text-xs mt-1">✓ Verified</div>
                   )}
                   

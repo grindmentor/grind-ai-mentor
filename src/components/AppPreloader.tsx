@@ -9,7 +9,7 @@ interface AppPreloaderProps {
 
 const AppPreloader: React.FC<AppPreloaderProps> = ({ 
   onComplete, 
-  minDuration = 500 // Reduced from 1000ms
+  minDuration = 100 // Drastically reduced
 }) => {
   const [progress, setProgress] = useState(0);
 
@@ -26,23 +26,22 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
   };
 
   useEffect(() => {
-    // Much shorter duration for mobile devices
-    const baseDuration = isMobile() ? 400 : minDuration;
-    const adjustedDuration = isIOSPWA() ? baseDuration * 1.2 : baseDuration;
+    // Minimal duration for all devices
+    const baseDuration = 50; // Very fast
+    const adjustedDuration = isIOSPWA() ? 100 : baseDuration;
     
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          // Minimal delay for completion
-          const completionDelay = isMobile() ? 100 : 200;
-          setTimeout(onComplete, completionDelay);
+          // Immediate completion
+          setTimeout(onComplete, 0);
           return 100;
         }
-        // Faster progress increments for mobile
-        return prev + (isMobile() ? 25 : 20);
+        // Very fast progress increments
+        return prev + 50;
       });
-    }, adjustedDuration / (isMobile() ? 4 : 5));
+    }, adjustedDuration / 2);
 
     return () => clearInterval(interval);
   }, [minDuration, onComplete]);
@@ -61,14 +60,14 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
         {/* Progress Bar */}
         <div className="w-64 bg-gray-800 rounded-full h-2">
           <div 
-            className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full transition-all duration-200 ease-out"
+            className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full transition-all duration-100 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
         {/* Loading Text */}
         <p className="text-gray-400 text-sm">
-          {isMobile() ? 'Optimizing for mobile...' : 'Initializing your AI fitness coach...'}
+          Loading...
         </p>
       </div>
     </div>

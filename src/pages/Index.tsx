@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Target, TrendingUp, Timer, Utensils, Camera, Dumbbell, Crown, ArrowRight, CheckCircle, Sparkles, LogIn } from "lucide-react";
+import { Brain, Target, TrendingUp, Timer, Utensils, Camera, Dumbbell, Crown, ArrowRight, CheckCircle, Sparkles, LogIn, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/ui/logo";
@@ -99,12 +99,20 @@ const Index = () => {
                 ) : (
                   <div className="flex items-center space-x-2">
                     <SmoothButton
+                      variant="outline"
+                      onClick={() => navigate('/signin')}
+                      className="border-gray-600 text-white hover:bg-gray-800 flex items-center"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Login
+                    </SmoothButton>
+                    <SmoothButton
                       onClick={() => navigate('/signin')}
                       className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 flex items-center"
                     >
                       <LogIn className="w-4 h-4 mr-2" />
                       <span className="hidden sm:inline">Get Started</span>
-                      <span className="sm:hidden">Login</span>
+                      <span className="sm:hidden">Sign Up</span>
                     </SmoothButton>
                   </div>
                 )}
@@ -135,14 +143,37 @@ const Index = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 sm:mb-12 px-4">
-                <SmoothButton
-                  size="lg"
-                  onClick={() => navigate(user ? '/app' : '/signin')}
-                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
-                >
-                  {user ? 'Go to Dashboard' : 'Start Free Trial'}
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </SmoothButton>
+                {user ? (
+                  <SmoothButton
+                    size="lg"
+                    onClick={() => navigate('/app')}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
+                  >
+                    Go to Dashboard
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </SmoothButton>
+                ) : (
+                  <>
+                    <SmoothButton
+                      size="lg"
+                      onClick={() => navigate('/signin')}
+                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
+                    >
+                      Start Free Trial
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </SmoothButton>
+                    
+                    <SmoothButton
+                      variant="outline"
+                      size="lg"
+                      onClick={() => navigate('/signin')}
+                      className="border-gray-600 text-white hover:bg-gray-800 text-lg px-6 sm:px-8 py-4 w-full sm:w-auto flex items-center justify-center"
+                    >
+                      <User className="w-5 h-5 mr-2" />
+                      Existing User? Login
+                    </SmoothButton>
+                  </>
+                )}
                 
                 <SmoothButton
                   variant="outline"
@@ -234,14 +265,27 @@ const Index = () => {
                 <p className="text-lg sm:text-xl text-gray-400 mb-8">
                   Join thousands of users who are already achieving their fitness goals with AI-powered guidance.
                 </p>
-                <SmoothButton
-                  size="lg"
-                  onClick={() => navigate(user ? '/app' : '/signin')}
-                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow"
-                >
-                  {user ? 'Access Dashboard' : 'Start Your Journey'}
-                  <Dumbbell className="w-5 h-5 ml-2" />
-                </SmoothButton>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <SmoothButton
+                    size="lg"
+                    onClick={() => navigate(user ? '/app' : '/signin')}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
+                  >
+                    {user ? 'Access Dashboard' : 'Start Your Journey'}
+                    <Dumbbell className="w-5 h-5 ml-2" />
+                  </SmoothButton>
+                  {!user && (
+                    <SmoothButton
+                      variant="outline"
+                      size="lg"
+                      onClick={() => navigate('/signin')}
+                      className="border-gray-600 text-white hover:bg-gray-800 text-lg px-6 sm:px-8 py-4 w-full sm:w-auto flex items-center justify-center"
+                    >
+                      <User className="w-5 h-5 mr-2" />
+                      Already Have Account?
+                    </SmoothButton>
+                  )}
+                </div>
               </CardContent>
             </AnimatedCard>
           </div>

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,12 +40,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   // Check onboarding completion status
-  const checkOnboardingStatus = (userId: string) => {
+  const checkOnboardingStatus = async (userId: string) => {
     try {
-      const onboardingCompleted = localStorage.getItem(`grindmentor_onboarding_${userId}`);
-      setHasCompletedOnboarding(!!onboardingCompleted);
+      // Check localStorage first for immediate response
+      const localOnboarding = localStorage.getItem(`grindmentor_onboarding_${userId}`);
+      if (localOnboarding) {
+        setHasCompletedOnboarding(true);
+        return;
+      }
+      
+      // Check database for profile data to determine onboarding completion
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('weight, height, experience, activity, goal')
+        .eq('id', userId)
+        .single();
+      
+      if (!error && profile) {
+        // If user has basic profile data, consider onboarding complete
+        const isComplete = profile.weight && profile.height && profile.experience && profile.activity && profile.goal;
+        setHasCompletedOnboarding(isComplete);
+        
+        // Update localStorage to match database state
+        if (isComplete) {
+          localStorage.setItem(`grindmentor_onboarding_${userId}`, 'completed');
+        }
+      } else {
+        setHasCompletedOnboarding(false);
+      }
     } catch (error) {
-      console.warn('Could not access localStorage for onboarding status:', error);
+      console.warn('Could not check onboarding status:', error);
       setHasCompletedOnboarding(false);
     }
   };

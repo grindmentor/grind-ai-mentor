@@ -52,7 +52,11 @@ const AuthenticatedApp = () => {
   }
 
   return user ? (
-    <AppPage />
+    <PreferencesProvider>
+      <UserDataProvider>
+        <AppPage />
+      </UserDataProvider>
+    </PreferencesProvider>
   ) : null;
 };
 
@@ -81,29 +85,61 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <UserDataProvider>
-          <PreferencesProvider>
-            <ModulesProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/signin" element={<SignIn />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/app" element={<AuthenticatedApp />} />
-                <Route path="/modules" element={<ModuleLibrary />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </ModulesProvider>
-          </PreferencesProvider>
-        </UserDataProvider>
+        <ModulesProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/app" element={<AuthenticatedApp />} />
+            <Route 
+              path="/modules" 
+              element={
+                <PreferencesProvider>
+                  <UserDataProvider>
+                    <ModuleLibrary />
+                  </UserDataProvider>
+                </PreferencesProvider>
+              } 
+            />
+            <Route 
+              path="/pricing" 
+              element={
+                <PreferencesProvider>
+                  <UserDataProvider>
+                    <Pricing />
+                  </UserDataProvider>
+                </PreferencesProvider>
+              } 
+            />
+            <Route 
+              path="/account" 
+              element={
+                <PreferencesProvider>
+                  <UserDataProvider>
+                    <Account />
+                  </UserDataProvider>
+                </PreferencesProvider>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <PreferencesProvider>
+                  <UserDataProvider>
+                    <Settings />
+                  </UserDataProvider>
+                </PreferencesProvider>
+              } 
+            />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ModulesProvider>
       </AuthProvider>
     </Router>
   );

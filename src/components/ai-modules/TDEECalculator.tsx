@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calculator, ArrowLeft } from "lucide-react";
+import { Calculator, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
+import { useSmartUserData } from '@/hooks/useSmartUserData';
+import { SmartInput } from '@/components/ui/smart-input';
 
 interface TDEECalculatorProps {
   onBack: () => void;
@@ -16,17 +17,47 @@ interface TDEECalculatorProps {
 
 const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   const { user } = useAuth();
+  const { smartData, getPrefillData, refreshData } = useSmartUserData();
+  
   const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [age, setAge] = useState<number | null>(null);
-  const [weight, setWeight] = useState<number | null>(null);
-  const [height, setHeight] = useState<number | null>(null);
+  const [age, setAge] = useState('');
+  const [weight, setWeight] = useState('');
+  const [height, setHeight] = useState('');
   const [activityLevel, setActivityLevel] = useState<'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active'>('sedentary');
   const [goal, setGoal] = useState<'lose_weight' | 'maintain_weight' | 'gain_weight' | 'build_muscle' | 'improve_fitness' | 'cut' | 'bulk' | 'recomp'>('maintain_weight');
-  const [bodyFatPercentage, setBodyFatPercentage] = useState<number | null>(null);
+  const [bodyFatPercentage, setBodyFatPercentage] = useState('');
   const [results, setResults] = useState<{ bmr: number; tdee: number; recommendedCalories: number } | null>(null);
+  const [prefillApplied, setPrefillApplied] = useState(false);
+
+  // Get prefill data
+  const prefillData = getPrefillData({ includePersonal: true, includeFitness: true });
+
+  // Auto-prefill when component loads and data is available
+  useEffect(() => {
+    if (smartData && !prefillApplied) {
+      if (prefillData.age && !age) setAge(String(prefillData.age));
+      if (prefillData.weight && !weight) setWeight(String(prefillData.weight));
+      if (prefillData.height && !height) setHeight(String(prefillData.height));
+      if (prefillData.gender && gender === 'male') setGender(prefillData.gender as 'male' | 'female');
+      if (prefillData.activityLevel && activityLevel === 'sedentary') {
+        setActivityLevel(prefillData.activityLevel as any);
+      }
+      if (prefillData.fitnessGoals && goal === 'maintain_weight') {
+        setGoal(prefillData.fitnessGoals as any);
+      }
+      if (prefillData.bodyFatPercentage && !bodyFatPercentage) {
+        setBodyFatPercentage(String(prefillData.bodyFatPercentage));
+      }
+      setPrefillApplied(true);
+    }
+  }, [smartData, prefillData, prefillApplied]);
 
   const calculateTDEE = () => {
-    if (!weight || !height || !age) {
+    const weightNum = parseFloat(weight);
+    const heightNum = parseFloat(height);
+    const ageNum = parseInt(age);
+    
+    if (!weightNum || !heightNum || !ageNum) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -34,15 +65,16 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     let bmr: number;
     
     // Use Katch-McArdle formula if body fat is provided (more accurate)
-    if (bodyFatPercentage && bodyFatPercentage > 0 && bodyFatPercentage < 50) {
-      const leanBodyMass = weight * (1 - bodyFatPercentage / 100);
+    const bodyFatNum = parseFloat(bodyFatPercentage);
+    if (bodyFatNum && bodyFatNum > 0 && bodyFatNum < 50) {
+      const leanBodyMass = weightNum * (1 - bodyFatNum / 100);
       bmr = 370 + (21.6 * leanBodyMass);
     } else {
       // Use Mifflin-St Jeor equation as fallback
       if (gender === 'male') {
-        bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+        bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum + 5;
       } else {
-        bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+        bmr = 10 * weightNum + 6.25 * heightNum - 5 * ageNum - 161;
       }
     }
 
@@ -74,7 +106,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   };
 
   const saveTDEECalculation = async (bmr: number, tdee: number, recommendedCalories: number) => {
-    if (!user || !age || !weight || !height) return;
+    if (!user) return;
 
     try {
       const { error } = await supabase
@@ -86,9 +118,9 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
           recommended_calories: recommendedCalories,
           activity_level: activityLevel,
           gender,
-          age,
-          weight,
-          height,
+          age: parseInt(age),
+          weight: parseFloat(weight),
+          height: parseFloat(height),
           goal
         });
 
@@ -97,6 +129,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
         toast.error('Failed to save TDEE calculation');
       } else {
         toast.success('TDEE calculation saved!');
+        // Refresh smart data to include new calculation
+        setTimeout(() => refreshData(), 500);
       }
     } catch (error) {
       console.error('Error saving TDEE calculation:', error);
@@ -106,13 +140,26 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
   const handleReset = () => {
     setGender('male');
-    setAge(null);
-    setWeight(null);
-    setHeight(null);
+    setAge('');
+    setWeight('');
+    setHeight('');
     setActivityLevel('sedentary');
     setGoal('maintain_weight');
-    setBodyFatPercentage(null);
+    setBodyFatPercentage('');
     setResults(null);
+    setPrefillApplied(false);
+  };
+
+  const handleSmartFill = () => {
+    if (prefillData.age) setAge(String(prefillData.age));
+    if (prefillData.weight) setWeight(String(prefillData.weight));
+    if (prefillData.height) setHeight(String(prefillData.height));
+    if (prefillData.gender) setGender(prefillData.gender as 'male' | 'female');
+    if (prefillData.activityLevel) setActivityLevel(prefillData.activityLevel as any);
+    if (prefillData.fitnessGoals) setGoal(prefillData.fitnessGoals as any);
+    if (prefillData.bodyFatPercentage) setBodyFatPercentage(String(prefillData.bodyFatPercentage));
+    
+    toast.success('Form pre-filled with your saved data!');
   };
 
   const activityOptions = [
@@ -154,8 +201,23 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Personal Information</CardTitle>
-          <CardDescription>Enter your details for accurate calculations</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-foreground">Personal Information</CardTitle>
+              <CardDescription>Enter your details for accurate calculations</CardDescription>
+            </div>
+            {smartData && Object.keys(prefillData).length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSmartFill}
+                className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Smart Fill
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -171,71 +233,45 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="age" className="text-foreground">Age (years)</Label>
-            <Input
-              id="age"
-              type="number"
-              placeholder="e.g., 30"
-              value={age || ''}
-              onChange={(e) => setAge(e.target.value ? parseInt(e.target.value) : null)}
-              className="bg-input border-border text-foreground"
-              min="15"
-              max="90"
-            />
-          </div>
+          <SmartInput
+            label="Age (years)"
+            value={age}
+            onChange={setAge}
+            prefillValue={prefillData.age}
+            type="number"
+            placeholder="e.g., 30"
+          />
 
-          <div>
-            <Label htmlFor="weight" className="text-foreground">Weight (kg)</Label>
-            <Input
-              id="weight"
-              type="number"
-              placeholder="e.g., 75"
-              value={weight || ''}
-              onChange={(e) => setWeight(e.target.value ? parseInt(e.target.value) : null)}
-              className="bg-input border-border text-foreground"
-              min="30"
-              max="250"
-            />
-          </div>
+          <SmartInput
+            label={`Weight (${smartData?.weightUnit || 'kg'})`}
+            value={weight}
+            onChange={setWeight}
+            prefillValue={prefillData.weight}
+            type="number"
+            placeholder="e.g., 75"
+          />
 
-          <div>
-            <Label htmlFor="height" className="text-foreground">Height (cm)</Label>
-            <Input
-              id="height"
-              type="number"
-              placeholder="e.g., 180"
-              value={height || ''}
-              onChange={(e) => setHeight(e.target.value ? parseInt(e.target.value) : null)}
-              className="bg-input border-border text-foreground"
-              min="120"
-              max="250"
-            />
-          </div>
+          <SmartInput
+            label={`Height (${smartData?.heightUnit === 'ft-in' ? 'inches' : smartData?.heightUnit || 'cm'})`}
+            value={height}
+            onChange={setHeight}
+            prefillValue={prefillData.height}
+            type="number"
+            placeholder="e.g., 180"
+          />
           
-          <div>
-            <Label htmlFor="bodyFat" className="text-foreground">
-              Body Fat Percentage (optional)
-            </Label>
-            <Input
-              id="bodyFat"
-              type="number"
-              placeholder="e.g., 15"
-              value={bodyFatPercentage || ''}
-              onChange={(e) => setBodyFatPercentage(e.target.value ? parseFloat(e.target.value) : null)}
-              className="bg-input border-border text-foreground"
-              min="5"
-              max="45"
-              step="0.1"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Providing body fat % enables more accurate calculations using the Katch-McArdle formula
-            </p>
-          </div>
+          <SmartInput
+            label="Body Fat Percentage (optional)"
+            value={bodyFatPercentage}
+            onChange={setBodyFatPercentage}
+            prefillValue={prefillData.bodyFatPercentage}
+            type="number"
+            placeholder="e.g., 15"
+          />
 
           <div>
             <Label htmlFor="activity" className="text-foreground">Activity Level</Label>
-            <Select value={activityLevel} onValueChange={(value) => setActivityLevel(value as 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active')}>
+            <Select value={activityLevel} onValueChange={(value) => setActivityLevel(value as any)}>
               <SelectTrigger className="bg-input border-border text-foreground">
                 <SelectValue placeholder="Select activity level" />
               </SelectTrigger>
@@ -249,7 +285,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
           <div>
             <Label htmlFor="goal" className="text-foreground">Fitness Goal</Label>
-            <Select value={goal} onValueChange={(value) => setGoal(value as 'lose_weight' | 'maintain_weight' | 'gain_weight' | 'build_muscle' | 'improve_fitness' | 'cut' | 'bulk' | 'recomp')}>
+            <Select value={goal} onValueChange={(value) => setGoal(value as any)}>
               <SelectTrigger className="bg-input border-border text-foreground">
                 <SelectValue placeholder="Select fitness goal" />
               </SelectTrigger>

@@ -366,39 +366,51 @@ export type Database = {
         Row: {
           activity: string | null
           birthday: string | null
+          body_fat_percentage: number | null
           created_at: string
+          dietary_preferences: string | null
           display_name: string | null
           email: string
           experience: string | null
           goal: string | null
           height: number | null
           id: string
+          injuries: string | null
+          preferred_workout_style: string | null
           updated_at: string
           weight: number | null
         }
         Insert: {
           activity?: string | null
           birthday?: string | null
+          body_fat_percentage?: number | null
           created_at?: string
+          dietary_preferences?: string | null
           display_name?: string | null
           email: string
           experience?: string | null
           goal?: string | null
           height?: number | null
           id: string
+          injuries?: string | null
+          preferred_workout_style?: string | null
           updated_at?: string
           weight?: number | null
         }
         Update: {
           activity?: string | null
           birthday?: string | null
+          body_fat_percentage?: number | null
           created_at?: string
+          dietary_preferences?: string | null
           display_name?: string | null
           email?: string
           experience?: string | null
           goal?: string | null
           height?: number | null
           id?: string
+          injuries?: string | null
+          preferred_workout_style?: string | null
           updated_at?: string
           weight?: number | null
         }

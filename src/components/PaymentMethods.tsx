@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard, Smartphone, Building, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface PaymentMethodsProps {
   planName: string;
@@ -16,6 +17,7 @@ interface PaymentMethodsProps {
 const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { refreshSubscription } = useSubscription();
 
   const handleStripePayment = async () => {
     setIsProcessing(true);
@@ -29,11 +31,30 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
-        // Call onSuccess after a short delay to allow for processing
-        setTimeout(() => {
-          onSuccess();
-        }, 2000);
+        // Open Stripe checkout in a new tab
+        const newWindow = window.open(data.url, '_blank');
+        
+        // Listen for payment completion
+        const checkPaymentStatus = async () => {
+          try {
+            // Wait a bit then refresh subscription status
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            await refreshSubscription();
+            
+            toast({
+              title: "Payment Successful!",
+              description: "Your premium features are now active.",
+              duration: 5000,
+            });
+            
+            onSuccess();
+          } catch (error) {
+            console.error('Error checking payment status:', error);
+          }
+        };
+
+        // Check payment status after a delay
+        setTimeout(checkPaymentStatus, 5000);
       }
     } catch (error) {
       console.error('Payment error:', error);

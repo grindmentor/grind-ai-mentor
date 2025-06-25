@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import PaymentMethods from "./PaymentMethods";
 import DashboardHeader from "./dashboard/DashboardHeader";
 import AIModuleCard from "./dashboard/AIModuleCard";
+import MobileModuleSelector from "./dashboard/MobileModuleSelector";
 import { aiModules } from "./dashboard/AIModuleData";
 import { ArrowLeft, Star, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,7 +18,7 @@ const Dashboard = () => {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<{name: string, price: number} | null>(null);
   const isMobile = useIsMobile();
-  const { currentTier, isSubscribed } = useSubscription();
+  const { currentTier, isSubscribed, refreshSubscription } = useSubscription();
   const { refreshUserData } = useUserData();
   const navigate = useNavigate();
 
@@ -34,9 +35,17 @@ const Dashboard = () => {
     navigate('/pricing');
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     setSelectedPlan(null);
-    console.log('Payment successful! Premium features unlocked.');
+    console.log('Payment successful! Refreshing subscription status...');
+    
+    // Refresh subscription status immediately after payment
+    await refreshSubscription();
+    
+    // Also refresh user data
+    refreshUserData();
+    
+    console.log('Premium features unlocked.');
   };
 
   const handleFoodLogged = () => {
@@ -120,20 +129,23 @@ const Dashboard = () => {
             </Card>
           )}
 
-          {/* Improved Mobile Grid Layout */}
-          <div className={`grid gap-3 sm:gap-6 ${
-            isMobile 
-              ? 'grid-cols-2' // Always 2 columns on mobile for cleaner look
-              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-          }`}>
-            {aiModules.map((module) => (
-              <AIModuleCard
-                key={module.id}
-                module={module}
-                onModuleClick={handleModuleClick}
-              />
-            ))}
-          </div>
+          {/* Mobile: Dropdown Selector, Desktop: Grid Layout */}
+          {isMobile ? (
+            <MobileModuleSelector
+              modules={aiModules}
+              onModuleSelect={handleModuleClick}
+            />
+          ) : (
+            <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {aiModules.map((module) => (
+                <AIModuleCard
+                  key={module.id}
+                  module={module}
+                  onModuleClick={handleModuleClick}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

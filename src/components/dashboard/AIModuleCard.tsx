@@ -70,31 +70,35 @@ const AIModuleCard = ({ module, onModuleClick }: AIModuleCardProps) => {
         <CardTitle className="text-white text-lg">{module.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <CardDescription className="text-white/80 text-sm mb-3">
+        <CardDescription className="text-white/80 text-sm mb-4">
           {module.description}
         </CardDescription>
         
         {canAccess ? (
-          <div className="flex items-center justify-between">
-            <span className="text-white/70 text-xs">
-              {remaining === -1 ? 'Unlimited' : `${remaining} remaining`}
-            </span>
+          <div className="space-y-3">
+            <div className="text-center">
+              <span className="text-white/70 text-xs">
+                {remaining === -1 ? 'Unlimited' : `${remaining} remaining`}
+              </span>
+            </div>
             <Button 
               variant="secondary" 
               size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-0"
+              className="w-full bg-white/20 hover:bg-white/30 text-white border-0"
               disabled={!canUse}
             >
               {canUse ? 'Launch' : 'Limit reached'}
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
-            <span className="text-white/70 text-xs">Premium Required</span>
+          <div className="space-y-3">
+            <div className="text-center">
+              <span className="text-white/70 text-xs">Premium Required</span>
+            </div>
             <Button 
               variant="secondary" 
               size="sm"
-              className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0"
+              className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border-0"
             >
               <Crown className="w-3 h-3 mr-1" />
               Upgrade

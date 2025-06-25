@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,7 +116,6 @@ Provide exact values using the most recent and accurate nutritional data availab
     }
   };
 
-  // Enhanced nutrient extraction with multiple patterns
   const extractNutrientValue = (text: string, nutrient: string): number | null => {
     const patterns = [
       new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)`, 'i'),
@@ -138,28 +136,28 @@ Provide exact values using the most recent and accurate nutritional data availab
   const features = [
     {
       icon: <Target className="w-4 h-4" />,
-      title: "2024 Databases",
-      description: "USDA Food Data Central, Matvaretabellen"
+      title: "AI Recognition",
+      description: "Advanced food identification"
     },
     {
       icon: <Sparkles className="w-4 h-4" />,
-      title: "Professional Accuracy",
-      description: "Evidence-based portion estimation"
+      title: "Macro Analysis",
+      description: "Precise nutritional breakdown"
     },
     {
       icon: <CheckCircle className="w-4 h-4" />,
-      title: "Scientific Method",
-      description: "Cross-referenced nutritional data"
+      title: "Smart Logging",
+      description: "Automatic food diary entry"
     },
     {
       icon: <Clock className="w-4 h-4" />,
-      title: "Instant Analysis",
-      description: "Complete macro and micro breakdown"
+      title: "Quick Process",
+      description: "Instant photo analysis"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-900 via-pink-800 to-rose-900 text-white" style={{fontFamily: 'Playfair Display, serif'}}>
+    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-pink-900 text-white">
       <div className="p-6">
         <div className="max-w-5xl mx-auto space-y-8">
           {/* Header */}
@@ -168,20 +166,20 @@ Provide exact values using the most recent and accurate nutritional data availab
               <Button 
                 variant="ghost" 
                 onClick={onBack} 
-                className="text-pink-200 hover:text-white hover:bg-pink-800/50"
+                className="text-slate-400 hover:text-white hover:bg-slate-800/50"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Dashboard
               </Button>
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-pink-700 rounded-2xl flex items-center justify-center shadow-xl shadow-pink-500/25">
+                <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-pink-700 rounded-2xl flex items-center justify-center shadow-xl shadow-pink-500/25 border-2 border-pink-400/30">
                   <Camera className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-300 to-rose-200 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold text-white">
                     Food Photo Logger
                   </h1>
-                  <p className="text-pink-200 text-lg">AI-powered nutrition analysis with 2024 scientific databases</p>
+                  <p className="text-slate-400 text-lg">AI-powered nutrition analysis from photos</p>
                 </div>
               </div>
             </div>
@@ -193,54 +191,54 @@ Provide exact values using the most recent and accurate nutritional data availab
           <div className="flex justify-center">
             <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30 px-6 py-3 text-base">
               <Award className="w-5 h-5 mr-2" />
-              Latest 2024 Nutrition Databases
+              AI Photo Recognition
             </Badge>
           </div>
 
           {/* Features Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((feature, index) => (
-              <Card key={index} className="bg-pink-900/40 border-pink-600/40 backdrop-blur-sm">
+              <Card key={index} className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
                 <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center mx-auto mb-3 border border-pink-400/20">
                     <div className="text-pink-300">
                       {feature.icon}
                     </div>
                   </div>
-                  <h3 className="text-white font-semibold text-sm mb-1">{feature.title}</h3>
-                  <p className="text-pink-200 text-xs">{feature.description}</p>
+                  <h3 className="text-white font-medium text-sm mb-1">{feature.title}</h3>
+                  <p className="text-slate-400 text-xs">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
           {!canUseFeature('food_photo_analyses') ? (
-            <Card className="bg-pink-900/50 border-pink-600/50 backdrop-blur-sm">
+            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
               <CardContent className="text-center py-16">
-                <div className="w-16 h-16 bg-pink-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Camera className="w-8 h-8 text-pink-400" />
+                <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Camera className="w-8 h-8 text-slate-400" />
                 </div>
-                <h3 className="text-white font-semibold text-xl mb-2">Food Photo Analysis Limit Reached</h3>
-                <p className="text-pink-200 mb-4">Upgrade your plan to analyze more food photos</p>
+                <h3 className="text-white font-semibold text-xl mb-2">Photo Analysis Limit Reached</h3>
+                <p className="text-slate-400 mb-4">Upgrade your plan to analyze more food photos</p>
                 <Badge className="bg-red-500/20 text-red-300 border-red-500/30">
                   Upgrade Required
                 </Badge>
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-pink-900/50 border-pink-600/50 backdrop-blur-sm">
+            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-2xl flex items-center">
                   <Camera className="w-6 h-6 mr-3 text-pink-400" />
-                  Professional Food Analysis
+                  Food Photo Analysis
                 </CardTitle>
-                <CardDescription className="text-pink-200 text-lg">
-                  Take or upload a photo for professional nutritional analysis using 2024 databases
+                <CardDescription className="text-slate-400 text-lg">
+                  Upload a photo for instant nutritional analysis
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Upload Area */}
-                <div className="border-2 border-dashed border-pink-500/50 hover:border-pink-400/70 rounded-2xl p-8 text-center transition-all duration-200 bg-pink-800/20">
+                <div className="border-2 border-dashed border-pink-500/30 hover:border-pink-400/50 rounded-2xl p-8 text-center transition-all duration-200 bg-slate-800/20">
                   <input
                     type="file"
                     accept="image/*"
@@ -249,34 +247,34 @@ Provide exact values using the most recent and accurate nutritional data availab
                     id="food-photo-upload"
                   />
                   <label htmlFor="food-photo-upload" className="cursor-pointer">
-                    <div className="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-pink-400/20">
                       <Camera className="w-8 h-8 text-pink-400" />
                     </div>
                     <h3 className="text-white font-semibold text-xl mb-2">Upload Food Photo</h3>
-                    <p className="text-pink-200">Professional analysis with latest nutrition databases</p>
+                    <p className="text-slate-400">AI analysis with nutritional breakdown</p>
                   </label>
                 </div>
 
                 {selectedFile && (
-                  <Card className="bg-pink-800/40 border-pink-600/40">
+                  <Card className="bg-slate-800/40 border-slate-600/40">
                     <CardContent className="p-6 space-y-4">
                       <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
+                        <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center border border-pink-400/20">
                           <Utensils className="w-6 h-6 text-pink-400" />
                         </div>
                         <div>
                           <p className="text-white font-semibold">{selectedFile.name}</p>
-                          <p className="text-pink-200 text-sm">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                          <p className="text-slate-400 text-sm">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-pink-200 mb-2">Meal Type</label>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">Meal Type</label>
                           <select
                             value={mealType}
                             onChange={(e) => setMealType(e.target.value as any)}
-                            className="w-full p-3 bg-pink-700/40 border border-pink-600/50 text-white rounded-xl focus:border-pink-500 transition-colors"
+                            className="w-full p-3 bg-slate-700/40 border border-slate-600/50 text-white rounded-xl focus:border-pink-500 transition-colors"
                           >
                             <option value="breakfast">🌅 Breakfast</option>
                             <option value="lunch">☀️ Lunch</option>
@@ -286,12 +284,12 @@ Provide exact values using the most recent and accurate nutritional data availab
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-pink-200 mb-2">Additional Context</label>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">Additional Notes</label>
                           <Input
-                            placeholder="e.g., homemade, restaurant, portion size..."
+                            placeholder="e.g., homemade, restaurant..."
                             value={additionalNotes}
                             onChange={(e) => setAdditionalNotes(e.target.value)}
-                            className="bg-pink-700/40 border-pink-600/50 text-white focus:border-pink-500"
+                            className="bg-slate-700/40 border-slate-600/50 text-white focus:border-pink-500"
                           />
                         </div>
                       </div>
@@ -299,17 +297,17 @@ Provide exact values using the most recent and accurate nutritional data availab
                       <Button
                         onClick={handleAnalyzeFood}
                         disabled={isAnalyzing}
-                        className="w-full bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-semibold py-4 rounded-xl transition-all duration-200 shadow-xl shadow-pink-500/25"
+                        className="w-full bg-gradient-to-r from-pink-500 to-pink-700 hover:from-pink-600 hover:to-pink-800 text-white font-medium py-4 rounded-xl transition-all duration-200 shadow-xl shadow-pink-500/25"
                       >
                         {isAnalyzing ? (
                           <>
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                            🔍 Analyzing with 2024 Databases...
+                            Analyzing Photo...
                           </>
                         ) : (
                           <>
                             <Sparkles className="w-5 h-5 mr-3" />
-                            🔬 Professional Analysis & Log
+                            Analyze & Log Food
                           </>
                         )}
                       </Button>
@@ -318,24 +316,24 @@ Provide exact values using the most recent and accurate nutritional data availab
                 )}
 
                 {/* Tips */}
-                <Card className="bg-pink-800/30 border-pink-600/40">
+                <Card className="bg-slate-800/30 border-slate-600/40">
                   <CardContent className="p-4">
-                    <h4 className="text-white font-semibold mb-3 flex items-center">
+                    <h4 className="text-white font-medium mb-3 flex items-center">
                       <Target className="w-4 h-4 mr-2 text-pink-400" />
-                      📸 Analysis Tips
+                      📸 Photo Tips
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="text-pink-200">
-                        <span className="font-medium text-pink-300">• Best Lighting:</span> Natural, overhead lighting
+                      <div className="text-slate-400">
+                        <span className="font-medium text-slate-300">• Lighting:</span> Good natural light
                       </div>
-                      <div className="text-pink-200">
-                        <span className="font-medium text-pink-300">• Angle:</span> Top-down view preferred
+                      <div className="text-slate-400">
+                        <span className="font-medium text-slate-300">• Angle:</span> Top-down view
                       </div>
-                      <div className="text-pink-200">
-                        <span className="font-medium text-pink-300">• Reference:</span> Include utensils for scale
+                      <div className="text-slate-400">
+                        <span className="font-medium text-slate-300">• Reference:</span> Include utensils for scale
                       </div>
-                      <div className="text-pink-200">
-                        <span className="font-medium text-pink-300">• Quality:</span> Clear, focused images
+                      <div className="text-slate-400">
+                        <span className="font-medium text-slate-300">• Quality:</span> Clear, focused images
                       </div>
                     </div>
                   </CardContent>

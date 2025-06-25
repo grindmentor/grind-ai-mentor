@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, ArrowLeft, Search, Filter, Play, Target, Dumbbell, Clock } from "lucide-react";
+import { BarChart3, ArrowLeft, Search, Filter, Play, Target, Dumbbell, Clock, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface WorkoutLibraryProps {
@@ -106,17 +106,17 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-900 via-violet-800 to-purple-900 text-white flex items-center justify-center" style={{fontFamily: 'Montserrat, sans-serif'}}>
+      <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-violet-900 text-white flex items-center justify-center">
         <div className="flex items-center space-x-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-400"></div>
-          <span className="text-violet-200">Loading exercise library...</span>
+          <span className="text-slate-400">Loading workout library...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-900 via-violet-800 to-purple-900 text-white p-6" style={{fontFamily: 'Montserrat, sans-serif'}}>
+    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-violet-900 text-white p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -124,20 +124,20 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
             <Button 
               variant="ghost" 
               onClick={onBack} 
-              className="text-violet-200 hover:text-white hover:bg-violet-800/50"
+              className="text-slate-400 hover:text-white hover:bg-slate-800/50"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Dashboard
             </Button>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-violet-500 to-violet-700 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-500/25">
-                <BarChart3 className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-violet-500 to-violet-700 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-500/25 border border-violet-400/20">
+                <BookOpen className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-300 to-purple-200 bg-clip-text text-transparent">
-                  Exercise Library
+                <h1 className="text-4xl font-bold text-white">
+                  Workout Library
                 </h1>
-                <p className="text-violet-200 text-lg">Comprehensive database of exercises with detailed instructions</p>
+                <p className="text-slate-400 text-lg">Comprehensive exercise database with detailed instructions</p>
               </div>
             </div>
           </div>
@@ -149,7 +149,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
         </div>
 
         {/* Search and Filter Bar */}
-        <Card className="bg-violet-900/50 border-violet-600/50 backdrop-blur-sm">
+        <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
@@ -159,7 +159,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                     placeholder="Search exercises or muscle groups..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-violet-800/30 border-violet-600/50 text-white focus:border-violet-500"
+                    className="pl-10 bg-slate-800/50 border-slate-600/50 text-white focus:border-violet-500"
                   />
                 </div>
               </div>
@@ -168,7 +168,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full p-3 bg-violet-800/30 border border-violet-600/50 text-white rounded-lg focus:border-violet-500"
+                  className="w-full p-3 bg-slate-800/50 border border-slate-600/50 text-white rounded-lg focus:border-violet-500"
                 >
                   {categories.map(category => (
                     <option key={category} value={category}>
@@ -182,7 +182,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                 <select
                   value={selectedDifficulty}
                   onChange={(e) => setSelectedDifficulty(e.target.value)}
-                  className="w-full p-3 bg-violet-800/30 border border-violet-600/50 text-white rounded-lg focus:border-violet-500"
+                  className="w-full p-3 bg-slate-800/50 border border-slate-600/50 text-white rounded-lg focus:border-violet-500"
                 >
                   {difficulties.map(difficulty => (
                     <option key={difficulty} value={difficulty}>
@@ -198,12 +198,12 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
         {/* Exercise Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredExercises.map((exercise) => (
-            <Card key={exercise.id} className="bg-violet-900/50 border-violet-600/50 backdrop-blur-sm hover:bg-violet-800/50 transition-all duration-300 hover:scale-105">
+            <Card key={exercise.id} className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm hover:bg-slate-800/50 transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-white text-lg">{exercise.name}</CardTitle>
-                    <CardDescription className="text-violet-200 capitalize">
+                    <CardDescription className="text-slate-400 capitalize">
                       {exercise.category} • {exercise.equipment}
                     </CardDescription>
                   </div>
@@ -214,7 +214,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
               </CardHeader>
               
               <CardContent className="space-y-4">
-                <p className="text-violet-200 text-sm">{exercise.description}</p>
+                <p className="text-slate-400 text-sm">{exercise.description}</p>
                 
                 <div className="flex flex-wrap gap-1">
                   {exercise.muscle_groups.map((muscle) => (
@@ -226,7 +226,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
 
                 <div className="space-y-2">
                   <h4 className="text-white font-medium text-sm">Instructions:</h4>
-                  <ol className="text-violet-200 text-xs space-y-1">
+                  <ol className="text-slate-400 text-xs space-y-1">
                     {exercise.instructions.slice(0, 2).map((instruction, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-violet-400 mr-2">{index + 1}.</span>
@@ -242,7 +242,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full border-violet-600/50 text-violet-200 hover:bg-violet-700/50"
+                  className="w-full border-slate-600/50 text-slate-300 hover:bg-slate-700/50"
                 >
                   <Play className="w-4 h-4 mr-2" />
                   View Full Exercise
@@ -254,11 +254,11 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
 
         {filteredExercises.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-violet-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-violet-400" />
+            <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-slate-500" />
             </div>
             <h3 className="text-white font-semibold text-lg mb-2">No exercises found</h3>
-            <p className="text-violet-300">Try adjusting your search terms or filters</p>
+            <p className="text-slate-400">Try adjusting your search terms or filters</p>
           </div>
         )}
 
@@ -270,11 +270,11 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
             { label: "Equipment Types", value: "12+", icon: BarChart3 },
             { label: "Difficulty Levels", value: 3, icon: Clock }
           ].map((stat, index) => (
-            <Card key={index} className="bg-violet-900/30 border-violet-600/30 backdrop-blur-sm">
+            <Card key={index} className="bg-slate-900/30 border-slate-700/30 backdrop-blur-sm">
               <CardContent className="p-4 text-center">
                 <stat.icon className="w-6 h-6 text-violet-400 mx-auto mb-2" />
                 <div className="text-xl font-bold text-white">{stat.value}</div>
-                <p className="text-violet-200 text-sm">{stat.label}</p>
+                <p className="text-slate-400 text-sm">{stat.label}</p>
               </CardContent>
             </Card>
           ))}

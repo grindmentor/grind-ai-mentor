@@ -153,7 +153,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-orange-900 text-white p-6" style={{fontFamily: 'Roboto Slab, serif'}}>
+    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-red-900 text-white p-6">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -161,27 +161,27 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
             <Button 
               variant="ghost" 
               onClick={onBack} 
-              className="text-red-200 hover:text-white hover:bg-red-800/50"
+              className="text-slate-400 hover:text-white hover:bg-slate-800/50"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Dashboard
             </Button>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-red-700 rounded-2xl flex items-center justify-center shadow-xl shadow-red-500/25">
+              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-red-700 rounded-2xl flex items-center justify-center shadow-xl shadow-red-500/25 border border-red-400/20">
                 <Target className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-red-300 to-orange-200 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold text-white">
                   CutCalc Pro
                 </h1>
-                <p className="text-red-200 text-lg">Advanced cutting calculator with comprehensive analysis</p>
+                <p className="text-slate-400 text-lg">Advanced cutting calculator with precision analysis</p>
               </div>
             </div>
           </div>
           
           <Badge className="bg-red-500/20 text-red-300 border-red-500/30 px-4 py-2">
             <Zap className="w-4 h-4 mr-2" />
-            Professional Tool
+            Pro Analysis
           </Badge>
         </div>
 
@@ -189,30 +189,30 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: TrendingDown, title: "Precise Cutting", desc: "Scientific approach" },
-            { icon: Scale, title: "Body Composition", desc: "Fat loss tracking" },
+            { icon: Scale, title: "Body Composition", desc: "Advanced metrics" },
             { icon: Calendar, title: "Timeline Planning", desc: "Realistic goals" },
-            { icon: Award, title: "Pro Analysis", desc: "Advanced metrics" }
+            { icon: Award, title: "Pro Analysis", desc: "Detailed insights" }
           ].map((feature, index) => (
-            <Card key={index} className="bg-red-900/30 border-red-600/30 backdrop-blur-sm">
+            <Card key={index} className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
               <CardContent className="p-4 text-center">
-                <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-3 border border-red-400/20">
                   <feature.icon className="w-5 h-5 text-red-400" />
                 </div>
-                <h3 className="text-white font-semibold text-sm mb-1">{feature.title}</h3>
-                <p className="text-red-200 text-xs">{feature.desc}</p>
+                <h3 className="text-white font-medium text-sm mb-1">{feature.title}</h3>
+                <p className="text-slate-400 text-xs">{feature.desc}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Main Calculator Card */}
-        <Card className="bg-red-900/50 border-red-600/30 backdrop-blur-sm">
+        <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-white text-2xl flex items-center justify-center">
               <Target className="w-6 h-6 mr-3 text-red-400" />
-              Professional Cutting Calculator
+              Cutting Calculator
             </CardTitle>
-            <CardDescription className="text-red-200 text-lg">
+            <CardDescription className="text-slate-400 text-lg">
               Calculate your optimal cutting strategy with scientific precision
             </CardDescription>
           </CardHeader>
@@ -220,22 +220,21 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
           <CardContent className="space-y-8">
             {!result ? (
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Form fields remain the same but with updated styling */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Weight Input */}
                   <div className="space-y-2">
-                    <Label className="text-red-200 font-medium">Current Weight</Label>
+                    <Label className="text-slate-300 font-medium">Current Weight</Label>
                     <div className="flex space-x-2">
                       <Input
                         type="number"
                         placeholder="70"
                         value={formData.weight}
                         onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                        className="bg-red-800/30 border-red-600/50 text-white focus:border-red-500"
+                        className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
                         required
                       />
                       <Select value={formData.weightUnit} onValueChange={(value: 'kg' | 'lbs') => setFormData({...formData, weightUnit: value})}>
-                        <SelectTrigger className="w-20 bg-red-800/30 border-red-600/50 text-white">
+                        <SelectTrigger className="w-20 bg-slate-800/50 border-slate-600/50 text-white">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -246,30 +245,29 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                     </div>
                   </div>
 
-                  {/* Continue with other form fields using similar red theme styling... */}
                   {/* Age Input */}
                   <div className="space-y-2">
-                    <Label className="text-red-200 font-medium">Age</Label>
+                    <Label className="text-slate-300 font-medium">Age</Label>
                     <Input
                       type="number"
                       placeholder="25"
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: e.target.value})}
-                      className="bg-red-800/30 border-red-600/50 text-white focus:border-red-500"
+                      className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
                       required
                     />
                   </div>
 
                   {/* Body Fat Input */}
                   <div className="space-y-2">
-                    <Label className="text-red-200 font-medium">Body Fat % (optional)</Label>
+                    <Label className="text-slate-300 font-medium">Body Fat % (optional)</Label>
                     <Input
                       type="number"
                       step="0.1"
                       placeholder="15.0"
                       value={formData.bodyFat}
                       onChange={(e) => setFormData({...formData, bodyFat: e.target.value})}
-                      className="bg-red-800/30 border-red-600/50 text-white focus:border-red-500"
+                      className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
                     />
                   </div>
                 </div>
@@ -277,7 +275,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-semibold py-4 text-lg shadow-xl shadow-red-500/25"
+                  className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-medium py-4 text-lg shadow-xl shadow-red-500/25"
                 >
                   {isLoading ? (
                     <>
@@ -294,19 +292,18 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
               </form>
             ) : (
               <div className="space-y-6">
-                {/* Results display with red theme */}
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-400/20">
                     <Award className="w-8 h-8 text-red-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Your Cutting Plan</h3>
-                  <p className="text-red-200">Professional analysis complete</p>
+                  <p className="text-slate-400">Professional analysis complete</p>
                 </div>
                 
                 <Button
                   onClick={() => setResult(null)}
                   variant="outline"
-                  className="w-full border-red-600/50 text-red-200 hover:bg-red-800/50"
+                  className="w-full border-slate-600/50 text-slate-300 hover:bg-slate-800/50"
                 >
                   Calculate Again
                 </Button>

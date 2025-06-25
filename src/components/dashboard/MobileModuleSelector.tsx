@@ -44,7 +44,7 @@ const MobileModuleSelector: React.FC<MobileModuleSelectorProps> = ({
     )
   };
 
-  const groupGradients = {
+  const groupGradients: Record<string, string> = {
     'Training & Workouts': 'from-purple-600 to-purple-800',
     'Nutrition & Food': 'from-green-600 to-green-800', 
     'Calculators & Tools': 'from-orange-600 to-orange-800',
@@ -57,7 +57,7 @@ const MobileModuleSelector: React.FC<MobileModuleSelectorProps> = ({
       {Object.entries(groupedModules).map(([groupName, groupModules]) => (
         <Card 
           key={groupName}
-          className={`bg-gradient-to-br ${groupGradients[groupName as keyof typeof groupGradients]} border-0 shadow-lg overflow-hidden`}
+          className={`bg-gradient-to-br ${groupGradients[groupName]} border-0 shadow-lg overflow-hidden`}
         >
           <Collapsible
             open={openGroups[groupName]}

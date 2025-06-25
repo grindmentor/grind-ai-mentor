@@ -1,5 +1,5 @@
 
-import { Brain, Utensils, Calculator, Camera, Timer, Target, TrendingUp, Heart, Dumbbell, BarChart3, Activity, Zap } from "lucide-react";
+import { Brain, Utensils, Calculator, Camera, Timer, Target, TrendingUp, Heart, Dumbbell, BarChart3, Activity, Zap, NotebookPen } from "lucide-react";
 import CoachGPT from "../ai-modules/CoachGPT";
 import MealPlanAI from "../ai-modules/MealPlanAI";
 import TDEECalculator from "../ai-modules/TDEECalculator";
@@ -12,6 +12,7 @@ import WorkoutLibrary from "../ai-modules/WorkoutLibrary";
 import SmartFoodLog from "../ai-modules/SmartFoodLog";
 import HabitTracker from "../ai-modules/HabitTracker";
 import CutCalcPro from "../ai-modules/CutCalcPro";
+import WorkoutLoggerAI from "../ai-modules/WorkoutLoggerAI";
 import React from "react";
 
 // Define a flexible component type that can handle different prop structures
@@ -51,6 +52,17 @@ export const aiModules: AIModule[] = [
     isNew: false,
     isPremium: false, // Changed to false to allow Basic tier access
     usageKey: "training_programs" as const
+  },
+  {
+    id: "workout-logger-ai",
+    title: "Workout Logger AI",
+    description: "Smart exercise tracking with AI-powered progression insights",
+    icon: NotebookPen,
+    gradient: "from-rose-500 to-rose-700",
+    component: WorkoutLoggerAI,
+    isNew: true,
+    isPremium: false,
+    usageKey: "progress_analyses" as const
   },
   {
     id: "meal-plan-ai",

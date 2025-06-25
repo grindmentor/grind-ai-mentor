@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, X, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface SupportFormData {
@@ -25,7 +25,6 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     subject: '',
     message: ''
   });
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<SupportFormData>>({});
   const { toast } = useToast();
@@ -64,11 +63,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('=== SUPPORT FORM SUBMISSION START ===');
-    console.log('Form data:', formData);
-    
     if (!validateForm()) {
-      console.log('Form validation failed');
       toast({
         title: "Validation Error",
         description: "Please check all required fields.",
@@ -80,18 +75,9 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     setIsSubmitting(true);
 
     try {
-      // Check current user session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('Current session:', sessionData?.session ? 'User logged in' : 'Anonymous user');
-      console.log('Session error:', sessionError);
-
-      // Check if we can read from the table (this should fail with our current policies)
-      console.log('Testing table access...');
-      const { data: testRead, error: readError } = await supabase
-        .from('support_requests')
-        .select('id')
-        .limit(1);
-      console.log('Read test result:', { testRead, readError });
+      // Get current user if logged in (for user_id, but it's optional now)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id || null;
 
       // Sanitize form data
       const sanitizedData = {
@@ -99,34 +85,21 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
         email: sanitizeText(formData.email),
         subject: sanitizeText(formData.subject),
         message: sanitizeText(formData.message),
+        user_id: userId, // Can be null for anonymous submissions
         file_url: null
       };
 
-      console.log('Sanitized data to submit:', sanitizedData);
-      console.log('Attempting insert to support_requests table...');
-
-      // Submit to Supabase with detailed error logging
-      const { data, error } = await supabase
+      // Submit to Supabase (RLS is disabled, so this should work)
+      const { error } = await supabase
         .from('support_requests')
-        .insert([sanitizedData])
-        .select();
-
-      console.log('Insert result:', { data, error });
+        .insert([sanitizedData]);
 
       if (error) {
-        console.error('Supabase insertion error details:');
-        console.error('- Error code:', error.code);
-        console.error('- Error message:', error.message);
-        console.error('- Error details:', error.details);
-        console.error('- Error hint:', error.hint);
-        throw new Error(`Database error: ${error.message}`);
+        throw new Error(`Failed to submit support request: ${error.message}`);
       }
-
-      console.log('Support request submitted successfully:', data);
 
       // Reset form and show success
       setFormData({ name: '', email: '', subject: '', message: '' });
-      setUploadedFiles([]);
       setErrors({});
       
       toast({
@@ -137,10 +110,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       onSuccess();
       
     } catch (error: any) {
-      console.error('=== SUBMISSION ERROR ===');
-      console.error('Error object:', error);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+      console.error('Support form submission error:', error);
       
       toast({
         title: "Submission Failed",
@@ -149,7 +119,6 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       });
     } finally {
       setIsSubmitting(false);
-      console.log('=== SUPPORT FORM SUBMISSION END ===');
     }
   };
 
@@ -161,29 +130,6 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     if (errors[name as keyof SupportFormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
-    // Validate file size (max 10MB)
-    const validFiles = files.filter(file => {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File Too Large",
-          description: `File ${file.name} is too large. Maximum size is 10MB.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      return true;
-    });
-
-    setUploadedFiles(validFiles.slice(0, 1)); // Max 1 file
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -265,17 +211,6 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
           placeholder="Please describe your issue or question in detail..."
         />
         {errors.message && <p className="text-red-400 text-sm mt-1">{errors.message}</p>}
-      </div>
-      
-      {/* File upload section - temporarily disabled for reliability */}
-      <div className="opacity-50">
-        <label className="block text-sm font-medium text-white mb-2">
-          Attachment (temporarily disabled)
-        </label>
-        <div className="p-4 border-2 border-dashed border-gray-600 rounded-lg text-center">
-          <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-400">File upload temporarily disabled for form reliability</p>
-        </div>
       </div>
 
       <Button

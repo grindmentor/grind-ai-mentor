@@ -97,7 +97,7 @@ const MobileModuleSelector: React.FC<MobileModuleSelectorProps> = ({
                 {groupModules.map((module) => (
                   <div 
                     key={module.id}
-                    className="bg-white/10 backdrop-blur-sm rounded-lg p-3 hover:bg-white/20 transition-colors cursor-pointer"
+                    className={`bg-gradient-to-r ${module.gradient} backdrop-blur-sm rounded-lg p-3 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-[1.02]`}
                     onClick={() => onModuleSelect(module.id)}
                   >
                     <div className="flex items-center justify-between">

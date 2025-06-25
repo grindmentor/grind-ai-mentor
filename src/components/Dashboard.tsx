@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Crown, TrendingUp, Brain, Zap, Target, ChevronRight, Settings, User, Bell, Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -31,7 +29,6 @@ const Dashboard = () => {
   const { currentUsage, loading: usageLoading } = useUsageTracking();
   const { modules, isInitialized: modulesInitialized } = useModules();
 
-  // Wait for all systems to be fully initialized
   useEffect(() => {
     const allSystemsReady = modulesInitialized && !subscriptionLoading && !usageLoading;
     
@@ -58,7 +55,6 @@ const Dashboard = () => {
     setSelectedModule("");
   };
 
-  // Show skeleton until everything is fully initialized
   if (!isFullyInitialized) {
     return <DashboardSkeleton />;
   }
@@ -196,13 +192,12 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Enhanced Quick Stats - Better Grid Alignment */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          {/* Updated Quick Stats - Removed AI Modules count */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {[
               { value: totalUsage, label: "Total Interactions", color: "text-orange-500", delay: 0 },
               { value: currentTier.charAt(0).toUpperCase() + currentTier.slice(1), label: "Current Plan", color: "text-blue-500", delay: 100 },
-              { value: modules.length, label: "AI Modules", color: "text-green-500", delay: 200 },
-              { value: "24/7", label: "AI Support", color: "text-purple-500", delay: 300 }
+              { value: "24/7", label: "AI Support", color: "text-purple-500", delay: 200 }
             ].map((stat, index) => (
               <AnimatedCard key={index} className="bg-gray-900 border-gray-800 hover:bg-gray-800/50 transition-all duration-300" delay={stat.delay}>
                 <CardContent className="p-4 text-center">
@@ -215,7 +210,7 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* AI Modules Section - Improved Grid */}
+          {/* AI Modules Section - Updated for mobile */}
           <div className="space-y-6 animate-fade-in" style={{ animationDelay: '400ms' }}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">AI Modules</h2>

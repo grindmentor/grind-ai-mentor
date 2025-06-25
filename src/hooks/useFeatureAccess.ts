@@ -13,19 +13,19 @@ export interface FeatureAccessInfo {
 }
 
 export const useFeatureAccess = (featureKey: string) => {
-  const { currentTier, currentTierData, isSubscribed } = useSubscription();
-  const { canUseFeature, getRemainingUsage } = useUsageTracking();
+  const { currentTier, currentTierData, isSubscribed, isLoading: subscriptionLoading } = useSubscription();
+  const { canUseFeature, getRemainingUsage, loading: usageLoading } = useUsageTracking();
 
   return useMemo(() => {
-    // Default blocked state
-    if (!currentTierData) {
+    // If still loading subscription or usage data, provide conservative defaults
+    if (subscriptionLoading || usageLoading || !currentTierData) {
       return {
-        canAccess: false,
-        canUse: false,
+        canAccess: currentTier !== 'free', // Conservative assumption
+        canUse: currentTier !== 'free',
         remaining: 0,
-        isUnlimited: false,
+        isUnlimited: currentTier === 'premium',
         tierRequired: 'basic',
-        upgradeMessage: 'Please upgrade to access this feature'
+        upgradeMessage: 'Checking access...'
       };
     }
 
@@ -57,5 +57,5 @@ export const useFeatureAccess = (featureKey: string) => {
       tierRequired,
       upgradeMessage
     };
-  }, [currentTier, currentTierData, featureKey, canUseFeature, getRemainingUsage]);
+  }, [currentTier, currentTierData, featureKey, canUseFeature, getRemainingUsage, subscriptionLoading, usageLoading]);
 };

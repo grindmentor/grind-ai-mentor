@@ -30,31 +30,42 @@ interface CurrentUsage {
   food_photo_analyses: number;
 }
 
+const DEFAULT_USAGE: CurrentUsage = {
+  coach_gpt_queries: 0,
+  meal_plan_generations: 0,
+  food_log_analyses: 0,
+  tdee_calculations: 0,
+  habit_checks: 0,
+  training_programs: 0,
+  progress_analyses: 0,
+  cut_calc_uses: 0,
+  workout_timer_sessions: 0,
+  food_photo_analyses: 0
+};
+
 export const useUsageTracking = () => {
   const { user } = useAuth();
   const { currentTierData, currentTier } = useSubscription();
-  const [currentUsage, setCurrentUsage] = useState<CurrentUsage>({
-    coach_gpt_queries: 0,
-    meal_plan_generations: 0,
-    food_log_analyses: 0,
-    tdee_calculations: 0,
-    habit_checks: 0,
-    training_programs: 0,
-    progress_analyses: 0,
-    cut_calc_uses: 0,
-    workout_timer_sessions: 0,
-    food_photo_analyses: 0
-  });
+  const [currentUsage, setCurrentUsage] = useState<CurrentUsage>(DEFAULT_USAGE);
+  const [loading, setLoading] = useState(false);
   const cacheRef = useRef<CurrentUsage | null>(null);
+  const lastFetchRef = useRef<number>(0);
 
   useEffect(() => {
     if (user) {
-      // Set cached data immediately
-      if (cacheRef.current) {
+      // Use cached data immediately if available and recent
+      const now = Date.now();
+      if (cacheRef.current && (now - lastFetchRef.current) < 30000) {
         setCurrentUsage(cacheRef.current);
+      } else {
+        // Set default values first to prevent loading states
+        setCurrentUsage(DEFAULT_USAGE);
+        // Fetch in background
+        fetchUsageData();
       }
-      // Fetch in background
-      fetchUsageData();
+    } else {
+      setCurrentUsage(DEFAULT_USAGE);
+      cacheRef.current = null;
     }
   }, [user]);
 
@@ -62,6 +73,7 @@ export const useUsageTracking = () => {
     if (!user) return;
 
     try {
+      setLoading(true);
       const { data, error } = await supabase.rpc('get_current_usage', {
         p_user_id: user.id
       });
@@ -71,23 +83,15 @@ export const useUsageTracking = () => {
         return;
       }
 
-      const usage = data && data.length > 0 ? data[0] : {
-        coach_gpt_queries: 0,
-        meal_plan_generations: 0,
-        food_log_analyses: 0,
-        tdee_calculations: 0,
-        habit_checks: 0,
-        training_programs: 0,
-        progress_analyses: 0,
-        cut_calc_uses: 0,
-        workout_timer_sessions: 0,
-        food_photo_analyses: 0
-      };
-
+      const usage = data && data.length > 0 ? data[0] : DEFAULT_USAGE;
+      
       setCurrentUsage(usage);
       cacheRef.current = usage;
+      lastFetchRef.current = Date.now();
     } catch (error) {
       console.error('Error fetching usage:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -167,7 +171,7 @@ export const useUsageTracking = () => {
 
   return {
     currentUsage,
-    loading: false, // Always false to eliminate loading states
+    loading,
     canUseFeature,
     incrementUsage,
     getRemainingUsage,

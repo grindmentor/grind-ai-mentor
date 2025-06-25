@@ -16,23 +16,25 @@ import DashboardSkeleton from "./dashboard/DashboardSkeleton";
 const Dashboard = () => {
   const [selectedModule, setSelectedModule] = useState<string>("");
   const [showModule, setShowModule] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isFullyInitialized, setIsFullyInitialized] = useState(false);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { currentTier, isSubscribed } = useSubscription();
-  const { currentUsage } = useUsageTracking();
-  const { modules, isInitialized } = useModules();
+  const { currentTier, isSubscribed, isLoading: subscriptionLoading } = useSubscription();
+  const { currentUsage, loading: usageLoading } = useUsageTracking();
+  const { modules, isInitialized: modulesInitialized } = useModules();
 
-  // Initialize dashboard with proper timing
+  // Wait for all systems to be fully initialized
   useEffect(() => {
-    if (isInitialized) {
-      // Short delay to prevent flickering
+    const allSystemsReady = modulesInitialized && !subscriptionLoading && !usageLoading;
+    
+    if (allSystemsReady && !isFullyInitialized) {
+      // Add a small delay to ensure all state updates are complete
       const timer = setTimeout(() => {
-        setIsInitializing(false);
-      }, 300);
+        setIsFullyInitialized(true);
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isInitialized]);
+  }, [modulesInitialized, subscriptionLoading, usageLoading, isFullyInitialized]);
 
   const handleModuleSelect = (moduleId: string) => {
     const module = modules.find(m => m.id === moduleId);
@@ -47,8 +49,8 @@ const Dashboard = () => {
     setSelectedModule("");
   };
 
-  // Show skeleton while initializing
-  if (isInitializing || !isInitialized) {
+  // Show skeleton until everything is fully initialized
+  if (!isFullyInitialized) {
     return <DashboardSkeleton />;
   }
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -8,8 +9,6 @@ import {
 import { AuthProvider } from "./contexts/AuthContext";
 import { ModulesProvider } from "./contexts/ModulesContext";
 import { PreferencesProvider } from "./contexts/PreferencesContext";
-import { SubscriptionProvider } from "./hooks/useSubscription";
-import { UsageTrackingProvider } from "./hooks/useUsageTracking";
 import { SoundEffects } from "./utils/soundEffects";
 import Index from "./pages/Index";
 import Pricing from "./pages/Pricing";
@@ -29,16 +28,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ModuleLibrary from "./pages/ModuleLibrary";
 
 const AuthenticatedApp = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!loading && !user) {
       navigate("/");
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [user, loading, navigate]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <PageTransition>
         <div className="flex flex-col items-center justify-center h-screen bg-black text-white">
@@ -49,7 +48,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  return isAuthenticated ? (
+  return user ? (
     <Dashboard />
   ) : null;
 };
@@ -80,26 +79,22 @@ const App = () => {
     <Router>
       <AuthProvider>
         <PreferencesProvider>
-          <SubscriptionProvider>
-            <UsageTrackingProvider>
-              <ModulesProvider>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/modules" element={<ModuleLibrary />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/account" element={<Account />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </ModulesProvider>
-            </UsageTrackingProvider>
-          </SubscriptionProvider>
+          <ModulesProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/modules" element={<ModuleLibrary />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ModulesProvider>
         </PreferencesProvider>
       </AuthProvider>
     </Router>

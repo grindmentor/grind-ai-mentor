@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Target, TrendingUp, Timer, Utensils, Camera, Dumbbell, Crown, ArrowRight, CheckCircle, Sparkles } from "lucide-react";
+import { Brain, Target, TrendingUp, Timer, Utensils, Camera, Dumbbell, Crown, ArrowRight, CheckCircle, Sparkles, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/ui/logo";
@@ -67,25 +67,25 @@ const Index = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-black text-white overflow-x-hidden">
         {/* Navigation */}
         <nav className="border-b border-gray-800 bg-black/95 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <Logo size="md" />
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <SmoothButton
                   variant="ghost"
                   onClick={() => navigate('/about')}
-                  className="text-gray-300 hover:text-white"
+                  className="text-gray-300 hover:text-white hidden sm:block"
                 >
                   About
                 </SmoothButton>
                 <SmoothButton
                   variant="ghost"
                   onClick={() => navigate('/pricing')}
-                  className="text-gray-300 hover:text-white"
+                  className="text-gray-300 hover:text-white hidden sm:block"
                 >
                   Pricing
                 </SmoothButton>
@@ -99,17 +99,12 @@ const Index = () => {
                 ) : (
                   <div className="flex items-center space-x-2">
                     <SmoothButton
-                      variant="ghost"
                       onClick={() => navigate('/signin')}
-                      className="text-gray-300 hover:text-white"
+                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 flex items-center"
                     >
-                      Sign In
-                    </SmoothButton>
-                    <SmoothButton
-                      onClick={() => navigate('/signin')}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                    >
-                      Get Started
+                      <LogIn className="w-4 h-4 mr-2" />
+                      <span className="hidden sm:inline">Get Started</span>
+                      <span className="sm:hidden">Login</span>
                     </SmoothButton>
                   </div>
                 )}
@@ -119,7 +114,7 @@ const Index = () => {
         </nav>
 
         {/* Hero Section */}
-        <section className="pt-20 pb-32 px-4 sm:px-6 lg:px-8">
+        <section className="pt-12 sm:pt-20 pb-20 sm:pb-32 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto text-center">
             <div className="animate-fade-in">
               <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 mb-6 animate-pulse-glow">
@@ -127,7 +122,7 @@ const Index = () => {
                 AI-Powered Fitness Coach
               </Badge>
               
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent leading-tight">
                 Your Personal{" "}
                 <span className="font-orbitron bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
                   AI Fitness
@@ -135,15 +130,15 @@ const Index = () => {
                 Coach
               </h1>
               
-              <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed px-4">
                 Science-backed fitness guidance powered by AI. Get personalized workouts, nutrition plans, and expert advice 24/7.
               </p>
               
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 sm:mb-12 px-4">
                 <SmoothButton
                   size="lg"
                   onClick={() => navigate(user ? '/app' : '/signin')}
-                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-8 py-4 hover-glow"
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
                 >
                   {user ? 'Go to Dashboard' : 'Start Free Trial'}
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -153,14 +148,14 @@ const Index = () => {
                   variant="outline"
                   size="lg"
                   onClick={() => navigate('/pricing')}
-                  className="border-gray-600 text-white hover:bg-gray-800 text-lg px-8 py-4"
+                  className="border-gray-600 text-white hover:bg-gray-800 text-lg px-6 sm:px-8 py-4 w-full sm:w-auto"
                 >
                   View Pricing
                 </SmoothButton>
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
+              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-500 px-4">
                 <div className="flex items-center">
                   <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
                   Science-Based
@@ -186,10 +181,10 @@ const Index = () => {
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/50">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16 animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
                 AI-Powered Fitness Modules
               </h2>
-              <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto">
                 Choose from our comprehensive suite of AI tools designed to accelerate your fitness journey
               </p>
             </div>
@@ -232,17 +227,17 @@ const Index = () => {
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <AnimatedCard delay={600} className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/20">
-              <CardContent className="p-12">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <CardContent className="p-8 sm:p-12">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
                   Ready to Transform Your Fitness?
                 </h2>
-                <p className="text-xl text-gray-400 mb-8">
+                <p className="text-lg sm:text-xl text-gray-400 mb-8">
                   Join thousands of users who are already achieving their fitness goals with AI-powered guidance.
                 </p>
                 <SmoothButton
                   size="lg"
                   onClick={() => navigate(user ? '/app' : '/signin')}
-                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-8 py-4 hover-glow"
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow"
                 >
                   {user ? 'Access Dashboard' : 'Start Your Journey'}
                   <Dumbbell className="w-5 h-5 ml-2" />
@@ -258,7 +253,7 @@ const Index = () => {
             <div className="flex flex-col md:flex-row justify-between items-center">
               <Logo size="sm" />
               
-              <div className="flex flex-wrap justify-center gap-6 mt-6 md:mt-0">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-6 md:mt-0">
                 <SmoothButton
                   variant="ghost"
                   onClick={() => navigate('/about')}

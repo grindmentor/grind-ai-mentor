@@ -6,14 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
 import { Dumbbell, Home, Settings, LogOut, Menu, X, HelpCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { usePaymentStatus } from "@/hooks/usePaymentStatus";
-import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
-import { useAppHealth } from "@/hooks/useAppHealth";
-import { useMobileEnhancements } from "@/hooks/useMobileEnhancements";
-import { useAdvancedCaching } from "@/hooks/useAdvancedCaching";
 import EmailVerificationGuard from "@/components/EmailVerificationGuard";
 import OnboardingFlow from "@/components/OnboardingFlow";
-import AppPreloader from "@/components/AppPreloader";
 import PremiumLoader from "@/components/PremiumLoader";
 import Logo from "@/components/ui/logo";
 
@@ -23,7 +17,6 @@ const WelcomeBack = lazy(() => import("@/components/WelcomeBack"));
 
 const App = () => {
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
-  const [showPreloader, setShowPreloader] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -31,17 +24,8 @@ const App = () => {
   const navigate = useNavigate();
   const { user, loading, signOut, hasCompletedOnboarding, markOnboardingComplete } = useAuth();
   const isMobile = useIsMobile();
-  
-  // Premium monitoring hooks
-  const performanceMetrics = usePerformanceMonitor();
-  const { metrics: healthMetrics, isHealthy } = useAppHealth();
-  const { safeArea, hapticFeedback } = useMobileEnhancements();
-  const { prefetchBasedOnBehavior, stats: cacheStats } = useAdvancedCaching();
-  
-  // Initialize payment status monitoring
-  usePaymentStatus();
 
-  // Enhanced mobile header scroll behavior with performance optimization
+  // Enhanced mobile header scroll behavior
   useEffect(() => {
     if (!isMobile) return;
 
@@ -69,39 +53,24 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, isMobile]);
 
-  // Immediate app initialization
+  // App initialization
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        if (!loading && !user) {
-          navigate('/signin');
-          return;
-        }
-        
-        if (!loading && user) {
-          // Prefetch likely next routes
-          prefetchBasedOnBehavior('/app');
-          
-          // Show welcome back for returning users who have completed onboarding
-          if (hasCompletedOnboarding) {
-            const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
-            if (!hasSeenWelcome) {
-              setShowWelcomeBack(true);
-              sessionStorage.setItem('hasSeenWelcome', 'true');
-            }
-          }
-        }
-      } catch (error) {
-        console.error('App initialization error:', error);
+    if (!loading && !user) {
+      navigate('/signin');
+      return;
+    }
+    
+    if (!loading && user && hasCompletedOnboarding) {
+      const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
+      if (!hasSeenWelcome) {
+        setShowWelcomeBack(true);
+        sessionStorage.setItem('hasSeenWelcome', 'true');
       }
-    };
-
-    initializeApp();
-  }, [user, loading, navigate, hasCompletedOnboarding, prefetchBasedOnBehavior]);
+    }
+  }, [user, loading, navigate, hasCompletedOnboarding]);
 
   const handleSignOut = async () => {
     try {
-      hapticFeedback('medium');
       sessionStorage.removeItem('hasSeenWelcome');
       await signOut();
       navigate('/');
@@ -111,45 +80,29 @@ const App = () => {
   };
 
   const handleWelcomeBackContinue = () => {
-    hapticFeedback('light');
     setShowWelcomeBack(false);
   };
 
   const handleOnboardingComplete = () => {
-    hapticFeedback('medium');
     markOnboardingComplete();
   };
 
-  const handlePreloaderComplete = () => {
-    setShowPreloader(false);
-  };
-
   const handleSidebarToggle = () => {
-    hapticFeedback('light');
     setSidebarOpen(!sidebarOpen);
   };
 
   const handleNavigation = (path: string) => {
-    hapticFeedback('light');
     navigate(path);
     if (isMobile) setSidebarOpen(false);
   };
 
-  // Show performance warning in development
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      if (performanceMetrics.memoryUsage > 50) {
-        console.warn(`High memory usage: ${performanceMetrics.memoryUsage.toFixed(1)}MB`);
-      }
-      if (performanceMetrics.frameDrops > 5) {
-        console.warn(`Frame drops detected: ${performanceMetrics.frameDrops}`);
-      }
-    }
-  }, [performanceMetrics]);
-
-  // Immediate loading - only show preloader briefly and only if really needed
-  if (loading && showPreloader) {
-    return <AppPreloader onComplete={handlePreloaderComplete} minDuration={50} />;
+  // Show loading only while auth is actually loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <PremiumLoader variant="minimal" message="Loading..." />
+      </div>
+    );
   }
 
   if (!user && !loading) {
@@ -160,7 +113,7 @@ const App = () => {
   if (!hasCompletedOnboarding && user) {
     return (
       <EmailVerificationGuard userEmail={user.email || ''}>
-        <div className="min-h-screen bg-black text-white ios-safe-area">
+        <div className="min-h-screen bg-black text-white">
           <OnboardingFlow onComplete={handleOnboardingComplete} />
         </div>
       </EmailVerificationGuard>
@@ -170,22 +123,7 @@ const App = () => {
   return (
     <EmailVerificationGuard userEmail={user?.email || ''}>
       <UserDataProvider>
-        <div 
-          className="min-h-screen bg-black text-white ios-safe-area"
-          style={{ 
-            paddingTop: safeArea.top,
-            paddingBottom: safeArea.bottom,
-            paddingLeft: safeArea.left,
-            paddingRight: safeArea.right
-          }}
-        >
-          {/* Health Status Indicator (Development Only) */}
-          {process.env.NODE_ENV === 'development' && !isHealthy && (
-            <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-3 py-1 rounded-full text-xs">
-              Health Issue Detected
-            </div>
-          )}
-
+        <div className="min-h-screen bg-black text-white">
           {/* Welcome Back Modal */}
           {showWelcomeBack && (
             <Suspense fallback={<PremiumLoader variant="minimal" />}>
@@ -265,22 +203,13 @@ const App = () => {
                 </Button>
               </nav>
 
-              {/* Enhanced User Info with Performance Stats */}
+              {/* User Info */}
               <div className="mt-auto">
                 <div className="bg-gray-800/80 p-4 rounded-xl border border-gray-700">
                   <div className="text-white text-sm font-medium mb-1">Signed in as:</div>
                   <div className="text-gray-400 text-xs truncate">{user?.email}</div>
                   {user?.email_confirmed_at && (
                     <div className="text-green-400 text-xs mt-1">✓ Verified</div>
-                  )}
-                  
-                  {/* Development Performance Stats */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-2 pt-2 border-t border-gray-700 text-xs text-gray-500">
-                      <div>Memory: {performanceMetrics.memoryUsage.toFixed(1)}MB</div>
-                      <div>Cache: {(cacheStats.memoryUsage / 1024).toFixed(1)}KB</div>
-                      <div>Status: {isHealthy ? '✓' : '⚠'}</div>
-                    </div>
                   )}
                 </div>
               </div>

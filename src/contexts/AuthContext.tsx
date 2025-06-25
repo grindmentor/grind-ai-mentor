@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,18 +40,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authPending, setAuthPending] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
-  // Mobile detection
-  const isMobile = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
-
-  // iOS PWA detection
-  const isIOSPWA = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    return isIOS && isStandalone;
-  };
-
   // Check onboarding completion status
   const checkOnboardingStatus = (userId: string) => {
     try {
@@ -75,74 +64,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    let mounted = true;
+    console.log('Initializing auth context');
     
-    const initializeAuth = async () => {
-      try {
-        console.log('Initializing auth context');
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        const userCreatedAt = new Date(session.user.created_at);
+        const now = new Date();
+        const timeDiff = now.getTime() - userCreatedAt.getTime();
+        const minutesDiff = timeDiff / (1000 * 60);
         
-        // Set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-          console.log('Auth state changed:', event, session?.user?.email);
-          
-          if (mounted) {
-            setSession(session);
-            setUser(session?.user ?? null);
-            
-            if (event === 'SIGNED_IN' && session?.user) {
-              const userCreatedAt = new Date(session.user.created_at);
-              const now = new Date();
-              const timeDiff = now.getTime() - userCreatedAt.getTime();
-              const minutesDiff = timeDiff / (1000 * 60);
-              
-              setIsNewUser(minutesDiff < 5);
-              checkOnboardingStatus(session.user.id);
-              setIsEmailUnconfirmed(!session.user.email_confirmed_at);
-            } else if (event === 'SIGNED_OUT') {
-              setIsNewUser(false);
-              setIsEmailUnconfirmed(false);
-              setHasCompletedOnboarding(false);
-            }
-            
-            setAuthPending(false);
-          }
-        });
-
-        // Check for existing session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-        
-        if (mounted && session?.user) {
-          console.log('Initial session found:', session.user.email);
-          setSession(session);
-          setUser(session.user);
-          setIsEmailUnconfirmed(!session.user.email_confirmed_at);
-          checkOnboardingStatus(session.user.id);
-        }
-        
-        // Immediate loading completion
-        if (mounted) {
-          setLoading(false);
-        }
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        if (mounted) {
-          setLoading(false);
-        }
+        setIsNewUser(minutesDiff < 5);
+        checkOnboardingStatus(session.user.id);
+        setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+      } else if (event === 'SIGNED_OUT') {
+        setIsNewUser(false);
+        setIsEmailUnconfirmed(false);
+        setHasCompletedOnboarding(false);
       }
-    };
+      
+      setAuthPending(false);
+      setLoading(false);
+    });
 
-    initializeAuth();
+    // Check for existing session immediately
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+      }
+      
+      if (session?.user) {
+        console.log('Initial session found:', session.user.email);
+        setSession(session);
+        setUser(session.user);
+        setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+        checkOnboardingStatus(session.user.id);
+      }
+      
+      setLoading(false);
+    });
     
     return () => {
-      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -154,7 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setAuthPending(true);
     
     const baseUrl = window.location.origin;
-    const redirectUrl = isIOSPWA() ? `${baseUrl}/app` : `${baseUrl}/auth/callback`;
+    const redirectUrl = `${baseUrl}/auth/callback`;
     
     console.log('Sign up attempt with redirect URL:', redirectUrl);
     
@@ -211,10 +179,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Sign in error:', error);
       } else {
         console.log('Sign in successful');
-        // Faster completion for mobile
-        if (isMobile()) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
       }
       
       setAuthPending(false);
@@ -243,9 +207,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setAuthPending(true);
-
-    const baseUrl = window.location.origin;
-    const redirectUrl = isIOSPWA() ? `${baseUrl}/app` : `${baseUrl}/auth/callback`;
+    const redirectUrl = `${window.location.origin}/auth/callback`;
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -272,11 +234,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     setAuthPending(true);
-
-    try {
-      const baseUrl = window.location.origin;
-      const redirectUrl = isIOSPWA() ? `${baseUrl}/app` : `${baseUrl}/auth/callback`;
+    const redirectUrl = `${window.location.origin}/auth/callback`;
       
+    try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,

@@ -11,15 +11,27 @@
   "scope": "/",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23000000' rx='32'/><g transform='translate(96,96)'><rect x='-48' y='-12' width='12' height='24' rx='6' fill='%23f97316'/><rect x='-30' y='-8' width='60' height='16' rx='8' fill='%23f97316'/><rect x='36' y='-12' width='12' height='24' rx='6' fill='%23f97316'/></g></svg>",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23000000' rx='64'/><g transform='translate(256,256)'><rect x='-96' y='-24' width='24' height='48' rx='12' fill='%23f97316'/><rect x='-60' y='-16' width='120' height='32' rx='16' fill='%23f97316'/><rect x='72' y='-24' width='24' height='48' rx='12' fill='%23f97316'/></g></svg>",
+      "src": "/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],

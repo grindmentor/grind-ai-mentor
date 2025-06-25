@@ -13,17 +13,29 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
 }) => {
   const [progress, setProgress] = useState(0);
 
+  // iOS PWA detection
+  const isIOSPWA = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    return isIOS && isStandalone;
+  };
+
   useEffect(() => {
+    // Longer duration for iOS PWA to ensure proper initialization
+    const adjustedDuration = isIOSPWA() ? minDuration * 1.5 : minDuration;
+    
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          setTimeout(onComplete, 200);
+          // Add delay for iOS PWA to ensure everything is ready
+          const completionDelay = isIOSPWA() ? 500 : 200;
+          setTimeout(onComplete, completionDelay);
           return 100;
         }
-        return prev + 20;
+        return prev + (isIOSPWA() ? 15 : 20); // Slower progress for iOS PWA
       });
-    }, minDuration / 5);
+    }, adjustedDuration / (isIOSPWA() ? 7 : 5));
 
     return () => clearInterval(interval);
   }, [minDuration, onComplete]);
@@ -49,7 +61,7 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
 
         {/* Loading Text */}
         <p className="text-gray-400 text-sm">
-          Initializing your AI fitness coach...
+          {isIOSPWA() ? 'Optimizing for iOS...' : 'Initializing your AI fitness coach...'}
         </p>
       </div>
     </div>

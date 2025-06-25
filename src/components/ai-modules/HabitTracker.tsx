@@ -1,8 +1,9 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ArrowLeft, Plus, Flame, Target, Calendar } from "lucide-react";
+import { CheckCircle, ArrowLeft, Plus, Flame, Target, Calendar, Zap, Trophy, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -220,213 +221,240 @@ const HabitTracker = ({ onBack }: HabitTrackerProps) => {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-yellow-800 to-orange-900 text-white flex items-center justify-center" style={{fontFamily: 'Nunito, sans-serif'}}>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+          <span className="text-yellow-200">Loading your habits...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center">
-            <Target className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white">Habit Tracker</h1>
-            <p className="text-gray-400">Build consistent fitness and wellness habits</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-4">
-        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-          <Flame className="w-3 h-3 mr-1" />
-          All data saved to your profile
-        </Badge>
-        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-          {completedToday}/{totalHabits} completed today ({completionRate}%)
-        </Badge>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-white">Today's Habits</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Check off your daily habits to build streaks
-                  </CardDescription>
-                </div>
-                <Button
-                  onClick={() => setShowAddForm(!showAddForm)}
-                  className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Habit
-                </Button>
+    <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-yellow-800 to-orange-900 text-white p-6" style={{fontFamily: 'Nunito, sans-serif'}}>
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              onClick={onBack} 
+              className="text-yellow-200 hover:text-white hover:bg-yellow-800/50"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Dashboard
+            </Button>
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center shadow-xl shadow-yellow-500/25">
+                <Zap className="w-8 h-8 text-white" />
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {showAddForm && (
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <div className="flex space-x-2">
-                    <Input
-                      placeholder="Enter new habit (e.g., 'Read 20 minutes')"
-                      value={newHabit}
-                      onChange={(e) => setNewHabit(e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white"
-                      onKeyPress={(e) => e.key === 'Enter' && addHabit()}
-                    />
-                    <Button onClick={addHabit} className="bg-green-500 hover:bg-green-600">
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-300 to-orange-200 bg-clip-text text-transparent">
+                  Habit Tracker
+                </h1>
+                <p className="text-yellow-200 text-lg">Build consistent fitness and wellness habits</p>
+              </div>
+            </div>
+          </div>
+          
+          <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-2">
+            <Star className="w-4 h-4 mr-2" />
+            {completionRate}% Today
+          </Badge>
+        </div>
 
-              <div className="space-y-3">
-                {habits.map((habit) => (
-                  <div
-                    key={habit.id}
-                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                      habit.completed_today 
-                        ? 'border-green-500 bg-green-500/10' 
-                        : 'border-gray-700 hover:border-gray-600'
-                    }`}
-                    onClick={() => toggleHabit(habit.id)}
+        {/* Daily Progress Banner */}
+        <Card className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border-yellow-500/30 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Today's Progress</h2>
+                <p className="text-yellow-200">{completedToday} of {totalHabits} habits completed</p>
+              </div>
+              <div className="text-right">
+                <div className="text-4xl font-bold text-yellow-400 mb-1">{completionRate}%</div>
+                <div className="w-24 h-3 bg-yellow-800/50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500"
+                    style={{ width: `${completionRate}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Habits Section */}
+          <div className="lg:col-span-2">
+            <Card className="bg-yellow-900/50 border-yellow-600/50 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white text-xl">Today's Habits</CardTitle>
+                    <CardDescription className="text-yellow-200">
+                      Check off your daily habits to build powerful streaks
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-6 h-6 rounded-full ${habit.color} flex items-center justify-center`}>
-                        {habit.completed_today && <CheckCircle className="w-4 h-4 text-white" />}
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Habit
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {showAddForm && (
+                  <Card className="bg-yellow-800/30 border-yellow-600/30">
+                    <CardContent className="p-4">
+                      <div className="flex space-x-2">
+                        <Input
+                          placeholder="Enter new habit (e.g., '20 push-ups', 'Read 15 minutes')"
+                          value={newHabit}
+                          onChange={(e) => setNewHabit(e.target.value)}
+                          className="bg-yellow-700/40 border-yellow-600/50 text-white focus:border-yellow-500"
+                          onKeyPress={(e) => e.key === 'Enter' && addHabit()}
+                        />
+                        <Button 
+                          onClick={addHabit} 
+                          className="bg-yellow-600 hover:bg-yellow-700"
+                        >
+                          Add
+                        </Button>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className={`font-medium ${habit.completed_today ? 'text-green-400' : 'text-white'}`}>
-                            {habit.name}
-                          </h3>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-2xl">{getStreakEmoji(habit.streak)}</span>
-                            <Badge className={`${
-                              habit.streak >= 7 
-                                ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' 
-                                : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                            }`}>
-                              {habit.streak} day streak
-                            </Badge>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="space-y-4">
+                  {habits.map((habit) => (
+                    <Card
+                      key={habit.id}
+                      className={`transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
+                        habit.completed_today 
+                          ? 'bg-gradient-to-r from-yellow-600/30 to-orange-600/30 border-yellow-500/50 shadow-lg shadow-yellow-500/20' 
+                          : 'bg-yellow-800/30 border-yellow-700/50 hover:border-yellow-600/70'
+                      }`}
+                      onClick={() => toggleHabit(habit.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-8 h-8 rounded-full ${habit.color} flex items-center justify-center transition-all duration-300 ${
+                            habit.completed_today ? 'scale-110' : ''
+                          }`}>
+                            {habit.completed_today && <CheckCircle className="w-5 h-5 text-white" />}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h3 className={`font-semibold ${habit.completed_today ? 'text-yellow-300' : 'text-white'}`}>
+                                {habit.name}
+                              </h3>
+                              <div className="flex items-center space-x-3">
+                                <span className="text-2xl">{getStreakEmoji(habit.streak)}</span>
+                                <Badge className={`${
+                                  habit.streak >= 7 
+                                    ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' 
+                                    : 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                                }`}>
+                                  <Flame className="w-3 h-3 mr-1" />
+                                  {habit.streak} day streak
+                                </Badge>
+                              </div>
+                            </div>
+                            <p className="text-yellow-200 text-sm capitalize mt-1">{habit.category}</p>
                           </div>
                         </div>
-                        <p className="text-gray-400 text-sm capitalize">{habit.category}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {habits.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-yellow-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Target className="w-8 h-8 text-yellow-400" />
                       </div>
+                      <h3 className="text-white font-semibold text-lg mb-2">No habits yet</h3>
+                      <p className="text-yellow-300">Add your first habit to start building consistency!</p>
                     </div>
-                  </div>
-                ))}
-                
-                {habits.length === 0 && (
-                  <div className="text-center py-8">
-                    <Target className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-500">No habits yet</p>
-                    <p className="text-gray-600 text-sm">Add your first habit to start tracking!</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        <div className="space-y-6">
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">Today's Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className="relative w-24 h-24 mx-auto mb-4">
-                  <svg className="w-24 h-24 transform -rotate-90">
-                    <circle
-                      className="text-gray-700"
-                      strokeWidth="6"
-                      stroke="currentColor"
-                      fill="transparent"
-                      r="36"
-                      cx="48"
-                      cy="48"
-                    />
-                    <circle
-                      className="text-green-500"
-                      strokeWidth="6"
-                      strokeDasharray={`${2 * Math.PI * 36}`}
-                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - completedToday / Math.max(totalHabits, 1))}`}
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="transparent"
-                      r="36"
-                      cx="48"
-                      cy="48"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">{completionRate}%</span>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Streak Leaderboard */}
+            <Card className="bg-yellow-900/50 border-yellow-600/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Trophy className="w-5 h-5 mr-2 text-yellow-400" />
+                  Streak Champions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {habits
+                    .sort((a, b) => b.streak - a.streak)
+                    .slice(0, 3)
+                    .map((habit, index) => (
+                      <div key={habit.id} className="flex items-center space-x-3 p-2 bg-yellow-800/20 rounded-lg">
+                        <div className="text-2xl">
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-white font-medium text-sm">{habit.name}</p>
+                          <p className="text-yellow-300 text-xs">{habit.streak} days strong</p>
+                        </div>
+                      </div>
+                    ))}
+                  {habits.length === 0 && (
+                    <p className="text-yellow-400 text-center text-sm">Add habits to see your streaks!</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Habit Tips */}
+            <Card className="bg-yellow-900/50 border-yellow-600/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white">💡 Success Tips</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm text-yellow-200">
+                  <div className="flex items-start space-x-2">
+                    <Star className="w-4 h-4 text-yellow-400 mt-0.5" />
+                    <span>Start with 2-3 habits maximum</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <Target className="w-4 h-4 text-yellow-400 mt-0.5" />
+                    <span>Stack new habits with existing routines</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <Flame className="w-4 h-4 text-yellow-400 mt-0.5" />
+                    <span>Focus on consistency over perfection</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <Trophy className="w-4 h-4 text-yellow-400 mt-0.5" />
+                    <span>Celebrate small wins daily</span>
                   </div>
                 </div>
-                <p className="text-gray-400">{completedToday} of {totalHabits} habits completed</p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">Streak Leaderboard</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {habits
-                  .sort((a, b) => b.streak - a.streak)
-                  .slice(0, 3)
-                  .map((habit, index) => (
-                    <div key={habit.id} className="flex items-center space-x-3">
-                      <div className="text-2xl">
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-white font-medium text-sm">{habit.name}</p>
-                        <p className="text-gray-400 text-xs">{habit.streak} days</p>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">💡 Habit Tips</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm text-gray-300">
-                <p>• Start with 2-3 habits max</p>
-                <p>• Stack habits with existing routines</p>
-                <p>• Track your streaks for motivation</p>
-                <p>• Focus on consistency over perfection</p>
-                <p>• Celebrate small wins daily</p>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Motivation Card */}
+            <Card className="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 border-yellow-500/30">
+              <CardContent className="p-4 text-center">
+                <div className="text-3xl mb-2">🔥</div>
+                <h3 className="text-white font-semibold mb-1">Keep Going!</h3>
+                <p className="text-yellow-200 text-sm">
+                  Every habit completed is a step towards your best self
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

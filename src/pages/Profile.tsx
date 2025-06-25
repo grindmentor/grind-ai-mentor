@@ -54,6 +54,7 @@ const Profile = () => {
 
     try {
       setError(null);
+      console.log('Loading profile stats for user:', user.id);
       
       // Get workout sessions with error handling
       const { data: workoutSessions, error: workoutError } = await supabase
@@ -85,6 +86,12 @@ const Profile = () => {
         console.warn('Error fetching habit completions:', habitError);
       }
 
+      console.log('Data loaded:', { 
+        workouts: workoutSessions?.length || 0, 
+        recovery: recoveryData?.length || 0, 
+        habits: habitCompletions?.length || 0 
+      });
+
       // Calculate stats with safe defaults
       const totalWorkouts = workoutSessions?.length || 0;
       const daysActive = workoutSessions?.length ? new Set(workoutSessions.map(w => w.session_date)).size : 0;
@@ -93,9 +100,9 @@ const Profile = () => {
         : 7.5; // Default average sleep
 
       // Calculate percentiles and scores with safe fallbacks
-      const experienceBonus = userData.experience === 'advanced' ? 30 : userData.experience === 'intermediate' ? 15 : 0;
+      const experienceBonus = userData?.experience === 'advanced' ? 30 : userData?.experience === 'intermediate' ? 15 : 0;
       const strengthPercentile = Math.min(95, Math.max(5, totalWorkouts * 2 + experienceBonus));
-      const bodyFatPercentage = smartData?.bodyFatPercentage || userData.bodyFatPercentage || 15;
+      const bodyFatPercentage = smartData?.bodyFatPercentage || userData?.bodyFatPercentage || 15;
 
       // Calculate trait scores (0-100) with safe calculations
       const dedication = Math.min(100, (habitCompletions?.length || 0) * 5 + daysActive * 2);
@@ -103,7 +110,7 @@ const Profile = () => {
       const recovery = Math.min(100, avgSleep * 12 + (recoveryData?.length || 0) * 3);
       const consistency = Math.min(100, daysActive * 3);
 
-      setProfileStats({
+      const stats = {
         strengthPercentile,
         bodyFatPercentage,
         dedication,
@@ -114,7 +121,10 @@ const Profile = () => {
         daysActive,
         avgSleep,
         goalsAchieved: Math.floor(totalWorkouts / 10)
-      });
+      };
+
+      console.log('Calculated stats:', stats);
+      setProfileStats(stats);
     } catch (error) {
       console.error('Error loading profile stats:', error);
       setError('Failed to load profile data');
@@ -195,10 +205,10 @@ const Profile = () => {
 
   // Prepare radar chart data with validation
   const radarData = [
-    { trait: 'Dedication', value: Math.max(0, Math.min(100, profileStats.dedication)) },
-    { trait: 'Strength', value: Math.max(0, Math.min(100, profileStats.strength)) },
-    { trait: 'Recovery', value: Math.max(0, Math.min(100, profileStats.recovery)) },
-    { trait: 'Consistency', value: Math.max(0, Math.min(100, profileStats.consistency)) },
+    { trait: 'Dedication', value: Math.max(0, Math.min(100, profileStats.dedication || 0)) },
+    { trait: 'Strength', value: Math.max(0, Math.min(100, profileStats.strength || 0)) },
+    { trait: 'Recovery', value: Math.max(0, Math.min(100, profileStats.recovery || 0)) },
+    { trait: 'Consistency', value: Math.max(0, Math.min(100, profileStats.consistency || 0)) },
   ];
 
   const getPercentileColor = (percentile: number) => {
@@ -233,7 +243,7 @@ const Profile = () => {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-              <h1 className="text-lg font-semibold">Your Profile</h1>
+              <h1 className="text-lg font-semibold">Progress Hub</h1>
               <div className="w-16"></div>
             </div>
           </div>
@@ -245,12 +255,12 @@ const Profile = () => {
             <AnimatedCard className="bg-gradient-to-br from-gray-900 to-black border border-gray-800">
               <CardContent className="p-6 text-center">
                 <div className={`text-3xl font-bold bg-gradient-to-r ${getPercentileColor(profileStats.strengthPercentile)} bg-clip-text text-transparent mb-2`}>
-                  {profileStats.strengthPercentile}%
+                  {Math.round(profileStats.strengthPercentile)}%
                 </div>
                 <p className="text-gray-400 text-sm">Strength Percentile</p>
                 <Badge className="mt-2 bg-orange-500/20 text-orange-400 border-orange-500/30">
                   <Award className="w-3 h-3 mr-1" />
-                  Top {100 - profileStats.strengthPercentile}%
+                  Top {100 - Math.round(profileStats.strengthPercentile)}%
                 </Badge>
               </CardContent>
             </AnimatedCard>
@@ -352,7 +362,7 @@ const Profile = () => {
               <Zap className="w-8 h-8 text-orange-400 mx-auto mb-3" />
               <h3 className="text-lg font-semibold text-white mb-2">Keep Crushing It!</h3>
               <p className="text-gray-300 text-sm">
-                You're in the top {100 - profileStats.strengthPercentile}% of users. Your consistency is paying off!
+                You're in the top {100 - Math.round(profileStats.strengthPercentile)}% of users. Your consistency is paying off!
               </p>
             </CardContent>
           </AnimatedCard>

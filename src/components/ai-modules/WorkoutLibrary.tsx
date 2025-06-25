@@ -1,314 +1,283 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Dumbbell, Target, Zap, Heart, Users, Clock, Sparkles, Brain, TrendingUp } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useUserData } from '@/contexts/UserDataContext';
-import FormattedAIResponse from '../FormattedAIResponse';
-import { SmoothButton } from '@/components/ui/smooth-button';
-import { AnimatedCard } from '@/components/ui/animated-card';
-import PremiumLoader from '../PremiumLoader';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { BarChart3, ArrowLeft, Search, Filter, Play, Target, Dumbbell, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface WorkoutLibraryProps {
   onBack: () => void;
 }
 
-interface ExerciseCategory {
+interface Exercise {
+  id: string;
   name: string;
-  icon: React.ReactNode;
+  category: string;
+  muscle_groups: string[];
+  equipment: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
   description: string;
-  examples: string[];
-  gradient: string;
-  intensity: string;
+  instructions: string[];
 }
 
-const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [aiResponse, setAiResponse] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { getCleanUserContext } = useUserData();
+const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const categories: ExerciseCategory[] = [
-    {
-      name: 'Strength Training',
-      icon: <Dumbbell className="w-6 h-6" />,
-      description: 'Build muscle and strength with compound movements',
-      examples: ['Deadlifts', 'Squats', 'Bench Press', 'Pull-ups', 'Overhead Press'],
-      gradient: 'from-red-500 to-orange-600',
-      intensity: 'High Intensity'
-    },
-    {
-      name: 'Cardio & Conditioning',
-      icon: <Heart className="w-6 h-6" />,
-      description: 'Improve cardiovascular health and endurance',
-      examples: ['HIIT', 'Running', 'Cycling', 'Rowing', 'Swimming'],
-      gradient: 'from-pink-500 to-red-600',
-      intensity: 'Moderate-High'
-    },
-    {
-      name: 'Functional Training',
-      icon: <Target className="w-6 h-6" />,
-      description: 'Movement patterns for daily life activities',
-      examples: ['Kettlebell Swings', 'Turkish Get-ups', 'Farmer Walks', 'Bear Crawls'],
-      gradient: 'from-blue-500 to-cyan-600',
-      intensity: 'Moderate'
-    },
-    {
-      name: 'High-Intensity Circuits',
-      icon: <Zap className="w-6 h-6" />,
-      description: 'Time-efficient workouts for maximum results',
-      examples: ['Burpees', 'Mountain Climbers', 'Battle Ropes', 'Plyometrics'],
-      gradient: 'from-yellow-500 to-orange-600',
-      intensity: 'Very High'
-    },
-    {
-      name: 'Group Workouts',
-      icon: <Users className="w-6 h-6" />,
-      description: 'Exercises perfect for training with others',
-      examples: ['Partner Exercises', 'Team Challenges', 'Circuit Training', 'CrossFit'],
-      gradient: 'from-purple-500 to-indigo-600',
-      intensity: 'Variable'
-    },
-    {
-      name: 'Quick Sessions',
-      icon: <Clock className="w-6 h-6" />,
-      description: '15-30 minute efficient workouts',
-      examples: ['Tabata', 'Quick HIIT', 'Express Strength', '7-Minute Workout'],
-      gradient: 'from-green-500 to-emerald-600',
-      intensity: 'High Efficiency'
-    },
-    {
-      name: 'Bodyweight Training',
-      icon: <TrendingUp className="w-6 h-6" />,
-      description: 'No equipment needed - use your body weight',
-      examples: ['Push-ups', 'Pull-ups', 'Pistol Squats', 'Handstand Push-ups'],
-      gradient: 'from-teal-500 to-blue-600',
-      intensity: 'Moderate-High'
-    },
-    {
-      name: 'Mobility & Flexibility',
-      icon: <Sparkles className="w-6 h-6" />,
-      description: 'Improve range of motion and prevent injury',
-      examples: ['Dynamic Stretching', 'Yoga Flow', 'Foam Rolling', 'PNF Stretching'],
-      gradient: 'from-violet-500 to-purple-600',
-      intensity: 'Low-Moderate'
-    }
-  ];
+  useEffect(() => {
+    // Load sample exercises
+    const sampleExercises: Exercise[] = [
+      {
+        id: '1',
+        name: 'Push-ups',
+        category: 'chest',
+        muscle_groups: ['chest', 'shoulders', 'triceps'],
+        equipment: 'bodyweight',
+        difficulty: 'beginner',
+        description: 'Classic upper body exercise targeting chest, shoulders, and triceps.',
+        instructions: [
+          'Start in plank position with hands shoulder-width apart',
+          'Lower your body until chest nearly touches the floor',
+          'Push back up to starting position',
+          'Keep your body in a straight line throughout'
+        ]
+      },
+      {
+        id: '2',
+        name: 'Squats',
+        category: 'legs',
+        muscle_groups: ['quadriceps', 'glutes', 'hamstrings'],
+        equipment: 'bodyweight',
+        difficulty: 'beginner',
+        description: 'Fundamental lower body exercise for leg and glute strength.',
+        instructions: [
+          'Stand with feet shoulder-width apart',
+          'Lower your body by pushing hips back and bending knees',
+          'Keep chest up and weight on heels',
+          'Push through heels to return to standing'
+        ]
+      },
+      {
+        id: '3',
+        name: 'Deadlifts',
+        category: 'back',
+        muscle_groups: ['hamstrings', 'glutes', 'lower back'],
+        equipment: 'barbell',
+        difficulty: 'intermediate',
+        description: 'Compound movement targeting posterior chain muscles.',
+        instructions: [
+          'Stand with feet hip-width apart, bar over mid-foot',
+          'Hinge at hips and bend knees to grip the bar',
+          'Keep chest up and back straight',
+          'Drive through heels to lift the bar',
+          'Reverse the movement to lower the bar'
+        ]
+      }
+    ];
+    
+    setExercises(sampleExercises);
+    setIsLoading(false);
+  }, []);
 
-  const handleCategorySelect = async (category: ExerciseCategory) => {
-    setSelectedCategory(category.name);
-    setIsLoading(true);
-    setAiResponse('');
+  const filteredExercises = exercises.filter(exercise => {
+    const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         exercise.muscle_groups.some(muscle => muscle.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || exercise.category === selectedCategory;
+    const matchesDifficulty = selectedDifficulty === 'all' || exercise.difficulty === selectedDifficulty;
+    
+    return matchesSearch && matchesCategory && matchesDifficulty;
+  });
 
-    try {
-      const userContext = getCleanUserContext();
-      
-      const prompt = `${userContext}
+  const categories = ['all', 'chest', 'back', 'legs', 'shoulders', 'arms', 'core'];
+  const difficulties = ['all', 'beginner', 'intermediate', 'advanced'];
 
-Generate a comprehensive exercise guide for "${category.name}" based on the latest 2024 exercise science research. Include:
-
-## Exercise Selection
-- 10-12 specific exercises with proper form cues
-- Beginner, intermediate, and advanced variations
-- Equipment needed for each exercise
-- Primary and secondary muscles worked
-- Safety considerations and contraindications
-
-## Scientific Rationale
-- Recent 2024 research supporting these exercise choices
-- Biomechanical benefits and movement patterns
-- Injury prevention considerations
-- Performance optimization tips
-- Physiological adaptations
-
-## Programming Guidelines
-- Sets and reps recommendations based on goals
-- Rest periods between sets
-- Weekly frequency suggestions
-- Progressive overload strategies
-- Periodization recommendations
-
-## Form & Technique
-- Step-by-step execution for key exercises
-- Common mistakes to avoid
-- Breathing patterns and timing
-- Setup and safety considerations
-- Coaching cues for proper form
-
-## Training Templates
-- Beginner workout template
-- Intermediate workout template
-- Advanced workout template
-- Recovery and deload recommendations
-
-Base all recommendations on peer-reviewed exercise physiology research from 2023-2024, particularly focusing on optimal training methodologies, biomechanical efficiency, and evidence-based programming principles.`;
-
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: {
-          prompt,
-          feature: 'workout_library'
-        }
-      });
-
-      if (error) throw error;
-      setAiResponse(data.response);
-    } catch (error) {
-      console.error('Error generating workout guide:', error);
-      setAiResponse('Sorry, there was an error generating the workout guide. Please try again.');
-    } finally {
-      setIsLoading(false);
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'beginner': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'intermediate': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      case 'advanced': return 'bg-red-500/20 text-red-300 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
   };
 
-  const handleBackToCategories = () => {
-    setSelectedCategory(null);
-    setAiResponse('');
-  };
-
-  if (selectedCategory) {
-    const category = categories.find(c => c.name === selectedCategory);
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
-        <div className="p-4 md:p-6">
-          <div className="max-w-5xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex items-center space-x-4">
-              <SmoothButton 
-                variant="ghost" 
-                onClick={handleBackToCategories}
-                className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Categories
-              </SmoothButton>
-              <div className="flex items-center space-x-4">
-                <div className={`w-16 h-16 bg-gradient-to-r ${category?.gradient} rounded-2xl flex items-center justify-center shadow-lg`}>
-                  <div className="text-white">
-                    {category?.icon}
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-white">{selectedCategory}</h1>
-                  <p className="text-slate-400">{category?.description}</p>
-                  <Badge className="mt-1 bg-orange-500/20 text-orange-400 border-orange-500/30">
-                    {category?.intensity}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <AnimatedCard className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
-              <CardContent className="p-6 md:p-8">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-16">
-                    <PremiumLoader variant="minimal" message="Generating Exercise Guide..." />
-                  </div>
-                ) : aiResponse ? (
-                  <FormattedAIResponse content={aiResponse} />
-                ) : (
-                  <div className="text-center py-16 text-slate-400">
-                    Select a category to view exercises
-                  </div>
-                )}
-              </CardContent>
-            </AnimatedCard>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-violet-900 via-violet-800 to-purple-900 text-white flex items-center justify-center" style={{fontFamily: 'Montserrat, sans-serif'}}>
+        <div className="flex items-center space-x-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-400"></div>
+          <span className="text-violet-200">Loading exercise library...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
-      <div className="p-4 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-          {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-violet-900 via-violet-800 to-purple-900 text-white p-6" style={{fontFamily: 'Montserrat, sans-serif'}}>
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <SmoothButton 
+            <Button 
               variant="ghost" 
-              onClick={onBack}
-              className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+              onClick={onBack} 
+              className="text-violet-200 hover:text-white hover:bg-violet-800/50"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Dashboard
-            </SmoothButton>
+            </Button>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/25">
-                <Brain className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-violet-500 to-violet-700 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-500/25">
+                <BarChart3 className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-300 to-purple-200 bg-clip-text text-transparent">
                   Exercise Library
                 </h1>
-                <p className="text-slate-400 text-lg">Science-backed exercise guides and techniques</p>
+                <p className="text-violet-200 text-lg">Comprehensive database of exercises with detailed instructions</p>
               </div>
             </div>
           </div>
+          
+          <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30 px-4 py-2">
+            <Dumbbell className="w-4 h-4 mr-2" />
+            {exercises.length} Exercises
+          </Badge>
+        </div>
 
-          {/* Status Badge */}
-          <div className="flex justify-center">
-            <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 px-4 py-2 text-sm flex items-center">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Research-backed exercise science from 2024
-            </Badge>
-          </div>
+        {/* Search and Filter Bar */}
+        <Card className="bg-violet-900/50 border-violet-600/50 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-violet-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search exercises or muscle groups..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-violet-800/30 border-violet-600/50 text-white focus:border-violet-500"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full p-3 bg-violet-800/30 border border-violet-600/50 text-white rounded-lg focus:border-violet-500"
+                >
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Categories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {categories.map((category, index) => (
-              <AnimatedCard
-                key={category.name}
-                delay={index * 100}
-                className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-all duration-200 cursor-pointer group overflow-hidden"
-                onClick={() => handleCategorySelect(category)}
-              >
-                <CardHeader className="pb-4">
-                  <div className={`w-14 h-14 bg-gradient-to-r ${category.gradient} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200 shadow-lg`}>
-                    <div className="text-white">
-                      {category.icon}
-                    </div>
+              <div>
+                <select
+                  value={selectedDifficulty}
+                  onChange={(e) => setSelectedDifficulty(e.target.value)}
+                  className="w-full p-3 bg-violet-800/30 border border-violet-600/50 text-white rounded-lg focus:border-violet-500"
+                >
+                  {difficulties.map(difficulty => (
+                    <option key={difficulty} value={difficulty}>
+                      {difficulty === 'all' ? 'All Levels' : difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Exercise Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredExercises.map((exercise) => (
+            <Card key={exercise.id} className="bg-violet-900/50 border-violet-600/50 backdrop-blur-sm hover:bg-violet-800/50 transition-all duration-300 hover:scale-105">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-white text-lg">{exercise.name}</CardTitle>
+                    <CardDescription className="text-violet-200 capitalize">
+                      {exercise.category} • {exercise.equipment}
+                    </CardDescription>
                   </div>
-                  <CardTitle className="text-white text-xl group-hover:text-orange-400 transition-colors">
-                    {category.name}
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    {category.description}
-                  </CardDescription>
-                  <Badge className="w-fit bg-slate-800/50 text-slate-300 border-slate-700/50">
-                    {category.intensity}
+                  <Badge className={getDifficultyColor(exercise.difficulty)}>
+                    {exercise.difficulty}
                   </Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <h4 className="text-white font-medium text-sm">Featured Exercises:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {category.examples.slice(0, 3).map((example, index) => (
-                        <span 
-                          key={index}
-                          className="text-xs bg-slate-800/50 text-slate-300 px-3 py-1 rounded-full border border-slate-700/50"
-                        >
-                          {example}
-                        </span>
-                      ))}
-                      {category.examples.length > 3 && (
-                        <span className="text-xs text-slate-500 px-3 py-1">
-                          +{category.examples.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                    <div className="pt-2">
-                      <div className="flex items-center text-orange-400 text-sm group-hover:text-orange-300 transition-colors">
-                        <span>Explore Exercises</span>
-                        <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </AnimatedCard>
-            ))}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <p className="text-violet-200 text-sm">{exercise.description}</p>
+                
+                <div className="flex flex-wrap gap-1">
+                  {exercise.muscle_groups.map((muscle) => (
+                    <Badge key={muscle} className="bg-violet-600/20 text-violet-300 border-violet-500/30 text-xs">
+                      {muscle}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-white font-medium text-sm">Instructions:</h4>
+                  <ol className="text-violet-200 text-xs space-y-1">
+                    {exercise.instructions.slice(0, 2).map((instruction, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-violet-400 mr-2">{index + 1}.</span>
+                        <span>{instruction}</span>
+                      </li>
+                    ))}
+                    {exercise.instructions.length > 2 && (
+                      <li className="text-violet-400 text-xs">... and {exercise.instructions.length - 2} more steps</li>
+                    )}
+                  </ol>
+                </div>
+
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full border-violet-600/50 text-violet-200 hover:bg-violet-700/50"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  View Full Exercise
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {filteredExercises.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-violet-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-violet-400" />
+            </div>
+            <h3 className="text-white font-semibold text-lg mb-2">No exercises found</h3>
+            <p className="text-violet-300">Try adjusting your search terms or filters</p>
           </div>
+        )}
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Total Exercises", value: exercises.length, icon: Dumbbell },
+            { label: "Categories", value: categories.length - 1, icon: Target },
+            { label: "Equipment Types", value: "12+", icon: BarChart3 },
+            { label: "Difficulty Levels", value: 3, icon: Clock }
+          ].map((stat, index) => (
+            <Card key={index} className="bg-violet-900/30 border-violet-600/30 backdrop-blur-sm">
+              <CardContent className="p-4 text-center">
+                <stat.icon className="w-6 h-6 text-violet-400 mx-auto mb-2" />
+                <div className="text-xl font-bold text-white">{stat.value}</div>
+                <p className="text-violet-200 text-sm">{stat.label}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>

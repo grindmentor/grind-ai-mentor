@@ -13,20 +13,37 @@ const AppPage = () => {
   const { userData, isLoading } = useUserData();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("AppPage - User:", user?.email);
+    console.log("AppPage - UserData loading:", isLoading);
+    console.log("AppPage - UserData:", userData);
+
+    if (!user) {
+      console.log("AppPage - No user found, should redirect to signin");
+      setError("No user found");
+      return;
+    }
+
     if (user && !isLoading) {
-      // Check if user needs onboarding - if they don't have basic info
-      if (!userData.age || !userData.weight || !userData.height) {
-        setShowOnboarding(true);
+      try {
+        // Check if user needs onboarding - if they don't have basic info
+        if (!userData.age || !userData.weight || !userData.height) {
+          console.log("AppPage - User needs onboarding");
+          setShowOnboarding(true);
+        }
+        
+        // Add a small delay to ensure smooth transition
+        const timer = setTimeout(() => {
+          setIsInitializing(false);
+        }, 300);
+        
+        return () => clearTimeout(timer);
+      } catch (err) {
+        console.error("AppPage - Error during initialization:", err);
+        setError("Failed to initialize app");
       }
-      
-      // Add a small delay to ensure smooth transition
-      const timer = setTimeout(() => {
-        setIsInitializing(false);
-      }, 300);
-      
-      return () => clearTimeout(timer);
     }
   }, [user, userData, isLoading]);
 
@@ -37,6 +54,24 @@ const AppPage = () => {
   const handlePreloaderComplete = () => {
     setIsInitializing(false);
   };
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-4">Something went wrong</h2>
+          <p className="text-gray-400 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.href = '/signin'}
+            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-6 py-3 rounded-lg"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Show preloader while initializing
   if (isLoading || isInitializing) {

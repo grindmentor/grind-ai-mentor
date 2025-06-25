@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { usePreferences } from './PreferencesContext';
@@ -64,8 +63,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     if (user) {
+      console.log("UserDataContext - Loading data for user:", user.email);
       loadUserData();
     } else {
+      console.log("UserDataContext - No user, setting loading to false");
       setIsLoading(false);
     }
   }, [user]);
@@ -82,13 +83,22 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return;
 
     try {
-      const { data: profile } = await supabase
+      console.log("UserDataContext - Fetching profile data for user:", user.id);
+      
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
+      if (error) {
+        console.error("UserDataContext - Error fetching profile:", error);
+        // Don't throw error, just continue with null data
+      }
+
       if (profile) {
+        console.log("UserDataContext - Profile data loaded:", profile);
+        
         let age = null;
         if (profile.birthday) {
           const today = new Date();
@@ -136,9 +146,11 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           tdee: tdeeData?.tdee || null,
           bodyFatPercentage: profile.body_fat_percentage || null
         }));
+      } else {
+        console.log("UserDataContext - No profile data found");
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('UserDataContext - Error loading user data:', error);
     } finally {
       setIsLoading(false);
     }

@@ -64,7 +64,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Starting form submission...');
+    console.log('Starting support form submission...');
     
     if (!validateForm()) {
       toast({
@@ -84,41 +84,23 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
         email: sanitizeText(formData.email),
         subject: sanitizeText(formData.subject),
         message: sanitizeText(formData.message),
-        file_url: null // Simplified - removing file upload for now to ensure basic form works
+        file_url: null
       };
 
-      console.log('Submitting sanitized data:', sanitizedData);
+      console.log('Submitting support request:', sanitizedData);
 
-      // Use direct insertion instead of RPC call
+      // Submit to Supabase
       const { data, error } = await supabase
         .from('support_requests')
         .insert([sanitizedData])
         .select();
 
       if (error) {
-        console.error('Database insertion error:', error);
-        
-        // Fallback: try without the file_url field
-        const fallbackData = {
-          name: sanitizedData.name,
-          email: sanitizedData.email,
-          subject: sanitizedData.subject,
-          message: sanitizedData.message
-        };
-        
-        const { data: fallbackResult, error: fallbackError } = await supabase
-          .from('support_requests')
-          .insert([fallbackData])
-          .select();
-          
-        if (fallbackError) {
-          throw fallbackError;
-        }
-        
-        console.log('Fallback submission successful:', fallbackResult);
-      } else {
-        console.log('Support request submitted successfully:', data);
+        console.error('Supabase error:', error);
+        throw new Error(`Database error: ${error.message}`);
       }
+
+      console.log('Support request submitted successfully:', data);
 
       // Reset form and show success
       setFormData({ name: '', email: '', subject: '', message: '' });
@@ -131,17 +113,15 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       });
       
       onSuccess();
+      
     } catch (error: any) {
       console.error('Error submitting support request:', error);
       
-      // Final fallback - show success message even if backend fails
       toast({
-        title: "Request Received",
-        description: "Your message has been recorded. If you don't hear back within 7 days, please try again.",
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your request. Please try again.",
+        variant: "destructive",
       });
-      
-      // Still call onSuccess to provide good UX
-      onSuccess();
     } finally {
       setIsSubmitting(false);
     }
@@ -261,7 +241,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
         {errors.message && <p className="text-red-400 text-sm mt-1">{errors.message}</p>}
       </div>
       
-      {/* Simplified file upload - temporarily disabled for reliability */}
+      {/* File upload section - temporarily disabled for reliability */}
       <div className="opacity-50">
         <label className="block text-sm font-medium text-white mb-2">
           Attachment (temporarily disabled)

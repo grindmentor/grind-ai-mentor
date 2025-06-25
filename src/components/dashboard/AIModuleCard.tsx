@@ -2,20 +2,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LucideIcon, Crown, Lock, Zap } from "lucide-react";
+import { Crown, Lock, Zap } from "lucide-react";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useMemo } from "react";
-
-interface AIModule {
-  id: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  gradient: string;
-  isNew?: boolean;
-  isPremium?: boolean;
-  usageKey: string;
-}
+import { AIModule } from "./AIModuleData";
 
 interface AIModuleCardProps {
   module: AIModule;

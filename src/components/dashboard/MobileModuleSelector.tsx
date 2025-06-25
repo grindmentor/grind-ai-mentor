@@ -5,17 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, Crown, Lock, Zap } from "lucide-react";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
-
-interface AIModule {
-  id: string;
-  title: string;
-  description: string;
-  icon: any;
-  gradient: string;
-  isNew?: boolean;
-  isPremium?: boolean;
-  usageKey: string;
-}
+import { AIModule } from "./AIModuleData";
 
 interface MobileModuleSelectorProps {
   modules: AIModule[];

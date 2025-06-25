@@ -2,10 +2,14 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Dumbbell, Target, Zap, Heart, Users, Clock, Sparkles, Brain } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Dumbbell, Target, Zap, Heart, Users, Clock, Sparkles, Brain, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserData } from '@/contexts/UserDataContext';
 import FormattedAIResponse from '../FormattedAIResponse';
+import { SmoothButton } from '@/components/ui/smooth-button';
+import { AnimatedCard } from '@/components/ui/animated-card';
+import PremiumLoader from '../PremiumLoader';
 
 interface WorkoutLibraryProps {
   onBack: () => void;
@@ -17,6 +21,7 @@ interface ExerciseCategory {
   description: string;
   examples: string[];
   gradient: string;
+  intensity: string;
 }
 
 const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
@@ -28,45 +33,67 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
   const categories: ExerciseCategory[] = [
     {
       name: 'Strength Training',
-      icon: <Dumbbell className="w-5 h-5" />,
+      icon: <Dumbbell className="w-6 h-6" />,
       description: 'Build muscle and strength with compound movements',
-      examples: ['Deadlifts', 'Squats', 'Bench Press', 'Pull-ups'],
-      gradient: 'from-red-500 to-orange-600'
+      examples: ['Deadlifts', 'Squats', 'Bench Press', 'Pull-ups', 'Overhead Press'],
+      gradient: 'from-red-500 to-orange-600',
+      intensity: 'High Intensity'
     },
     {
       name: 'Cardio & Conditioning',
-      icon: <Heart className="w-5 h-5" />,
+      icon: <Heart className="w-6 h-6" />,
       description: 'Improve cardiovascular health and endurance',
-      examples: ['HIIT', 'Running', 'Cycling', 'Rowing'],
-      gradient: 'from-pink-500 to-red-600'
+      examples: ['HIIT', 'Running', 'Cycling', 'Rowing', 'Swimming'],
+      gradient: 'from-pink-500 to-red-600',
+      intensity: 'Moderate-High'
     },
     {
       name: 'Functional Training',
-      icon: <Target className="w-5 h-5" />,
+      icon: <Target className="w-6 h-6" />,
       description: 'Movement patterns for daily life activities',
-      examples: ['Kettlebell Swings', 'Turkish Get-ups', 'Farmer Walks'],
-      gradient: 'from-blue-500 to-cyan-600'
+      examples: ['Kettlebell Swings', 'Turkish Get-ups', 'Farmer Walks', 'Bear Crawls'],
+      gradient: 'from-blue-500 to-cyan-600',
+      intensity: 'Moderate'
     },
     {
-      name: 'High-Intensity',
-      icon: <Zap className="w-5 h-5" />,
+      name: 'High-Intensity Circuits',
+      icon: <Zap className="w-6 h-6" />,
       description: 'Time-efficient workouts for maximum results',
-      examples: ['Burpees', 'Mountain Climbers', 'Battle Ropes'],
-      gradient: 'from-yellow-500 to-orange-600'
+      examples: ['Burpees', 'Mountain Climbers', 'Battle Ropes', 'Plyometrics'],
+      gradient: 'from-yellow-500 to-orange-600',
+      intensity: 'Very High'
     },
     {
       name: 'Group Workouts',
-      icon: <Users className="w-5 h-5" />,
+      icon: <Users className="w-6 h-6" />,
       description: 'Exercises perfect for training with others',
-      examples: ['Partner Exercises', 'Team Challenges', 'Circuit Training'],
-      gradient: 'from-purple-500 to-indigo-600'
+      examples: ['Partner Exercises', 'Team Challenges', 'Circuit Training', 'CrossFit'],
+      gradient: 'from-purple-500 to-indigo-600',
+      intensity: 'Variable'
     },
     {
       name: 'Quick Sessions',
-      icon: <Clock className="w-5 h-5" />,
+      icon: <Clock className="w-6 h-6" />,
       description: '15-30 minute efficient workouts',
-      examples: ['Tabata', 'Quick HIIT', 'Express Strength'],
-      gradient: 'from-green-500 to-emerald-600'
+      examples: ['Tabata', 'Quick HIIT', 'Express Strength', '7-Minute Workout'],
+      gradient: 'from-green-500 to-emerald-600',
+      intensity: 'High Efficiency'
+    },
+    {
+      name: 'Bodyweight Training',
+      icon: <TrendingUp className="w-6 h-6" />,
+      description: 'No equipment needed - use your body weight',
+      examples: ['Push-ups', 'Pull-ups', 'Pistol Squats', 'Handstand Push-ups'],
+      gradient: 'from-teal-500 to-blue-600',
+      intensity: 'Moderate-High'
+    },
+    {
+      name: 'Mobility & Flexibility',
+      icon: <Sparkles className="w-6 h-6" />,
+      description: 'Improve range of motion and prevent injury',
+      examples: ['Dynamic Stretching', 'Yoga Flow', 'Foam Rolling', 'PNF Stretching'],
+      gradient: 'from-violet-500 to-purple-600',
+      intensity: 'Low-Moderate'
     }
   ];
 
@@ -83,30 +110,40 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
 Generate a comprehensive exercise guide for "${category.name}" based on the latest 2024 exercise science research. Include:
 
 ## Exercise Selection
-- 8-10 specific exercises with proper form cues
+- 10-12 specific exercises with proper form cues
 - Beginner, intermediate, and advanced variations
 - Equipment needed for each exercise
 - Primary and secondary muscles worked
+- Safety considerations and contraindications
 
 ## Scientific Rationale
 - Recent 2024 research supporting these exercise choices
 - Biomechanical benefits and movement patterns
 - Injury prevention considerations
 - Performance optimization tips
+- Physiological adaptations
 
 ## Programming Guidelines
 - Sets and reps recommendations based on goals
 - Rest periods between sets
 - Weekly frequency suggestions
 - Progressive overload strategies
+- Periodization recommendations
 
 ## Form & Technique
 - Step-by-step execution for key exercises
 - Common mistakes to avoid
-- Breathing patterns
+- Breathing patterns and timing
 - Setup and safety considerations
+- Coaching cues for proper form
 
-Base all recommendations on peer-reviewed exercise physiology research from 2023-2024, particularly focusing on optimal training methodologies and biomechanical efficiency.`;
+## Training Templates
+- Beginner workout template
+- Intermediate workout template
+- Advanced workout template
+- Recovery and deload recommendations
+
+Base all recommendations on peer-reviewed exercise physiology research from 2023-2024, particularly focusing on optimal training methodologies, biomechanical efficiency, and evidence-based programming principles.`;
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
@@ -134,18 +171,18 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
     const category = categories.find(c => c.name === selectedCategory);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
-        <div className="p-6">
-          <div className="max-w-5xl mx-auto space-y-8">
+        <div className="p-4 md:p-6">
+          <div className="max-w-5xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center space-x-4">
-              <Button 
+              <SmoothButton 
                 variant="ghost" 
                 onClick={handleBackToCategories}
                 className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to Categories
-              </Button>
+              </SmoothButton>
               <div className="flex items-center space-x-4">
                 <div className={`w-16 h-16 bg-gradient-to-r ${category?.gradient} rounded-2xl flex items-center justify-center shadow-lg`}>
                   <div className="text-white">
@@ -153,21 +190,20 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">{selectedCategory}</h1>
-                  <p className="text-slate-400">Science-based exercise guide</p>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white">{selectedCategory}</h1>
+                  <p className="text-slate-400">{category?.description}</p>
+                  <Badge className="mt-1 bg-orange-500/20 text-orange-400 border-orange-500/30">
+                    {category?.intensity}
+                  </Badge>
                 </div>
               </div>
             </div>
 
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
-              <CardContent className="p-8">
+            <AnimatedCard className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm">
+              <CardContent className="p-6 md:p-8">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-16">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-                      <h3 className="text-white font-medium mb-2">Generating Exercise Guide</h3>
-                      <p className="text-slate-400 text-sm">Analyzing latest 2024 research...</p>
-                    </div>
+                    <PremiumLoader variant="minimal" message="Generating Exercise Guide..." />
                   </div>
                 ) : aiResponse ? (
                   <FormattedAIResponse content={aiResponse} />
@@ -177,7 +213,7 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </AnimatedCard>
           </div>
         </div>
       </div>
@@ -186,24 +222,24 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900">
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           {/* Header */}
           <div className="flex items-center space-x-4">
-            <Button 
+            <SmoothButton 
               variant="ghost" 
               onClick={onBack}
               className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Dashboard
-            </Button>
+            </SmoothButton>
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/25">
                 <Brain className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                   Exercise Library
                 </h1>
                 <p className="text-slate-400 text-lg">Science-backed exercise guides and techniques</p>
@@ -213,22 +249,23 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
 
           {/* Status Badge */}
           <div className="flex justify-center">
-            <div className="bg-orange-500/20 text-orange-400 border border-orange-500/30 px-4 py-2 rounded-full text-sm flex items-center">
+            <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 px-4 py-2 text-sm flex items-center">
               <Sparkles className="w-4 h-4 mr-2" />
               Research-backed exercise science from 2024
-            </div>
+            </Badge>
           </div>
 
           {/* Categories Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map((category) => (
-              <Card 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {categories.map((category, index) => (
+              <AnimatedCard
                 key={category.name}
-                className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-all duration-200 cursor-pointer group"
+                delay={index * 100}
+                className="bg-slate-900/50 border-slate-700/50 backdrop-blur-sm hover:border-slate-600/50 transition-all duration-200 cursor-pointer group overflow-hidden"
                 onClick={() => handleCategorySelect(category)}
               >
                 <CardHeader className="pb-4">
-                  <div className={`w-14 h-14 bg-gradient-to-r ${category.gradient} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200`}>
+                  <div className={`w-14 h-14 bg-gradient-to-r ${category.gradient} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200 shadow-lg`}>
                     <div className="text-white">
                       {category.icon}
                     </div>
@@ -239,6 +276,9 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
                   <CardDescription className="text-slate-400">
                     {category.description}
                   </CardDescription>
+                  <Badge className="w-fit bg-slate-800/50 text-slate-300 border-slate-700/50">
+                    {category.intensity}
+                  </Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -266,7 +306,7 @@ Base all recommendations on peer-reviewed exercise physiology research from 2023
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </AnimatedCard>
             ))}
           </div>
         </div>

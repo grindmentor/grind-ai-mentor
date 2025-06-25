@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, User, HelpCircle } from "lucide-react";
@@ -63,8 +62,8 @@ const Settings = () => {
         weight: userData.weight?.toString() || '',
         birthday: userData.birthday || '',
         height: userData.height?.toString() || '',
-        heightFeet: '', // Will be calculated from height if needed
-        heightInches: '', // Will be calculated from height if needed
+        heightFeet: '',
+        heightInches: '',
         experience: userData.experience || '',
         activity: userData.activity || '',
         goal: userData.goal || ''
@@ -88,7 +87,7 @@ const Settings = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
 
     // Save to database for specific fields
-    if (['experience', 'activity', 'goal'].includes(field)) {
+    if (['experience', 'activity', 'goal', 'birthday'].includes(field)) {
       try {
         await supabase
           .from('profiles')

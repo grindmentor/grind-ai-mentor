@@ -82,6 +82,11 @@ class AdvancedCache<T> {
     this.updateStats();
   }
 
+  // Public method to get all cache keys for cleanup
+  getAllKeys(): string[] {
+    return Array.from(this.cache.keys());
+  }
+
   private evictLRU(): void {
     let oldestKey = '';
     let oldestTime = Date.now();
@@ -198,11 +203,10 @@ export const useAdvancedCaching = <T>() => {
   };
 
   const cleanupExpired = () => {
-    const keys = Array.from((cacheRef.current as any).cache.keys());
+    const keys = cacheRef.current.getAllKeys();
     keys.forEach(key => {
-      if (!cacheRef.current.has(key)) {
-        // This will remove expired entries
-      }
+      // This will trigger the expiry check in has() method
+      cacheRef.current.has(key);
     });
   };
 

@@ -7,45 +7,62 @@ import OnboardingFlow from "@/components/OnboardingFlow";
 import YouButton from "@/components/dashboard/YouButton";
 import AppPreloader from "@/components/AppPreloader";
 import { PageTransition } from "@/components/ui/page-transition";
+import { useNavigate } from "react-router-dom";
 
 const AppPage = () => {
-  const { user } = useAuth();
-  const { userData, isLoading } = useUserData();
+  const { user, loading: authLoading } = useAuth();
+  const { userData, isLoading: userDataLoading } = useUserData();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("AppPage - Auth loading:", authLoading);
     console.log("AppPage - User:", user?.email);
-    console.log("AppPage - UserData loading:", isLoading);
+    console.log("AppPage - UserData loading:", userDataLoading);
     console.log("AppPage - UserData:", userData);
 
-    if (!user) {
-      console.log("AppPage - No user found, should redirect to signin");
-      setError("No user found");
+    // If auth is still loading, wait
+    if (authLoading) {
+      console.log("AppPage - Auth still loading, waiting...");
       return;
     }
 
-    if (user && !isLoading) {
+    // If no user found after auth loading is complete, redirect to signin
+    if (!authLoading && !user) {
+      console.log("AppPage - No user found after auth loading, redirecting to signin");
+      navigate('/signin', { replace: true });
+      return;
+    }
+
+    // If user exists but user data is still loading, wait
+    if (user && userDataLoading) {
+      console.log("AppPage - User exists but user data still loading, waiting...");
+      return;
+    }
+
+    // Once we have user and user data loading is complete
+    if (user && !userDataLoading) {
       try {
+        console.log("AppPage - User and data loaded, checking onboarding status");
+        
         // Check if user needs onboarding - if they don't have basic info
-        if (!userData.age || !userData.weight || !userData.height) {
-          console.log("AppPage - User needs onboarding");
+        const needsOnboarding = !userData.age || !userData.weight || !userData.height;
+        console.log("AppPage - Needs onboarding:", needsOnboarding);
+        
+        if (needsOnboarding) {
           setShowOnboarding(true);
         }
         
-        // Add a small delay to ensure smooth transition
-        const timer = setTimeout(() => {
-          setIsInitializing(false);
-        }, 300);
-        
-        return () => clearTimeout(timer);
+        // Complete initialization
+        setIsInitializing(false);
       } catch (err) {
         console.error("AppPage - Error during initialization:", err);
-        setError("Failed to initialize app");
+        // Don't block the app, just continue
+        setIsInitializing(false);
       }
     }
-  }, [user, userData, isLoading]);
+  }, [user, userData, authLoading, userDataLoading, navigate]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
@@ -55,15 +72,20 @@ const AppPage = () => {
     setIsInitializing(false);
   };
 
-  // Show error state
-  if (error) {
+  // Show preloader while auth is loading or while initializing
+  if (authLoading || isInitializing) {
+    return <AppPreloader onComplete={handlePreloaderComplete} />;
+  }
+
+  // If no user at this point, something went wrong with redirect
+  if (!user) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold mb-4">Something went wrong</h2>
-          <p className="text-gray-400 mb-4">{error}</p>
+          <h2 className="text-xl font-bold mb-4">Authentication Required</h2>
+          <p className="text-gray-400 mb-4">Please sign in to access your dashboard</p>
           <button 
-            onClick={() => window.location.href = '/signin'}
+            onClick={() => navigate('/signin')}
             className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-6 py-3 rounded-lg"
           >
             Go to Sign In
@@ -71,11 +93,6 @@ const AppPage = () => {
         </div>
       </div>
     );
-  }
-
-  // Show preloader while initializing
-  if (isLoading || isInitializing) {
-    return <AppPreloader onComplete={handlePreloaderComplete} />;
   }
 
   // Show onboarding if user hasn't completed it

@@ -41,7 +41,7 @@ interface UserDataContextType {
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
 
 export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { preferences } = usePreferences();
   const [userData, setUserData] = useState<UserData>({
     weight: null,
@@ -62,25 +62,44 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log("UserDataContext - Auth loading:", authLoading);
+    console.log("UserDataContext - User:", user?.email);
+    
+    // Wait for auth to complete loading
+    if (authLoading) {
+      console.log("UserDataContext - Waiting for auth to complete");
+      return;
+    }
+
+    // If no user after auth loading is complete, stop loading
+    if (!authLoading && !user) {
+      console.log("UserDataContext - No user found, stopping loading");
+      setIsLoading(false);
+      return;
+    }
+
+    // If we have a user, load their data
     if (user) {
       console.log("UserDataContext - Loading data for user:", user.email);
       loadUserData();
-    } else {
-      console.log("UserDataContext - No user, setting loading to false");
-      setIsLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   useEffect(() => {
-    setUserData(prev => ({
-      ...prev,
-      weightUnit: preferences.weight_unit,
-      heightUnit: preferences.height_unit
-    }));
+    if (preferences) {
+      setUserData(prev => ({
+        ...prev,
+        weightUnit: preferences.weight_unit,
+        heightUnit: preferences.height_unit
+      }));
+    }
   }, [preferences]);
 
   const loadUserData = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       console.log("UserDataContext - Fetching profile data for user:", user.id);
@@ -89,11 +108,11 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("UserDataContext - Error fetching profile:", error);
-        // Don't throw error, just continue with null data
+        // Continue with empty data rather than blocking
       }
 
       if (profile) {
@@ -112,45 +131,64 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         // Convert weight from lbs to preferred unit
         let weight = profile.weight;
-        if (weight && preferences.weight_unit === 'kg') {
+        if (weight && preferences?.weight_unit === 'kg') {
           weight = Math.round(weight * 0.453592);
         }
 
         // Convert height from inches to preferred unit
         let height = profile.height;
-        if (height && preferences.height_unit === 'cm') {
+        if (height && preferences?.height_unit === 'cm') {
           height = Math.round(height * 2.54);
         }
 
         // Get latest TDEE calculation
-        const { data: tdeeData } = await supabase
-          .from('tdee_calculations')
-          .select('tdee')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        try {
+          const { data: tdeeData } = await supabase
+            .from('tdee_calculations')
+            .select('tdee')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-        setUserData(prev => ({
-          ...prev,
-          weight,
-          height,
-          age,
-          birthday: profile.birthday,
-          experience: profile.experience,
-          activity: profile.activity,
-          goal: profile.goal,
-          injuries: profile.injuries || null,
-          dietary_preferences: profile.dietary_preferences || null,
-          training_preferences: profile.preferred_workout_style || null,
-          tdee: tdeeData?.tdee || null,
-          bodyFatPercentage: profile.body_fat_percentage || null
-        }));
+          setUserData(prev => ({
+            ...prev,
+            weight,
+            height,
+            age,
+            birthday: profile.birthday,
+            experience: profile.experience,
+            activity: profile.activity,
+            goal: profile.goal,
+            injuries: profile.injuries || null,
+            dietary_preferences: profile.dietary_preferences || null,
+            training_preferences: profile.preferred_workout_style || null,
+            tdee: tdeeData?.tdee || null,
+            bodyFatPercentage: profile.body_fat_percentage || null
+          }));
+        } catch (tdeeError) {
+          console.warn("UserDataContext - Could not fetch TDEE data:", tdeeError);
+          setUserData(prev => ({
+            ...prev,
+            weight,
+            height,
+            age,
+            birthday: profile.birthday,
+            experience: profile.experience,
+            activity: profile.activity,
+            goal: profile.goal,
+            injuries: profile.injuries || null,
+            dietary_preferences: profile.dietary_preferences || null,
+            training_preferences: profile.preferred_workout_style || null,
+            bodyFatPercentage: profile.body_fat_percentage || null
+          }));
+        }
       } else {
-        console.log("UserDataContext - No profile data found");
+        console.log("UserDataContext - No profile data found, using defaults");
       }
     } catch (error) {
       console.error('UserDataContext - Error loading user data:', error);
+      // Continue with default data rather than blocking
     } finally {
       setIsLoading(false);
     }

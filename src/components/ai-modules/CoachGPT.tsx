@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, ArrowLeft, Brain, RefreshCw, Sparkles, Zap } from 'lucide-react';
+import { Send, ArrowLeft, Brain, RefreshCw, Sparkles, History, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -28,12 +28,38 @@ const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationSession] = useState(() => crypto.randomUUID());
+  const [showHistory, setShowHistory] = useState(false);
+  const [funFact, setFunFact] = useState('');
+  const [factIndex, setFactIndex] = useState(0);
+
+  const funFacts = [
+    "💪 Your muscles can only grow when you're in a caloric surplus - even small deficits limit hypertrophy",
+    "🧬 Muscle protein synthesis peaks 1-3 hours post-workout and stays elevated for 24-48 hours",
+    "⚡ Training a muscle 2-3x per week produces 40% more growth than once per week training",
+    "🔬 The 'anabolic window' is actually 4-6 hours, not 30 minutes post-workout",
+    "📊 Progressive overload doesn't always mean more weight - reps, sets, and time under tension count too",
+    "🎯 Compound movements activate 40% more muscle fibers than isolation exercises",
+    "💤 Growth hormone release peaks during deep sleep - aim for 7-9 hours nightly",
+    "🥩 Leucine threshold of 2.5-3g per meal maximizes muscle protein synthesis",
+    "⏱️ Rest periods of 2-3 minutes optimize strength gains, 60-90 seconds for hypertrophy",
+    "🔥 Your body burns 6 calories per day for every pound of muscle you maintain"
+  ];
 
   useEffect(() => {
     if (user) {
       loadConversationHistory();
     }
   }, [user, conversationSession]);
+
+  useEffect(() => {
+    if (isLoading) {
+      const interval = setInterval(() => {
+        setFactIndex((prev) => (prev + 1) % funFacts.length);
+        setFunFact(funFacts[factIndex]);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading, factIndex]);
 
   const loadConversationHistory = async () => {
     if (!user) return;
@@ -111,6 +137,7 @@ const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
+    setFunFact(funFacts[0]);
 
     // Save user message
     await saveMessage('user', inputMessage);
@@ -179,7 +206,36 @@ Respond in a professional, encouraging tone that shows you understand their comp
 
       if (error) {
         console.error('Supabase function error:', error);
-        throw error;
+        
+        // Provide a helpful fallback response instead of throwing
+        const fallbackResponse = `I understand you're asking about: "${inputMessage}"
+
+While I'm experiencing a technical issue connecting to my full knowledge base, I can still provide some general guidance:
+
+**General Fitness Coaching Advice:**
+- Consistency beats perfection - small daily actions compound over time
+- Focus on progressive overload in your training (gradually increasing weight, reps, or volume)
+- Prioritize protein intake (aim for 0.8-1g per lb bodyweight) for muscle recovery and growth
+- Quality sleep (7-9 hours) is crucial for recovery and performance
+- Track your progress through photos, measurements, and performance metrics
+
+**For specific plans:**
+- Use our **Smart Training** module for workout programs
+- Use our **MealPlan AI** module for nutrition planning
+- Use our **Recovery Coach** for sleep and recovery optimization
+
+Would you like me to elaborate on any of these areas, or do you have specific questions about your current fitness routine I can help analyze?`;
+
+        const assistantMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: fallbackResponse,
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+        await saveMessage('assistant', fallbackResponse);
+        return;
       }
 
       const assistantMessage: Message = {
@@ -196,14 +252,31 @@ Respond in a professional, encouraging tone that shows you understand their comp
 
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Provide a helpful fallback instead of just an error
+      const fallbackMessage = `I'm having trouble connecting right now, but I'm here to help! 
+
+**Quick Tips Based on Your Question:**
+- If it's about training: Check out our Smart Training module for science-based programs
+- If it's about nutrition: Our MealPlan AI can create detailed meal plans
+- If it's about recovery: Try our Recovery Coach for sleep optimization
+
+**General Coaching Reminders:**
+- Stay consistent with your routine
+- Progressive overload is key for strength gains
+- Adequate protein and sleep support your goals
+- Track your progress to stay motivated
+
+Please try asking again, or feel free to explore our other modules while I get back online!`;
+
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: 'I apologize, but I encountered an error processing your request. Please try again in a moment.',
+        content: fallbackMessage,
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMessage]);
-      toast.error('Failed to get coach response');
+      toast.error('Connection issue - provided general guidance instead');
     } finally {
       setIsLoading(false);
     }
@@ -242,18 +315,28 @@ Respond in a professional, encouraging tone that shows you understand their comp
               </div>
             </div>
             
-            <Button
-              onClick={refreshContext}
-              disabled={contextLoading}
-              className="bg-blue-600/20 hover:bg-blue-700/30 border border-blue-500/30 backdrop-blur-sm"
-            >
-              {contextLoading ? (
-                <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
-              Update Context
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => setShowHistory(!showHistory)}
+                className="bg-blue-600/20 hover:bg-blue-700/30 border border-blue-500/30 backdrop-blur-sm"
+              >
+                <History className="w-4 h-4 mr-2" />
+                History
+              </Button>
+              
+              <Button
+                onClick={refreshContext}
+                disabled={contextLoading}
+                className="bg-blue-600/20 hover:bg-blue-700/30 border border-blue-500/30 backdrop-blur-sm"
+              >
+                {contextLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Update Context
+              </Button>
+            </div>
           </div>
 
           {/* Context Summary */}
@@ -318,10 +401,16 @@ Respond in a professional, encouraging tone that shows you understand their comp
               
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-blue-800/30 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-blue-600/20">
-                    <div className="flex items-center space-x-3">
+                  <div className="bg-blue-800/30 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-blue-600/20 max-w-[80%]">
+                    <div className="flex items-center space-x-3 mb-4">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
                       <span className="text-blue-200">🧠 Coach is analyzing...</span>
+                    </div>
+                    <div className="text-sm text-blue-300 leading-relaxed">
+                      💡 <strong>Did you know?</strong> {funFact || funFacts[0]}
+                    </div>
+                    <div className="text-xs text-blue-400 mt-2">
+                      Feel free to browse other modules while I work on your response!
                     </div>
                   </div>
                 </div>

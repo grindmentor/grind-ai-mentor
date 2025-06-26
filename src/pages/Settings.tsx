@@ -1,100 +1,94 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft, User, Bell, Shield, Palette, Info } from "lucide-react";
-import { Link } from "react-router-dom";
-import Logo from "@/components/ui/logo";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, User, Dumbbell, Globe, Zap, Brain } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BasicInformation from '@/components/settings/BasicInformation';
+import FitnessProfile from '@/components/settings/FitnessProfile';
+import UnitPreferences from '@/components/settings/UnitPreferences';
+import AppPreferences from '@/components/settings/AppPreferences';
+import AIMemoryReset from '@/components/settings/AIMemoryReset';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { PageTransition } from '@/components/ui/page-transition';
 
 const Settings = () => {
-  const [activeSection, setActiveSection] = useState("basic");
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState('basic');
 
-  const sections = [
-    { id: "basic", label: "Basic Information", icon: User },
-    { id: "fitness", label: "Fitness Profile", icon: Shield },
-    { id: "units", label: "Units & Preferences", icon: Palette },
-    { id: "app", label: "App Settings", icon: Bell },
-    { id: "insights", label: "Data Insights", icon: Info },
-    { id: "ai-memory", label: "AI Memory", icon: Shield }
+  const tabs = [
+    { id: 'basic', label: 'Profile', icon: User },
+    { id: 'fitness', label: 'Fitness', icon: Dumbbell },
+    { id: 'units', label: 'Units', icon: Globe },
+    { id: 'app', label: 'App', icon: Zap },
+    { id: 'ai', label: 'AI Memory', icon: Brain }
   ];
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case "basic":
-        return <div className="p-6"><p className="text-gray-400">Basic Information settings coming soon...</p></div>;
-      case "fitness":
-        return <div className="p-6"><p className="text-gray-400">Fitness Profile settings coming soon...</p></div>;
-      case "units":
-        return <div className="p-6"><p className="text-gray-400">Units & Preferences settings coming soon...</p></div>;
-      case "app":
-        return <div className="p-6"><p className="text-gray-400">App Settings coming soon...</p></div>;
-      case "insights":
-        return <div className="p-6"><p className="text-gray-400">Data Insights coming soon...</p></div>;
-      case "ai-memory":
-        return <div className="p-6"><p className="text-gray-400">AI Memory settings coming soon...</p></div>;
-      default:
-        return <div className="p-6"><p className="text-gray-400">Basic Information settings coming soon...</p></div>;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white animate-fade-in">
-      {/* Header */}
-      <header className="border-b border-gray-800/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center space-x-4">
-              <Link to="/app">
-                <Button variant="ghost" className="text-white hover:bg-white/10">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Logo size="md" />
+    <PageTransition>
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+        <div className="p-4 sm:p-6">
+          <div className="max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/app')}
+                className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors w-fit"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  Settings
+                </h1>
+                <p className="text-gray-400">Customize your fitness journey</p>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-              Settings
-            </h1>
-          </div>
-        </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm p-6">
-              <nav className="space-y-2">
-                {sections.map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <button
-                      key={section.id}
-                      onClick={() => setActiveSection(section.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
-                        activeSection === section.id
-                          ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
-                          : "text-gray-400 hover:text-white hover:bg-gray-800/50"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{section.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </Card>
-          </div>
+            {/* Settings Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+              <TabsList className={`grid w-full grid-cols-5 bg-gray-900/40 backdrop-blur-sm ${isMobile ? 'text-xs' : ''}`}>
+                {tabs.map((tab) => (
+                  <TabsTrigger 
+                    key={tab.id}
+                    value={tab.id} 
+                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30"
+                  >
+                    <tab.icon className="w-4 h-4 mr-1" />
+                    {!isMobile && tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
-              {renderContent()}
-            </Card>
+              <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-6">
+                <TabsContent value="basic" className="mt-0">
+                  <BasicInformation />
+                </TabsContent>
+
+                <TabsContent value="fitness" className="mt-0">
+                  <FitnessProfile />
+                </TabsContent>
+
+                <TabsContent value="units" className="mt-0">
+                  <UnitPreferences />
+                </TabsContent>
+
+                <TabsContent value="app" className="mt-0">
+                  <AppPreferences />
+                </TabsContent>
+
+                <TabsContent value="ai" className="mt-0">
+                  <AIMemoryReset />
+                </TabsContent>
+              </div>
+            </Tabs>
           </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 };
 

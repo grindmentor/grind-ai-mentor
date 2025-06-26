@@ -103,6 +103,26 @@ const ModuleLibrary = () => {
     setSelectedModule("");
   };
 
+  // Get module-specific background color based on gradient
+  const getModuleBackgroundColor = (gradient: string) => {
+    const colorMap: { [key: string]: string } = {
+      'from-blue-500 to-blue-700': 'bg-blue-500/10',
+      'from-purple-500 to-purple-700': 'bg-purple-500/10',
+      'from-rose-500 to-rose-700': 'bg-rose-500/10',
+      'from-green-500 to-green-700': 'bg-green-500/10',
+      'from-orange-500 to-orange-700': 'bg-orange-500/10',
+      'from-red-500 to-red-700': 'bg-red-500/10',
+      'from-pink-500 to-pink-700': 'bg-pink-500/10',
+      'from-emerald-500 to-emerald-700': 'bg-emerald-500/10',
+      'from-cyan-500 to-cyan-700': 'bg-cyan-500/10',
+      'from-indigo-500 to-indigo-700': 'bg-indigo-500/10',
+      'from-teal-500 to-teal-700': 'bg-teal-500/10',
+      'from-violet-500 to-violet-700': 'bg-violet-500/10',
+      'from-yellow-500 to-yellow-700': 'bg-yellow-500/10'
+    };
+    return colorMap[gradient] || 'bg-gray-500/10';
+  };
+
   if (showModule && selectedModule) {
     const module = modules.find(m => m.id === selectedModule);
     if (module) {
@@ -117,20 +137,20 @@ const ModuleLibrary = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900/30 to-gray-800 text-white p-4 md:p-6 lg:p-8 animate-fade-in">
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white p-4 md:p-6 lg:p-8 animate-fade-in">
         <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           {/* Header */}
-          <div className="flex items-center space-x-4 mb-8">
-            <SmoothButton variant="ghost" onClick={() => navigate('/app')} className="text-white hover:bg-gray-800">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+            <SmoothButton variant="ghost" onClick={() => navigate('/app')} className="text-white hover:bg-gray-800/50 backdrop-blur-sm w-fit">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {isMobile ? "Back" : "Back to Dashboard"}
             </SmoothButton>
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-purple-500/20 to-pink-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-purple-400/20">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500/20 to-orange-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-orange-400/20">
                 <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
                   Module Library
                 </h1>
                 <p className="text-sm md:text-base text-gray-400">Discover all available fitness modules</p>
@@ -139,14 +159,15 @@ const ModuleLibrary = () => {
           </div>
 
           {/* Modules Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {modules.map((module) => {
               const isFavorited = favorites.includes(module.id);
+              const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
               
               return (
                 <Card 
                   key={module.id} 
-                  className="bg-gray-900/40 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/60 transition-all duration-300 cursor-pointer group hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/20"
+                  className={`${moduleBackgroundColor} border-gray-700/50 backdrop-blur-sm hover:bg-opacity-20 transition-all duration-300 cursor-pointer group hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/20 hover:scale-105`}
                   onClick={() => handleModuleSelect(module.id)}
                 >
                   <CardHeader className="pb-3">

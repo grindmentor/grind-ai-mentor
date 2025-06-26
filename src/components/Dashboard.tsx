@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, TrendingUp, Brain, Zap, Target, ChevronRight, Settings, User, Bell, Menu, Library } from "lucide-react";
@@ -105,9 +106,14 @@ const Dashboard = () => {
     ? modules.filter(m => favoriteModules.includes(m.id))
     : [];
 
+  // Fix tier display - capitalize properly and show actual tier
+  const displayTier = currentTier === 'free' ? 'Free' : 
+                     currentTier === 'basic' ? 'Basic' : 
+                     currentTier === 'premium' ? 'Premium' : 'Free';
+
   return (
     <PageTransition>
-      <div className="min-h-screen bg-black text-white p-4 md:p-6 lg:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           {/* Enhanced Header Section with Navigation */}
           <div className="animate-fade-in">
@@ -172,7 +178,7 @@ const Dashboard = () => {
 
             {/* Mobile Menu */}
             {showMobileMenu && (
-              <div className="md:hidden mb-6 p-4 bg-gray-900 rounded-lg border border-gray-800 animate-fade-in">
+              <div className="md:hidden mb-6 p-4 bg-gray-900/40 backdrop-blur-sm rounded-lg border border-gray-800 animate-fade-in">
                 <div className="flex flex-col space-y-2">
                   <SmoothButton
                     variant="ghost"
@@ -228,10 +234,10 @@ const Dashboard = () => {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {[
               { value: totalUsage, label: "Total Interactions", color: "text-orange-500", delay: 0 },
-              { value: currentTier.charAt(0).toUpperCase() + currentTier.slice(1), label: "Current Plan", color: "text-blue-500", delay: 100 },
+              { value: displayTier, label: "Current Plan", color: "text-blue-500", delay: 100 },
               { value: "24/7", label: "AI Support", color: "text-purple-500", delay: 200 }
             ].map((stat, index) => (
-              <AnimatedCard key={index} className="bg-gray-900 border-gray-800 hover:bg-gray-800/50 transition-all duration-300" delay={stat.delay}>
+              <AnimatedCard key={index} className="bg-gray-900/40 backdrop-blur-sm border-gray-800 hover:bg-gray-800/50 transition-all duration-300" delay={stat.delay}>
                 <CardContent className="p-4 text-center">
                   <div className={`text-2xl font-bold ${stat.color} mb-1 transition-all duration-300 hover:scale-110`}>
                     {stat.value}
@@ -259,9 +265,9 @@ const Dashboard = () => {
             </div>
 
             {/* Module Library Card */}
-            <AnimatedCard className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700 hover:border-orange-500/30 transition-all duration-300" delay={500}>
+            <AnimatedCard className="bg-gradient-to-br from-gray-900/60 via-gray-800/40 to-gray-900/60 backdrop-blur-sm border border-gray-700 hover:border-orange-500/30 transition-all duration-300" delay={500}>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
                       <Library className="w-8 h-8 text-white" />
@@ -275,10 +281,10 @@ const Dashboard = () => {
                   </div>
                   <SmoothButton
                     onClick={() => navigate('/modules')}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-6 py-3"
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-4 py-2 sm:px-6 sm:py-3 w-full sm:w-auto"
                   >
-                    Browse Modules
-                    <ChevronRight className="w-4 h-4 ml-2" />
+                    <span className="mr-2">Browse Modules</span>
+                    <ChevronRight className="w-4 h-4" />
                   </SmoothButton>
                 </div>
               </CardHeader>
@@ -297,7 +303,7 @@ const Dashboard = () => {
                     <div className="text-sm text-gray-400">Categories</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-500">Free</div>
+                    <div className="text-2xl font-bold text-green-500">{displayTier}</div>
                     <div className="text-sm text-gray-400">Access</div>
                   </div>
                 </div>
@@ -340,7 +346,7 @@ const Dashboard = () => {
           )}
 
           {/* Enhanced Quick Actions */}
-          <AnimatedCard className="bg-gray-900 border-gray-800 hover:bg-gray-800/30 transition-all duration-300" delay={700}>
+          <AnimatedCard className="bg-gray-900/40 backdrop-blur-sm border-gray-800 hover:bg-gray-800/30 transition-all duration-300" delay={700}>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Zap className="w-5 h-5 mr-2 text-orange-500" />
@@ -352,12 +358,12 @@ const Dashboard = () => {
                 {[
                   { id: 'coach-gpt', icon: Brain, title: 'Ask CoachGPT', subtitle: 'Get instant answers', color: 'text-blue-500' },
                   { id: 'meal-plan-ai', icon: Target, title: 'Create Meal Plan', subtitle: 'Nutrition planning', color: 'text-green-500' },
-                  { id: 'progress-ai', icon: TrendingUp, title: 'Track Progress', subtitle: 'Workout analysis', color: 'text-indigo-500' }
+                  { id: 'physique-ai', icon: TrendingUp, title: 'Track Progress', subtitle: 'Workout analysis', color: 'text-indigo-500' }
                 ].map((action, index) => (
                   <SmoothButton
                     key={action.id}
                     variant="ghost"
-                    className="h-auto p-4 justify-start hover:bg-gray-800 transform transition-all duration-200 hover:scale-105 group"
+                    className="h-auto p-4 justify-start hover:bg-gray-800/50 backdrop-blur-sm transform transition-all duration-200 hover:scale-105 group"
                     onClick={() => handleModuleSelect(action.id)}
                   >
                     <div className="flex items-center space-x-3 w-full">

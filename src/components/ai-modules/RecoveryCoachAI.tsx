@@ -152,9 +152,9 @@ const RecoveryCoachAI: React.FC<RecoveryCoachAIProps> = ({ onBack }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !canUseFeature('recovery_coach_queries')) return;
+    if (!input.trim() || !canUseFeature('coach_gpt_queries')) return;
     
-    const success = await incrementUsage('recovery_coach_queries');
+    const success = await incrementUsage('coach_gpt_queries');
     if (!success) return;
     
     setIsLoading(true);
@@ -208,7 +208,7 @@ Provide specific, actionable protocols with timing, dosages, and implementation 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
           prompt: enhancedInput,
-          feature: 'recovery_coach_queries'
+          feature: 'coach_gpt_queries'
         }
       });
 
@@ -434,7 +434,7 @@ Based on your request: ${input}
                 <History className="w-4 h-4 mr-2" />
                 History
               </Button>
-              <UsageIndicator featureKey="recovery_coach_queries" featureName="Recovery Plans" compact />
+              <UsageIndicator featureKey="coach_gpt_queries" featureName="Recovery Plans" compact />
             </div>
           </div>
 
@@ -554,11 +554,11 @@ Based on your request: ${input}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-purple-500 transition-colors resize-none backdrop-blur-sm"
-                    disabled={!canUseFeature('recovery_coach_queries')}
+                    disabled={!canUseFeature('coach_gpt_queries')}
                   />
                   <Button 
                     type="submit" 
-                    disabled={!input.trim() || isLoading || !canUseFeature('recovery_coach_queries')}
+                    disabled={!input.trim() || isLoading || !canUseFeature('coach_gpt_queries')}
                     className="w-full bg-gradient-to-r from-purple-500/80 to-pink-600/80 hover:from-purple-600/80 hover:to-pink-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 backdrop-blur-sm"
                   >
                     {isLoading ? (

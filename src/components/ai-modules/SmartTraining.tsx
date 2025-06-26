@@ -151,9 +151,9 @@ const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !canUseFeature('workout_generations')) return;
+    if (!input.trim() || !canUseFeature('training_programs')) return;
     
-    const success = await incrementUsage('workout_generations');
+    const success = await incrementUsage('training_programs');
     if (!success) return;
     
     setIsLoading(true);
@@ -219,7 +219,7 @@ Provide detailed exercise selection rationale, weekly structure, and progression
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
           prompt: enhancedInput,
-          feature: 'workout_generations'
+          feature: 'training_programs'
         }
       });
 
@@ -432,7 +432,7 @@ Based on your request: ${input}
                 <History className="w-4 h-4 mr-2" />
                 History
               </Button>
-              <UsageIndicator featureKey="workout_generations" featureName="Training Programs" compact />
+              <UsageIndicator featureKey="training_programs" featureName="Training Programs" compact />
             </div>
           </div>
 
@@ -552,11 +552,11 @@ Based on your request: ${input}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-blue-500 transition-colors resize-none backdrop-blur-sm"
-                    disabled={!canUseFeature('workout_generations')}
+                    disabled={!canUseFeature('training_programs')}
                   />
                   <Button 
                     type="submit" 
-                    disabled={!input.trim() || isLoading || !canUseFeature('workout_generations')}
+                    disabled={!input.trim() || isLoading || !canUseFeature('training_programs')}
                     className="w-full bg-gradient-to-r from-blue-500/80 to-cyan-600/80 hover:from-blue-600/80 hover:to-cyan-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 backdrop-blur-sm"
                   >
                     {isLoading ? (

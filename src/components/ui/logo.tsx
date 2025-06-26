@@ -24,7 +24,7 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
       </div>
       {showText && (
         <span className={`${sizes.text} font-bold text-white logo-text`}>
-          GrindMentor
+          Myotopia
         </span>
       )}
     </div>

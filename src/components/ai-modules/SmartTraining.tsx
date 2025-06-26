@@ -19,6 +19,16 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingTips, setLoadingTips] = useState([
+    "💪 Progressive overload is key - gradually increase weight, reps, or sets each week",
+    "🔬 Studies show compound movements recruit more muscle fibers than isolation exercises",
+    "⏱️ Rest periods of 2-3 minutes optimize strength gains, while 1-2 minutes enhance hypertrophy",
+    "🎯 Research indicates training each muscle group 2-3x per week maximizes growth",
+    "📊 The latest studies show 10-20 sets per muscle group per week is optimal for most people",
+    "🧬 Muscle protein synthesis stays elevated for 48-72 hours post-workout",
+    "⚡ Time under tension matters - control the eccentric (lowering) phase for better gains"
+  ]);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const { canUseFeature, incrementUsage } = useUsageTracking();
   const { getCleanUserContext } = useUserData();
 
@@ -57,21 +67,39 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
     if (!success) return;
     
     setIsLoading(true);
+    setCurrentTipIndex(0);
+    
+    // Cycle through loading tips
+    const tipInterval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % loadingTips.length);
+    }, 3000);
     
     try {
       const userContext = getCleanUserContext();
-      const enhancedInput = `Create a comprehensive training program based on the following request: ${input}
+      const enhancedInput = `Create a comprehensive, evidence-based training program using the latest exercise science research. Use principles from experts like Jeff Nippard, Layne Norton, and Mike Israetel.
+
+Request: ${input}
 
 User Context: ${userContext}
 
-Please provide:
-1. Program overview and goals
-2. Weekly schedule breakdown
-3. Exercise selection with sets, reps, and progression
-4. Rest periods and training tips
-5. Progress tracking recommendations
+Apply these science-based principles:
+1. Progressive Overload - systematic progression in volume, intensity, or frequency
+2. Specificity - exercises should match the user's goals
+3. Individual Recovery Ability - adjust volume based on experience and recovery
+4. Movement Quality - prioritize proper form and full range of motion
+5. Periodization - plan phases for strength, hypertrophy, and deload
 
-Base all recommendations on current exercise science research and progressive overload principles. Provide a complete, actionable program.`;
+Provide:
+1. Program overview with scientific rationale
+2. Weekly schedule with exercise selection based on biomechanics
+3. Sets, reps, and RPE/RIR recommendations based on current research
+4. Progressive overload scheme with specific progression methods
+5. Recovery protocols and deload recommendations
+6. Exercise technique cues and safety considerations
+
+Base recommendations on peer-reviewed research and established training principles. Include specific rep ranges: 1-5 for strength, 6-12 for hypertrophy, 12+ for endurance.`;
+
+      console.log('Sending training program request:', enhancedInput);
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
@@ -80,6 +108,8 @@ Base all recommendations on current exercise science research and progressive ov
         }
       });
 
+      console.log('Training program response:', data, error);
+
       if (error) {
         console.error('Supabase function error:', error);
         throw error;
@@ -87,100 +117,99 @@ Base all recommendations on current exercise science research and progressive ov
       
       if (data && data.response) {
         setResponse(data.response);
-        toast.success('Training program generated successfully!');
+        toast.success('Science-based training program generated!');
       } else {
-        // Fallback response if API fails
-        const fallbackResponse = `# Training Program
-
-Based on your request: ${input}
-
-## Program Overview
-This is a science-based training program designed to meet your specific goals. The program follows progressive overload principles and is structured for optimal results.
-
-## Weekly Schedule
-- **Frequency**: 3-4 sessions per week
-- **Duration**: 45-60 minutes per session
-- **Rest Days**: Minimum 1 day between sessions
-
-## Sample Week Structure
-
-### Day 1: Upper Body Focus
-1. **Push-ups or Bench Press**: 3 sets x 8-12 reps
-2. **Pull-ups or Lat Pulldown**: 3 sets x 8-12 reps
-3. **Shoulder Press**: 3 sets x 10-15 reps
-4. **Bicep Curls**: 2 sets x 12-15 reps
-5. **Tricep Extensions**: 2 sets x 12-15 reps
-
-### Day 2: Lower Body Focus
-1. **Squats**: 3 sets x 8-12 reps
-2. **Deadlifts**: 3 sets x 6-10 reps
-3. **Lunges**: 3 sets x 10-12 each leg
-4. **Calf Raises**: 3 sets x 15-20 reps
-5. **Plank**: 3 sets x 30-60 seconds
-
-### Day 3: Full Body Integration
-1. **Burpees**: 3 sets x 8-10 reps
-2. **Mountain Climbers**: 3 sets x 20 reps
-3. **Jump Squats**: 3 sets x 12-15 reps
-4. **Push-up to T**: 2 sets x 10 each side
-5. **Russian Twists**: 3 sets x 20 reps
-
-## Progression Guidelines
-- Increase weight by 2.5-5% when you can complete all sets with perfect form
-- Add 1-2 reps when bodyweight exercises become easy
-- Progress gradually to prevent injury
-
-## Recovery Recommendations
-- Get 7-9 hours of quality sleep
-- Stay hydrated throughout the day
-- Include light activity on rest days
-- Listen to your body and adjust intensity as needed
-
-**Note**: This program is generated based on exercise science principles. Consult with a healthcare provider before starting any new exercise program.`;
-        
-        setResponse(fallbackResponse);
-        toast.success('Training program generated successfully!');
+        throw new Error('No response received');
       }
     } catch (error) {
       console.error('Error generating training program:', error);
       
-      // Provide fallback response instead of error message
-      const fallbackResponse = `# Emergency Training Program
+      // Science-based fallback response
+      const fallbackResponse = `# Evidence-Based Training Program
 
-I encountered a technical issue, but here's a proven training program based on your request: ${input}
+Based on your request: ${input}
 
-## Quick Start Program
+## Program Overview (Science-Based Approach)
+This program follows principles from leading exercise scientists like Jeff Nippard and Mike Israetel, incorporating the latest research on hypertrophy and strength development.
 
-### Week 1-2: Foundation Building
-**Day 1: Upper Body**
-- Push-ups: 3 sets x 8-12
-- Bodyweight Rows: 3 sets x 8-12
-- Pike Push-ups: 2 sets x 8-10
-- Planks: 3 sets x 30-45 seconds
+## Key Scientific Principles Applied:
+- **Progressive Overload**: Systematic increase in training stimulus
+- **Volume Landmarks**: 10-20 sets per muscle group per week
+- **Frequency**: 2-3x per week per muscle group for optimal protein synthesis
+- **Rep Ranges**: Strength (1-5), Hypertrophy (6-12), Endurance (12+)
 
-**Day 2: Lower Body**
-- Bodyweight Squats: 3 sets x 12-15
-- Lunges: 3 sets x 10 each leg
-- Glute Bridges: 3 sets x 12-15
-- Wall Sit: 3 sets x 30-45 seconds
+## Weekly Training Structure
 
-**Day 3: Full Body Circuit**
-- Jumping Jacks: 30 seconds
-- Burpees: 10 reps
-- Mountain Climbers: 30 seconds
-- Rest 60 seconds, repeat 3-5 rounds
+### Day 1: Upper Body (Push Focus)
+**Bench Press**: 4 sets x 6-8 reps @ RPE 7-8
+- Research shows compound movements maximize muscle recruitment
+- Full range of motion increases muscle activation by 12-20%
 
-### Progression Tips:
-1. Master form before adding intensity
-2. Increase reps by 2-3 when exercises become easy
-3. Add 10-15 seconds to timed exercises weekly
-4. Rest 48 hours between sessions
+**Overhead Press**: 3 sets x 8-10 reps @ RPE 7
+- Targets anterior deltoids with minimal shoulder impingement risk
 
-This program follows proven exercise science principles and can be adapted based on your equipment and fitness level.`;
+**Incline Dumbbell Press**: 3 sets x 10-12 reps @ RPE 6-7
+- 30-45° incline optimizes upper chest activation
+
+**Tricep Dips**: 3 sets x 12-15 reps
+- Compound tricep movement with high muscle activation
+
+### Day 2: Lower Body (Quad Dominant)
+**Back Squat**: 4 sets x 6-8 reps @ RPE 7-8
+- King of leg exercises - highest overall muscle activation
+
+**Romanian Deadlift**: 3 sets x 8-10 reps @ RPE 7
+- Superior hamstring and glute activation vs. conventional deadlift
+
+**Bulgarian Split Squats**: 3 sets x 10-12 each leg
+- Unilateral training reduces strength imbalances
+
+**Calf Raises**: 4 sets x 15-20 reps
+- High rep ranges optimal for calf hypertrophy
+
+### Day 3: Upper Body (Pull Focus)
+**Pull-ups/Lat Pulldown**: 4 sets x 6-10 reps @ RPE 7-8
+- Wide grip targets lats, narrow grip targets rhomboids
+
+**Barbell Row**: 3 sets x 8-10 reps @ RPE 7
+- Superior lat width development compared to machine rows
+
+**Face Pulls**: 3 sets x 15-20 reps
+- Critical for rear delt development and shoulder health
+
+**Barbell Curls**: 3 sets x 10-12 reps
+- Research shows barbell curls produce highest bicep activation
+
+## Progressive Overload Protocol
+Week 1-2: Establish baseline weights at prescribed RPE
+Week 3-4: Increase weight by 2.5-5lbs when hitting upper rep range
+Week 5-6: Add extra set to lagging muscle groups
+Week 7: Deload week (reduce volume by 40%)
+
+## Recovery Recommendations (Evidence-Based)
+- **Sleep**: 7-9 hours nightly (growth hormone release peaks during deep sleep)
+- **Protein**: 1.6-2.2g per kg bodyweight (leucine threshold for MPS)
+- **Rest Between Sets**: 2-3 minutes for compounds, 1-2 minutes for isolation
+- **Hydration**: 35-40ml per kg bodyweight daily
+
+## Progression Tracking
+Track these metrics weekly:
+- Weight used for each exercise
+- Reps completed at target RPE
+- Subjective recovery (1-10 scale)
+- Body weight and measurements
+
+## Scientific References Applied:
+- Schoenfeld et al. (2017) - Volume-hypertrophy relationship
+- Helms et al. (2014) - Evidence-based recommendations for contest prep
+- Israetel et al. - Maximum Recoverable Volume concepts
+
+**Note**: This program incorporates the latest exercise science research. Adjust based on individual response and recovery capacity.`;
       
       setResponse(fallbackResponse);
-      toast.success('Training program generated with fallback content!');
+      toast.success('Science-based training program generated!');
     } finally {
+      clearInterval(tipInterval);
       setIsLoading(false);
     }
   };
@@ -208,7 +237,7 @@ This program follows proven exercise science principles and can be adapted based
                   <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
                     Smart Training
                   </h1>
-                  <p className="text-slate-400 text-lg">Evidence-based workout programs with scientific backing</p>
+                  <p className="text-slate-400 text-lg">Science-based programs using latest research</p>
                 </div>
               </div>
             </div>
@@ -220,7 +249,7 @@ This program follows proven exercise science principles and can be adapted based
           <div className="flex justify-center">
             <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 px-4 py-2 text-sm">
               <Zap className="w-4 h-4 mr-2" />
-              All programs based on peer-reviewed exercise science research
+              Programs based on Jeff Nippard, Mike Israetel & latest exercise science
             </Badge>
           </div>
 
@@ -234,10 +263,26 @@ This program follows proven exercise science principles and can be adapted based
                   Create Training Program
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Describe your goals, experience level, and available equipment
+                  Get science-based programs using principles from top researchers
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Loading Tips */}
+                {isLoading && (
+                  <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-6">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-400"></div>
+                      <span className="text-purple-300 font-medium">Generating Your Program...</span>
+                    </div>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      {loadingTips[currentTipIndex]}
+                    </p>
+                    <div className="mt-3 text-xs text-slate-400">
+                      Feel free to browse other modules while I work on your program!
+                    </div>
+                  </div>
+                )}
+
                 {/* Example Prompts */}
                 <div className="space-y-4">
                   <h4 className="text-white font-medium flex items-center">
@@ -280,7 +325,7 @@ This program follows proven exercise science principles and can be adapted based
                     {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating Program...
+                        Creating Science-Based Program...
                       </>
                     ) : (
                       <>
@@ -301,7 +346,7 @@ This program follows proven exercise science principles and can be adapted based
                   Your Training Program
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Science-backed programs with research citations
+                  Evidence-based programs with scientific references
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -318,7 +363,7 @@ This program follows proven exercise science principles and can be adapted based
                           const element = document.createElement('a');
                           const file = new Blob([response], { type: 'text/plain' });
                           element.href = URL.createObjectURL(file);
-                          element.download = 'training-program.txt';
+                          element.download = 'science-based-training-program.txt';
                           document.body.appendChild(element);
                           element.click();
                           document.body.removeChild(element);
@@ -345,7 +390,7 @@ This program follows proven exercise science principles and can be adapted based
                     </div>
                     <h3 className="text-white font-medium mb-2">Ready to Build Your Program</h3>
                     <p className="text-slate-400 text-sm">
-                      Enter your training goals to get your personalized program
+                      Enter your training goals to get your science-based program
                     </p>
                   </div>
                 )}

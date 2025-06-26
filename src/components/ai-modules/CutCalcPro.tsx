@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     
     setIsLoading(true);
     
+    // Simulate calculation time
     setTimeout(() => {
       const weightInLbs = formData.weightUnit === 'kg' 
         ? convertKgToLbs(parseFloat(formData.weight))
@@ -102,6 +104,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       const age = parseInt(formData.age);
       const currentBodyFat = formData.bodyFat ? parseFloat(formData.bodyFat) : null;
       
+      // Enhanced calculations
       const bmr = formData.gender === 'male' 
         ? (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) + 5
         : (10 * weightInLbs * 0.453592) + (6.25 * heightInInches * 2.54) - (5 * age) - 161;
@@ -115,8 +118,18 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       };
       
       const tdee = bmr * activityMultipliers[formData.activityLevel as keyof typeof activityMultipliers];
-      const bmi = weightInLbs / ((heightInInches * 0.0254) ** 2);
-      const ffmi = weightInLbs * 0.453592 * (1 - (currentBodyFat ? currentBodyFat / 100 : 0.15)) / ((heightInInches * 0.0254) ** 2);
+      const bmi = (weightInLbs * 0.453592) / ((heightInInches * 0.0254) ** 2);
+      
+      // Calculate lean body mass and FFMI if body fat is provided
+      let leanBodyMass = null;
+      let ffmi = null;
+      let muscleMass = null;
+      
+      if (currentBodyFat) {
+        leanBodyMass = weightInLbs * (1 - currentBodyFat / 100);
+        ffmi = (leanBodyMass * 0.453592) / ((heightInInches * 0.0254) ** 2);
+        muscleMass = leanBodyMass * 0.85; // Estimate muscle mass as ~85% of lean body mass
+      }
       
       const optimalBF = calculateOptimalBodyFat(formData.gender, age);
       
@@ -124,7 +137,9 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
         bmr: Math.round(bmr),
         tdee: Math.round(tdee),
         bmi: bmi.toFixed(1),
-        ffmi: ffmi.toFixed(1),
+        ffmi: ffmi ? ffmi.toFixed(1) : null,
+        leanBodyMass: leanBodyMass ? leanBodyMass.toFixed(1) : null,
+        muscleMass: muscleMass ? muscleMass.toFixed(1) : null,
         currentBodyFat: currentBodyFat ? `${currentBodyFat}%` : 'Not provided',
         optimalBodyFat: `${optimalBF.optimal}% (Range: ${optimalBF.min}-${optimalBF.max}%)`,
         cuttingCalories: Math.round(tdee - 500),
@@ -137,8 +152,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
           bmi < 18.5 ? 'Consider a lean bulk phase with progressive overload training' : 
           bmi > 25 ? 'Consider a cutting phase with adequate protein intake' : 
           'Maintenance or body recomposition recommended',
-          ffmi > 22 ? 'Excellent muscle development - focus on strength training' : 
-          ffmi > 20 ? 'Good muscle development - continue progressive overload' : 
+          ffmi && ffmi > 22 ? 'Excellent muscle development - focus on strength training' : 
+          ffmi && ffmi > 20 ? 'Good muscle development - continue progressive overload' : 
           'Focus on muscle building with compound movements',
           'Track progress photos and measurements weekly for best results',
           'Prioritize sleep (7-9 hours) and stress management for optimal body composition'
@@ -174,7 +189,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                 <h1 className="text-4xl font-bold text-white">
                   CutCalc Pro
                 </h1>
-                <p className="text-slate-400 text-lg">Advanced cutting calculator with precision analysis</p>
+                <p className="text-slate-400 text-lg">Advanced body composition analysis</p>
               </div>
             </div>
           </div>
@@ -210,10 +225,10 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-white text-2xl flex items-center justify-center">
               <Target className="w-6 h-6 mr-3 text-red-400" />
-              Cutting Calculator
+              Advanced Body Composition Calculator
             </CardTitle>
             <CardDescription className="text-slate-400 text-lg">
-              Calculate your optimal cutting strategy with scientific precision
+              Calculate cutting strategy with muscle mass and FFMI analysis
             </CardDescription>
           </CardHeader>
           
@@ -245,6 +260,62 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                     </div>
                   </div>
 
+                  {/* Height Input */}
+                  <div className="space-y-2">
+                    <Label className="text-slate-300 font-medium">Height</Label>
+                    {formData.heightUnit === 'ft-in' ? (
+                      <div className="flex space-x-2">
+                        <Input
+                          type="number"
+                          placeholder="5"
+                          value={formData.heightFeet}
+                          onChange={(e) => setFormData({...formData, heightFeet: e.target.value})}
+                          className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
+                          required
+                        />
+                        <Input
+                          type="number"
+                          placeholder="10"
+                          value={formData.heightInches}
+                          onChange={(e) => setFormData({...formData, heightInches: e.target.value})}
+                          className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
+                          required
+                        />
+                        <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => setFormData({...formData, heightUnit: value})}>
+                          <SelectTrigger className="w-20 bg-slate-800/50 border-slate-600/50 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cm">cm</SelectItem>
+                            <SelectItem value="ft-in">ft-in</SelectItem>
+                            <SelectItem value="in">in</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="flex space-x-2">
+                        <Input
+                          type="number"
+                          placeholder={formData.heightUnit === 'cm' ? '170' : '67'}
+                          value={formData.height}
+                          onChange={(e) => setFormData({...formData, height: e.target.value})}
+                          className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
+                          required
+                        />
+                        <Select value={formData.heightUnit} onValueChange={(value: 'cm' | 'ft-in' | 'in') => setFormData({...formData, heightUnit: value})}>
+                          <SelectTrigger className="w-20 bg-slate-800/50 border-slate-600/50 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cm">cm</SelectItem>
+                            <SelectItem value="ft-in">ft-in</SelectItem>
+                            <SelectItem value="in">in</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Age Input */}
                   <div className="space-y-2">
                     <Label className="text-slate-300 font-medium">Age</Label>
@@ -256,6 +327,37 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                       className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
                       required
                     />
+                  </div>
+
+                  {/* Gender Input */}
+                  <div className="space-y-2">
+                    <Label className="text-slate-300 font-medium">Gender</Label>
+                    <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
+                      <SelectTrigger className="bg-slate-800/50 border-slate-600/50 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Activity Level */}
+                  <div className="space-y-2">
+                    <Label className="text-slate-300 font-medium">Activity Level</Label>
+                    <Select value={formData.activityLevel} onValueChange={(value) => setFormData({...formData, activityLevel: value})}>
+                      <SelectTrigger className="bg-slate-800/50 border-slate-600/50 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sedentary">Sedentary</SelectItem>
+                        <SelectItem value="light">Light Activity</SelectItem>
+                        <SelectItem value="moderate">Moderate Activity</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="very_active">Very Active</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Body Fat Input */}
@@ -280,12 +382,12 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      Calculating...
+                      Calculating Advanced Metrics...
                     </>
                   ) : (
                     <>
                       <Target className="w-5 h-5 mr-3" />
-                      Calculate Cutting Plan
+                      Calculate Body Composition
                     </>
                   )}
                 </Button>
@@ -296,9 +398,89 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                   <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-400/20">
                     <Award className="w-8 h-8 text-red-400" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Your Cutting Plan</h3>
-                  <p className="text-slate-400">Professional analysis complete</p>
+                  <h3 className="text-2xl font-bold text-white mb-2">Your Body Composition Analysis</h3>
+                  <p className="text-slate-400">Advanced metrics and recommendations</p>
                 </div>
+
+                {/* Results Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Card className="bg-slate-800/30 border-slate-700/50">
+                    <CardContent className="p-4">
+                      <h4 className="text-white font-medium mb-2">Basic Metrics</h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">BMR:</span>
+                          <span className="text-white">{result.bmr} cal</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">TDEE:</span>
+                          <span className="text-white">{result.tdee} cal</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">BMI:</span>
+                          <span className="text-white">{result.bmi}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {result.ffmi && (
+                    <Card className="bg-slate-800/30 border-slate-700/50">
+                      <CardContent className="p-4">
+                        <h4 className="text-white font-medium mb-2">Body Composition</h4>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">FFMI:</span>
+                            <span className="text-white">{result.ffmi}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Lean Mass:</span>
+                            <span className="text-white">{result.leanBodyMass} {formData.weightUnit}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Muscle Mass:</span>
+                            <span className="text-white">{result.muscleMass} {formData.weightUnit}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card className="bg-slate-800/30 border-slate-700/50">
+                    <CardContent className="p-4">
+                      <h4 className="text-white font-medium mb-2">Calorie Targets</h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Cutting:</span>
+                          <span className="text-red-400">{result.cuttingCalories} cal</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Maintenance:</span>
+                          <span className="text-white">{result.tdee} cal</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Bulking:</span>
+                          <span className="text-green-400">{result.bulkingCalories} cal</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recommendations */}
+                <Card className="bg-slate-800/30 border-slate-700/50">
+                  <CardContent className="p-6">
+                    <h4 className="text-white font-medium mb-4">Personalized Recommendations</h4>
+                    <div className="space-y-3">
+                      {result.recommendations.map((rec: string, index: number) => (
+                        <div key={index} className="flex items-start space-x-3">
+                          <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0"></div>
+                          <p className="text-slate-300 text-sm">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
                 
                 <Button
                   onClick={() => setResult(null)}

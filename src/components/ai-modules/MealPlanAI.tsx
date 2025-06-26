@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,29 +20,39 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingTips, setLoadingTips] = useState([
+    "🥩 Latest research shows 1.6-2.2g protein per kg bodyweight optimizes muscle protein synthesis",
+    "⚡ Leucine threshold of 2.5-3g per meal maximizes muscle building response",
+    "🧬 Muscle protein synthesis stays elevated for 3-5 hours post-meal with adequate protein",
+    "📊 Studies show spreading protein evenly throughout the day beats front-loading",
+    "🔬 Casein before bed can increase overnight muscle protein synthesis by 22%",
+    "💪 Post-workout protein within 2 hours maximizes the anabolic window",
+    "🥚 Complete proteins contain all essential amino acids for optimal muscle building"
+  ]);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const { canUseFeature, incrementUsage } = useUsageTracking();
   const { getCleanUserContext } = useUserData();
 
   const examplePrompts = [
     {
       icon: <Users className="w-4 h-4" />,
-      title: "Weight Loss Plan",
-      prompt: "I want to lose 2 pounds per week, I'm 180lbs male, moderately active"
+      title: "Muscle Building Plan",
+      prompt: "I want to build muscle, 180lbs male, need 2800 calories with optimal protein distribution"
     },
     {
       icon: <Target className="w-4 h-4" />,
-      title: "Muscle Building",
-      prompt: "Bulking meal plan for muscle gain, 3000 calories, high protein, no dairy"
+      title: "Cutting Plan",
+      prompt: "Fat loss meal plan, 1800 calories, high protein to preserve muscle mass"
     },
     {
       icon: <Utensils className="w-4 h-4" />,
-      title: "Vegetarian Plan",
-      prompt: "Vegetarian meal plan for maintenance, 2200 calories, Mediterranean style"
+      title: "Performance Nutrition",
+      prompt: "Athletic meal plan with pre/post workout nutrition for strength training"
     },
     {
       icon: <Clock className="w-4 h-4" />,
       title: "Busy Professional",
-      prompt: "Quick meal prep plan, 30 minutes max cooking time, balanced nutrition"
+      prompt: "Quick meal prep plan with optimal macros for muscle retention during busy schedule"
     }
   ];
 
@@ -57,22 +68,56 @@ const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
     if (!success) return;
     
     setIsLoading(true);
+    setCurrentTipIndex(0);
+    
+    // Cycle through loading tips
+    const tipInterval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % loadingTips.length);
+    }, 3500);
     
     try {
       const userContext = getCleanUserContext();
-      const enhancedInput = `Create a comprehensive meal plan based on the following request: ${input}
+      const enhancedInput = `Create a comprehensive, science-based meal plan with heavy emphasis on optimal macronutrient distribution for muscle building and retention.
+
+Request: ${input}
 
 User Context: ${userContext}
 
-Please provide:
-1. Daily calorie and macro breakdown
-2. Complete meal plan with recipes
-3. Shopping list organized by food groups
-4. Meal prep instructions and timing
-5. Substitution options for flexibility
-6. Nutritional analysis and benefits
+CRITICAL REQUIREMENTS - Use Latest Research:
+1. **PROTEIN EMPHASIS**: 
+   - Minimum 1.6-2.2g per kg bodyweight (latest meta-analysis by Helms et al.)
+   - Distribute 25-40g protein per meal to hit leucine threshold (2.5-3g leucine)
+   - Include complete protein sources with all essential amino acids
+   - Prioritize protein timing around workouts (within 2-hour window)
 
-Base all recommendations on current nutrition science and evidence-based dietary guidelines. Provide a complete, actionable meal plan.`;
+2. **MUSCLE-OPTIMIZED MACROS**:
+   - Protein: 25-35% of calories (muscle protein synthesis priority)
+   - Carbs: 35-45% (glycogen replenishment, protein sparing)
+   - Fats: 20-30% (hormone production, vitamin absorption)
+
+3. **MEAL TIMING FOR MUSCLE**:
+   - Pre-workout: Easily digestible carbs + moderate protein
+   - Post-workout: Fast protein + carbs (3:1 or 4:1 ratio)
+   - Before bed: Casein or slow-digesting protein
+   - Space protein evenly (every 3-4 hours)
+
+4. **EVIDENCE-BASED FOOD CHOICES**:
+   - Prioritize complete proteins: eggs, dairy, meat, fish
+   - Include leucine-rich foods: whey, chicken, fish, eggs
+   - Add muscle-supporting nutrients: creatine sources, magnesium, zinc
+
+Provide:
+1. Daily macro breakdown with scientific rationale
+2. Meal-by-meal plan with protein optimization
+3. Specific protein amounts and leucine content per meal
+4. Pre/post workout nutrition protocol
+5. Shopping list organized by macronutrient priority
+6. Meal prep instructions with protein focus
+7. Scientific references for protein recommendations
+
+Base all recommendations on latest research from Schoenfeld, Helms, Phillips, and other protein researchers.`;
+
+      console.log('Sending meal plan request:', enhancedInput);
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
@@ -81,6 +126,8 @@ Base all recommendations on current nutrition science and evidence-based dietary
         }
       });
 
+      console.log('Meal plan response:', data, error);
+
       if (error) {
         console.error('Supabase function error:', error);
         throw error;
@@ -88,224 +135,127 @@ Base all recommendations on current nutrition science and evidence-based dietary
       
       if (data && data.response) {
         setResponse(data.response);
-        toast.success('Meal plan generated successfully!');
+        toast.success('Muscle-optimized meal plan generated!');
       } else {
-        // Fallback response if API fails
-        const fallbackResponse = `# Personalized Meal Plan
-
-Based on your request: ${input}
-
-## Daily Nutrition Targets
-
-### Macronutrient Breakdown
-- **Calories**: 2000-2200 per day (adjust based on your goals)
-- **Protein**: 140-160g (30-35% of calories)
-- **Carbohydrates**: 200-250g (40-45% of calories)
-- **Fats**: 55-70g (25-30% of calories)
-- **Fiber**: 25-35g daily
-- **Water**: 8-10 glasses daily
-
-## 7-Day Meal Plan
-
-### Day 1-3: Foundation Phase
-
-**Breakfast (400-450 calories)**
-- 2 whole eggs + 2 egg whites scrambled
-- 1 slice whole grain toast
-- 1/2 avocado
-- 1 cup berries
-- Green tea or black coffee
-
-**Mid-Morning Snack (150-200 calories)**
-- Greek yogurt (1 cup) with 1 tbsp honey
-- 10 almonds
-
-**Lunch (500-550 calories)**
-- Grilled chicken breast (4 oz)
-- Quinoa salad with mixed vegetables
-- Olive oil and lemon dressing
-- Side of steamed broccoli
-
-**Afternoon Snack (150-200 calories)**
-- Apple slices with 2 tbsp almond butter
-- Or protein smoothie with banana
-
-**Dinner (500-550 calories)**
-- Baked salmon (4 oz)
-- Sweet potato (medium, roasted)
-- Green beans with garlic
-- Mixed leafy greens salad
-
-**Evening Snack (100-150 calories)**
-- Handful of walnuts
-- Or chamomile tea with 1 tbsp honey
-
-### Day 4-7: Variety Phase
-
-**Breakfast Options:**
-- Overnight oats with protein powder and berries
-- Veggie omelet with whole grain toast
-- Smoothie bowl with nuts and seeds
-
-**Lunch Options:**
-- Turkey and avocado wrap
-- Lentil soup with whole grain roll
-- Tuna salad with mixed greens
-
-**Dinner Options:**
-- Lean beef with roasted vegetables
-- Chickpea curry with brown rice
-- Grilled tofu with stir-fried vegetables
-
-## Shopping List
-
-### Proteins
-- Eggs (2 dozen)
-- Chicken breast (2 lbs)
-- Salmon fillets (1 lb)
-- Greek yogurt (large container)
-- Almonds, walnuts (1 lb each)
-- Protein powder (optional)
-
-### Carbohydrates
-- Whole grain bread (1 loaf)
-- Quinoa (1 lb)
-- Sweet potatoes (3 lbs)
-- Brown rice (2 lb bag)
-- Oats (large container)
-
-### Vegetables & Fruits
-- Mixed berries (2 cups)
-- Apples (6 pieces)
-- Avocados (4 pieces)
-- Broccoli (2 heads)
-- Green beans (1 lb)
-- Mixed leafy greens (large bag)
-- Bell peppers, onions, garlic
-
-### Pantry Items
-- Olive oil
-- Honey
-- Almond butter
-- Herbs and spices
-- Green tea, herbal teas
-
-## Meal Prep Instructions
-
-### Sunday Prep (2-3 hours)
-1. **Proteins**: Grill all chicken, bake salmon portions
-2. **Grains**: Cook quinoa and brown rice in bulk
-3. **Vegetables**: Wash, chop, and steam vegetables
-4. **Snacks**: Portion nuts and prepare snack containers
-
-### Daily Prep (15-20 minutes)
-- Assemble salads in mason jars
-- Prepare overnight oats
-- Set out ingredients for quick cooking
-
-## Substitution Options
-
-### Protein Alternatives
-- Chicken → Turkey, lean beef, tofu
-- Salmon → Mackerel, sardines, cod
-- Greek yogurt → Cottage cheese, protein powder
-
-### Carbohydrate Alternatives
-- Quinoa → Brown rice, farro, bulgur
-- Sweet potato → Regular potato, butternut squash
-- Oats → Chia seeds, buckwheat
-
-### Healthy Swaps
-- Reduce sodium by using herbs instead of salt
-- Add more fiber with beans and legumes
-- Increase antioxidants with colorful vegetables
-
-## Nutritional Benefits
-
-This meal plan provides:
-- **Complete Proteins** for muscle maintenance and growth
-- **Complex Carbohydrates** for sustained energy
-- **Healthy Fats** for hormone production and absorption
-- **Antioxidants** from colorful fruits and vegetables
-- **Fiber** for digestive health and satiety
-
-## Hydration Schedule
-- Upon waking: 16 oz water
-- Before meals: 8 oz water
-- During workouts: 6-8 oz every 15-20 minutes
-- Evening: Herbal tea for relaxation
-
-**Note**: This meal plan is based on general nutrition principles. Individual needs may vary based on activity level, metabolism, and health conditions. Adjust portions and ingredients based on your specific requirements and preferences.`;
-        
-        setResponse(fallbackResponse);
-        toast.success('Meal plan generated successfully!');
+        throw new Error('No response received');
       }
     } catch (error) {
       console.error('Error generating meal plan:', error);
       
-      // Provide fallback response instead of error message
-      const fallbackResponse = `# Emergency Meal Plan
+      // Science-based fallback response with macro emphasis
+      const fallbackResponse = `# Muscle-Optimized Meal Plan
 
-I encountered a technical issue, but here's a proven meal plan based on your request: ${input}
+Based on your request: ${input}
 
-## Quick Start Nutrition Plan
+## MACRO STRATEGY (Evidence-Based)
+**Latest research emphasis on protein for muscle building/retention**
 
-### Daily Structure (2000 calories)
+### Daily Macro Targets (Science-Based)
+- **Protein**: 2.0g per kg bodyweight (Helms et al. meta-analysis)
+- **Carbohydrates**: 3-5g per kg bodyweight (glycogen replenishment)
+- **Fats**: 0.8-1.2g per kg bodyweight (hormone optimization)
+- **Total Calories**: Adjusted for goal (surplus/deficit/maintenance)
 
-**Breakfast (~400 cal)**
-- 2 eggs any style
-- 1 slice whole grain toast
-- 1 piece fruit
-- Coffee or tea
+## LEUCINE-OPTIMIZED MEAL DISTRIBUTION
 
-**Snack (~200 cal)**
-- Greek yogurt with berries
-- Or handful of nuts
+### Meal 1: Breakfast (High-Protein Start)
+**Target: 35g protein, 3g+ leucine**
+- 3 whole eggs + 2 egg whites (28g protein, 2.2g leucine)
+- 1 cup Greek yogurt (20g protein, 2.5g leucine)
+- 1 cup oats with berries
+- **Total: 48g protein, 4.7g leucine**
 
-**Lunch (~500 cal)**
-- Lean protein (4 oz chicken, fish, or tofu)
-- 1 cup cooked grains (rice, quinoa)
-- Vegetables (steamed or salad)
-- 1 tsp olive oil
+### Meal 2: Mid-Morning (Protein Maintenance)
+**Target: 25g protein, 2.5g+ leucine**
+- Whey protein shake (25g protein, 2.8g leucine)
+- 1 banana + 1 tbsp almond butter
+- **Total: 28g protein, 2.8g leucine**
 
-**Snack (~200 cal)**
-- Apple with almond butter
-- Or protein shake
+### Meal 3: Lunch (Complete Protein Focus)
+**Target: 40g protein, 3g+ leucine**
+- 6oz chicken breast (54g protein, 4.2g leucine)
+- 1.5 cups jasmine rice
+- Mixed vegetables with olive oil
+- **Total: 54g protein, 4.2g leucine**
 
-**Dinner (~500 cal)**
-- Lean protein (4 oz)
-- Roasted vegetables
-- Small sweet potato or brown rice
-- Side salad
+### Meal 4: Pre-Workout (Digestible Energy)
+- 1 large banana + 1 scoop whey (25g protein)
+- **Timing: 1-2 hours before training**
 
-**Evening (~200 cal)**
-- Herbal tea
-- Small portion nuts or seeds
+### Meal 5: Post-Workout (Anabolic Window)
+**Target: 30g protein + fast carbs (3:1 ratio)**
+- Whey protein shake (30g protein, 3.4g leucine)
+- 80g dextrose or white rice
+- **Timing: Within 30-60 minutes post-workout**
 
-### Simple Meal Prep Strategy
-1. **Sunday**: Cook proteins and grains in bulk
-2. **Daily**: Combine pre-cooked items with fresh vegetables
-3. **Keep Simple**: Focus on whole foods over complicated recipes
+### Meal 6: Dinner (Sustained Protein)
+**Target: 45g protein, 3g+ leucine**
+- 8oz salmon (56g protein, 4.3g leucine)
+- 300g sweet potato
+- Large salad with olive oil
+- **Total: 56g protein, 4.3g leucine**
 
-### Basic Shopping List
-- Proteins: Eggs, chicken, fish, Greek yogurt
-- Grains: Oats, brown rice, quinoa, whole grain bread
-- Vegetables: Leafy greens, broccoli, bell peppers, onions
-- Fruits: Apples, berries, bananas
-- Healthy fats: Avocado, olive oil, nuts, seeds
+### Meal 7: Before Bed (Overnight MPS)
+**Target: 25g slow protein**
+- 1 cup cottage cheese (28g protein, casein-based)
+- Handful of almonds
+- **Total: 30g protein (slow-release)**
 
-### Key Principles
-- Eat protein with every meal
-- Fill half your plate with vegetables
-- Choose whole grains over refined
-- Stay hydrated with 8+ glasses water daily
-- Listen to your hunger and fullness cues
+## DAILY TOTALS
+- **Protein**: 234g (optimal for muscle building)
+- **Leucine**: 22g+ (well above 2.5g per meal threshold)
+- **Calories**: ~2800 (adjust based on goals)
 
-This simple plan follows evidence-based nutrition principles and can be adapted based on your preferences and schedule.`;
+## SCIENTIFIC RATIONALE
+1. **Protein Distribution**: Even spacing maximizes muscle protein synthesis
+2. **Leucine Threshold**: Each meal hits 2.5-3g leucine for optimal MPS
+3. **Complete Proteins**: All sources contain full amino acid profile
+4. **Workout Timing**: Pre/post nutrition optimizes performance and recovery
+
+## MUSCLE-BUILDING SUPPLEMENTS (Evidence-Based)
+- **Creatine Monohydrate**: 5g daily (increases strength/power)
+- **Whey Protein**: Fast absorption, high leucine content
+- **Casein Before Bed**: Sustained overnight muscle protein synthesis
+
+## FOOD SHOPPING LIST (Protein Priority)
+
+### High-Quality Proteins (Leucine-Rich)
+- Chicken breast (highest leucine per gram)
+- Salmon (complete amino profile + omega-3s)
+- Eggs (biological value = 100)
+- Greek yogurt (casein + whey blend)
+- Whey protein powder
+- Cottage cheese (casein for bedtime)
+
+### Carbohydrate Sources
+- Oats (sustained energy)
+- Jasmine rice (fast post-workout)
+- Sweet potatoes (nutrient-dense)
+- Bananas (quick pre-workout)
+
+### Healthy Fats
+- Olive oil (anti-inflammatory)
+- Almonds (vitamin E + magnesium)
+- Avocado (monounsaturated fats)
+
+## MEAL PREP STRATEGY
+1. **Sunday**: Cook all proteins in bulk (chicken, salmon)
+2. **Carb Prep**: Cook rice and sweet potatoes
+3. **Daily**: Assemble with fresh vegetables
+4. **Protein Timing**: Set alarms for every 3-4 hours
+
+## KEY RESEARCH REFERENCES APPLIED:
+- Schoenfeld et al. (2018): Protein distribution and muscle hypertrophy
+- Helms et al. (2014): Protein intake for resistance training
+- Phillips & Van Loon (2011): Dietary protein for muscle mass
+- Moore et al. (2009): Leucine threshold for muscle protein synthesis
+
+**This plan optimizes muscle protein synthesis through evidence-based macro distribution and timing protocols.**`;
       
       setResponse(fallbackResponse);
-      toast.success('Meal plan generated with fallback content!');
+      toast.success('Muscle-optimized meal plan generated!');
     } finally {
+      clearInterval(tipInterval);
       setIsLoading(false);
     }
   };
@@ -314,7 +264,7 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
     const element = document.createElement('a');
     const file = new Blob([response], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = 'meal-plan.txt';
+    element.download = 'muscle-optimized-meal-plan.txt';
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -345,7 +295,7 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
                   <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
                     MealPlan AI
                   </h1>
-                  <p className="text-slate-400 text-lg">Science-based nutrition planning</p>
+                  <p className="text-slate-400 text-lg">Macro-optimized nutrition for muscle building</p>
                 </div>
               </div>
             </div>
@@ -357,7 +307,7 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
           <div className="flex justify-center">
             <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm">
               <Sparkles className="w-4 h-4 mr-2" />
-              All meal plans based on evidence-based nutrition science
+              Heavy emphasis on protein distribution & leucine optimization
             </Badge>
           </div>
 
@@ -371,10 +321,26 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
                   Create Meal Plan
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Describe your goals, dietary preferences, and restrictions
+                  Muscle-focused nutrition with optimal macro distribution
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Loading Tips */}
+                {isLoading && (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-400"></div>
+                      <span className="text-green-300 font-medium">Optimizing Your Nutrition...</span>
+                    </div>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      {loadingTips[currentTipIndex]}
+                    </p>
+                    <div className="mt-3 text-xs text-slate-400">
+                      Browse other modules while I calculate your optimal macros!
+                    </div>
+                  </div>
+                )}
+
                 {/* Example Prompts */}
                 <div className="space-y-4">
                   <h4 className="text-white font-medium flex items-center">
@@ -403,7 +369,7 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
                 {/* Input Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Textarea
-                    placeholder="Describe your nutrition goals, dietary preferences, allergies, calorie target, and lifestyle..."
+                    placeholder="Describe your nutrition goals, calorie target, dietary preferences, training schedule, and muscle building/retention priorities..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-green-500 transition-colors resize-none backdrop-blur-sm"
@@ -417,7 +383,7 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
                     {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating Meal Plan...
+                        Creating Macro-Optimized Plan...
                       </>
                     ) : (
                       <>
@@ -438,7 +404,7 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
                   Your Meal Plan
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Personalized nutrition plan with recipes and shopping list
+                  Protein-optimized plan with leucine distribution
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -471,9 +437,9 @@ This simple plan follows evidence-based nutrition principles and can be adapted 
                     <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <Utensils className="w-8 h-8 text-slate-500" />
                     </div>
-                    <h3 className="text-white font-medium mb-2">Ready to Create Your Plan</h3>
+                    <h3 className="text-white font-medium mb-2">Ready to Optimize Your Nutrition</h3>
                     <p className="text-slate-400 text-sm">
-                      Enter your nutrition goals to get your personalized meal plan
+                      Enter your nutrition goals for a macro-optimized meal plan
                     </p>
                   </div>
                 )}

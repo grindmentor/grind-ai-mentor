@@ -1,551 +1,212 @@
-import { useEffect, useState } from "react";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Target, TrendingUp, Timer, Utensils, Camera, Dumbbell, Crown, ArrowRight, CheckCircle, Sparkles, LogIn, User, Activity, Calendar, Zap } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import Logo from "@/components/ui/logo";
-import { AnimatedCard } from "@/components/ui/animated-card";
-import { SmoothButton } from "@/components/ui/smooth-button";
-import { PageTransition } from "@/components/ui/page-transition";
+import { ArrowRight, Dumbbell, Brain, Zap, Star, Users, Trophy, Target, Shield, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  console.log("Index page - User state:", user ? "logged in" : "not logged in");
-
-  const features = [
-    {
-      icon: Brain,
-      title: "CoachGPT",
-      description: "AI-powered fitness coach for personalized guidance",
-      isPremium: false,
-      color: "from-blue-500 to-blue-600"
-    },
-    {
-      icon: Utensils,
-      title: "Meal Plan AI",
-      description: "Custom nutrition plans based on your goals",
-      isPremium: true,
-      color: "from-green-500 to-green-600"
-    },
-    {
-      icon: TrendingUp,
-      title: "Progress Tracking",
-      description: "AI-powered physique analysis and progress monitoring",
-      isPremium: true,
-      color: "from-purple-500 to-purple-600"
-    },
-    {
-      icon: Timer,
-      title: "Workout Timer",
-      description: "Smart timing for your training sessions",
-      isPremium: false,
-      color: "from-orange-500 to-orange-600"
-    },
-    {
-      icon: Target,
-      title: "TDEE Calculator",
-      description: "Precise calorie calculations for your metabolism",
-      isPremium: false,
-      color: "from-red-500 to-red-600"
-    },
-    {
-      icon: Camera,
-      title: "Food Photo Logger",
-      description: "Log meals with AI-powered photo analysis",
-      isPremium: true,
-      color: "from-pink-500 to-pink-600"
-    }
-  ];
-
-  // Enhanced logged-in user experience
-  if (user) {
-    const userFirstName = user.email?.split('@')[0] || 'there';
-    
-    return (
-      <PageTransition>
-        <div className="min-h-screen bg-black text-white overflow-x-hidden">
-          {/* Navigation */}
-          <nav className="border-b border-gray-800 bg-black/95 backdrop-blur-md sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-                <Logo size="md" />
-                
-                <div className="flex items-center space-x-2 sm:space-x-4">
-                  <SmoothButton
-                    variant="ghost"
-                    onClick={() => navigate('/about')}
-                    className="text-gray-300 hover:text-white hidden sm:block"
-                  >
-                    About
-                  </SmoothButton>
-                  <SmoothButton
-                    variant="ghost"
-                    onClick={() => navigate('/pricing')}
-                    className="text-gray-300 hover:text-white hidden sm:block"
-                  >
-                    Pricing
-                  </SmoothButton>
-                  <SmoothButton
-                    onClick={() => navigate('/app')}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                  >
-                    <Dumbbell className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </SmoothButton>
-                </div>
-              </div>
-            </div>
-          </nav>
-
-          {/* Welcome Back Hero */}
-          <section className="pt-12 sm:pt-20 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-12 animate-fade-in">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mr-4">
-                    <User className="w-8 h-8 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-                      Welcome back, <span className="text-orange-500">{userFirstName}</span>!
-                    </h1>
-                    <p className="text-gray-400 text-lg">Ready to continue your fitness journey?</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-                  <SmoothButton
-                    size="lg"
-                    onClick={() => navigate('/app')}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-8 py-4 hover-glow w-full sm:w-auto"
-                  >
-                    <Dumbbell className="w-5 h-5 mr-2" />
-                    Access Your Dashboard
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </SmoothButton>
-                  
-                  <SmoothButton
-                    variant="outline"
-                    size="lg"
-                    onClick={() => navigate('/settings')}
-                    className="border-gray-600 text-white hover:bg-gray-800 text-lg px-8 py-4 w-full sm:w-auto"
-                  >
-                    <User className="w-5 h-5 mr-2" />
-                    Settings
-                  </SmoothButton>
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <AnimatedCard delay={200} className="bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-blue-500/20">
-                  <CardContent className="p-6 text-center">
-                    <Activity className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold text-white mb-1">AI Coach</h3>
-                    <p className="text-gray-400 text-sm">Get personalized guidance</p>
-                  </CardContent>
-                </AnimatedCard>
-
-                <AnimatedCard delay={300} className="bg-gradient-to-r from-green-500/10 to-green-600/10 border-green-500/20">
-                  <CardContent className="p-6 text-center">
-                    <Calendar className="w-8 h-8 text-green-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold text-white mb-1">Track Progress</h3>
-                    <p className="text-gray-400 text-sm">Monitor your journey</p>
-                  </CardContent>
-                </AnimatedCard>
-
-                <AnimatedCard delay={400} className="bg-gradient-to-r from-purple-500/10 to-purple-600/10 border-purple-500/20">
-                  <CardContent className="p-6 text-center">
-                    <Zap className="w-8 h-8 text-purple-400 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold text-white mb-1">Smart Tools</h3>
-                    <p className="text-gray-400 text-sm">AI-powered features</p>
-                  </CardContent>
-                </AnimatedCard>
-              </div>
-            </div>
-          </section>
-
-          {/* Your Available Tools */}
-          <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-900/30">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-12 animate-fade-in" style={{ animationDelay: '500ms' }}>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                  Your AI Fitness Arsenal
-                </h2>
-                <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto">
-                  Access all your personalized fitness tools from your dashboard
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {features.map((feature, index) => (
-                  <AnimatedCard
-                    key={feature.title}
-                    delay={600 + index * 100}
-                    className="group p-0 border-0 bg-transparent"
-                  >
-                    <Card className={`h-full bg-gradient-to-br ${feature.color} border-0 text-white hover:scale-[1.02] transition-all duration-300 hover:shadow-2xl cursor-pointer`}
-                          onClick={() => navigate('/app')}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
-                            <feature.icon className="w-6 h-6 text-white" />
-                          </div>
-                          {feature.isPremium && (
-                            <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                              <Crown className="w-3 h-3 mr-1" />
-                              Premium
-                            </Badge>
-                          )}
-                        </div>
-                        <CardTitle className="text-white text-lg">{feature.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <CardDescription className="text-white/80 mb-3">
-                          {feature.description}
-                        </CardDescription>
-                        <div className="flex items-center text-white/60 text-sm">
-                          <ArrowRight className="w-4 h-4 mr-2" />
-                          Click to access
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </AnimatedCard>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Footer */}
-          <footer className="border-t border-gray-800 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <Logo size="sm" />
-                
-                <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-6 md:mt-0">
-                  <SmoothButton
-                    variant="ghost"
-                    onClick={() => navigate('/about')}
-                    className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                  >
-                    About
-                  </SmoothButton>
-                  <SmoothButton
-                    variant="ghost"
-                    onClick={() => navigate('/privacy')}
-                    className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                  >
-                    Privacy Policy
-                  </SmoothButton>
-                  <SmoothButton
-                    variant="ghost"
-                    onClick={() => navigate('/terms')}
-                    className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                  >
-                    Terms of Service
-                  </SmoothButton>
-                  <SmoothButton
-                    variant="ghost"
-                    onClick={() => navigate('/support')}
-                    className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                  >
-                    Support
-                  </SmoothButton>
-                </div>
-              </div>
-              
-              <div className="text-center mt-8 text-sm text-gray-500">
-                © 2025 GrindMentor. All rights reserved.
-              </div>
-            </div>
-          </footer>
-        </div>
-      </PageTransition>
-    );
-  }
-
-  // Regular landing page for non-logged-in users
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-black text-white overflow-x-hidden">
-        {/* Navigation */}
-        <nav className="border-b border-gray-800 bg-black/95 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <Logo size="md" />
-              
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <SmoothButton
-                  variant="ghost"
-                  onClick={() => navigate('/about')}
-                  className="text-gray-300 hover:text-white hidden sm:block"
-                >
-                  About
-                </SmoothButton>
-                <SmoothButton
-                  variant="ghost"
-                  onClick={() => navigate('/pricing')}
-                  className="text-gray-300 hover:text-white hidden sm:block"
-                >
-                  Pricing
-                </SmoothButton>
-                {user ? (
-                  <SmoothButton
-                    onClick={() => navigate('/app')}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                  >
-                    Dashboard
-                  </SmoothButton>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <SmoothButton
-                      variant="outline"
-                      onClick={() => navigate('/signin')}
-                      className="border-gray-600 text-white hover:bg-gray-800 flex items-center"
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Login
-                    </SmoothButton>
-                    <SmoothButton
-                      onClick={() => navigate('/signin')}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 flex items-center"
-                    >
-                      <LogIn className="w-4 h-4 mr-2" />
-                      <span className="hidden sm:inline">Get Started</span>
-                      <span className="sm:hidden">Sign Up</span>
-                    </SmoothButton>
-                  </div>
-                )}
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white animate-fade-in">
+      {/* Header */}
+      <header className="border-b border-gray-800/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <Logo size="lg" />
+            <div className="flex items-center space-x-4">
+              <Link to="/signin">
+                <Button variant="ghost" className="text-white hover:bg-white/10">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/signin">
+                <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 mb-6 px-4 py-2">
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI-Powered Fitness Platform
+          </Badge>
+          
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            Your Personal
+            <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent block">
+              AI Fitness Coach
+            </span>
+          </h1>
+          
+          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            Transform your fitness journey with science-backed AI guidance. Get personalized workout plans, 
+            nutrition advice, and real-time coaching tailored to your goals.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/signin">
+              <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-3">
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/about">
+              <Button size="lg" variant="outline" className="border-gray-600 text-white hover:bg-white/10 px-8 py-3">
+                Learn More
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Everything You Need to Succeed
+            </h2>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Comprehensive AI-powered tools designed to optimize every aspect of your fitness journey
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Brain,
+                title: "Smart Training Plans",
+                description: "AI-generated workout programs based on exercise science and your personal goals",
+                gradient: "from-purple-500 to-purple-700"
+              },
+              {
+                icon: Target,
+                title: "Nutrition Optimization",
+                description: "Personalized meal plans with macro tracking and evidence-based recommendations",
+                gradient: "from-green-500 to-green-700"
+              },
+              {
+                icon: Zap,
+                title: "Real-time Coaching",
+                description: "Your AI coach remembers your progress and provides contextual guidance",
+                gradient: "from-blue-500 to-blue-700"
+              },
+              {
+                icon: Trophy,
+                title: "Progress Tracking",
+                description: "Advanced analytics to monitor your transformation and optimize results",
+                gradient: "from-yellow-500 to-yellow-700"
+              },
+              {
+                icon: Shield,
+                title: "Science-Based",
+                description: "All recommendations backed by the latest exercise and nutrition research",
+                gradient: "from-red-500 to-red-700"
+              },
+              {
+                icon: Users,
+                title: "Personal Journey",
+                description: "Tailored exclusively to your fitness level, goals, and preferences",
+                gradient: "from-indigo-500 to-indigo-700"
+              }
+            ].map((feature, index) => (
+              <Card key={index} className="bg-gray-900/50 border-gray-800/50 p-6 hover:bg-gray-800/50 transition-all duration-300 backdrop-blur-sm">
+                <div className={`w-12 h-12 bg-gradient-to-r ${feature.gradient} rounded-xl flex items-center justify-center mb-4`}>
+                  <feature.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-gray-400">{feature.description}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black/20">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <div className="text-4xl font-bold text-orange-400 mb-2">10,000+</div>
+              <div className="text-gray-300">Active Users</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-orange-400 mb-2">50M+</div>
+              <div className="text-gray-300">Workouts Tracked</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-orange-400 mb-2">4.9/5</div>
+              <div className="text-gray-300 flex items-center justify-center">
+                User Rating
+                <div className="flex ml-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-orange-400 text-orange-400" />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </nav>
+        </div>
+      </section>
 
-        {/* Hero Section */}
-        <section className="pt-12 sm:pt-20 pb-20 sm:pb-32 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto text-center">
-            <div className="animate-fade-in">
-              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 mb-6 animate-pulse-glow">
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI-Powered Fitness Coach
-              </Badge>
-              
-              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent leading-tight">
-                Your Personal{" "}
-                <span className="font-orbitron bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                  AI Fitness
-                </span>{" "}
-                Coach
-              </h1>
-              
-              <p className="text-lg sm:text-xl md:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed px-4">
-                Science-backed fitness guidance powered by AI. Get personalized workouts, nutrition plans, and expert advice 24/7.
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Ready to Transform Your Fitness?
+          </h2>
+          <p className="text-xl text-gray-300 mb-8">
+            Join thousands of users who have achieved their fitness goals with AI-powered guidance
+          </p>
+          <Link to="/signin">
+            <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-8 py-4 text-lg">
+              Start Your Journey Today
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-800/50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="col-span-1 md:col-span-2">
+              <Logo size="md" className="mb-4" />
+              <p className="text-gray-400 max-w-md">
+                Empowering your fitness journey with AI-driven insights and personalized coaching.
               </p>
-              
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 sm:mb-12 px-4">
-                {user ? (
-                  <SmoothButton
-                    size="lg"
-                    onClick={() => navigate('/app')}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
-                  >
-                    Go to Dashboard
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </SmoothButton>
-                ) : (
-                  <>
-                    <SmoothButton
-                      size="lg"
-                      onClick={() => navigate('/signin')}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
-                    >
-                      Make an Account for Free
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </SmoothButton>
-                    
-                    <SmoothButton
-                      variant="outline"
-                      size="lg"
-                      onClick={() => navigate('/signin')}
-                      className="border-gray-600 text-white hover:bg-gray-800 text-lg px-6 sm:px-8 py-4 w-full sm:w-auto flex items-center justify-center"
-                    >
-                      <User className="w-5 h-5 mr-2" />
-                      Already Have Account?
-                    </SmoothButton>
-                  </>
-                )}
-                
-                <SmoothButton
-                  variant="outline"
-                  size="lg"
-                  onClick={() => navigate('/pricing')}
-                  className="border-gray-600 text-white hover:bg-gray-800 text-lg px-6 sm:px-8 py-4 w-full sm:w-auto"
-                >
-                  View Pricing
-                </SmoothButton>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Product</h4>
+              <div className="space-y-2">
+                <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">About</Link>
+                <Link to="/pricing" className="block text-gray-400 hover:text-white transition-colors">Pricing</Link>
+                <Link to="/support" className="block text-gray-400 hover:text-white transition-colors">Support</Link>
               </div>
-
-              {/* Trust Indicators */}
-              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-500 px-4">
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                  Science-Based
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                  24/7 AI Support
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                  Personalized Plans
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                  No Equipment Required
-                </div>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <div className="space-y-2">
+                <Link to="/privacy" className="block text-gray-400 hover:text-white transition-colors">Privacy</Link>
+                <Link to="/terms" className="block text-gray-400 hover:text-white transition-colors">Terms</Link>
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-900/50">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16 animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                AI-Powered Fitness Modules
-              </h2>
-              <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto">
-                Choose from our comprehensive suite of AI tools designed to accelerate your fitness journey
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-animation">
-              {features.map((feature, index) => (
-                <AnimatedCard
-                  key={feature.title}
-                  delay={300 + index * 100}
-                  className="group p-0 border-0 bg-transparent"
-                >
-                  <Card className={`h-full bg-gradient-to-br ${feature.color} border-0 text-white hover:scale-[1.02] transition-all duration-300 hover:shadow-2xl`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300">
-                          <feature.icon className="w-6 h-6 text-white" />
-                        </div>
-                        {feature.isPremium && (
-                          <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                            <Crown className="w-3 h-3 mr-1" />
-                            Premium
-                          </Badge>
-                        )}
-                      </div>
-                      <CardTitle className="text-white text-lg">{feature.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-white/80">
-                        {feature.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                </AnimatedCard>
-              ))}
-            </div>
+          <div className="border-t border-gray-800/50 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 Myotopia. All rights reserved.</p>
           </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <AnimatedCard delay={600} className="bg-gradient-to-r from-orange-500/10 to-red-600/10 border-orange-500/20">
-              <CardContent className="p-8 sm:p-12">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
-                  Ready to Transform Your Fitness?
-                </h2>
-                <p className="text-lg sm:text-xl text-gray-400 mb-8">
-                  Join thousands of users who are already achieving their fitness goals with AI-powered guidance.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <SmoothButton
-                    size="lg"
-                    onClick={() => navigate(user ? '/app' : '/signin')}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-lg px-6 sm:px-8 py-4 hover-glow w-full sm:w-auto"
-                  >
-                    {user ? 'Access Dashboard' : 'Start Your Journey'}
-                    <Dumbbell className="w-5 h-5 ml-2" />
-                  </SmoothButton>
-                  {!user && (
-                    <SmoothButton
-                      variant="outline"
-                      size="lg"
-                      onClick={() => navigate('/signin')}
-                      className="border-gray-600 text-white hover:bg-gray-800 text-lg px-6 sm:px-8 py-4 w-full sm:w-auto flex items-center justify-center"
-                    >
-                      <User className="w-5 h-5 mr-2" />
-                      Already Have Account?
-                    </SmoothButton>
-                  )}
-                </div>
-              </CardContent>
-            </AnimatedCard>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="border-t border-gray-800 py-12 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <Logo size="sm" />
-              
-              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-6 md:mt-0">
-                <SmoothButton
-                  variant="ghost"
-                  onClick={() => navigate('/about')}
-                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                >
-                  About
-                </SmoothButton>
-                <SmoothButton
-                  variant="ghost"
-                  onClick={() => navigate('/privacy')}
-                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                >
-                  Privacy Policy
-                </SmoothButton>
-                <SmoothButton
-                  variant="ghost"
-                  onClick={() => navigate('/terms')}
-                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                >
-                  Terms of Service
-                </SmoothButton>
-                <SmoothButton
-                  variant="ghost"
-                  onClick={() => navigate('/support')}
-                  className="text-gray-400 hover:text-white hover:bg-transparent p-0 h-auto font-normal"
-                >
-                  Support
-                </SmoothButton>
-              </div>
-            </div>
-            
-            <div className="text-center mt-8 text-sm text-gray-500">
-              © 2025 GrindMentor. All rights reserved.
-            </div>
-          </div>
-        </footer>
-      </div>
-    </PageTransition>
+        </div>
+      </footer>
+    </div>
   );
 };
 

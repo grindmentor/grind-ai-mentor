@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,13 +83,15 @@ const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     
     if (lowerInput.includes('workout plan') || lowerInput.includes('training program') || 
         lowerInput.includes('exercise routine') || lowerInput.includes('workout routine') ||
-        lowerInput.includes('create workout') || lowerInput.includes('design workout')) {
+        lowerInput.includes('create workout') || lowerInput.includes('design workout') ||
+        lowerInput.includes('program') || lowerInput.includes('routine')) {
       return "I'd love to help with workout planning! However, for creating comprehensive training programs, I recommend using our **Smart Training** module. It's specifically designed to generate science-backed workout programs based on your goals, experience level, and available equipment. You can find it in your dashboard. Is there anything else about your current training or progress I can help you analyze instead?";
     }
     
     if (lowerInput.includes('meal plan') || lowerInput.includes('diet plan') || 
         lowerInput.includes('nutrition plan') || lowerInput.includes('eating plan') ||
-        lowerInput.includes('create meal') || lowerInput.includes('design meal')) {
+        lowerInput.includes('create meal') || lowerInput.includes('design meal') ||
+        lowerInput.includes('macro') || lowerInput.includes('calories')) {
       return "For creating detailed meal plans, our **MealPlan AI** module is perfect for that! It generates personalized nutrition plans based on your dietary preferences, goals, and restrictions. You can access it from your dashboard. I'm here to help analyze your current nutrition habits or answer specific questions about your fitness journey. What would you like to know?";
     }
     
@@ -163,6 +166,8 @@ Focus areas:
 
 Respond in a professional, encouraging tone that shows you understand their complete fitness journey.`;
 
+      console.log('Sending prompt to fitness-ai:', fullPrompt);
+
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
           prompt: fullPrompt,
@@ -170,12 +175,17 @@ Respond in a professional, encouraging tone that shows you understand their comp
         }
       });
 
-      if (error) throw error;
+      console.log('Response from fitness-ai:', data, error);
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.response || 'I apologize, but I encountered an issue generating a response. Please try again.',
+        content: data?.response || 'I apologize, but I encountered an issue generating a response. Please try again.',
         timestamp: new Date().toISOString()
       };
 
@@ -189,7 +199,7 @@ Respond in a professional, encouraging tone that shows you understand their comp
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again in a moment.',
+        content: 'I apologize, but I encountered an error processing your request. Please try again in a moment.',
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMessage]);

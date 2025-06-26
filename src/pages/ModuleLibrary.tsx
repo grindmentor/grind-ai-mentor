@@ -119,7 +119,7 @@ const ModuleLibrary = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white p-4 md:p-6 lg:p-8 animate-fade-in">
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900/30 to-gray-800 text-white p-4 md:p-6 lg:p-8 animate-fade-in">
         <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           {/* Header */}
           <div className="flex items-center space-x-4 mb-8">
@@ -148,7 +148,7 @@ const ModuleLibrary = () => {
               return (
                 <Card 
                   key={module.id} 
-                  className="bg-gray-900/30 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 cursor-pointer group hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/20"
+                  className="bg-gray-900/40 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/60 transition-all duration-300 cursor-pointer group hover:border-gray-600/70 hover:shadow-lg hover:shadow-gray-900/20"
                   onClick={() => handleModuleSelect(module.id)}
                 >
                   <CardHeader className="pb-3">
@@ -212,14 +212,14 @@ const ModuleLibrary = () => {
 
           {/* Info Section */}
           <div className="mt-12 text-center">
-            <div className="bg-gray-900/30 border border-gray-700/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm">
+            <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 md:p-8 backdrop-blur-sm">
               <h2 className="text-xl md:text-2xl font-bold text-white mb-4">
                 🔬 Science-Backed Modules
               </h2>
               <p className="text-gray-400 max-w-3xl mx-auto leading-relaxed">
-                Each module is built on peer-reviewed research and evidence-based methodologies. 
-                Our AI provides recommendations grounded in exercise science, nutrition research, 
-                and behavioral psychology. Click the star to add modules to your dashboard favorites.
+                Each module uses the best available information from scientific research. 
+                Our AI provides recommendations based on evidence, though it can make mistakes. 
+                Click the star to add modules to your dashboard favorites.
               </p>
             </div>
           </div>

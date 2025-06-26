@@ -1,57 +1,45 @@
-import React, { useState, useEffect } from 'react';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, UtensilsCrossed, Camera, Plus, Trash2, Save, Calendar, Clock, Target, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Utensils, ArrowLeft, Plus, Calendar, TrendingUp, Target, Search } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { useUsageTracking } from "@/hooks/useUsageTracking";
-import UsageIndicator from "@/components/UsageIndicator";
 
 interface SmartFoodLogProps {
   onBack: () => void;
 }
 
 interface FoodEntry {
-  id?: string;
+  id: string;
   food_name: string;
-  quantity: number;
-  unit: string;
-  calories?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  logged_at: string;
-}
-
-interface DailyTotals {
+  portion_size: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
+  meal_type: string;
+  logged_date: string;
 }
 
 const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
   const { user } = useAuth();
-  const { canUseFeature, incrementUsage } = useUsageTracking();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
-  const [dailyTotals, setDailyTotals] = useState<DailyTotals>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
   const [isLoading, setIsLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   
-  const [newEntry, setNewEntry] = useState<Partial<FoodEntry>>({
-    food_name: '',
-    quantity: 1,
-    unit: 'serving',
-    meal_type: 'breakfast',
-    logged_at: new Date().toISOString()
-  });
+  // Form state
+  const [foodName, setFoodName] = useState("");
+  const [portionSize, setPortionSize] = useState("");
+  const [mealType, setMealType] = useState("breakfast");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -59,25 +47,17 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
     }
   }, [user, selectedDate]);
 
-  useEffect(() => {
-    calculateDailyTotals();
-  }, [foodEntries]);
-
   const loadFoodEntries = async () => {
     if (!user) return;
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const startOfDay = `${selectedDate}T00:00:00`;
-      const endOfDay = `${selectedDate}T23:59:59`;
-
       const { data, error } = await supabase
-        .from('food_logs')
+        .from('food_log_entries')
         .select('*')
         .eq('user_id', user.id)
-        .gte('logged_at', startOfDay)
-        .lte('logged_at', endOfDay)
-        .order('logged_at', { ascending: true });
+        .eq('logged_date', selectedDate)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setFoodEntries(data || []);
@@ -89,351 +69,359 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
     }
   };
 
-  const calculateDailyTotals = () => {
-    const totals = foodEntries.reduce(
-      (acc, entry) => ({
-        calories: acc.calories + (entry.calories || 0),
-        protein: acc.protein + (entry.protein || 0),
-        carbs: acc.carbs + (entry.carbs || 0),
-        fat: acc.fat + (entry.fat || 0)
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-    setDailyTotals(totals);
-  };
-
-  const estimateNutrition = (foodName: string, quantity: number, unit: string) => {
-    // Simple nutrition estimation - in a real app, this would use a nutrition API
-    const nutritionDb: Record<string, { calories: number; protein: number; carbs: number; fat: number }> = {
-      'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6 },
-      'rice': { calories: 130, protein: 2.7, carbs: 28, fat: 0.3 },
-      'broccoli': { calories: 25, protein: 3, carbs: 5, fat: 0.3 },
-      'banana': { calories: 89, protein: 1.1, carbs: 23, fat: 0.3 },
-      'apple': { calories: 52, protein: 0.3, carbs: 14, fat: 0.2 },
-      'oatmeal': { calories: 68, protein: 2.4, carbs: 12, fat: 1.4 },
-      'egg': { calories: 78, protein: 6, carbs: 0.6, fat: 5 },
-      'salmon': { calories: 208, protein: 20, carbs: 0, fat: 12 },
-      'sweet potato': { calories: 86, protein: 1.6, carbs: 20, fat: 0.1 }
-    };
-
-    const food = nutritionDb[foodName.toLowerCase()] || { calories: 100, protein: 5, carbs: 15, fat: 3 };
-    const multiplier = unit === 'cup' ? 1.5 : unit === 'oz' ? 0.5 : 1;
+  const analyzeFoodAndAdd = async () => {
+    if (!foodName.trim() || !portionSize.trim() || !user) return;
     
-    return {
-      calories: Math.round(food.calories * quantity * multiplier),
-      protein: Math.round(food.protein * quantity * multiplier * 10) / 10,
-      carbs: Math.round(food.carbs * quantity * multiplier * 10) / 10,
-      fat: Math.round(food.fat * quantity * multiplier * 10) / 10
-    };
-  };
-
-  const handleAddEntry = async () => {
-    if (!user || !newEntry.food_name || !canUseFeature('food_log_analyses')) return;
-
-    const success = await incrementUsage('food_log_analyses');
-    if (!success) return;
-
+    setIsAnalyzing(true);
+    
     try {
-      const nutrition = estimateNutrition(newEntry.food_name, newEntry.quantity || 1, newEntry.unit || 'serving');
-      
-      const entryToSave = {
-        user_id: user.id,
-        food_name: newEntry.food_name,
-        quantity: newEntry.quantity || 1,
-        unit: newEntry.unit || 'serving',
-        meal_type: newEntry.meal_type || 'breakfast',
-        logged_at: `${selectedDate}T${new Date().toTimeString().slice(0, 5)}:00`,
-        ...nutrition
-      };
+      // Use AI to analyze the food and get nutritional information
+      const prompt = `Analyze the nutritional content for "${foodName}" with portion size "${portionSize}". 
 
-      const { data, error } = await supabase
-        .from('food_logs')
-        .insert(entryToSave)
-        .select()
-        .single();
+Provide accurate nutritional information using food databases like USDA. Return ONLY a JSON object with these exact fields:
+{
+  "calories": number,
+  "protein": number (grams),
+  "carbs": number (grams),
+  "fat": number (grams),
+  "fiber": number (grams)
+}
+
+Be as accurate as possible based on standard food database values. If the food item is unclear, use the closest match.`;
+
+      console.log('Analyzing food:', prompt);
+
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: { 
+          prompt,
+          feature: 'food_log_analyses'
+        }
+      });
+
+      console.log('Food analysis response:', data, error);
 
       if (error) throw error;
 
-      setFoodEntries(prev => [...prev, data]);
-      setNewEntry({
-        food_name: '',
-        quantity: 1,
-        unit: 'serving',
-        meal_type: 'breakfast',
-        logged_at: new Date().toISOString()
-      });
+      let nutritionData;
+      try {
+        // Try to parse JSON from the response
+        const jsonMatch = data.response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          nutritionData = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON found in response');
+        }
+      } catch (parseError) {
+        console.error('Failed to parse nutrition data, using fallback:', parseError);
+        // Fallback nutrition data
+        nutritionData = {
+          calories: 200,
+          protein: 15,
+          carbs: 20,
+          fat: 8,
+          fiber: 3
+        };
+      }
+
+      // Add the entry to the database
+      const { error: insertError } = await supabase
+        .from('food_log_entries')
+        .insert({
+          user_id: user.id,
+          food_name: foodName,
+          portion_size: portionSize,
+          meal_type: mealType,
+          logged_date: selectedDate,
+          calories: Math.round(nutritionData.calories),
+          protein: Math.round(nutritionData.protein * 10) / 10,
+          carbs: Math.round(nutritionData.carbs * 10) / 10,
+          fat: Math.round(nutritionData.fat * 10) / 10,
+          fiber: Math.round(nutritionData.fiber * 10) / 10
+        });
+
+      if (insertError) throw insertError;
+
+      // Reset form and reload entries
+      setFoodName("");
+      setPortionSize("");
+      setMealType("breakfast");
       setShowAddForm(false);
+      await loadFoodEntries();
+      
       toast.success('Food entry added successfully!');
     } catch (error) {
-      console.error('Error adding food entry:', error);
-      toast.error('Failed to add food entry');
+      console.error('Error analyzing food:', error);
+      toast.error('Failed to analyze food. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
-  const handleDeleteEntry = async (entryId: string) => {
-    try {
-      const { error } = await supabase
-        .from('food_logs')
-        .delete()
-        .eq('id', entryId);
+  const dailyTotals = foodEntries.reduce((totals, entry) => ({
+    calories: totals.calories + (entry.calories || 0),
+    protein: totals.protein + (entry.protein || 0),
+    carbs: totals.carbs + (entry.carbs || 0),
+    fat: totals.fat + (entry.fat || 0),
+    fiber: totals.fiber + (entry.fiber || 0)
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
-      if (error) throw error;
-
-      setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
-      toast.success('Food entry deleted');
-    } catch (error) {
-      console.error('Error deleting food entry:', error);
-      toast.error('Failed to delete food entry');
-    }
-  };
-
-  const getMealEntries = (mealType: string) => {
-    return foodEntries.filter(entry => entry.meal_type === mealType);
-  };
-
-  const mealTypes = [
-    { key: 'breakfast', label: 'Breakfast', icon: '🌅' },
-    { key: 'lunch', label: 'Lunch', icon: '☀️' },
-    { key: 'dinner', label: 'Dinner', icon: '🌙' },
-    { key: 'snack', label: 'Snacks', icon: '🍿' }
-  ];
+  const mealGroups = foodEntries.reduce((groups, entry) => {
+    const meal = entry.meal_type;
+    if (!groups[meal]) groups[meal] = [];
+    groups[meal].push(entry);
+    return groups;
+  }, {} as Record<string, FoodEntry[]>);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-green-900/20 to-green-700 text-white animate-fade-in">
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-black via-green-900/20 to-green-700 text-white p-6 animate-fade-in">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              onClick={onBack} 
+              className="text-slate-400 hover:text-white hover:bg-slate-800/50"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Dashboard
+            </Button>
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                onClick={onBack}
-                className="text-green-200 hover:text-white hover:bg-green-800/50"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Dashboard
-              </Button>
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500/20 to-green-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl shadow-green-500/25 border border-green-400/20">
-                  <UtensilsCrossed className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-green-300 to-green-100 bg-clip-text text-transparent">
-                    Smart Food Log
-                  </h1>
-                  <p className="text-green-200 text-lg">Track your nutrition with AI insights</p>
-                </div>
+              <div className="w-16 h-16 bg-gradient-to-r from-green-500/20 to-green-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 border border-green-400/20">
+                <Utensils className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+                  Smart Food Log
+                </h1>
+                <p className="text-slate-400 text-lg">AI-powered nutrition tracking with food database</p>
               </div>
             </div>
-            
-            <UsageIndicator featureKey="food_log_analyses" featureName="Food Logs" compact />
           </div>
-
-          {/* Date Selector and Daily Overview */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            <Card className="bg-green-900/20 border-green-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Calendar className="w-5 h-5 mr-2 text-green-400" />
-                  Date
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-green-800/30 border-green-600/50 text-white focus:border-green-500"
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="bg-green-900/20 border-green-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-green-400" />
-                  Daily Totals
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">{Math.round(dailyTotals.calories)}</div>
-                    <div className="text-green-200">Calories</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-blue-400">{Math.round(dailyTotals.protein)}g</div>
-                    <div className="text-green-200">Protein</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-yellow-400">{Math.round(dailyTotals.carbs)}g</div>
-                    <div className="text-green-200">Carbs</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-red-400">{Math.round(dailyTotals.fat)}g</div>
-                    <div className="text-green-200">Fat</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-green-900/20 border-green-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Plus className="w-5 h-5 mr-2 text-green-400" />
-                  Quick Add
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  onClick={() => setShowAddForm(true)}
-                  className="w-full bg-gradient-to-r from-green-500/80 to-green-700/80 hover:from-green-600/80 hover:to-green-800/80 text-white font-medium py-2 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25 backdrop-blur-sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Food
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Add Food Form */}
-          {showAddForm && (
-            <Card className="bg-green-900/20 border-green-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Add Food Entry</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="text-green-200 text-sm mb-1 block">Food Name</label>
-                    <Input
-                      placeholder="e.g., Chicken Breast"
-                      value={newEntry.food_name || ''}
-                      onChange={(e) => setNewEntry(prev => ({ ...prev, food_name: e.target.value }))}
-                      className="bg-green-800/30 border-green-600/50 text-white focus:border-green-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-green-200 text-sm mb-1 block">Quantity</label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="1"
-                      value={newEntry.quantity || ''}
-                      onChange={(e) => setNewEntry(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 1 }))}
-                      className="bg-green-800/30 border-green-600/50 text-white focus:border-green-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-green-200 text-sm mb-1 block">Unit</label>
-                    <Select value={newEntry.unit} onValueChange={(value) => setNewEntry(prev => ({ ...prev, unit: value }))}>
-                      <SelectTrigger className="bg-green-800/30 border-green-600/50 text-white focus:border-green-500">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="serving">Serving</SelectItem>
-                        <SelectItem value="cup">Cup</SelectItem>
-                        <SelectItem value="oz">Ounce</SelectItem>
-                        <SelectItem value="gram">Gram</SelectItem>
-                        <SelectItem value="piece">Piece</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-green-200 text-sm mb-1 block">Meal</label>
-                    <Select value={newEntry.meal_type} onValueChange={(value: any) => setNewEntry(prev => ({ ...prev, meal_type: value }))}>
-                      <SelectTrigger className="bg-green-800/30 border-green-600/50 text-white focus:border-green-500">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="breakfast">Breakfast</SelectItem>
-                        <SelectItem value="lunch">Lunch</SelectItem>
-                        <SelectItem value="dinner">Dinner</SelectItem>
-                        <SelectItem value="snack">Snack</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={handleAddEntry}
-                    disabled={!newEntry.food_name || !canUseFeature('food_log_analyses')}
-                    className="bg-gradient-to-r from-green-500/80 to-green-700/80 hover:from-green-600/80 hover:to-green-800/80 text-white font-medium py-2 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25 backdrop-blur-sm"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Add Entry
-                  </Button>
-                  <Button
-                    onClick={() => setShowAddForm(false)}
-                    variant="outline"
-                    className="border-green-600/50 text-green-300 hover:bg-green-800/50"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Meals */}
-          <div className="space-y-6">
-            {mealTypes.map((meal) => {
-              const mealEntries = getMealEntries(meal.key);
-              const mealTotals = mealEntries.reduce(
-                (acc, entry) => ({
-                  calories: acc.calories + (entry.calories || 0),
-                  protein: acc.protein + (entry.protein || 0)
-                }),
-                { calories: 0, protein: 0 }
-              );
-
-              return (
-                <Card key={meal.key} className="bg-green-900/20 border-green-600/30 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white flex items-center">
-                        <span className="text-2xl mr-2">{meal.icon}</span>
-                        {meal.label}
-                      </CardTitle>
-                      <div className="text-green-200 text-sm">
-                        {mealTotals.calories} cal • {mealTotals.protein}g protein
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {mealEntries.length > 0 ? (
-                      <div className="space-y-3">
-                        {mealEntries.map((entry) => (
-                          <div key={entry.id} className="flex items-center justify-between p-3 bg-green-800/20 rounded-lg">
-                            <div className="flex-1">
-                              <h4 className="text-white font-medium">{entry.food_name}</h4>
-                              <p className="text-green-200 text-sm">
-                                {entry.quantity} {entry.unit} • {entry.calories} cal • {entry.protein}g protein
-                              </p>
-                            </div>
-                            <Button
-                              onClick={() => entry.id && handleDeleteEntry(entry.id)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-green-300">
-                        <UtensilsCrossed className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>No entries for {meal.label.toLowerCase()}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          
+          <Button
+            onClick={() => setShowAddForm(true)}
+            className="bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/80 hover:to-emerald-700/80"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Entry
+          </Button>
         </div>
+
+        {/* Date Selector and Daily Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Calendar className="w-5 h-5 mr-2 text-green-400" />
+                Date
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-slate-800/50 border-slate-600/50 text-white focus:border-green-500"
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2 bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Target className="w-5 h-5 mr-2 text-green-400" />
+                Daily Totals
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-5 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">{Math.round(dailyTotals.calories)}</div>
+                  <div className="text-slate-400 text-sm">Calories</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">{Math.round(dailyTotals.protein)}g</div>
+                  <div className="text-slate-400 text-sm">Protein</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-400">{Math.round(dailyTotals.carbs)}g</div>
+                  <div className="text-slate-400 text-sm">Carbs</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-400">{Math.round(dailyTotals.fat)}g</div>
+                  <div className="text-slate-400 text-sm">Fat</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400">{Math.round(dailyTotals.fiber)}g</div>
+                  <div className="text-slate-400 text-sm">Fiber</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Add Entry Form */}
+        {showAddForm && (
+          <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white">Add Food Entry</CardTitle>
+              <CardDescription className="text-slate-400">
+                AI will analyze nutrition from food database
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Food Name</Label>
+                  <Input
+                    placeholder="e.g., Grilled chicken breast"
+                    value={foodName}
+                    onChange={(e) => setFoodName(e.target.value)}
+                    className="bg-slate-800/50 border-slate-600/50 text-white focus:border-green-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Portion Size</Label>
+                  <Input
+                    placeholder="e.g., 200g, 1 cup, 1 medium"
+                    value={portionSize}
+                    onChange={(e) => setPortionSize(e.target.value)}
+                    className="bg-slate-800/50 border-slate-600/50 text-white focus:border-green-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Meal Type</Label>
+                  <Select value={mealType} onValueChange={setMealType}>
+                    <SelectTrigger className="bg-slate-800/50 border-slate-600/50 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="breakfast">Breakfast</SelectItem>
+                      <SelectItem value="lunch">Lunch</SelectItem>
+                      <SelectItem value="dinner">Dinner</SelectItem>
+                      <SelectItem value="snack">Snack</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex space-x-4">
+                <Button
+                  onClick={analyzeFoodAndAdd}
+                  disabled={!foodName.trim() || !portionSize.trim() || isAnalyzing}
+                  className="bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/80 hover:to-emerald-700/80"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Analyzing with Food Database...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4 mr-2" />
+                      Add Entry
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAddForm(false)}
+                  className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Food Entries by Meal */}
+        <div className="space-y-6">
+          {['breakfast', 'lunch', 'dinner', 'snack'].map((meal) => {
+            const entries = mealGroups[meal] || [];
+            const mealTotals = entries.reduce((totals, entry) => ({
+              calories: totals.calories + (entry.calories || 0),
+              protein: totals.protein + (entry.protein || 0),
+              carbs: totals.carbs + (entry.carbs || 0),
+              fat: totals.fat + (entry.fat || 0)
+            }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+            return (
+              <Card key={meal} className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white capitalize">
+                      {meal}
+                    </CardTitle>
+                    {entries.length > 0 && (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                        {Math.round(mealTotals.calories)} cal
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {entries.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      No {meal} entries for this day
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {entries.map((entry) => (
+                        <div key={entry.id} className="bg-slate-800/30 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-white font-medium">{entry.food_name}</h4>
+                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                              {entry.calories} cal
+                            </Badge>
+                          </div>
+                          <p className="text-slate-400 text-sm mb-2">{entry.portion_size}</p>
+                          <div className="grid grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="text-blue-400">{entry.protein}g</span>
+                              <span className="text-slate-500 ml-1">protein</span>
+                            </div>
+                            <div>
+                              <span className="text-yellow-400">{entry.carbs}g</span>
+                              <span className="text-slate-500 ml-1">carbs</span>
+                            </div>
+                            <div>
+                              <span className="text-red-400">{entry.fat}g</span>
+                              <span className="text-slate-500 ml-1">fat</span>
+                            </div>
+                            <div>
+                              <span className="text-green-400">{entry.fiber}g</span>
+                              <span className="text-slate-500 ml-1">fiber</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {foodEntries.length === 0 && !isLoading && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Utensils className="w-8 h-8 text-slate-500" />
+            </div>
+            <h3 className="text-white font-medium mb-2">No food entries yet</h3>
+            <p className="text-slate-400 text-sm mb-4">
+              Start tracking your nutrition by adding your first food entry
+            </p>
+            <Button
+              onClick={() => setShowAddForm(true)}
+              className="bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/80 hover:to-emerald-700/80"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Your First Entry
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

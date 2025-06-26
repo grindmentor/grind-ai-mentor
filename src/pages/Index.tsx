@@ -207,6 +207,43 @@ const Index = () => {
             </Button>
           </AnimatedCard>
         </div>
+
+        {/* Footer Links */}
+        <footer className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm">
+          <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+            <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-8">
+              <button
+                onClick={() => navigate('/about')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                About
+              </button>
+              <button
+                onClick={() => navigate('/privacy')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                Privacy Policy
+              </button>
+              <button
+                onClick={() => navigate('/terms')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                Terms of Service
+              </button>
+              <button
+                onClick={() => navigate('/support')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                Support
+              </button>
+            </div>
+            <div className="mt-8 text-center">
+              <p className="text-xs text-gray-500">
+                © 2024 Grind AI Mentor. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
     </PageTransition>
   );

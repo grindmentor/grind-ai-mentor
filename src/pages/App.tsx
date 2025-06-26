@@ -9,13 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 const App = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!loading && !user) {
       navigate('/signin');
       return;
     }
@@ -23,7 +23,7 @@ const App = () => {
     if (user) {
       checkOnboardingStatus();
     }
-  }, [user, isLoading, navigate]);
+  }, [user, loading, navigate]);
 
   const checkOnboardingStatus = async () => {
     if (!user) return;
@@ -55,7 +55,7 @@ const App = () => {
     setHasCompletedOnboarding(true);
   };
 
-  if (isLoading || isCheckingOnboarding) {
+  if (loading || isCheckingOnboarding) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 flex items-center justify-center animate-fade-in">
         <LoadingSpinner />
@@ -68,7 +68,7 @@ const App = () => {
   }
 
   return (
-    <EmailVerificationGuard>
+    <EmailVerificationGuard userEmail={user.email || ''}>
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 animate-fade-in">
         {hasCompletedOnboarding === false ? (
           <OnboardingFlow onComplete={handleOnboardingComplete} />

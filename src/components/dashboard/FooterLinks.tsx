@@ -47,7 +47,7 @@ export const FooterLinks: React.FC = () => {
         </SmoothButton>
       </div>
       <div className="text-center mt-4 text-xs text-gray-500">
-        © 2025 GrindMentor. All rights reserved.
+        © 2025 Myotopia. All rights reserved.
       </div>
     </div>
   );

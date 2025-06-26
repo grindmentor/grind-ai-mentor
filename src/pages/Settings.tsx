@@ -5,12 +5,6 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, User, Bell, Shield, Palette, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import Logo from "@/components/ui/logo";
-import BasicInformation from "@/components/settings/BasicInformation";
-import FitnessProfile from "@/components/settings/FitnessProfile";
-import UnitPreferences from "@/components/settings/UnitPreferences";
-import AppPreferences from "@/components/settings/AppPreferences";
-import SmartDataInsights from "@/components/settings/SmartDataInsights";
-import AIMemoryReset from "@/components/settings/AIMemoryReset";
 
 const Settings = () => {
   const [activeSection, setActiveSection] = useState("basic");
@@ -27,19 +21,19 @@ const Settings = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "basic":
-        return <BasicInformation />;
+        return <div className="p-6"><p className="text-gray-400">Basic Information settings coming soon...</p></div>;
       case "fitness":
-        return <FitnessProfile />;
+        return <div className="p-6"><p className="text-gray-400">Fitness Profile settings coming soon...</p></div>;
       case "units":
-        return <UnitPreferences />;
+        return <div className="p-6"><p className="text-gray-400">Units & Preferences settings coming soon...</p></div>;
       case "app":
-        return <AppPreferences />;
+        return <div className="p-6"><p className="text-gray-400">App Settings coming soon...</p></div>;
       case "insights":
-        return <SmartDataInsights />;
+        return <div className="p-6"><p className="text-gray-400">Data Insights coming soon...</p></div>;
       case "ai-memory":
-        return <AIMemoryReset />;
+        return <div className="p-6"><p className="text-gray-400">AI Memory settings coming soon...</p></div>;
       default:
-        return <BasicInformation />;
+        return <div className="p-6"><p className="text-gray-400">Basic Information settings coming soon...</p></div>;
     }
   };
 

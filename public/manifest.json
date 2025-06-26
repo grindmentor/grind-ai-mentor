@@ -1,7 +1,7 @@
 
 {
-  "name": "GrindMentor - Science-Based AI Fitness Coach",
-  "short_name": "GrindMentor",
+  "name": "Myotopia - Science-Based AI Fitness Coach",
+  "short_name": "Myotopia",
   "description": "Transform your physique with personalized, science-based AI fitness coaching",
   "start_url": "/",
   "display": "standalone",
@@ -61,14 +61,14 @@
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GrindMentor AI Fitness Coach"
+      "label": "Myotopia AI Fitness Coach"
     },
     {
       "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "GrindMentor Dashboard"
+      "label": "Myotopia Dashboard"
     }
   ],
   "categories": ["fitness", "health", "lifestyle", "productivity"],

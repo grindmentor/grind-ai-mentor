@@ -53,7 +53,7 @@ const ModuleLibrary = () => {
   };
 
   const toggleFavorite = async (moduleId: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent module selection when clicking star
+    event.stopPropagation();
     if (!user) return;
 
     const isFavorited = favorites.includes(moduleId);
@@ -61,7 +61,6 @@ const ModuleLibrary = () => {
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
 
-    // Update local state immediately for instant feedback
     setFavorites(newFavorites);
     playSuccessSound();
 
@@ -81,7 +80,6 @@ const ModuleLibrary = () => {
       });
     } catch (error) {
       console.error('Error updating favorites:', error);
-      // Revert local state on error
       setFavorites(favorites);
       toast({
         title: "Error updating favorites",
@@ -128,7 +126,7 @@ const ModuleLibrary = () => {
               {isMobile ? "Back" : "Back to Dashboard"}
             </SmoothButton>
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-purple-500/20 to-pink-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-purple-400/20">
                 <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
               <div>
@@ -153,7 +151,8 @@ const ModuleLibrary = () => {
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center ${module.gradient} shadow-lg backdrop-blur-sm border border-white/10`}>
+                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10`} 
+                           style={{background: module.gradient.replace('from-', 'from-').replace('to-', 'to-').replace('/20', '/30').replace('/40', '/50')}}>
                         <module.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
                       </div>
                       <div className="flex items-center space-x-2">

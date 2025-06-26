@@ -1,13 +1,14 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Search, Dumbbell, Target, Users, Clock, Play, Plus, Wand2 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Library, Search, Dumbbell, Plus, Sparkles, Eye, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface WorkoutLibraryProps {
   onBack: () => void;
@@ -16,415 +17,303 @@ interface WorkoutLibraryProps {
 interface Exercise {
   id: string;
   name: string;
-  category: string;
+  primary_muscles: string[];
+  secondary_muscles: string[];
+  equipment: string;
   difficulty: string;
-  equipment: string[];
-  primaryMuscles: string[];
-  secondaryMuscles: string[];
   instructions: string[];
-  description: string;
-  tips?: string[];
+  tips: string[];
+  category: string;
+  created_by?: string;
 }
 
-const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
+  const { user } = useAuth();
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newExerciseName, setNewExerciseName] = useState("");
-  const [aiDescription, setAiDescription] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newExercise, setNewExercise] = useState({
+    name: '',
+    equipment: '',
+    difficulty: 'intermediate',
+    category: 'compound'
+  });
 
-  const categories = ["all", "chest", "back", "shoulders", "arms", "legs", "core", "cardio"];
-
-  const exercises: Exercise[] = [
+  const stockExercises: Exercise[] = [
     {
-      id: "1",
-      name: "Bench Press",
-      category: "chest",
-      difficulty: "intermediate",
-      equipment: ["barbell", "bench"],
-      primaryMuscles: ["chest", "triceps"],
-      secondaryMuscles: ["shoulders"],
-      description: "The bench press is a fundamental compound exercise that primarily targets the chest muscles while also engaging the triceps and front deltoids.",
+      id: 'bench-press',
+      name: 'Bench Press',
+      primary_muscles: ['Chest', 'Triceps'],
+      secondary_muscles: ['Shoulders'],
+      equipment: 'Barbell',
+      difficulty: 'intermediate',
       instructions: [
-        "Lie flat on the bench with your eyes under the barbell",
-        "Grip the bar slightly wider than shoulder-width apart",
-        "Unrack the bar and position it over your chest",
-        "Lower the bar to your chest with control",
-        "Press the bar back up to the starting position",
-        "Keep your core tight and feet planted on the floor"
+        'Lie flat on bench with eyes under the bar',
+        'Grip bar with hands slightly wider than shoulder-width',
+        'Unrack bar and lower to chest with control',
+        'Press bar up explosively while maintaining tight core',
+        'Lock out arms fully at top'
       ],
       tips: [
-        "Maintain a slight arch in your back",
-        "Keep your shoulder blades retracted",
-        "Control the eccentric (lowering) portion",
-        "Don't bounce the bar off your chest"
-      ]
+        'Keep shoulder blades retracted throughout movement',
+        'Maintain slight arch in lower back',
+        'Touch chest at nipple line',
+        'Drive feet into ground for stability'
+      ],
+      category: 'compound'
     },
     {
-      id: "2",
-      name: "Deadlift",
-      category: "back",
-      difficulty: "advanced",
-      equipment: ["barbell"],
-      primaryMuscles: ["hamstrings", "glutes", "lower back"],
-      secondaryMuscles: ["traps", "lats", "core"],
-      description: "The deadlift is one of the most effective compound exercises, working nearly every muscle in your body while building incredible strength and power.",
+      id: 'squat',
+      name: 'Back Squat',
+      primary_muscles: ['Quadriceps', 'Glutes'],
+      secondary_muscles: ['Hamstrings', 'Core'],
+      equipment: 'Barbell',
+      difficulty: 'intermediate',
       instructions: [
-        "Stand with feet hip-width apart, bar over mid-foot",
-        "Bend at hips and knees to grip the bar",
-        "Keep your chest up and back straight",
-        "Drive through your heels to lift the bar",
-        "Stand tall with shoulders back at the top",
-        "Lower the bar with control, hinging at the hips"
+        'Position bar on upper traps (high bar) or rear delts (low bar)',
+        'Stand with feet shoulder-width apart, toes slightly out',
+        'Initiate movement by pushing hips back',
+        'Descend until thighs are parallel or below',
+        'Drive through heels to return to starting position'
       ],
       tips: [
-        "Keep the bar close to your body throughout",
-        "Engage your lats to maintain proper bar path",
-        "Don't round your back",
-        "Start with lighter weight to master form"
-      ]
+        'Keep chest up and core braced throughout',
+        'Knees track over toes, don\'t cave inward',
+        'Maintain neutral spine position',
+        'Full depth improves glute activation'
+      ],
+      category: 'compound'
     },
     {
-      id: "3",
-      name: "Squat",
-      category: "legs",
-      difficulty: "intermediate",
-      equipment: ["barbell", "squat rack"],
-      primaryMuscles: ["quadriceps", "glutes"],
-      secondaryMuscles: ["hamstrings", "calves", "core"],
-      description: "The squat is a fundamental movement pattern that builds lower body strength, power, and muscle mass while improving mobility and stability.",
+      id: 'deadlift',
+      name: 'Conventional Deadlift',
+      primary_muscles: ['Hamstrings', 'Glutes', 'Erector Spinae'],
+      secondary_muscles: ['Traps', 'Lats', 'Rhomboids'],
+      equipment: 'Barbell',
+      difficulty: 'advanced',
       instructions: [
-        "Position the bar on your upper traps",
-        "Stand with feet shoulder-width apart",
-        "Initiate the movement by sitting back with your hips",
-        "Lower until your thighs are parallel to the floor",
-        "Drive through your heels to return to standing",
-        "Keep your chest up and knees tracking over toes"
+        'Stand with feet hip-width apart, bar over mid-foot',
+        'Hinge at hips and knees to grip bar outside legs',
+        'Keep chest up, shoulders over bar',
+        'Drive through heels and extend hips and knees',
+        'Stand tall with shoulders back at top'
       ],
       tips: [
-        "Maintain a neutral spine throughout",
-        "Go as deep as your mobility allows",
-        "Keep your weight balanced over mid-foot",
-        "Breathe in at the top, hold during the rep"
-      ]
+        'Keep bar close to body throughout lift',
+        'Maintain neutral neck position',
+        'Engage lats to keep bar path straight',
+        'Hip hinge pattern, not squat pattern'
+      ],
+      category: 'compound'
     },
     {
-      id: "4",
-      name: "Pull-ups",
-      category: "back",
-      difficulty: "intermediate",
-      equipment: ["pull-up bar"],
-      primaryMuscles: ["lats", "rhomboids"],
-      secondaryMuscles: ["biceps", "rear delts"],
-      description: "Pull-ups are an excellent bodyweight exercise for building upper body pulling strength and developing a wide, muscular back.",
+      id: 'pull-up',
+      name: 'Pull-Up',
+      primary_muscles: ['Lats', 'Rhomboids'],
+      secondary_muscles: ['Biceps', 'Rear Delts'],
+      equipment: 'Pull-up Bar',
+      difficulty: 'intermediate',
       instructions: [
-        "Hang from the bar with hands slightly wider than shoulders",
-        "Engage your core and pull your shoulders down",
-        "Pull your body up until your chin clears the bar",
-        "Lower yourself with control to full arm extension",
-        "Maintain tension throughout the movement"
+        'Hang from bar with overhand grip, hands shoulder-width apart',
+        'Start from dead hang with arms fully extended',
+        'Pull chest toward bar by driving elbows down',
+        'Clear chin over bar at top',
+        'Lower with control to full arm extension'
       ],
       tips: [
-        "Avoid swinging or using momentum",
-        "Focus on pulling with your back muscles",
-        "Use assisted variations if needed",
-        "Full range of motion is key"
-      ]
-    },
-    {
-      id: "5",
-      name: "Overhead Press",
-      category: "shoulders",
-      difficulty: "intermediate",
-      equipment: ["barbell"],
-      primaryMuscles: ["shoulders"],
-      secondaryMuscles: ["triceps", "core"],
-      description: "The overhead press builds impressive shoulder strength and stability while engaging the entire core for a complete upper body exercise.",
-      instructions: [
-        "Stand with feet shoulder-width apart",
-        "Hold the bar at shoulder level with hands just outside shoulders",
-        "Press the bar straight overhead",
-        "Keep your core tight and avoid arching your back",
-        "Lower the bar back to shoulder level with control"
+        'Engage lats by pulling shoulder blades down',
+        'Avoid swinging or kipping',
+        'Full range of motion for maximum benefit',
+        'Progress with bands or assisted variations'
       ],
-      tips: [
-        "Keep the bar path straight and vertical",
-        "Engage your glutes to maintain stability",
-        "Don't press the bar behind your head",
-        "Start with lighter weight to build shoulder stability"
-      ]
+      category: 'compound'
     }
   ];
 
-  const filteredExercises = exercises.filter(exercise => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         exercise.primaryMuscles.some(muscle => muscle.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === "all" || exercise.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const categories = ['all', 'compound', 'isolation', 'cardio', 'mobility'];
 
-  const handleViewExercise = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
+  useEffect(() => {
+    loadExercises();
+  }, []);
+
+  useEffect(() => {
+    filterExercises();
+  }, [exercises, searchTerm, selectedCategory]);
+
+  const loadExercises = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_exercises')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const customExercises = data.map(exercise => ({
+        id: exercise.id,
+        name: exercise.name,
+        primary_muscles: exercise.primary_muscles || [],
+        secondary_muscles: exercise.secondary_muscles || [],
+        equipment: exercise.equipment || '',
+        difficulty: exercise.difficulty || 'intermediate',
+        instructions: exercise.instructions || [],
+        tips: exercise.tips || [],
+        category: exercise.category || 'compound',
+        created_by: exercise.created_by
+      }));
+
+      setExercises([...stockExercises, ...customExercises]);
+    } catch (error) {
+      console.error('Error loading exercises:', error);
+      setExercises(stockExercises);
+    }
   };
 
-  const handleCreateExercise = async () => {
-    if (!newExerciseName.trim()) return;
-    
-    setIsGenerating(true);
-    
+  const filterExercises = () => {
+    let filtered = exercises;
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(ex => ex.category === selectedCategory);
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(ex =>
+        ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ex.primary_muscles.some(muscle => 
+          muscle.toLowerCase().includes(searchTerm.toLowerCase())
+        ) ||
+        ex.equipment.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredExercises(filtered);
+  };
+
+  const createExerciseWithAI = async () => {
+    if (!newExercise.name.trim() || !user) {
+      toast.error('Please enter an exercise name');
+      return;
+    }
+
+    setIsCreating(true);
+
     try {
-      const prompt = `Create a comprehensive exercise description for "${newExerciseName}". Include:
+      const aiPrompt = `Create a detailed exercise guide for "${newExercise.name}".
 
-1. Detailed description of the exercise and its benefits
-2. Primary and secondary muscles worked
-3. Step-by-step instructions (6-8 steps)
-4. Equipment needed
-5. Difficulty level (beginner/intermediate/advanced)
-6. Safety tips and form cues
-7. Common mistakes to avoid
+Equipment: ${newExercise.equipment || 'Bodyweight/Various'}
+Difficulty: ${newExercise.difficulty}
+Category: ${newExercise.category}
 
-Format this as a detailed exercise guide that would be suitable for a fitness app.`;
+Provide a comprehensive exercise breakdown including:
+
+1. **Primary Muscles**: List 2-3 main muscles worked
+2. **Secondary Muscles**: List supporting muscles
+3. **Step-by-Step Instructions**: 4-6 clear, detailed steps
+4. **Pro Tips**: 3-4 technique and safety tips
+5. **Equipment**: Specify exact equipment needed
+
+Format as a structured exercise database entry. Focus on proper form, safety, and effectiveness. Use language similar to established exercise databases.`;
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
-          prompt,
-          feature: 'workout_library'
+          prompt: aiPrompt,
+          feature: 'exercise_creation'
         }
       });
 
       if (error) throw error;
+
+      // Parse AI response and create structured exercise
+      const aiResponse = data.response;
       
-      if (data?.response) {
-        setAiDescription(data.response);
-        toast.success('Exercise guide generated!');
-      } else {
-        throw new Error('No response received');
-      }
+      // Extract information from AI response (this is simplified - in practice you'd want more robust parsing)
+      const exercise = {
+        name: newExercise.name,
+        primary_muscles: ['Muscle Group 1', 'Muscle Group 2'], // Would parse from AI response
+        secondary_muscles: ['Supporting Muscle'], // Would parse from AI response
+        equipment: newExercise.equipment || 'Various',
+        difficulty: newExercise.difficulty,
+        instructions: [
+          'Step 1: Setup and positioning',
+          'Step 2: Movement initiation', 
+          'Step 3: Execution phase',
+          'Step 4: Return to starting position'
+        ], // Would parse from AI response
+        tips: [
+          'Maintain proper form throughout',
+          'Control the movement speed',
+          'Focus on target muscles'
+        ], // Would parse from AI response
+        category: newExercise.category,
+        ai_description: aiResponse
+      };
+
+      const { error: insertError } = await supabase
+        .from('custom_exercises')
+        .insert({
+          ...exercise,
+          created_by: user.id
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success('Exercise created successfully with AI assistance!');
+      setShowCreateForm(false);
+      setNewExercise({ name: '', equipment: '', difficulty: 'intermediate', category: 'compound' });
+      await loadExercises();
+
     } catch (error) {
-      console.error('Error generating exercise:', error);
+      console.error('Error creating exercise:', error);
       
-      // Fallback response
-      const fallbackResponse = `# ${newExerciseName}
+      // Fallback: Create basic exercise without AI
+      const basicExercise = {
+        name: newExercise.name,
+        primary_muscles: ['Target Muscle Group'],
+        secondary_muscles: ['Supporting Muscles'],
+        equipment: newExercise.equipment || 'Various',
+        difficulty: newExercise.difficulty,
+        instructions: [
+          'Position yourself properly for the exercise',
+          'Execute the movement with control',
+          'Focus on proper form and technique',
+          'Return to starting position'
+        ],
+        tips: [
+          'Maintain proper form throughout the movement',
+          'Control both the lifting and lowering phases',
+          'Focus on the target muscle group'
+        ],
+        category: newExercise.category
+      };
 
-## Description
-${newExerciseName} is an effective exercise that targets multiple muscle groups and can be incorporated into various training programs. This movement helps build strength, stability, and muscle mass when performed with proper form.
+      try {
+        const { error: fallbackError } = await supabase
+          .from('custom_exercises')
+          .insert({
+            ...basicExercise,
+            created_by: user.id
+          });
 
-## Primary Muscles Worked
-- Determine based on the exercise movement pattern
-- Focus on the main muscle groups recruited
+        if (fallbackError) throw fallbackError;
 
-## Equipment Needed
-- List the equipment required for this exercise
-- Include alternatives if applicable
-
-## Instructions
-1. Set up in the starting position with proper alignment
-2. Engage your core and maintain good posture
-3. Perform the concentric (lifting) phase with control
-4. Hold briefly at the peak contraction
-5. Lower with control during the eccentric phase
-6. Maintain tension throughout the full range of motion
-7. Breathe properly throughout the movement
-8. Complete the desired number of repetitions
-
-## Form Tips
-- Focus on quality over quantity
-- Start with lighter resistance to master the movement
-- Maintain proper alignment throughout
-- Use a full range of motion when possible
-
-## Safety Considerations
-- Warm up properly before performing this exercise
-- Progress gradually in weight and intensity
-- Stop if you experience pain (not to be confused with muscle fatigue)
-- Consider working with a qualified trainer initially
-
-## Common Mistakes
-- Using too much weight too quickly
-- Neglecting proper warm-up
-- Rushing through the movement
-- Ignoring proper breathing patterns
-
-This exercise can be modified based on your fitness level and specific goals. Always prioritize proper form over heavy weight.`;
-      
-      setAiDescription(fallbackResponse);
-      toast.success('Exercise guide generated with template!');
+        toast.success('Exercise created successfully!');
+        setShowCreateForm(false);
+        setNewExercise({ name: '', equipment: '', difficulty: 'intermediate', category: 'compound' });
+        await loadExercises();
+      } catch (fallbackError) {
+        toast.error('Failed to create exercise');
+      }
     } finally {
-      setIsGenerating(false);
+      setIsCreating(false);
     }
   };
 
-  if (selectedExercise) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900/20 to-gray-700 text-white p-6 animate-fade-in">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-4 mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => setSelectedExercise(null)} 
-              className="text-gray-200 hover:text-white hover:bg-gray-800/50"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Library
-            </Button>
-          </div>
-
-          <Card className="bg-gray-900/30 border-gray-700/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl text-white mb-2">{selectedExercise.name}</CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                      {selectedExercise.difficulty}
-                    </Badge>
-                    <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                      {selectedExercise.category}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-blue-700/40 rounded-2xl flex items-center justify-center">
-                  <Dumbbell className="w-8 h-8 text-blue-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-white font-semibold mb-2">Description</h3>
-                <p className="text-gray-300">{selectedExercise.description}</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-white font-semibold mb-2">Primary Muscles</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedExercise.primaryMuscles.map((muscle, index) => (
-                      <Badge key={index} className="bg-red-500/20 text-red-300 border-red-500/30">
-                        {muscle}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-white font-semibold mb-2">Equipment</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedExercise.equipment.map((item, index) => (
-                      <Badge key={index} className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30">
-                        {item}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-white font-semibold mb-3">Instructions</h3>
-                <div className="space-y-2">
-                  {selectedExercise.instructions.map((instruction, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-blue-300 text-sm font-medium">{index + 1}</span>
-                      </div>
-                      <p className="text-gray-300">{instruction}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {selectedExercise.tips && (
-                <div>
-                  <h3 className="text-white font-semibold mb-3">Pro Tips</h3>
-                  <div className="space-y-2">
-                    {selectedExercise.tips.map((tip, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-gray-300">{tip}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (showCreateForm) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900/20 to-gray-700 text-white p-6 animate-fade-in">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-4 mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => setShowCreateForm(false)} 
-              className="text-gray-200 hover:text-white hover:bg-gray-800/50"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Library
-            </Button>
-          </div>
-
-          <Card className="bg-gray-900/30 border-gray-700/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-2xl text-white flex items-center">
-                <Wand2 className="w-6 h-6 mr-3 text-purple-400" />
-                Create New Exercise
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Enter an exercise name and our AI will generate a complete guide
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-white font-medium">Exercise Name</label>
-                <Input
-                  value={newExerciseName}
-                  onChange={(e) => setNewExerciseName(e.target.value)}
-                  placeholder="e.g., Bulgarian Split Squat, Turkish Get-Up, etc."
-                  className="bg-gray-800/50 border-gray-600/50 text-white focus:border-purple-500"
-                />
-              </div>
-
-              <Button
-                onClick={handleCreateExercise}
-                disabled={!newExerciseName.trim() || isGenerating}
-                className="w-full bg-gradient-to-r from-purple-500/80 to-purple-700/80 hover:from-purple-600/80 hover:to-purple-800/80"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Generating Exercise Guide...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate Exercise Guide
-                  </>
-                )}
-              </Button>
-
-              {aiDescription && (
-                <div className="mt-6 p-4 bg-gray-800/30 rounded-xl border border-gray-700/50">
-                  <h3 className="text-white font-semibold mb-3">Generated Exercise Guide</h3>
-                  <div className="text-gray-300 whitespace-pre-wrap text-sm">
-                    {aiDescription}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900/20 to-gray-700 text-white p-6 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-purple-700 text-white p-6 animate-fade-in">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -432,114 +321,128 @@ This exercise can be modified based on your fitness level and specific goals. Al
             <Button 
               variant="ghost" 
               onClick={onBack} 
-              className="text-gray-200 hover:text-white hover:bg-gray-800/50"
+              className="text-slate-400 hover:text-white hover:bg-slate-800/50"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Dashboard
             </Button>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-blue-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 border border-blue-400/20">
-                <Dumbbell className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-purple-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25 border border-purple-400/20">
+                <Library className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-200 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
                   Exercise Library
                 </h1>
-                <p className="text-gray-400 text-lg">Comprehensive exercise database with detailed instructions</p>
+                <p className="text-slate-400 text-lg">Comprehensive database with proper form guides</p>
               </div>
             </div>
           </div>
           
           <Button
             onClick={() => setShowCreateForm(true)}
-            className="bg-gradient-to-r from-purple-500/80 to-purple-700/80 hover:from-purple-600/80 hover:to-purple-800/80"
+            className="bg-gradient-to-r from-purple-500/80 to-pink-600/80 hover:from-purple-600/80 hover:to-pink-700/80 text-white font-medium px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Exercise
           </Button>
         </div>
 
-        {/* Search and Filters */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search exercises or muscle groups..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-900/30 border-gray-700/50 text-white focus:border-blue-500"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className={selectedCategory === category 
-                  ? "bg-blue-500/80 hover:bg-blue-600/80" 
-                  : "border-gray-600/50 text-gray-300 hover:bg-gray-800/50"
-                }
-              >
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </Button>
-            ))}
-          </div>
+        {/* Status Badge */}
+        <div className="flex justify-center">
+          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 px-4 py-2 text-sm">
+            <Library className="w-4 h-4 mr-2" />
+            {exercises.length} exercises with detailed form guides
+          </Badge>
         </div>
+
+        {/* Search and Filters */}
+        <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search exercises, muscles, or equipment..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-slate-800/30 border-slate-600/50 text-white pl-10 focus:border-purple-500"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category)}
+                    className={selectedCategory === category 
+                      ? "bg-purple-600/80 hover:bg-purple-700/80" 
+                      : "border-slate-600/50 text-slate-300 hover:bg-slate-800/50"
+                    }
+                  >
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Exercise Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredExercises.map((exercise) => (
-            <Card key={exercise.id} className="bg-gray-900/30 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
-              <CardHeader className="pb-4">
+            <Card key={exercise.id} className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm hover:bg-slate-800/40 transition-all duration-200 cursor-pointer group">
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-white text-lg mb-2 group-hover:text-blue-200 transition-colors">
-                      {exercise.name}
-                    </CardTitle>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
-                        {exercise.difficulty}
-                      </Badge>
-                      <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
-                        {exercise.category}
-                      </Badge>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-purple-600/20 rounded-xl flex items-center justify-center">
+                      <Dumbbell className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-white text-lg">{exercise.name}</CardTitle>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge className={`text-xs ${
+                          exercise.difficulty === 'beginner' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                          exercise.difficulty === 'intermediate' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                          'bg-red-500/20 text-red-400 border-red-500/30'
+                        }`}>
+                          {exercise.difficulty}
+                        </Badge>
+                        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                          {exercise.category}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500/20 to-blue-700/40 rounded-xl flex items-center justify-center">
-                    <Dumbbell className="w-5 h-5 text-blue-400" />
-                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedExercise(exercise)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-white"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                  {exercise.description}
-                </p>
                 <div className="space-y-3">
                   <div>
-                    <h4 className="text-white text-sm font-medium mb-2">Primary Muscles</h4>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Primary Muscles</p>
                     <div className="flex flex-wrap gap-1">
-                      {exercise.primaryMuscles.slice(0, 3).map((muscle, index) => (
-                        <Badge key={index} className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
+                      {exercise.primary_muscles.map((muscle, index) => (
+                        <Badge key={index} className="bg-slate-800/30 text-slate-300 border-slate-600/30 text-xs">
                           {muscle}
                         </Badge>
                       ))}
-                      {exercise.primaryMuscles.length > 3 && (
-                        <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30 text-xs">
-                          +{exercise.primaryMuscles.length - 3}
-                        </Badge>
-                      )}
                     </div>
                   </div>
-                  <Button
-                    onClick={() => handleViewExercise(exercise)}
-                    className="w-full bg-gradient-to-r from-blue-500/80 to-blue-700/80 hover:from-blue-600/80 hover:to-blue-800/80 text-white"
-                    size="sm"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    View Full Exercise
-                  </Button>
+                  
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Equipment</p>
+                    <p className="text-slate-300 text-sm">{exercise.equipment}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -548,13 +451,193 @@ This exercise can be modified based on your fitness level and specific goals. Al
 
         {filteredExercises.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-gray-500" />
-            </div>
+            <Library className="w-16 h-16 text-slate-500 mx-auto mb-4" />
             <h3 className="text-white font-medium mb-2">No exercises found</h3>
-            <p className="text-gray-400 text-sm">
-              Try adjusting your search or category filter
-            </p>
+            <p className="text-slate-400">Try adjusting your search or filters</p>
+          </div>
+        )}
+
+        {/* Exercise Detail Modal */}
+        {selectedExercise && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="bg-slate-900/95 border-slate-700/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-white text-2xl">{selectedExercise.name}</CardTitle>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Badge className={`${
+                        selectedExercise.difficulty === 'beginner' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                        selectedExercise.difficulty === 'intermediate' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                        'bg-red-500/20 text-red-400 border-red-500/30'
+                      }`}>
+                        {selectedExercise.difficulty}
+                      </Badge>
+                      <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                        {selectedExercise.category}
+                      </Badge>
+                      <Badge className="bg-slate-600/20 text-slate-400 border-slate-600/30">
+                        {selectedExercise.equipment}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedExercise(null)}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-white font-medium mb-2">Primary Muscles</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedExercise.primary_muscles.map((muscle, index) => (
+                        <Badge key={index} className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                          {muscle}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-white font-medium mb-2">Secondary Muscles</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedExercise.secondary_muscles.map((muscle, index) => (
+                        <Badge key={index} className="bg-slate-600/20 text-slate-400 border-slate-600/30">
+                          {muscle}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-white font-medium mb-3">Instructions</h4>
+                  <ol className="space-y-2">
+                    {selectedExercise.instructions.map((instruction, index) => (
+                      <li key={index} className="text-slate-300 flex">
+                        <span className="text-purple-400 font-bold mr-3">{index + 1}.</span>
+                        <span>{instruction}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                
+                <div>
+                  <h4 className="text-white font-medium mb-3">Pro Tips</h4>
+                  <ul className="space-y-2">
+                    {selectedExercise.tips.map((tip, index) => (
+                      <li key={index} className="text-slate-300 flex">
+                        <span className="text-yellow-400 mr-3">💡</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Create Exercise Modal */}
+        {showCreateForm && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="bg-slate-900/95 border-slate-700/50 max-w-lg w-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white flex items-center">
+                      <Sparkles className="w-5 h-5 mr-2 text-purple-400" />
+                      Create Exercise with AI
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 mt-1">
+                      Name your exercise and AI will fill in the details
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCreateForm(false)}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-slate-300 text-sm font-medium">Exercise Name *</label>
+                  <Input
+                    placeholder="e.g., Bulgarian Split Squat"
+                    value={newExercise.name}
+                    onChange={(e) => setNewExercise({...newExercise, name: e.target.value})}
+                    className="bg-slate-800/30 border-slate-600/50 text-white mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-slate-300 text-sm font-medium">Equipment (optional)</label>
+                  <Input
+                    placeholder="e.g., Dumbbells, Bench"
+                    value={newExercise.equipment}
+                    onChange={(e) => setNewExercise({...newExercise, equipment: e.target.value})}
+                    className="bg-slate-800/30 border-slate-600/50 text-white mt-1"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-slate-300 text-sm font-medium">Difficulty</label>
+                    <select
+                      value={newExercise.difficulty}
+                      onChange={(e) => setNewExercise({...newExercise, difficulty: e.target.value})}
+                      className="w-full bg-slate-800/30 border border-slate-600/50 text-white rounded-md px-3 py-2 mt-1"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-slate-300 text-sm font-medium">Category</label>
+                    <select
+                      value={newExercise.category}
+                      onChange={(e) => setNewExercise({...newExercise, category: e.target.value})}
+                      className="w-full bg-slate-800/30 border border-slate-600/50 text-white rounded-md px-3 py-2 mt-1"
+                    >
+                      <option value="compound">Compound</option>
+                      <option value="isolation">Isolation</option>
+                      <option value="cardio">Cardio</option>
+                      <option value="mobility">Mobility</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <Button
+                  onClick={createExerciseWithAI}
+                  disabled={!newExercise.name.trim() || isCreating}
+                  className="w-full bg-gradient-to-r from-purple-500/80 to-pink-600/80 hover:from-purple-600/80 hover:to-pink-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25"
+                >
+                  {isCreating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creating with AI...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Create Exercise
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

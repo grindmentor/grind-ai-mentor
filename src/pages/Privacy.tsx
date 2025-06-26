@@ -3,19 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Shield, ArrowLeft, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/ui/logo";
 
 const Privacy = () => {
   return (
-    <div className="min-h-screen bg-black text-white ios-safe-area">
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white ios-safe-area">
       {/* Fixed Header */}
       <nav className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800 px-6 py-4" style={{ paddingTop: 'max(env(safe-area-inset-top) + 1rem, 1rem)' }}>
         <div className="container mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-white text-sm">GM</span>
-            </div>
-            <span className="text-xl font-bold logo-text">GrindMentor</span>
-          </Link>
+          <Logo size="md" />
           <div className="flex items-center space-x-2">
             <Link to="/app">
               <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px] touch-manipulation">
@@ -44,7 +40,7 @@ const Privacy = () => {
           </p>
         </div>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-white">Your Privacy Matters</CardTitle>
             <CardDescription className="text-gray-400">

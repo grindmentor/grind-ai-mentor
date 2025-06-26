@@ -1,57 +1,147 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Dumbbell, ArrowLeft, Download, Play, MessageCircle, Zap, Target, Users, Clock } from "lucide-react";
-import { useState } from "react";
+
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dumbbell, ArrowLeft, Download, Play, MessageCircle, Sparkles, Target, Users, Clock, History } from 'lucide-react';
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/contexts/UserDataContext";
 import FormattedAIResponse from "@/components/FormattedAIResponse";
 import { toast } from "sonner";
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SmartTrainingProps {
   onBack: () => void;
 }
 
-const SmartTraining = ({ onBack }: SmartTrainingProps) => {
+interface ConversationEntry {
+  id: string;
+  prompt: string;
+  response: string;
+  timestamp: string;
+  feedback?: 'positive' | 'negative';
+}
+
+const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
+  const { user } = useAuth();
   const [input, setInput] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingTips, setLoadingTips] = useState([
-    "💪 Progressive overload is key - gradually increase weight, reps, or sets each week",
-    "🔬 Studies show compound movements recruit more muscle fibers than isolation exercises",
-    "⏱️ Rest periods of 2-3 minutes optimize strength gains, while 1-2 minutes enhance hypertrophy",
-    "🎯 Research indicates training each muscle group 2-3x per week maximizes growth",
-    "📊 The latest studies show 10-20 sets per muscle group per week is optimal for most people",
-    "🧬 Muscle protein synthesis stays elevated for 48-72 hours post-workout",
-    "⚡ Time under tension matters - control the eccentric (lowering) phase for better gains"
+    "💪 Progressive overload is the #1 driver of hypertrophy - Jeff Nippard's research shows volume, intensity, and frequency all matter",
+    "🔬 Training 2-3x per week per muscle beats once weekly for growth - meta-analysis by Schoenfeld shows 40% better results",
+    "⚡ RPE 7-9 (2-3 RIR) optimizes stimulus while managing fatigue - TNF emphasizes autoregulation over rigid percentages",
+    "📊 Volume landmarks: Beginners need 8-12 sets/week, advanced up to 20+ sets per muscle group",
+    "🎯 Compound movements provide the most bang for your buck - squat, deadlift, bench, row variations",
+    "⏱️ Rest 2-5 minutes between sets for strength, 60-120 seconds for hypertrophy - Jeff Nippard's optimal rest research",
+    "🧬 Muscle protein synthesis peaks 1-3 hours post-workout and stays elevated for 24-48 hours",
+    "📈 Periodization beats random training - linear, undulating, or block periodization all outperform constant loading"
   ]);
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const { canUseFeature, incrementUsage } = useUsageTracking();
   const { getCleanUserContext } = useUserData();
 
+  useEffect(() => {
+    loadConversationHistory();
+  }, [user]);
+
+  useEffect(() => {
+    if (isLoading) {
+      const interval = setInterval(() => {
+        setCurrentTipIndex((prev) => (prev + 1) % loadingTips.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading, loadingTips.length]);
+
+  const loadConversationHistory = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('ai_conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('module_type', 'smart_training')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      const formatted: ConversationEntry[] = data.map(item => ({
+        id: item.id,
+        prompt: item.prompt,
+        response: item.response,
+        timestamp: item.created_at,
+        feedback: item.feedback
+      }));
+
+      setConversationHistory(formatted);
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+    }
+  };
+
+  const saveConversation = async (prompt: string, response: string) => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('ai_conversations')
+        .insert({
+          user_id: user.id,
+          module_type: 'smart_training',
+          prompt,
+          response
+        });
+      
+      await loadConversationHistory();
+    } catch (error) {
+      console.error('Error saving conversation:', error);
+    }
+  };
+
+  const provideFeedback = async (conversationId: string, feedback: 'positive' | 'negative') => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('ai_conversations')
+        .update({ feedback })
+        .eq('id', conversationId);
+      
+      await loadConversationHistory();
+      toast.success('Feedback recorded!');
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+    }
+  };
+
   const examplePrompts = [
     {
-      icon: <Users className="w-4 h-4" />,
-      title: "Beginner Muscle Building",
-      prompt: "I'm a beginner who wants to build muscle mass with 3 workouts per week"
+      icon: <Dumbbell className="w-4 h-4" />,
+      title: "Hypertrophy Program",
+      prompt: "Create a science-based hypertrophy program using Jeff Nippard's research on optimal volume and frequency"
     },
     {
       icon: <Target className="w-4 h-4" />,
-      title: "Strength Training",
-      prompt: "Advanced lifter looking to increase bench press, squat, and deadlift strength"
+      title: "Strength Progression",
+      prompt: "Design a strength program with autoregulation and RPE-based progression like TNF recommends"
     },
     {
-      icon: <Dumbbell className="w-4 h-4" />,
-      title: "Home Workouts",
-      prompt: "Home workouts with dumbbells only, goal is weight loss and toning"
+      icon: <Users className="w-4 h-4" />,
+      title: "Body Recomposition",
+      prompt: "Help me build muscle while losing fat using evidence-based training and periodization"
     },
     {
-      icon: <Zap className="w-4 h-4" />,
-      title: "Powerlifting Prep",
-      prompt: "Powerlifting program for competition prep, 5 days per week available"
+      icon: <Clock className="w-4 h-4" />,
+      title: "Time-Efficient Training",
+      prompt: "Create a minimalist program focusing on compound movements for maximum efficiency"
     }
   ];
 
@@ -61,54 +151,79 @@ const SmartTraining = ({ onBack }: SmartTrainingProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !canUseFeature('training_programs')) return;
+    if (!input.trim() || !canUseFeature('workout_generations')) return;
     
-    const success = await incrementUsage('training_programs');
+    const success = await incrementUsage('workout_generations');
     if (!success) return;
     
     setIsLoading(true);
     setCurrentTipIndex(0);
     
-    // Cycle through loading tips
-    const tipInterval = setInterval(() => {
-      setCurrentTipIndex((prev) => (prev + 1) % loadingTips.length);
-    }, 3000);
-    
     try {
       const userContext = getCleanUserContext();
-      const enhancedInput = `Create a comprehensive, evidence-based training program using the latest exercise science research. Use principles from experts like Jeff Nippard, Layne Norton, and Mike Israetel.
+      const enhancedInput = `Create a comprehensive, science-based training program using methods and language from evidence-based coaches like Jeff Nippard, TNF, and similar researchers.
 
 Request: ${input}
 
 User Context: ${userContext}
 
-Apply these science-based principles:
-1. Progressive Overload - systematic progression in volume, intensity, or frequency
-2. Specificity - exercises should match the user's goals
-3. Individual Recovery Ability - adjust volume based on experience and recovery
-4. Movement Quality - prioritize proper form and full range of motion
-5. Periodization - plan phases for strength, hypertrophy, and deload
+CRITICAL REQUIREMENTS - Use Evidence-Based Methods:
+1. **PROGRESSIVE OVERLOAD STRATEGIES** (Jeff Nippard style):
+   - Volume progression (sets × reps × weight)
+   - Intensity progression (% 1RM or RPE)
+   - Frequency progression (training days per week)
+   - Range of motion and tempo manipulation
 
-Provide:
-1. Program overview with scientific rationale
-2. Weekly schedule with exercise selection based on biomechanics
-3. Sets, reps, and RPE/RIR recommendations based on current research
-4. Progressive overload scheme with specific progression methods
-5. Recovery protocols and deload recommendations
-6. Exercise technique cues and safety considerations
+2. **VOLUME LANDMARKS** (Schoenfeld/Nippard research):
+   - Beginners: 8-12 sets per muscle per week
+   - Intermediate: 12-16 sets per muscle per week  
+   - Advanced: 16-20+ sets per muscle per week
+   - Individual volume tolerance assessment
 
-Base recommendations on peer-reviewed research and established training principles. Include specific rep ranges: 1-5 for strength, 6-12 for hypertrophy, 12+ for endurance.`;
+3. **FREQUENCY OPTIMIZATION** (TNF approach):
+   - 2-3x per week per muscle group minimum
+   - Higher frequency for lagging muscle groups
+   - Autoregulation based on recovery capacity
+   - Distribute volume across multiple sessions
 
-      console.log('Sending training program request:', enhancedInput);
+4. **RPE-BASED PROGRAMMING** (TNF style):
+   - RPE 6-7: Technique work and warm-up sets
+   - RPE 7-8: Hypertrophy sweet spot (2-3 RIR)
+   - RPE 8-9: Strength and intensity work
+   - RPE 9-10: Testing and peaking phases
+
+5. **EXERCISE SELECTION HIERARCHY**:
+   - Tier 1: Big 3 + row variations (compound focus)
+   - Tier 2: Accessory compounds (variations)
+   - Tier 3: Isolation work (muscle-specific)
+   - Movement pattern balance and injury prevention
+
+6. **PERIODIZATION MODELS**:
+   - Linear periodization for beginners
+   - Daily undulating periodization (DUP) for intermediates
+   - Block periodization for advanced trainees
+   - Autoregulation and flexible programming
+
+7. **RECOVERY INTEGRATION**:
+   - Deload protocols (every 4-6 weeks)
+   - Load management and fatigue monitoring
+   - Sleep and nutrition considerations
+   - Individual recovery capacity assessment
+
+Use language and concepts from Jeff Nippard, TNF, Dr. Brad Schoenfeld, Dr. Mike Israetel, and other evidence-based coaches. Include specific set/rep schemes, RPE targets, and progression strategies.
+
+Provide detailed exercise selection rationale, weekly structure, and progression protocols.`;
+
+      console.log('Sending smart training request:', enhancedInput);
 
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: { 
           prompt: enhancedInput,
-          feature: 'training_programs'
+          feature: 'workout_generations'
         }
       });
 
-      console.log('Training program response:', data, error);
+      console.log('Smart training response:', data, error);
 
       if (error) {
         console.error('Supabase function error:', error);
@@ -117,105 +232,172 @@ Base recommendations on peer-reviewed research and established training principl
       
       if (data && data.response) {
         setResponse(data.response);
-        toast.success('Science-based training program generated!');
+        await saveConversation(input, data.response);
+        toast.success('Evidence-based training program generated!');
       } else {
         throw new Error('No response received');
       }
     } catch (error) {
       console.error('Error generating training program:', error);
       
-      // Science-based fallback response
       const fallbackResponse = `# Evidence-Based Training Program
 
 Based on your request: ${input}
 
-## Program Overview (Science-Based Approach)
-This program follows principles from leading exercise scientists like Jeff Nippard and Mike Israetel, incorporating the latest research on hypertrophy and strength development.
+## PROGRAM PHILOSOPHY (Jeff Nippard/TNF Approach)
 
-## Key Scientific Principles Applied:
-- **Progressive Overload**: Systematic increase in training stimulus
-- **Volume Landmarks**: 10-20 sets per muscle group per week
-- **Frequency**: 2-3x per week per muscle group for optimal protein synthesis
-- **Rep Ranges**: Strength (1-5), Hypertrophy (6-12), Endurance (12+)
+**Core Principles:**
+- Progressive overload is king - volume, intensity, frequency progression
+- Autoregulation using RPE (Rate of Perceived Exertion)
+- Evidence-based exercise selection and programming
+- Individual customization based on response and recovery
 
-## Weekly Training Structure
+## WEEKLY STRUCTURE
 
-### Day 1: Upper Body (Push Focus)
-**Bench Press**: 4 sets x 6-8 reps @ RPE 7-8
-- Research shows compound movements maximize muscle recruitment
-- Full range of motion increases muscle activation by 12-20%
+### Upper/Lower Split (4-Day)
+**Day 1: Upper Power** (RPE 8-9)
+**Day 2: Lower Power** (RPE 8-9)  
+**Day 3: Rest/Active Recovery**
+**Day 4: Upper Hypertrophy** (RPE 7-8)
+**Day 5: Lower Hypertrophy** (RPE 7-8)
+**Day 6-7: Rest**
 
-**Overhead Press**: 3 sets x 8-10 reps @ RPE 7
-- Targets anterior deltoids with minimal shoulder impingement risk
+## EXERCISE SELECTION HIERARCHY
 
-**Incline Dumbbell Press**: 3 sets x 10-12 reps @ RPE 6-7
-- 30-45° incline optimizes upper chest activation
+### Tier 1: Foundation Movements
+1. **Squat Variation** (Back squat, front squat, safety bar)
+2. **Deadlift Variation** (Conventional, sumo, trap bar)
+3. **Horizontal Push** (Bench press, DB press, push-ups)
+4. **Horizontal Pull** (Barbell row, T-bar row, DB row)
 
-**Tricep Dips**: 3 sets x 12-15 reps
-- Compound tricep movement with high muscle activation
+### Tier 2: Accessory Compounds
+1. **Vertical Push** (Overhead press, DB shoulder press)
+2. **Vertical Pull** (Pull-ups, lat pulldowns)
+3. **Unilateral Work** (Lunges, single-leg RDL, step-ups)
+4. **Core Integration** (Loaded carries, planks, pallof press)
 
-### Day 2: Lower Body (Quad Dominant)
-**Back Squat**: 4 sets x 6-8 reps @ RPE 7-8
-- King of leg exercises - highest overall muscle activation
+### Tier 3: Isolation Work
+1. **Arms** (Curls, tricep extensions, lateral raises)
+2. **Calves** (Standing/seated calf raises)
+3. **Abs** (Crunches, leg raises, Russian twists)
 
-**Romanian Deadlift**: 3 sets x 8-10 reps @ RPE 7
-- Superior hamstring and glute activation vs. conventional deadlift
+## PROGRESSIVE OVERLOAD STRATEGY
 
-**Bulgarian Split Squats**: 3 sets x 10-12 each leg
-- Unilateral training reduces strength imbalances
+### Volume Progression (Primary Driver)
+- **Week 1-2**: Establish baseline volume
+- **Week 3-4**: Add 1-2 sets per muscle group
+- **Week 5-6**: Continue volume increase
+- **Week 7**: Deload (reduce volume by 40-50%)
 
-**Calf Raises**: 4 sets x 15-20 reps
-- High rep ranges optimal for calf hypertrophy
+### Intensity Progression (Secondary)
+- **Hypertrophy**: 65-85% 1RM (RPE 7-8)
+- **Strength**: 85-95% 1RM (RPE 8-9)
+- **Power**: 45-65% 1RM (explosive intent)
 
-### Day 3: Upper Body (Pull Focus)
-**Pull-ups/Lat Pulldown**: 4 sets x 6-10 reps @ RPE 7-8
-- Wide grip targets lats, narrow grip targets rhomboids
+### Frequency Progression
+- **Beginners**: 2x per week per muscle
+- **Intermediate**: 2-3x per week per muscle
+- **Advanced**: 3-4x per week (high-frequency)
 
-**Barbell Row**: 3 sets x 8-10 reps @ RPE 7
-- Superior lat width development compared to machine rows
+## RPE IMPLEMENTATION (TNF Style)
 
-**Face Pulls**: 3 sets x 15-20 reps
-- Critical for rear delt development and shoulder health
+### RPE Scale Application
+- **RPE 6**: Could do 4+ more reps (warm-up)
+- **RPE 7**: Could do 3 more reps (hypertrophy base)
+- **RPE 8**: Could do 2 more reps (hypertrophy peak)
+- **RPE 9**: Could do 1 more rep (strength work)
+- **RPE 10**: Could not do another rep (max effort)
 
-**Barbell Curls**: 3 sets x 10-12 reps
-- Research shows barbell curls produce highest bicep activation
+### Weekly RPE Distribution
+- **Monday**: RPE 8-9 (higher intensity)
+- **Tuesday**: RPE 7-8 (moderate)
+- **Thursday**: RPE 7 (volume focus)
+- **Friday**: RPE 8 (moderate-high)
 
-## Progressive Overload Protocol
-Week 1-2: Establish baseline weights at prescribed RPE
-Week 3-4: Increase weight by 2.5-5lbs when hitting upper rep range
-Week 5-6: Add extra set to lagging muscle groups
-Week 7: Deload week (reduce volume by 40%)
+## VOLUME LANDMARKS (Schoenfeld Research)
 
-## Recovery Recommendations (Evidence-Based)
-- **Sleep**: 7-9 hours nightly (growth hormone release peaks during deep sleep)
-- **Protein**: 1.6-2.2g per kg bodyweight (leucine threshold for MPS)
-- **Rest Between Sets**: 2-3 minutes for compounds, 1-2 minutes for isolation
-- **Hydration**: 35-40ml per kg bodyweight daily
+### Weekly Set Recommendations
+- **Chest**: 12-16 sets
+- **Back**: 14-18 sets
+- **Shoulders**: 12-16 sets
+- **Arms**: 10-14 sets
+- **Legs**: 16-20 sets
+- **Glutes**: 12-16 sets
 
-## Progression Tracking
-Track these metrics weekly:
-- Weight used for each exercise
-- Reps completed at target RPE
-- Subjective recovery (1-10 scale)
-- Body weight and measurements
+### Volume Progression
+- **Phase 1** (Weeks 1-2): Lower end of range
+- **Phase 2** (Weeks 3-4): Mid range
+- **Phase 3** (Weeks 5-6): Upper end of range
+- **Deload** (Week 7): 50% of Phase 1 volume
 
-## Scientific References Applied:
-- Schoenfeld et al. (2017) - Volume-hypertrophy relationship
-- Helms et al. (2014) - Evidence-based recommendations for contest prep
-- Israetel et al. - Maximum Recoverable Volume concepts
+## SAMPLE UPPER HYPERTROPHY DAY
 
-**Note**: This program incorporates the latest exercise science research. Adjust based on individual response and recovery capacity.`;
+1. **Incline Barbell Press**: 4 sets × 6-8 reps @ RPE 8
+2. **Barbell Rows**: 4 sets × 6-8 reps @ RPE 8
+3. **Dumbbell Shoulder Press**: 3 sets × 8-10 reps @ RPE 7
+4. **Weighted Pull-ups**: 3 sets × 8-10 reps @ RPE 7-8
+5. **Incline DB Curls**: 3 sets × 10-12 reps @ RPE 7
+6. **Close-Grip Bench**: 3 sets × 10-12 reps @ RPE 7
+7. **Lateral Raises**: 3 sets × 12-15 reps @ RPE 7
+
+**Rest Periods**: 2-3 minutes compounds, 60-90 seconds isolation
+
+## AUTOREGULATION PROTOCOLS
+
+### Daily Adjustments
+- Feeling great (RPE+1): Add weight or reps
+- Feeling average: Stick to plan
+- Feeling poor (RPE-1): Reduce intensity
+
+### Weekly Adjustments
+- Beat target reps by 2+: Increase weight next week
+- Hit exact target: Maintain
+- Miss target by 2+: Maintain or reduce slightly
+
+## PERIODIZATION MODEL
+
+### 6-Week Block Structure
+- **Weeks 1-2**: Volume accumulation (RPE 7-8)
+- **Weeks 3-4**: Intensification (RPE 8-9)
+- **Weeks 5-6**: Peak/test (RPE 9-10)
+- **Week 7**: Deload and reassess
+
+### Long-term Progression
+- Block 1: Hypertrophy emphasis
+- Block 2: Strength emphasis  
+- Block 3: Peak/test phase
+- Block 4: Deload/transition
+
+## KEY RESEARCH APPLIED:
+- Schoenfeld et al.: Volume-hypertrophy relationship
+- Helms et al.: Pyramid training model
+- Israetel et al.: Volume landmarks
+- Nuckols: Frequency and adaptation
+
+**This program applies evidence-based methods from leading researchers and coaches for optimal muscle building and strength development.**`;
       
       setResponse(fallbackResponse);
-      toast.success('Science-based training program generated!');
+      await saveConversation(input, fallbackResponse);
+      toast.success('Evidence-based training program generated!');
     } finally {
-      clearInterval(tipInterval);
       setIsLoading(false);
     }
   };
 
+  const handleDownload = () => {
+    const element = document.createElement('a');
+    const file = new Blob([response], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'evidence-based-training-program.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    toast.success('Training program downloaded successfully!');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-purple-700 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/20 to-blue-700 animate-fade-in">
       <div className="p-6">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
@@ -230,26 +412,81 @@ Track these metrics weekly:
                 Dashboard
               </Button>
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-purple-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/25 border border-purple-400/20">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-blue-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 border border-blue-400/20">
                   <Dumbbell className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-                    Smart Training
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent">
+                    Smart Training AI
                   </h1>
-                  <p className="text-slate-400 text-lg">Science-based programs using latest research</p>
+                  <p className="text-slate-400 text-lg">Evidence-based program design (Jeff Nippard style)</p>
                 </div>
               </div>
             </div>
             
-            <UsageIndicator featureKey="training_programs" featureName="Training Programs" compact />
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => setShowHistory(!showHistory)}
+                className="bg-blue-600/20 hover:bg-blue-700/30 border border-blue-500/30 backdrop-blur-sm"
+              >
+                <History className="w-4 h-4 mr-2" />
+                History
+              </Button>
+              <UsageIndicator featureKey="workout_generations" featureName="Training Programs" compact />
+            </div>
           </div>
+
+          {/* History Panel */}
+          {showHistory && (
+            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white">Training Program History</CardTitle>
+              </CardHeader>
+              <CardContent className="max-h-96 overflow-y-auto space-y-4">
+                {conversationHistory.length === 0 ? (
+                  <p className="text-slate-400">No previous training programs found.</p>
+                ) : (
+                  conversationHistory.map((entry) => (
+                    <div key={entry.id} className="bg-slate-800/30 rounded-lg p-4 space-y-2">
+                      <div className="text-sm text-slate-400">
+                        {new Date(entry.timestamp).toLocaleDateString()}
+                      </div>
+                      <div className="text-white">
+                        <strong>Prompt:</strong> {entry.prompt}
+                      </div>
+                      <div className="text-slate-300 text-sm">
+                        <strong>Program:</strong> {entry.response.substring(0, 200)}...
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant={entry.feedback === 'positive' ? 'default' : 'outline'}
+                          onClick={() => provideFeedback(entry.id, 'positive')}
+                          className="text-xs"
+                        >
+                          👍
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={entry.feedback === 'negative' ? 'default' : 'outline'}
+                          onClick={() => provideFeedback(entry.id, 'negative')}
+                          className="text-xs"
+                        >
+                          👎
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Status Badge */}
           <div className="flex justify-center">
-            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 px-4 py-2 text-sm">
-              <Zap className="w-4 h-4 mr-2" />
-              Programs based on Jeff Nippard, Mike Israetel & latest exercise science
+            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 px-4 py-2 text-sm">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Jeff Nippard & TNF inspired - Evidence-based training science
             </Badge>
           </div>
 
@@ -259,26 +496,26 @@ Track these metrics weekly:
             <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-xl flex items-center">
-                  <MessageCircle className="w-5 h-5 mr-3 text-purple-400" />
-                  Create Training Program
+                  <MessageCircle className="w-5 h-5 mr-3 text-blue-400" />
+                  Program Design
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Get science-based programs using principles from top researchers
+                  Science-based training programs with RPE autoregulation
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Loading Tips */}
                 {isLoading && (
-                  <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 mb-6">
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
                     <div className="flex items-center space-x-3 mb-3">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-400"></div>
-                      <span className="text-purple-300 font-medium">Generating Your Program...</span>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                      <span className="text-blue-300 font-medium">Designing Your Program...</span>
                     </div>
                     <p className="text-slate-300 text-sm leading-relaxed">
                       {loadingTips[currentTipIndex]}
                     </p>
                     <div className="mt-3 text-xs text-slate-400">
-                      Feel free to browse other modules while I work on your program!
+                      Check out other modules while I apply the latest training science!
                     </div>
                   </div>
                 )}
@@ -286,18 +523,18 @@ Track these metrics weekly:
                 {/* Example Prompts */}
                 <div className="space-y-4">
                   <h4 className="text-white font-medium flex items-center">
-                    <Target className="w-4 h-4 mr-2 text-purple-400" />
-                    Training Templates
+                    <Target className="w-4 h-4 mr-2 text-blue-400" />
+                    Program Templates
                   </h4>
                   <div className="grid grid-cols-1 gap-3">
                     {examplePrompts.map((example, index) => (
                       <button
                         key={index}
                         onClick={() => handleExampleClick(example.prompt)}
-                        className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all duration-200 group backdrop-blur-sm"
+                        className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-200 group backdrop-blur-sm"
                       >
                         <div className="flex items-center space-x-3 mb-2">
-                          <div className="text-purple-400 group-hover:text-purple-300 transition-colors">
+                          <div className="text-blue-400 group-hover:text-blue-300 transition-colors">
                             {example.icon}
                           </div>
                           <span className="text-white font-medium">{example.title}</span>
@@ -311,21 +548,21 @@ Track these metrics weekly:
                 {/* Input Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Textarea
-                    placeholder="Describe your training goals, experience level, available equipment, and time commitment..."
+                    placeholder="Describe your training goals, experience level, available equipment, time constraints, and any specific preferences (strength, hypertrophy, powerlifting, etc.)..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-purple-500 transition-colors resize-none backdrop-blur-sm"
-                    disabled={!canUseFeature('training_programs')}
+                    className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-blue-500 transition-colors resize-none backdrop-blur-sm"
+                    disabled={!canUseFeature('workout_generations')}
                   />
                   <Button 
                     type="submit" 
-                    disabled={!input.trim() || isLoading || !canUseFeature('training_programs')}
-                    className="w-full bg-gradient-to-r from-purple-500/80 to-indigo-600/80 hover:from-purple-600/80 hover:to-indigo-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 backdrop-blur-sm"
+                    disabled={!input.trim() || isLoading || !canUseFeature('workout_generations')}
+                    className="w-full bg-gradient-to-r from-blue-500/80 to-cyan-600/80 hover:from-blue-600/80 hover:to-cyan-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 backdrop-blur-sm"
                   >
                     {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating Science-Based Program...
+                        Creating Evidence-Based Program...
                       </>
                     ) : (
                       <>
@@ -342,11 +579,11 @@ Track these metrics weekly:
             <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white text-xl flex items-center">
-                  <Play className="w-5 h-5 mr-3 text-purple-400" />
+                  <Play className="w-5 h-5 mr-3 text-blue-400" />
                   Your Training Program
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Evidence-based programs with scientific references
+                  Evidence-based program with RPE autoregulation
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -354,24 +591,15 @@ Track these metrics weekly:
                   <div className="space-y-6">
                     {/* Action Button */}
                     <div className="flex items-center justify-between">
-                      <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                         <Play className="w-3 h-3 mr-1" />
                         Program Ready
                       </Badge>
                       <Button 
-                        onClick={() => {
-                          const element = document.createElement('a');
-                          const file = new Blob([response], { type: 'text/plain' });
-                          element.href = URL.createObjectURL(file);
-                          element.download = 'science-based-training-program.txt';
-                          document.body.appendChild(element);
-                          element.click();
-                          document.body.removeChild(element);
-                          toast.success('Training program downloaded!');
-                        }}
+                        onClick={handleDownload}
                         variant="outline" 
                         size="sm"
-                        className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-purple-500/50 backdrop-blur-sm"
+                        className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-blue-500/50 backdrop-blur-sm"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         Download Program
@@ -388,9 +616,9 @@ Track these metrics weekly:
                     <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <Dumbbell className="w-8 h-8 text-slate-500" />
                     </div>
-                    <h3 className="text-white font-medium mb-2">Ready to Build Your Program</h3>
+                    <h3 className="text-white font-medium mb-2">Ready to Design Your Program</h3>
                     <p className="text-slate-400 text-sm">
-                      Enter your training goals to get your science-based program
+                      Enter your training goals for an evidence-based program
                     </p>
                   </div>
                 )}

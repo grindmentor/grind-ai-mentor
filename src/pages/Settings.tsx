@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, User, Dumbbell, Globe, Zap, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import BasicInformation from '@/components/settings/BasicInformation';
-import FitnessProfile from '@/components/settings/FitnessProfile';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import UnitPreferences from '@/components/settings/UnitPreferences';
 import AppPreferences from '@/components/settings/AppPreferences';
 import AIMemoryReset from '@/components/settings/AIMemoryReset';
@@ -65,11 +64,47 @@ const Settings = () => {
 
               <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-6">
                 <TabsContent value="basic" className="mt-0">
-                  <BasicInformation />
+                  <Card className="bg-gray-900 border-gray-800">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center">
+                        <User className="w-5 h-5 mr-2 text-orange-500" />
+                        Basic Information
+                      </CardTitle>
+                      <CardDescription>
+                        Manage your profile information in the dedicated profile section
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button 
+                        onClick={() => navigate('/profile')}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                      >
+                        Go to Profile Settings
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 <TabsContent value="fitness" className="mt-0">
-                  <FitnessProfile />
+                  <Card className="bg-gray-900 border-gray-800">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center">
+                        <Dumbbell className="w-5 h-5 mr-2 text-orange-500" />
+                        Fitness Profile
+                      </CardTitle>
+                      <CardDescription>
+                        Configure your fitness goals and preferences in your profile
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button 
+                        onClick={() => navigate('/profile')}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                      >
+                        Go to Profile Settings
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 <TabsContent value="units" className="mt-0">

@@ -25,29 +25,7 @@ interface ModuleGridProps {
   viewMode?: 'grid' | 'list';
 }
 
-// Module-specific color mappings for vibrant cards
-const getModuleColors = (moduleId: string, gradient: string) => {
-  const colorMap: Record<string, string> = {
-    'coach-gpt': 'bg-gradient-to-br from-blue-500/50 to-indigo-600/50 border-blue-400/40',
-    'smart-training': 'bg-gradient-to-br from-purple-500/50 to-pink-600/50 border-purple-400/40',
-    'meal-plan-ai': 'bg-gradient-to-br from-green-500/50 to-emerald-600/50 border-green-400/40',
-    'smart-food-log': 'bg-gradient-to-br from-orange-500/50 to-red-600/50 border-orange-400/40',
-    'progress-ai': 'bg-gradient-to-br from-cyan-500/50 to-blue-600/50 border-cyan-400/40',
-    'tdee-calculator': 'bg-gradient-to-br from-yellow-500/50 to-orange-600/50 border-yellow-400/40',
-    'cut-calc-pro': 'bg-gradient-to-br from-red-500/50 to-pink-600/50 border-red-400/40',
-    'workout-timer': 'bg-gradient-to-br from-indigo-500/50 to-purple-600/50 border-indigo-400/40',
-    'habit-tracker': 'bg-gradient-to-br from-teal-500/50 to-green-600/50 border-teal-400/40',
-    'recovery-coach': 'bg-gradient-to-br from-violet-500/50 to-indigo-600/50 border-violet-400/40',
-    'workout-library': 'bg-gradient-to-br from-slate-500/50 to-gray-600/50 border-slate-400/40',
-    'cardio-ai': 'bg-gradient-to-br from-pink-500/50 to-rose-600/50 border-pink-400/40',
-    'workout-logger-ai': 'bg-gradient-to-br from-emerald-500/50 to-teal-600/50 border-emerald-400/40',
-    'food-photo-logger': 'bg-gradient-to-br from-amber-500/50 to-yellow-600/50 border-amber-400/40'
-  };
-
-  return colorMap[moduleId] || 'bg-gradient-to-br from-gray-500/50 to-slate-600/50 border-gray-400/40';
-};
-
-export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
+export const ModuleGrid: React.FC<ModuleGridProps> = ({
   modules,
   favorites,
   onModuleClick,
@@ -56,45 +34,80 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
 }) => {
   const isMobile = useIsMobile();
 
+  // Get module-specific background based on gradient
+  const getModuleBackground = (gradient: string) => {
+    const gradientMap: { [key: string]: string } = {
+      'from-orange-400 to-red-500': 'bg-gradient-to-br from-orange-500/30 to-red-600/40',
+      'from-blue-400 to-purple-500': 'bg-gradient-to-br from-blue-500/30 to-purple-600/40',
+      'from-green-400 to-teal-500': 'bg-gradient-to-br from-green-500/30 to-teal-600/40',
+      'from-purple-400 to-pink-500': 'bg-gradient-to-br from-purple-500/30 to-pink-600/40',
+      'from-yellow-400 to-orange-500': 'bg-gradient-to-br from-yellow-500/30 to-orange-600/40',
+      'from-indigo-400 to-blue-500': 'bg-gradient-to-br from-indigo-500/30 to-blue-600/40',
+      'from-pink-400 to-rose-500': 'bg-gradient-to-br from-pink-500/30 to-rose-600/40',
+      'from-teal-400 to-cyan-500': 'bg-gradient-to-br from-teal-500/30 to-cyan-600/40',
+      'from-red-400 to-pink-500': 'bg-gradient-to-br from-red-500/30 to-pink-600/40',
+      'from-emerald-400 to-green-500': 'bg-gradient-to-br from-emerald-500/30 to-green-600/40'
+    };
+    
+    return gradientMap[gradient] || 'bg-gradient-to-br from-gray-500/20 to-gray-600/30';
+  };
+
+  // Get icon background based on gradient
+  const getIconBackground = (gradient: string) => {
+    const iconMap: { [key: string]: string } = {
+      'from-orange-400 to-red-500': 'bg-orange-500/30 border-orange-400/50',
+      'from-blue-400 to-purple-500': 'bg-blue-500/30 border-blue-400/50',
+      'from-green-400 to-teal-500': 'bg-green-500/30 border-green-400/50',
+      'from-purple-400 to-pink-500': 'bg-purple-500/30 border-purple-400/50',
+      'from-yellow-400 to-orange-500': 'bg-yellow-500/30 border-yellow-400/50',
+      'from-indigo-400 to-blue-500': 'bg-indigo-500/30 border-indigo-400/50',
+      'from-pink-400 to-rose-500': 'bg-pink-500/30 border-pink-400/50',
+      'from-teal-400 to-cyan-500': 'bg-teal-500/30 border-teal-400/50',
+      'from-red-400 to-pink-500': 'bg-red-500/30 border-red-400/50',
+      'from-emerald-400 to-green-500': 'bg-emerald-500/30 border-emerald-400/50'
+    };
+    
+    return iconMap[gradient] || 'bg-gray-500/30 border-gray-400/50';
+  };
+
   if (viewMode === 'list') {
     return (
       <div className="space-y-3">
         {modules.map((module) => {
           const IconComponent = module.icon;
           const isFavorited = favorites.includes(module.id);
-          const moduleColors = getModuleColors(module.id, module.gradient);
           
           return (
             <Card 
               key={module.id}
-              className={`group cursor-pointer hover:shadow-xl backdrop-blur-sm border-opacity-60 hover:border-opacity-80 relative overflow-hidden transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] ${moduleColors}`}
+              className={`group cursor-pointer hover:shadow-xl backdrop-blur-sm border-opacity-40 hover:border-opacity-60 relative overflow-hidden transition-all duration-200 ${getModuleBackground(module.gradient)}`}
               onClick={() => onModuleClick(module)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <IconComponent className="w-6 h-6 text-white drop-shadow-sm" />
+                  <div className={`w-12 h-12 rounded-xl backdrop-blur-sm flex items-center justify-center flex-shrink-0 border ${getIconBackground(module.gradient)}`}>
+                    <IconComponent className="w-6 h-6 text-white" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-semibold text-white text-lg truncate drop-shadow-sm">
+                      <h3 className="font-semibold text-white text-lg truncate">
                         {module.title}
                       </h3>
                       {module.isNew && (
-                        <Badge className="bg-orange-500/60 text-orange-100 border-orange-300/60 text-xs shadow-md">
+                        <Badge className="bg-orange-500/50 text-orange-100 border-orange-400/60 text-xs font-medium">
                           <Sparkles className="w-3 h-3 mr-1" />
                           New
                         </Badge>
                       )}
                       {module.isPremium && (
-                        <Badge className="bg-yellow-500/60 text-yellow-100 border-yellow-300/60 text-xs shadow-md">
+                        <Badge className="bg-yellow-500/50 text-yellow-100 border-yellow-400/60 text-xs font-medium">
                           <Crown className="w-3 h-3 mr-1" />
                           Pro
                         </Badge>
                       )}
                     </div>
-                    <p className="text-white/95 text-sm line-clamp-2 drop-shadow-sm">
+                    <p className="text-white/90 text-sm line-clamp-2">
                       {module.description}
                     </p>
                   </div>
@@ -106,10 +119,10 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
                     }}
                     variant="ghost"
                     size="sm"
-                    className={`flex-shrink-0 p-3 touch-manipulation rounded-lg transition-all duration-200 ${
+                    className={`flex-shrink-0 p-2 touch-manipulation transition-colors ${
                       isFavorited 
-                        ? 'text-orange-200 hover:text-orange-100 bg-orange-500/20' 
-                        : 'text-white/80 hover:text-orange-200 hover:bg-orange-500/20'
+                        ? 'text-orange-300 hover:text-orange-200' 
+                        : 'text-white/70 hover:text-orange-300'
                     }`}
                   >
                     <Star className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
@@ -132,18 +145,17 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
       {modules.map((module) => {
         const IconComponent = module.icon;
         const isFavorited = favorites.includes(module.id);
-        const moduleColors = getModuleColors(module.id, module.gradient);
         
         return (
           <Card 
             key={module.id}
-            className={`group cursor-pointer hover:shadow-xl backdrop-blur-sm border-opacity-60 hover:border-opacity-80 relative overflow-hidden transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] touch-manipulation ${moduleColors}`}
+            className={`group cursor-pointer hover:shadow-xl backdrop-blur-sm border-opacity-40 hover:border-opacity-70 relative overflow-hidden touch-manipulation transition-all duration-300 hover:scale-105 ${getModuleBackground(module.gradient)}`}
             onClick={() => onModuleClick(module)}
           >
             <CardHeader className="relative z-10 pb-2 p-4">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <IconComponent className="w-6 h-6 text-white drop-shadow-sm" />
+                <div className={`w-12 h-12 rounded-xl backdrop-blur-sm flex items-center justify-center border ${getIconBackground(module.gradient)}`}>
+                  <IconComponent className="w-6 h-6 text-white" />
                 </div>
                 <Button
                   onClick={(e) => {
@@ -152,10 +164,10 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
                   }}
                   variant="ghost"
                   size="sm"
-                  className={`p-3 touch-manipulation rounded-lg transition-all duration-200 ${
+                  className={`p-2 touch-manipulation transition-colors ${
                     isFavorited 
-                      ? 'text-orange-200 hover:text-orange-100 bg-orange-500/20' 
-                      : 'text-white/80 hover:text-orange-200 hover:bg-orange-500/20'
+                      ? 'text-orange-300 hover:text-orange-200' 
+                      : 'text-white/70 hover:text-orange-300'
                   }`}
                 >
                   <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
@@ -164,11 +176,11 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
               
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <CardTitle className="text-white text-lg font-bold drop-shadow-sm">
+                  <CardTitle className="text-white text-lg font-bold">
                     {module.title}
                   </CardTitle>
                   {module.isNew && (
-                    <Badge className="bg-orange-500/60 text-orange-100 border-orange-300/60 text-xs shadow-md">
+                    <Badge className="bg-orange-500/50 text-orange-100 border-orange-400/60 text-xs font-medium">
                       <Sparkles className="w-3 h-3 mr-1" />
                       New
                     </Badge>
@@ -176,7 +188,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
                 </div>
                 
                 {module.isPremium && (
-                  <Badge className="bg-yellow-500/60 text-yellow-100 border-yellow-300/60 w-fit shadow-md">
+                  <Badge className="bg-yellow-500/50 text-yellow-100 border-yellow-400/60 w-fit font-medium">
                     <Crown className="w-3 h-3 mr-1" />
                     Premium
                   </Badge>
@@ -185,7 +197,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
             </CardHeader>
             
             <CardContent className="relative z-10 pt-0 p-4">
-              <CardDescription className="text-white/95 text-sm leading-relaxed drop-shadow-sm">
+              <CardDescription className="text-white/90 text-sm leading-relaxed">
                 {module.description}
               </CardDescription>
             </CardContent>
@@ -194,6 +206,4 @@ export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
       })}
     </div>
   );
-});
-
-ModuleGrid.displayName = 'ModuleGrid';
+};

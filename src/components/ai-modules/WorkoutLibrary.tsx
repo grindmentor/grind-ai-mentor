@@ -1,695 +1,226 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Dumbbell, Calendar, Heart, MessageSquare, Send, X, Filter, Grid, List, Clock, Target, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, Search, Dumbbell, Filter, Info } from 'lucide-react';
+import { useExerciseDatabase } from '@/hooks/useExerciseDatabase';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface WorkoutLibraryProps {
   onBack: () => void;
   navigationSource?: 'dashboard' | 'library';
 }
 
-interface WorkoutSplit {
-  id: string;
-  name: string;
-  description: string;
-  days: number;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  focus: string[];
-  estimatedDuration: string;
-}
-
-interface WorkoutDay {
-  id: string;
-  splitId: string;
-  dayNumber: number;
-  name: string;
-  focus: string[];
-  exercises: ExerciseInWorkout[];
-  duration: number;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-}
-
-interface ExerciseInWorkout {
-  exerciseId: string;
-  name: string;
-  sets: number;
-  reps: string;
-  rest: string;
-  notes?: string;
-  weight?: string;
-}
-
-interface Exercise {
-  id: string;
-  name: string;
-  description?: string;
-  instructions?: string;
-  primary_muscles: string[];
-  secondary_muscles: string[];
-  equipment: string;
-  category: string;
-  difficulty_level: 'Beginner' | 'Intermediate' | 'Advanced';
-  mechanics: string;
-}
-
-interface CardioSession {
-  id: string;
-  name: string;
-  type: 'HIIT' | 'LISS' | 'Circuit' | 'Tabata';
-  duration: number;
-  intensity: 'Low' | 'Moderate' | 'High';
-  description: string;
-  instructions: string[];
-  equipment: string;
-}
-
-const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack, navigationSource = 'dashboard' }) => {
-  const { toast } = useToast();
-  
-  // Core state
-  const [activeTab, setActiveTab] = useState<'splits' | 'days' | 'exercises' | 'cardio'>('splits');
+const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ 
+  onBack,
+  navigationSource = 'dashboard'
+}) => {
+  const { exercises, loading, searchExercises, getRandomExercises } = useExerciseDatabase();
   const [searchQuery, setSearchQuery] = useState('');
-  const [muscleFilter, setMuscleFilter] = useState<string[]>([]);
-  const [equipmentFilter, setEquipmentFilter] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedSplit, setSelectedSplit] = useState<string | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  
-  // Chat state
-  const [showAIChat, setShowAIChat] = useState(false);
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Static workout data
-  const workoutSplits: WorkoutSplit[] = [
-    {
-      id: 'push-pull-legs',
-      name: 'Push/Pull/Legs',
-      description: 'Classic 3-day split focusing on movement patterns for optimal recovery and muscle growth',
-      days: 3,
-      difficulty: 'Intermediate',
-      focus: ['Chest', 'Shoulders', 'Triceps', 'Back', 'Biceps', 'Legs'],
-      estimatedDuration: '45-60 min'
-    },
-    {
-      id: 'upper-lower',
-      name: 'Upper/Lower Split',
-      description: '4-day split alternating between upper and lower body training sessions',
-      days: 4,
-      difficulty: 'Beginner',
-      focus: ['Upper Body', 'Lower Body', 'Strength'],
-      estimatedDuration: '50-70 min'
-    },
-    {
-      id: 'full-body',
-      name: 'Full Body Routine',
-      description: '3-day full body workout hitting all major muscle groups each session',
-      days: 3,
-      difficulty: 'Beginner',
-      focus: ['Full Body', 'Compound Movements', 'Efficiency'],
-      estimatedDuration: '60-75 min'
-    }
-  ];
-
-  const workoutDays: WorkoutDay[] = [
-    {
-      id: 'ppl-push',
-      splitId: 'push-pull-legs',
-      dayNumber: 1,
-      name: 'Push Day (Chest, Shoulders, Triceps)',
-      focus: ['Chest', 'Shoulders', 'Triceps'],
-      difficulty: 'Intermediate',
-      exercises: [
-        { exerciseId: '1', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rest: '3 min', weight: 'Heavy' },
-        { exerciseId: '2', name: 'Overhead Press', sets: 3, reps: '8-10', rest: '2-3 min', weight: 'Moderate' },
-        { exerciseId: '3', name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' }
-      ],
-      duration: 60
-    }
-  ];
-
-  const cardioSessions: CardioSession[] = [
-    {
-      id: 'hiit-fat-burn',
-      name: 'Fat Burning HIIT',
-      type: 'HIIT',
-      duration: 20,
-      intensity: 'High',
-      description: 'High-intensity intervals designed to maximize fat burn and improve cardiovascular fitness',
-      equipment: 'Treadmill/Bike',
-      instructions: [
-        'Warm up for 3 minutes at moderate pace',
-        '30 seconds all-out sprint (90-95% effort)',
-        '90 seconds active recovery (50-60% effort)',
-        'Repeat sprint/recovery cycle for 8 rounds'
-      ]
-    }
-  ];
-
-  // Only load exercises when user searches
-  const searchExercises = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setExercises([]);
-      return;
-    }
-
-    try {
-      setSearchLoading(true);
-      console.log('Searching exercises for:', query);
-      
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%,primary_muscles.cs.{${query}}`)
-        .eq('is_active', true)
-        .limit(20);
-
-      if (error) {
-        console.error('Exercise search error:', error);
-        toast({
-          title: 'Search Error',
-          description: 'Failed to search exercises. Using sample data.',
-          variant: 'destructive'
-        });
-        // Fallback to sample data
-        setExercises([
-          {
-            id: '1',
-            name: 'Barbell Bench Press',
-            description: 'The king of chest exercises targeting the entire pectoral region',
-            primary_muscles: ['Chest'],
-            secondary_muscles: ['Triceps', 'Front Deltoids'],
-            equipment: 'Barbell',
-            category: 'Strength',
-            difficulty_level: 'Intermediate',
-            mechanics: 'Compound'
-          }
-        ]);
-      } else {
-        console.log('Found exercises:', data?.length || 0);
-        setExercises(data || []);
-      }
-    } catch (error) {
-      console.error('Exercise search error:', error);
-      setExercises([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [toast]);
-
-  // Debounced search effect
+  // Initialize with a few sample exercises instead of loading all
   useEffect(() => {
-    if (activeTab === 'exercises' && searchQuery.trim()) {
-      const timer = setTimeout(() => {
-        searchExercises(searchQuery);
-      }, 300);
-      return () => clearTimeout(timer);
-    } else if (activeTab === 'exercises' && !searchQuery.trim()) {
-      setExercises([]);
+    if (!isInitialized) {
+      console.log('Initializing WorkoutLibrary with sample exercises');
+      getRandomExercises(8);
+      setIsInitialized(true);
     }
-  }, [searchQuery, activeTab, searchExercises]);
+  }, [isInitialized, getRandomExercises]);
 
-  // Safe filtering functions
-  const getFilteredSplits = useCallback(() => {
-    try {
-      return workoutSplits.filter(split => {
-        if (!split) return false;
-        const searchMatch = !searchQuery || 
-          split.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          split.description?.toLowerCase().includes(searchQuery.toLowerCase());
-        const difficultyMatch = !difficultyFilter || split.difficulty === difficultyFilter;
-        return searchMatch && difficultyMatch;
-      });
-    } catch (error) {
-      console.error('Error filtering splits:', error);
-      return workoutSplits;
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      console.log('Searching for:', query);
+      await searchExercises(query);
+    } else {
+      // Reset to sample exercises when search is cleared
+      await getRandomExercises(8);
     }
-  }, [searchQuery, difficultyFilter]);
+  };
 
-  const getFilteredDays = useCallback(() => {
-    try {
-      return workoutDays.filter(day => {
-        if (!day) return false;
-        const searchMatch = !searchQuery || 
-          day.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (day.focus && day.focus.some(f => f?.toLowerCase().includes(searchQuery.toLowerCase())));
-        const splitMatch = !selectedSplit || day.splitId === selectedSplit;
-        const difficultyMatch = !difficultyFilter || day.difficulty === difficultyFilter;
-        return searchMatch && splitMatch && difficultyMatch;
-      });
-    } catch (error) {
-      console.error('Error filtering days:', error);
-      return workoutDays;
+  const filterExercises = () => {
+    if (selectedFilter === 'all') return exercises;
+    return exercises.filter(exercise => 
+      exercise.difficulty_level?.toLowerCase() === selectedFilter.toLowerCase()
+    );
+  };
+
+  const filteredExercises = filterExercises();
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'beginner': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'intermediate': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'advanced': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
-  }, [searchQuery, selectedSplit, difficultyFilter]);
-
-  const getFilteredExercises = useCallback(() => {
-    try {
-      return exercises.filter(exercise => {
-        if (!exercise) return false;
-        const muscleMatch = muscleFilter.length === 0 || 
-          (exercise.primary_muscles && muscleFilter.some(muscle => 
-            exercise.primary_muscles.some(pm => pm?.toLowerCase().includes(muscle.toLowerCase()))
-          ));
-        const equipmentMatch = !equipmentFilter || 
-          exercise.equipment?.toLowerCase().includes(equipmentFilter.toLowerCase());
-        const difficultyMatch = !difficultyFilter || exercise.difficulty_level === difficultyFilter;
-        return muscleMatch && equipmentMatch && difficultyMatch;
-      });
-    } catch (error) {
-      console.error('Error filtering exercises:', error);
-      return exercises;
-    }
-  }, [exercises, muscleFilter, equipmentFilter, difficultyFilter]);
-
-  const getFilteredCardio = useCallback(() => {
-    try {
-      return cardioSessions.filter(session => {
-        if (!session) return false;
-        const searchMatch = !searchQuery || 
-          session.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          session.description?.toLowerCase().includes(searchQuery.toLowerCase());
-        return searchMatch;
-      });
-    } catch (error) {
-      console.error('Error filtering cardio:', error);
-      return cardioSessions;
-    }
-  }, [searchQuery]);
-
-  // Chat handlers
-  const handleSendMessage = useCallback(() => {
-    if (!chatMessage.trim()) return;
-    
-    try {
-      setChatHistory(prev => [...prev, { type: 'user', message: chatMessage }]);
-      
-      const responses = [
-        "Based on scientific research, progressive overload is the key principle for muscle growth.",
-        "Compound movements like squats, deadlifts, and bench press should form the foundation of your training.",
-        "Recovery is crucial - aim for 7-9 hours of sleep and allow 48-72 hours between training the same muscle groups.",
-        "Proper form always takes priority over heavy weight. Master the movement pattern first, then add load."
-      ];
-      
-      setTimeout(() => {
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        setChatHistory(prev => [...prev, { type: 'ai', message: randomResponse }]);
-      }, 1000);
-      
-      setChatMessage('');
-    } catch (error) {
-      console.error('Chat error:', error);
-      toast({
-        title: 'Chat Error',
-        description: 'Failed to send message',
-        variant: 'destructive'
-      });
-    }
-  }, [chatMessage, toast]);
-
-  // Get filtered data
-  const filteredSplits = getFilteredSplits();
-  const filteredDays = getFilteredDays();
-  const filteredExercises = getFilteredExercises();
-  const filteredCardio = getFilteredCardio();
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white relative">
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Button
-              variant="ghost"
-              onClick={onBack}
-              className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors font-medium flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>{navigationSource === 'library' ? 'Library' : 'Dashboard'}</span>
-            </Button>
-            <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
-              Workout Library
-            </h1>
-            <Button
-              variant="outline"
-              onClick={() => setShowAIChat(!showAIChat)}
-              className="border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              AI Coach
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+      {/* Mobile-optimized header */}
+      <div className="sticky top-0 z-10 bg-black/50 backdrop-blur-md border-b border-orange-500/20">
+        <div className="p-4 flex items-center space-x-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/20 p-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center space-x-3 flex-1">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-500/30 to-red-500/40 flex items-center justify-center border border-orange-500/30">
+              <Dumbbell className="w-4 h-4 text-orange-400" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-white">Workout Library</h1>
+              <p className="text-xs text-orange-300/80">Science-backed exercises</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content - Add top padding to account for fixed header */}
-      <div className="pt-16">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-          {/* Tab Navigation */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-orange-900/30 border-orange-500/40">
-              <TabsTrigger value="splits" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-                <Target className="w-4 h-4 mr-2" />
-                Splits
-              </TabsTrigger>
-              <TabsTrigger value="days" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-                <Calendar className="w-4 h-4 mr-2" />
-                Days
-              </TabsTrigger>
-              <TabsTrigger value="exercises" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-                <Dumbbell className="w-4 h-4 mr-2" />
-                Exercises
-              </TabsTrigger>
-              <TabsTrigger value="cardio" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-                <Heart className="w-4 h-4 mr-2" />
-                Cardio
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Search and Filters */}
+      <div className="p-4 space-y-4 max-w-4xl mx-auto">
+        {/* Search Section */}
+        <Card className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/30">
+          <CardContent className="p-4">
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-4 h-4" />
                 <Input
-                  placeholder={activeTab === 'exercises' ? 'Search exercises to load from database...' : `Search ${activeTab}...`}
+                  placeholder="Search exercises..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl"
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-10 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 focus:border-orange-400"
                 />
-                {searchLoading && (
-                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-orange-400" />
-                )}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {activeTab === 'exercises' && (
-                  <>
-                    <Select onValueChange={(value) => setMuscleFilter(value === '' ? [] : [value])}>
-                      <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                        <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                        <SelectValue placeholder="Filter by muscle" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                        <SelectItem value="">All Muscles</SelectItem>
-                        <SelectItem value="Chest">Chest</SelectItem>
-                        <SelectItem value="Back">Back</SelectItem>
-                        <SelectItem value="Shoulders">Shoulders</SelectItem>
-                        <SelectItem value="Biceps">Biceps</SelectItem>
-                        <SelectItem value="Triceps">Triceps</SelectItem>
-                        <SelectItem value="Quadriceps">Legs</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select onValueChange={setEquipmentFilter}>
-                      <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                        <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                        <SelectValue placeholder="Equipment" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                        <SelectItem value="">All Equipment</SelectItem>
-                        <SelectItem value="Barbell">Barbell</SelectItem>
-                        <SelectItem value="Dumbbell">Dumbbell</SelectItem>
-                        <SelectItem value="Machine">Machine</SelectItem>
-                        <SelectItem value="Bodyweight">Bodyweight</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </>
-                )}
-
-                <Select onValueChange={setDifficultyFilter}>
-                  <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                    <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                    <SelectValue placeholder="Difficulty" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                    <SelectItem value="">All Levels</SelectItem>
-                    <SelectItem value="Beginner">Beginner</SelectItem>
-                    <SelectItem value="Intermediate">Intermediate</SelectItem>
-                    <SelectItem value="Advanced">Advanced</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
+              
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedFilter('all')}
+                  className={selectedFilter === 'all' 
+                    ? 'bg-orange-500/30 text-orange-300 border-orange-500/50' 
+                    : 'border-orange-500/30 text-orange-400 hover:bg-orange-500/20'
+                  }
+                >
+                  All
+                </Button>
+                {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
                   <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    key={level}
+                    variant={selectedFilter === level ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 transition-all duration-200 ${
-                      viewMode === 'grid'
-                        ? 'bg-orange-500/30 text-orange-300'
-                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
-                    }`}
+                    onClick={() => setSelectedFilter(level)}
+                    className={selectedFilter === level 
+                      ? 'bg-orange-500/30 text-orange-300 border-orange-500/50' 
+                      : 'border-orange-500/30 text-orange-400 hover:bg-orange-500/20'
+                    }
                   >
-                    <Grid className="w-4 h-4" />
+                    {level}
                   </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 transition-all duration-200 ${
-                      viewMode === 'list'
-                        ? 'bg-orange-500/30 text-orange-300'
-                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
+                ))}
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Tab Content */}
-            <TabsContent value="splits" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSplits.map(split => (
-                  <Card key={split.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm hover:bg-orange-900/60 transition-all duration-200">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-white text-lg">{split.name}</CardTitle>
-                        <Badge variant="outline" className="border-orange-400/50 text-orange-300">
-                          {split.days} days
-                        </Badge>
-                      </div>
-                      <CardDescription className="text-orange-200/70">
-                        {split.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-400">Difficulty</span>
-                          <Badge variant={split.difficulty === 'Advanced' ? 'destructive' : split.difficulty === 'Intermediate' ? 'default' : 'secondary'}>
-                            {split.difficulty}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-400">Duration</span>
-                          <span className="text-orange-300 text-sm">{split.estimatedDuration}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {split.focus.map((focus, index) => (
-                            <Badge key={`${split.id}-focus-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
-                              {focus}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <LoadingSpinner />
+          </div>
+        )}
 
-            <TabsContent value="days" className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredDays.map(day => (
-                  <Card key={day.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-white text-lg">{day.name}</CardTitle>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4 text-orange-400" />
-                          <span className="text-orange-300 text-sm">{day.duration} min</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {day.focus.map((focus, index) => (
-                          <Badge key={`${day.id}-focus-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
-                            {focus}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {day.exercises.map((exercise, index) => (
-                          <div key={`${day.id}-exercise-${index}`} className="flex items-center justify-between p-2 bg-orange-800/20 rounded-lg">
-                            <div className="flex-1">
-                              <span className="text-white text-sm font-medium block">{exercise.name}</span>
-                              <span className="text-orange-400 text-xs">{exercise.weight} • Rest: {exercise.rest}</span>
-                            </div>
-                            <span className="text-orange-300 text-sm font-semibold">{exercise.sets}×{exercise.reps}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="exercises" className="mt-6">
-              {!searchQuery.trim() ? (
-                <div className="text-center py-16">
-                  <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
-                  <h3 className="text-2xl font-semibold text-white mb-2">Search to Load Exercises</h3>
-                  <p className="text-orange-300/70">Enter a search term to load exercises from our database</p>
+        {/* Results */}
+        {!loading && (
+          <>
+            {filteredExercises.length === 0 ? (
+              <Card className="bg-gray-900/40 border-gray-700/50">
+                <CardContent className="p-8 text-center">
+                  <Dumbbell className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">No exercises found</h3>
+                  <p className="text-gray-400">Try adjusting your search or filters</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-white">
+                    {searchQuery ? `Search Results (${filteredExercises.length})` : `Featured Exercises (${filteredExercises.length})`}
+                  </h2>
                 </div>
-              ) : filteredExercises.length === 0 && !searchLoading ? (
-                <div className="text-center py-16">
-                  <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
-                  <h3 className="text-2xl font-semibold text-white mb-2">No Exercises Found</h3>
-                  <p className="text-orange-300/70">Try a different search term or adjust your filters</p>
-                </div>
-              ) : (
-                <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
-                  {filteredExercises.map(exercise => (
-                    <Card key={exercise.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm hover:bg-orange-900/60 transition-all duration-200">
-                      <CardHeader>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredExercises.map((exercise) => (
+                    <Card 
+                      key={exercise.id}
+                      className="bg-gradient-to-br from-gray-900/60 to-gray-800/80 backdrop-blur-sm border-gray-700/50 hover:border-orange-500/50 transition-all duration-300 group"
+                    >
+                      <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
-                          <div className="space-y-2 flex-1">
-                            <CardTitle className="text-white text-base font-semibold">{exercise.name}</CardTitle>
-                            <div className="flex flex-wrap gap-1">
-                              {exercise.primary_muscles?.slice(0, 2).map((muscle, index) => (
-                                <Badge key={`${exercise.id}-muscle-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
-                                  {muscle}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">
-                            {exercise.difficulty_level}
+                          <CardTitle className="text-white text-lg group-hover:text-orange-300 transition-colors">
+                            {exercise.name}
+                          </CardTitle>
+                          <Badge className={getDifficultyColor(exercise.difficulty_level || 'Beginner')}>
+                            {exercise.difficulty_level || 'Beginner'}
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      
+                      <CardContent className="space-y-3">
+                        {exercise.description && (
+                          <p className="text-gray-300 text-sm leading-relaxed">
+                            {exercise.description}
+                          </p>
+                        )}
+                        
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-400">Equipment</span>
-                            <span className="text-orange-300">{exercise.equipment}</span>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="text-xs text-gray-400">Primary:</span>
+                            {exercise.primary_muscles?.map((muscle, index) => (
+                              <Badge 
+                                key={index}
+                                variant="outline" 
+                                className="text-xs border-orange-500/40 text-orange-400 bg-orange-500/10"
+                              >
+                                {muscle}
+                              </Badge>
+                            ))}
                           </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-400">Type</span>
-                            <span className="text-orange-300">{exercise.mechanics}</span>
+                          
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            <span>Equipment: {exercise.equipment}</span>
+                            <span>{exercise.mechanics || 'Compound'}</span>
                           </div>
-                          {exercise.description && (
-                            <p className="text-orange-200/80 text-xs mt-2">
-                              {exercise.description.substring(0, 100)}...
-                            </p>
-                          )}
                         </div>
+
+                        {exercise.form_cues && (
+                          <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                            <div className="flex items-start space-x-2">
+                              <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-blue-400 mb-1">Form Tips</p>
+                                <p className="text-xs text-blue-300/90">{exercise.form_cues}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="cardio" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredCardio.map(session => (
-                  <Card key={session.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-white text-lg">{session.name}</CardTitle>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="border-red-400/50 text-red-300">
-                            {session.type}
-                          </Badge>
-                          <Badge variant={session.intensity === 'High' ? 'destructive' : session.intensity === 'Moderate' ? 'default' : 'secondary'}>
-                            {session.intensity}
-                          </Badge>
-                        </div>
-                      </div>
-                      <CardDescription className="text-orange-200/70">
-                        {session.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-400">Duration</span>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="w-4 h-4 text-orange-400" />
-                            <span className="text-orange-300">{session.duration} min</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-400">Equipment</span>
-                          <span className="text-orange-300 text-sm">{session.equipment}</span>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-sm text-gray-400">Instructions:</span>
-                          <ul className="list-disc list-inside space-y-1 text-orange-200/80 text-sm">
-                            {session.instructions.slice(0, 3).map((instruction, index) => (
-                              <li key={`${session.id}-instruction-${index}`}>{instruction}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-
-      {/* AI Chat Sidebar */}
-      {showAIChat && (
-        <div className="fixed top-0 right-0 h-full w-80 bg-gray-900/95 backdrop-blur-md border-l border-gray-800 z-50 p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">AI Workout Coach</h2>
-            <Button variant="ghost" size="sm" onClick={() => setShowAIChat(false)}>
-              <X className="w-4 h-4 text-gray-400" />
-            </Button>
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-2 mb-4">
-            {chatHistory.length === 0 && (
-              <div className="text-center text-gray-400 text-sm py-8">
-                Ask me about workout programming, exercise form, training principles, or nutrition for optimal results!
-              </div>
+              </>
             )}
-            {chatHistory.map((message, index) => (
-              <div key={`chat-${index}`} className={`p-3 rounded-lg ${message.type === 'user' ? 'bg-orange-800/30 text-white ml-4' : 'bg-gray-800/30 text-gray-300 mr-4'}`}>
-                {message.message}
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Ask about workouts, form, programming..."
-              value={chatMessage}
-              onChange={(e) => setChatMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="bg-gray-800/50 border-gray-700/50 text-white flex-1"
-            />
-            <Button onClick={handleSendMessage} size="sm" className="bg-orange-600 hover:bg-orange-700">
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

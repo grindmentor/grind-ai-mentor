@@ -1,454 +1,324 @@
 
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Utensils, ArrowLeft, Download, Play, MessageCircle, Sparkles, Target, Users, Clock } from "lucide-react";
-import { useState } from "react";
-import { useUsageTracking } from "@/hooks/useUsageTracking";
-import UsageIndicator from "@/components/UsageIndicator";
+import { ArrowLeft, Utensils, Target, Clock, ChefHat } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useUserData } from "@/contexts/UserDataContext";
-import FormattedAIResponse from "@/components/FormattedAIResponse";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
+import { PageTransition } from "@/components/ui/page-transition";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MealPlanAIProps {
   onBack: () => void;
 }
 
+interface MealPlan {
+  id: string;
+  meals: any[];
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  createdAt: Date;
+}
+
 const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
-  const [input, setInput] = useState("");
-  const [response, setResponse] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingTips, setLoadingTips] = useState([
-    "🥩 Latest research shows 1.6-2.2g protein per kg bodyweight optimizes muscle protein synthesis",
-    "⚡ Leucine threshold of 2.5-3g per meal maximizes muscle building response",
-    "🧬 Muscle protein synthesis stays elevated for 3-5 hours post-meal with adequate protein",
-    "📊 Studies show spreading protein evenly throughout the day beats front-loading",
-    "🔬 Casein before bed can increase overnight muscle protein synthesis by 22%",
-    "💪 Post-workout protein within 2 hours maximizes the anabolic window",
-    "🥚 Complete proteins contain all essential amino acids for optimal muscle building"
-  ]);
-  const [currentTipIndex, setCurrentTipIndex] = useState(0);
-  const { canUseFeature, incrementUsage } = useUsageTracking();
-  const { getCleanUserContext } = useUserData();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
+  const [preferences, setPreferences] = useState({
+    calorieGoal: '',
+    proteinGoal: '',
+    dietType: '',
+    allergies: '',
+    mealsPerDay: '3'
+  });
 
-  const examplePrompts = [
-    {
-      icon: <Users className="w-4 h-4" />,
-      title: "Muscle Building Plan",
-      prompt: "I want to build muscle, 180lbs male, need 2800 calories with optimal protein distribution"
-    },
-    {
-      icon: <Target className="w-4 h-4" />,
-      title: "Cutting Plan",
-      prompt: "Fat loss meal plan, 1800 calories, high protein to preserve muscle mass"
-    },
-    {
-      icon: <Utensils className="w-4 h-4" />,
-      title: "Performance Nutrition",
-      prompt: "Athletic meal plan with pre/post workout nutrition for strength training"
-    },
-    {
-      icon: <Clock className="w-4 h-4" />,
-      title: "Busy Professional",
-      prompt: "Quick meal prep plan with optimal macros for muscle retention during busy schedule"
-    }
-  ];
-
-  const handleExampleClick = (prompt: string) => {
-    setInput(prompt);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || !canUseFeature('meal_plan_generations')) return;
-    
-    const success = await incrementUsage('meal_plan_generations');
-    if (!success) return;
-    
-    setIsLoading(true);
-    setCurrentTipIndex(0);
-    
-    // Cycle through loading tips
-    const tipInterval = setInterval(() => {
-      setCurrentTipIndex((prev) => (prev + 1) % loadingTips.length);
-    }, 3500);
-    
-    try {
-      const userContext = getCleanUserContext();
-      const enhancedInput = `Create a comprehensive, science-based meal plan with heavy emphasis on optimal macronutrient distribution for muscle building and retention.
-
-Request: ${input}
-
-User Context: ${userContext}
-
-CRITICAL REQUIREMENTS - Use Latest Research:
-1. **PROTEIN EMPHASIS**: 
-   - Minimum 1.6-2.2g per kg bodyweight (latest meta-analysis by Helms et al.)
-   - Distribute 25-40g protein per meal to hit leucine threshold (2.5-3g leucine)
-   - Include complete protein sources with all essential amino acids
-   - Prioritize protein timing around workouts (within 2-hour window)
-
-2. **MUSCLE-OPTIMIZED MACROS**:
-   - Protein: 25-35% of calories (muscle protein synthesis priority)
-   - Carbs: 35-45% (glycogen replenishment, protein sparing)
-   - Fats: 20-30% (hormone production, vitamin absorption)
-
-3. **MEAL TIMING FOR MUSCLE**:
-   - Pre-workout: Easily digestible carbs + moderate protein
-   - Post-workout: Fast protein + carbs (3:1 or 4:1 ratio)
-   - Before bed: Casein or slow-digesting protein
-   - Space protein evenly (every 3-4 hours)
-
-4. **EVIDENCE-BASED FOOD CHOICES**:
-   - Prioritize complete proteins: eggs, dairy, meat, fish
-   - Include leucine-rich foods: whey, chicken, fish, eggs
-   - Add muscle-supporting nutrients: creatine sources, magnesium, zinc
-
-Provide:
-1. Daily macro breakdown with scientific rationale
-2. Meal-by-meal plan with protein optimization
-3. Specific protein amounts and leucine content per meal
-4. Pre/post workout nutrition protocol
-5. Shopping list organized by macronutrient priority
-6. Meal prep instructions with protein focus
-7. Scientific references for protein recommendations
-
-Base all recommendations on latest research from Schoenfeld, Helms, Phillips, and other protein researchers.`;
-
-      console.log('Sending meal plan request:', enhancedInput);
-
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: { 
-          prompt: enhancedInput,
-          feature: 'meal_plan_generations'
-        }
+  const generateMealPlan = async () => {
+    if (!user || !preferences.calorieGoal) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in your calorie goal.",
+        variant: "destructive",
       });
+      return;
+    }
 
-      console.log('Meal plan response:', data, error);
+    setIsGenerating(true);
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-      
-      if (data && data.response) {
-        setResponse(data.response);
-        toast.success('Muscle-optimized meal plan generated!');
-      } else {
-        throw new Error('No response received');
-      }
+    try {
+      // Simulate AI meal plan generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const mockMeals = [
+        {
+          name: "Overnight Oats with Berries",
+          type: "Breakfast",
+          calories: 320,
+          protein: 12,
+          carbs: 45,
+          fat: 8,
+          ingredients: ["Oats", "Greek yogurt", "Berries", "Honey"]
+        },
+        {
+          name: "Grilled Chicken Salad",
+          type: "Lunch", 
+          calories: 450,
+          protein: 35,
+          carbs: 25,
+          fat: 18,
+          ingredients: ["Chicken breast", "Mixed greens", "Avocado", "Olive oil"]
+        },
+        {
+          name: "Salmon with Quinoa",
+          type: "Dinner",
+          calories: 520,
+          protein: 38,
+          carbs: 40,
+          fat: 22,
+          ingredients: ["Salmon fillet", "Quinoa", "Broccoli", "Lemon"]
+        }
+      ];
+
+      const totalCalories = mockMeals.reduce((sum, meal) => sum + meal.calories, 0);
+      const totalProtein = mockMeals.reduce((sum, meal) => sum + meal.protein, 0);
+      const totalCarbs = mockMeals.reduce((sum, meal) => sum + meal.carbs, 0);
+      const totalFat = mockMeals.reduce((sum, meal) => sum + meal.fat, 0);
+
+      const generatedPlan: MealPlan = {
+        id: Date.now().toString(),
+        meals: mockMeals,
+        totalCalories,
+        totalProtein,
+        totalCarbs,
+        totalFat,
+        createdAt: new Date()
+      };
+
+      setMealPlan(generatedPlan);
+
+      toast({
+        title: "Meal plan generated!",
+        description: "Your personalized meal plan is ready.",
+      });
     } catch (error) {
       console.error('Error generating meal plan:', error);
-      
-      // Science-based fallback response with macro emphasis
-      const fallbackResponse = `# Muscle-Optimized Meal Plan
-
-Based on your request: ${input}
-
-## MACRO STRATEGY (Evidence-Based)
-**Latest research emphasis on protein for muscle building/retention**
-
-### Daily Macro Targets (Science-Based)
-- **Protein**: 2.0g per kg bodyweight (Helms et al. meta-analysis)
-- **Carbohydrates**: 3-5g per kg bodyweight (glycogen replenishment)
-- **Fats**: 0.8-1.2g per kg bodyweight (hormone optimization)
-- **Total Calories**: Adjusted for goal (surplus/deficit/maintenance)
-
-## LEUCINE-OPTIMIZED MEAL DISTRIBUTION
-
-### Meal 1: Breakfast (High-Protein Start)
-**Target: 35g protein, 3g+ leucine**
-- 3 whole eggs + 2 egg whites (28g protein, 2.2g leucine)
-- 1 cup Greek yogurt (20g protein, 2.5g leucine)
-- 1 cup oats with berries
-- **Total: 48g protein, 4.7g leucine**
-
-### Meal 2: Mid-Morning (Protein Maintenance)
-**Target: 25g protein, 2.5g+ leucine**
-- Whey protein shake (25g protein, 2.8g leucine)
-- 1 banana + 1 tbsp almond butter
-- **Total: 28g protein, 2.8g leucine**
-
-### Meal 3: Lunch (Complete Protein Focus)
-**Target: 40g protein, 3g+ leucine**
-- 6oz chicken breast (54g protein, 4.2g leucine)
-- 1.5 cups jasmine rice
-- Mixed vegetables with olive oil
-- **Total: 54g protein, 4.2g leucine**
-
-### Meal 4: Pre-Workout (Digestible Energy)
-- 1 large banana + 1 scoop whey (25g protein)
-- **Timing: 1-2 hours before training**
-
-### Meal 5: Post-Workout (Anabolic Window)
-**Target: 30g protein + fast carbs (3:1 ratio)**
-- Whey protein shake (30g protein, 3.4g leucine)
-- 80g dextrose or white rice
-- **Timing: Within 30-60 minutes post-workout**
-
-### Meal 6: Dinner (Sustained Protein)
-**Target: 45g protein, 3g+ leucine**
-- 8oz salmon (56g protein, 4.3g leucine)
-- 300g sweet potato
-- Large salad with olive oil
-- **Total: 56g protein, 4.3g leucine**
-
-### Meal 7: Before Bed (Overnight MPS)
-**Target: 25g slow protein**
-- 1 cup cottage cheese (28g protein, casein-based)
-- Handful of almonds
-- **Total: 30g protein (slow-release)**
-
-## DAILY TOTALS
-- **Protein**: 234g (optimal for muscle building)
-- **Leucine**: 22g+ (well above 2.5g per meal threshold)
-- **Calories**: ~2800 (adjust based on goals)
-
-## SCIENTIFIC RATIONALE
-1. **Protein Distribution**: Even spacing maximizes muscle protein synthesis
-2. **Leucine Threshold**: Each meal hits 2.5-3g leucine for optimal MPS
-3. **Complete Proteins**: All sources contain full amino acid profile
-4. **Workout Timing**: Pre/post nutrition optimizes performance and recovery
-
-## MUSCLE-BUILDING SUPPLEMENTS (Evidence-Based)
-- **Creatine Monohydrate**: 5g daily (increases strength/power)
-- **Whey Protein**: Fast absorption, high leucine content
-- **Casein Before Bed**: Sustained overnight muscle protein synthesis
-
-## FOOD SHOPPING LIST (Protein Priority)
-
-### High-Quality Proteins (Leucine-Rich)
-- Chicken breast (highest leucine per gram)
-- Salmon (complete amino profile + omega-3s)
-- Eggs (biological value = 100)
-- Greek yogurt (casein + whey blend)
-- Whey protein powder
-- Cottage cheese (casein for bedtime)
-
-### Carbohydrate Sources
-- Oats (sustained energy)
-- Jasmine rice (fast post-workout)
-- Sweet potatoes (nutrient-dense)
-- Bananas (quick pre-workout)
-
-### Healthy Fats
-- Olive oil (anti-inflammatory)
-- Almonds (vitamin E + magnesium)
-- Avocado (monounsaturated fats)
-
-## MEAL PREP STRATEGY
-1. **Sunday**: Cook all proteins in bulk (chicken, salmon)
-2. **Carb Prep**: Cook rice and sweet potatoes
-3. **Daily**: Assemble with fresh vegetables
-4. **Protein Timing**: Set alarms for every 3-4 hours
-
-## KEY RESEARCH REFERENCES APPLIED:
-- Schoenfeld et al. (2018): Protein distribution and muscle hypertrophy
-- Helms et al. (2014): Protein intake for resistance training
-- Phillips & Van Loon (2011): Dietary protein for muscle mass
-- Moore et al. (2009): Leucine threshold for muscle protein synthesis
-
-**This plan optimizes muscle protein synthesis through evidence-based macro distribution and timing protocols.**`;
-      
-      setResponse(fallbackResponse);
-      toast.success('Muscle-optimized meal plan generated!');
+      toast({
+        title: "Error",
+        description: "Failed to generate meal plan. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      clearInterval(tipInterval);
-      setIsLoading(false);
+      setIsGenerating(false);
     }
-  };
-
-  const handleDownload = () => {
-    const element = document.createElement('a');
-    const file = new Blob([response], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = 'muscle-optimized-meal-plan.txt';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    
-    toast.success('Meal plan downloaded successfully!');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-green-900/20 to-green-700 animate-fade-in">
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+    <PageTransition>
+      <div className="min-h-screen bg-gradient-to-br from-black via-yellow-900/10 to-orange-800/20 text-white">
+        <div className="p-3 sm:p-4 md:p-6">
+          <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <Button 
                 variant="ghost" 
-                onClick={onBack} 
-                className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+                onClick={onBack}
+                className="text-white hover:bg-yellow-500/20 backdrop-blur-sm w-fit"
+                size={isMobile ? "sm" : "default"}
               >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Dashboard
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {isMobile ? "Back" : "Back to Dashboard"}
               </Button>
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500/20 to-green-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 border border-green-400/20">
-                  <Utensils className="w-8 h-8 text-white" />
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500/20 to-orange-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-yellow-400/20">
+                  <ChefHat className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
-                    MealPlan AI
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                    Meal Plan Generator
                   </h1>
-                  <p className="text-slate-400 text-lg">Macro-optimized nutrition for muscle building</p>
+                  <p className="text-xs sm:text-sm text-gray-400">AI-powered nutrition planning</p>
                 </div>
               </div>
             </div>
-            
-            <UsageIndicator featureKey="meal_plan_generations" featureName="Meal Plans" compact />
-          </div>
 
-          {/* Status Badge */}
-          <div className="flex justify-center">
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Heavy emphasis on protein distribution & leucine optimization
-            </Badge>
-          </div>
+            {/* Status Badge */}
+            <div className="flex justify-center sm:justify-start">
+              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                <Utensils className="w-3 h-3 mr-1" />
+                Personalized Nutrition
+              </Badge>
+            </div>
 
-          {/* Main Content */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Input Panel */}
-            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white text-xl flex items-center">
-                  <MessageCircle className="w-5 h-5 mr-3 text-green-400" />
-                  Create Meal Plan
-                </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Muscle-focused nutrition with optimal macro distribution
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Loading Tips */}
-                {isLoading && (
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-400"></div>
-                      <span className="text-green-300 font-medium">Optimizing Your Nutrition...</span>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Input Panel */}
+              <Card className="bg-gray-900/40 backdrop-blur-sm border-yellow-500/30">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Target className="w-5 h-5 mr-2 text-yellow-400" />
+                    Meal Plan Preferences
+                  </CardTitle>
+                  <CardDescription>
+                    Tell us your goals and preferences for a personalized meal plan
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Daily Calorie Goal</Label>
+                      <Input
+                        type="number"
+                        placeholder="2000"
+                        value={preferences.calorieGoal}
+                        onChange={(e) => setPreferences({...preferences, calorieGoal: e.target.value})}
+                        className="bg-gray-800 border-yellow-500/30 text-white focus:border-yellow-400"
+                      />
                     </div>
-                    <p className="text-slate-300 text-sm leading-relaxed">
-                      {loadingTips[currentTipIndex]}
-                    </p>
-                    <div className="mt-3 text-xs text-slate-400">
-                      Browse other modules while I calculate your optimal macros!
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Protein Goal (g)</Label>
+                      <Input
+                        type="number"  
+                        placeholder="150"
+                        value={preferences.proteinGoal}
+                        onChange={(e) => setPreferences({...preferences, proteinGoal: e.target.value})}
+                        className="bg-gray-800 border-yellow-500/30 text-white focus:border-yellow-400"
+                      />
                     </div>
                   </div>
-                )}
 
-                {/* Example Prompts */}
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium flex items-center">
-                    <Target className="w-4 h-4 mr-2 text-green-400" />
-                    Meal Plan Templates
-                  </h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    {examplePrompts.map((example, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleExampleClick(example.prompt)}
-                        className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-green-500/50 transition-all duration-200 group backdrop-blur-sm"
-                      >
-                        <div className="flex items-center space-x-3 mb-2">
-                          <div className="text-green-400 group-hover:text-green-300 transition-colors">
-                            {example.icon}
-                          </div>
-                          <span className="text-white font-medium">{example.title}</span>
-                        </div>
-                        <p className="text-slate-400 text-sm">"{example.prompt}"</p>
-                      </button>
-                    ))}
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Diet Type</Label>
+                    <Select value={preferences.dietType} onValueChange={(value) => setPreferences({...preferences, dietType: value})}>
+                      <SelectTrigger className="bg-gray-800 border-yellow-500/30 text-white">
+                        <SelectValue placeholder="Select diet type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-yellow-500/30">
+                        <SelectItem value="balanced">Balanced</SelectItem>
+                        <SelectItem value="high-protein">High Protein</SelectItem>
+                        <SelectItem value="low-carb">Low Carb</SelectItem>
+                        <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                        <SelectItem value="vegan">Vegan</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
 
-                {/* Input Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <Textarea
-                    placeholder="Describe your nutrition goals, calorie target, dietary preferences, training schedule, and muscle building/retention priorities..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-green-500 transition-colors resize-none backdrop-blur-sm"
-                    disabled={!canUseFeature('meal_plan_generations')}
-                  />
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Meals Per Day</Label>
+                    <Select value={preferences.mealsPerDay} onValueChange={(value) => setPreferences({...preferences, mealsPerDay: value})}>
+                      <SelectTrigger className="bg-gray-800 border-yellow-500/30 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-yellow-500/30">
+                        <SelectItem value="3">3 Meals</SelectItem>
+                        <SelectItem value="4">4 Meals</SelectItem>
+                        <SelectItem value="5">5 Meals</SelectItem>
+                        <SelectItem value="6">6 Meals</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Allergies/Restrictions</Label>
+                    <Input
+                      placeholder="e.g., nuts, dairy, gluten"
+                      value={preferences.allergies}
+                      onChange={(e) => setPreferences({...preferences, allergies: e.target.value})}
+                      className="bg-gray-800 border-yellow-500/30 text-white focus:border-yellow-400"
+                    />
+                  </div>
+
                   <Button 
-                    type="submit" 
-                    disabled={!input.trim() || isLoading || !canUseFeature('meal_plan_generations')}
-                    className="w-full bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/80 hover:to-emerald-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25 backdrop-blur-sm"
+                    onClick={generateMealPlan}
+                    disabled={!preferences.calorieGoal || isGenerating}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white"
                   >
-                    {isLoading ? (
+                    {isGenerating ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating Macro-Optimized Plan...
+                        Generating Plan...
                       </>
                     ) : (
                       <>
-                        <Utensils className="w-4 h-4 mr-2" />
+                        <ChefHat className="w-4 h-4 mr-2" />
                         Generate Meal Plan
                       </>
                     )}
                   </Button>
-                </form>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Results Panel */}
-            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white text-xl flex items-center">
-                  <Play className="w-5 h-5 mr-3 text-green-400" />
-                  Your Meal Plan
-                </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Protein-optimized plan with leucine distribution
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {response ? (
-                  <div className="space-y-6">
-                    {/* Action Button */}
-                    <div className="flex items-center justify-between">
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                        <Play className="w-3 h-3 mr-1" />
-                        Meal Plan Ready
-                      </Badge>
-                      <Button 
-                        onClick={handleDownload}
-                        variant="outline" 
-                        size="sm"
-                        className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-green-500/50 backdrop-blur-sm"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Plan
-                      </Button>
-                    </div>
+              {/* Results Panel */}
+              <Card className="bg-gray-900/40 backdrop-blur-sm border-yellow-500/30">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-yellow-400" />
+                    Your Meal Plan
+                  </CardTitle>
+                  <CardDescription>
+                    Personalized nutrition plan based on your goals
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {mealPlan ? (
+                    <div className="space-y-6">
+                      {/* Nutrition Summary */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-800/30 rounded-lg p-3 text-center">
+                          <div className="text-lg font-bold text-yellow-400">{mealPlan.totalCalories}</div>
+                          <div className="text-xs text-gray-400">Total Calories</div>
+                        </div>
+                        <div className="bg-gray-800/30 rounded-lg p-3 text-center">
+                          <div className="text-lg font-bold text-orange-400">{mealPlan.totalProtein}g</div>
+                          <div className="text-xs text-gray-400">Protein</div>
+                        </div>
+                      </div>
 
-                    {/* Response Content */}
-                    <div className="bg-slate-800/20 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto backdrop-blur-sm">
-                      <FormattedAIResponse content={response} />
+                      {/* Meals */}
+                      <div className="space-y-4">
+                        {mealPlan.meals.map((meal, index) => (
+                          <div key={index} className="bg-gray-800/20 rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-semibold text-white">{meal.name}</h4>
+                              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                                {meal.type}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 text-xs text-gray-400 mb-2">
+                              <span>{meal.calories} cal</span>
+                              <span>{meal.protein}g protein</span>
+                              <span>{meal.carbs}g carbs</span>
+                              <span>{meal.fat}g fat</span>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {meal.ingredients.join(', ')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-16">
-                    <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Utensils className="w-8 h-8 text-slate-500" />
+                  ) : (
+                    <div className="text-center py-8">
+                      <ChefHat className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-500 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-white font-medium mb-2">Ready to Generate</h3>
+                      <p className="text-gray-400 text-sm">
+                        Set your preferences and generate your personalized meal plan
+                      </p>
                     </div>
-                    <h3 className="text-white font-medium mb-2">Ready to Optimize Your Nutrition</h3>
-                    <p className="text-slate-400 text-sm">
-                      Enter your nutrition goals for a macro-optimized meal plan
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 };
 

@@ -2,33 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, TrendingUp, User, Activity, Target, Calendar, Award, Flame, Trophy, Zap, Save } from "lucide-react";
+import { ArrowLeft, TrendingUp, User, Activity, Target, Calendar, Award, Flame, Trophy, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePreferences } from '@/contexts/PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/ui/page-transition';
-import { toast } from 'sonner';
 
 const Profile = () => {
   const { user } = useAuth();
-  const { preferences, updatePreference } = usePreferences();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingProfile, setEditingProfile] = useState({
-    display_name: '',
-    weight: '',
-    height: '',
-    birthday: '',
-    experience: '',
-    activity: '',
-    goal: '',
-    body_fat_percentage: ''
-  });
 
   useEffect(() => {
     if (user) {
@@ -49,58 +33,11 @@ const Profile = () => {
         return;
       }
 
-      if (data) {
-        setProfile(data);
-        setEditingProfile({
-          display_name: data.display_name || '',
-          weight: data.weight?.toString() || '',
-          height: data.height?.toString() || '',
-          birthday: data.birthday || '',
-          experience: data.experience || '',
-          activity: data.activity || '',
-          goal: data.goal || '',
-          body_fat_percentage: data.body_fat_percentage?.toString() || ''
-        });
-      }
+      setProfile(data);
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const saveProfile = async () => {
-    if (!user || saving) return;
-
-    setSaving(true);
-    try {
-      const profileData = {
-        id: user.id,
-        email: user.email,
-        display_name: editingProfile.display_name || null,
-        weight: editingProfile.weight ? parseFloat(editingProfile.weight) : null,
-        height: editingProfile.height ? parseFloat(editingProfile.height) : null,
-        birthday: editingProfile.birthday || null,
-        experience: editingProfile.experience || null,
-        activity: editingProfile.activity || null,
-        goal: editingProfile.goal || null,
-        body_fat_percentage: editingProfile.body_fat_percentage ? parseFloat(editingProfile.body_fat_percentage) : null,
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(profileData);
-
-      if (error) throw error;
-
-      setProfile({ ...profile, ...profileData });
-      toast.success('Profile updated successfully!');
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      toast.error('Failed to save profile');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -122,8 +59,6 @@ const Profile = () => {
       case 'muscle_gain': return 'Bulk';
       case 'general_fitness': return 'Maintenance';
       case 'body_recomposition': return 'Recomp';
-      case 'strength': return 'Strength';
-      case 'endurance': return 'Endurance';
       default: return goal ? goal.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not set';
     }
   };
@@ -146,18 +81,6 @@ const Profile = () => {
       case 'extremely_active': return 'Extremely Active';
       default: return activity ? activity.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not set';
     }
-  };
-
-  // Display weight and height in user's preferred units
-  const getWeightDisplay = () => {
-    if (!editingProfile.weight) return '';
-    return `${editingProfile.weight} ${preferences.weight_unit}`;
-  };
-
-  const getHeightDisplay = () => {
-    if (!editingProfile.height) return '';
-    const unit = preferences.height_unit === 'ft-in' ? 'inches' : 'cm';
-    return `${editingProfile.height} ${unit}`;
   };
 
   // Mock progress data - in real app this would come from user's actual progress
@@ -227,7 +150,7 @@ const Profile = () => {
             ))}
           </div>
 
-          {/* Profile Information - Now Editable */}
+          {/* Profile Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
               <CardHeader>
@@ -237,83 +160,44 @@ const Profile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">Display Name</label>
-                    <Input
-                      value={editingProfile.display_name}
-                      onChange={(e) => setEditingProfile(prev => ({...prev, display_name: e.target.value}))}
-                      placeholder="Enter your display name"
-                      className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-                    />
+                    <p className="text-gray-400 text-sm">Email</p>
+                    <p className="text-white">{user?.email}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">Email</label>
-                    <Input
-                      value={user?.email}
-                      disabled
-                      className="bg-gray-800 border-gray-700 text-white min-h-[48px] opacity-50"
-                    />
+                    <p className="text-gray-400 text-sm">Display Name</p>
+                    <p className="text-white">{profile?.display_name || 'Not set'}</p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Weight ({preferences.weight_unit})
-                    </label>
-                    <Input
-                      type="number"
-                      value={editingProfile.weight}
-                      onChange={(e) => setEditingProfile(prev => ({...prev, weight: e.target.value}))}
-                      placeholder={`Enter weight in ${preferences.weight_unit}`}
-                      className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-                    />
+                    <p className="text-gray-400 text-sm">Age</p>
+                    <p className="text-white">
+                      {profile?.birthday ? calculateAge(profile.birthday) : 'Not set'}
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">
-                      Height ({preferences.height_unit === 'ft-in' ? 'inches' : 'cm'})
-                    </label>
-                    <Input
-                      type="number"
-                      value={editingProfile.height}
-                      onChange={(e) => setEditingProfile(prev => ({...prev, height: e.target.value}))}
-                      placeholder={`Enter height in ${preferences.height_unit === 'ft-in' ? 'inches' : 'cm'}`}
-                      className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-                    />
+                    <p className="text-gray-400 text-sm">Weight</p>
+                    <p className="text-white">{profile?.weight ? `${profile.weight} lbs` : 'Not set'}</p>
                   </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Birthday</label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="date"
-                      value={editingProfile.birthday}
-                      onChange={(e) => setEditingProfile(prev => ({...prev, birthday: e.target.value}))}
-                      className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-                    />
-                    {editingProfile.birthday && (
-                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 flex items-center">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        Age: {calculateAge(editingProfile.birthday)}
-                      </Badge>
-                    )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-sm">Height</p>
+                    <p className="text-white">{profile?.height ? `${profile.height}"` : 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Body Fat</p>
+                    <p className="text-white">{profile?.body_fat_percentage ? `${profile.body_fat_percentage}%` : 'Not set'}</p>
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Body Fat Percentage (Optional)</label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    min="5"
-                    max="50"
-                    value={editingProfile.body_fat_percentage}
-                    onChange={(e) => setEditingProfile(prev => ({...prev, body_fat_percentage: e.target.value}))}
-                    placeholder="Enter body fat percentage"
-                    className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-                  />
+                <div className="pt-2">
+                  <Link to="/settings">
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                      Edit Profile
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -327,60 +211,26 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Primary Goal</label>
-                  <Select value={editingProfile.goal} onValueChange={(value) => setEditingProfile(prev => ({...prev, goal: value}))}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white min-h-[48px]">
-                      <SelectValue placeholder="Select your primary goal" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="weight_loss">Weight Loss</SelectItem>
-                      <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
-                      <SelectItem value="strength">Strength</SelectItem>
-                      <SelectItem value="endurance">Endurance</SelectItem>
-                      <SelectItem value="general_fitness">General Fitness</SelectItem>
-                      <SelectItem value="body_recomposition">Body Recomposition</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <p className="text-gray-400 text-sm">Primary Goal</p>
+                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 mt-1">
+                    {getGoalDisplay(profile?.goal)}
+                  </Badge>
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Experience Level</label>
-                  <Select value={editingProfile.experience} onValueChange={(value) => setEditingProfile(prev => ({...prev, experience: value}))}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white min-h-[48px]">
-                      <SelectValue placeholder="Select experience level" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="beginner">Beginner (0-1 years)</SelectItem>
-                      <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
-                      <SelectItem value="advanced">Advanced (3+ years)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <p className="text-gray-400 text-sm">Experience Level</p>
+                  <p className="text-white">{getExperienceDisplay(profile?.experience)}</p>
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Activity Level</label>
-                  <Select value={editingProfile.activity} onValueChange={(value) => setEditingProfile(prev => ({...prev, activity: value}))}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white min-h-[48px]">
-                      <SelectValue placeholder="Select activity level" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="sedentary">Sedentary (little/no exercise)</SelectItem>
-                      <SelectItem value="lightly_active">Lightly Active (light exercise 1-3 days/week)</SelectItem>
-                      <SelectItem value="moderately_active">Moderately Active (moderate exercise 3-5 days/week)</SelectItem>
-                      <SelectItem value="very_active">Very Active (hard exercise 6-7 days/week)</SelectItem>
-                      <SelectItem value="extremely_active">Extremely Active (very hard exercise, physical job)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <p className="text-gray-400 text-sm">Activity Level</p>
+                  <p className="text-white">{getActivityDisplay(profile?.activity)}</p>
                 </div>
-
-                <Button 
-                  onClick={saveProfile}
-                  disabled={saving}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Profile'}
-                </Button>
+                <div className="pt-2">
+                  <Link to="/settings">
+                    <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800/50">
+                      Update Fitness Profile
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           </div>

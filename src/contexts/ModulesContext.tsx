@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext } from 'react';
-import { Activity, BarChart3, BookOpen, Calendar, CheckCircle, Cloud, Code, CreditCard, Flame, LayoutDashboard, ListChecks, LucideIcon, Mailbox, MessageSquare, Monitor, Settings, Shield, ShoppingCart, Star, User, Users, Wallet, Weight } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, Calendar, CheckCircle, Cloud, Code, CreditCard, Flame, LayoutDashboard, ListChecks, LucideIcon, Mailbox, MessageSquare, Monitor, Settings, Shield, ShoppingCart, Star, User, Users, Wallet, Weight, Brain } from 'lucide-react';
 
-interface Module {
+export interface Module {
   id: string;
   title: string;
   description: string;
@@ -219,3 +219,6 @@ export const useModules = () => {
   }
   return context;
 };
+
+// Default export for backward compatibility
+export default ModulesProvider;

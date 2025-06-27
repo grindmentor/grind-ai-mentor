@@ -1,16 +1,17 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Bot, User, Zap, Target, Utensils } from 'lucide-react';
+import { MessageSquare, Send, Bot, User, Zap, Target, Utensils, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import { optimizedAiService } from '@/services/optimizedAiService';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { LoadingSpinner } from '@/components/ui/loading-screen';
 
 interface Message {
   id: string;
@@ -26,26 +27,46 @@ interface CoachGPTProps {
 export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationLoaded, setConversationLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Memoized system context to prevent recreation
+  const coachSystemContext = useMemo(() => `
+You are CoachGPT, an expert fitness coach for Myotopia. You provide helpful, motivational, and science-backed fitness advice. 
+
+IMPORTANT RESTRICTIONS:
+- You do NOT create meal plans or detailed nutrition plans - redirect users to the Meal Plan AI module
+- You do NOT create detailed training programs or workout routines - redirect users to the Smart Training module
+- You focus ONLY on: exercise form, technique tips, training principles, motivation, mindset, recovery advice, and answering general fitness questions
+
+Your responses should be:
+- Concise but informative (under 200 words)
+- Encouraging and professional
+- Science-backed when relevant
+- Clear about your limitations
+
+If asked about meal plans or detailed training programs, politely redirect to the appropriate Myotopia modules.
+`, []);
+
   useEffect(() => {
-    if (user) {
+    if (user && !conversationLoaded) {
       loadConversationHistory();
     }
-  }, [user]);
+  }, [user, conversationLoaded]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
-  const loadConversationHistory = async () => {
+  const loadConversationHistory = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -54,7 +75,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
-        .limit(50);
+        .limit(20); // Limit to recent messages for better performance
 
       if (error) throw error;
 
@@ -68,10 +89,12 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       setMessages(conversationMessages);
     } catch (error) {
       console.error('Error loading conversation:', error);
+    } finally {
+      setConversationLoaded(true);
     }
-  };
+  }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading || !user) return;
 
@@ -97,15 +120,16 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
           message_content: userMessage.content
         });
 
-      // Check for meal plan or training program requests
+      // Check for meal plan or training program requests and redirect
       const lowerInput = input.toLowerCase();
       if (lowerInput.includes('meal plan') || lowerInput.includes('diet plan') || lowerInput.includes('nutrition plan')) {
         const redirectMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: "I see you're interested in meal planning! For personalized meal plans, I recommend using our dedicated **Meal Plan AI** module. It's specifically designed to create detailed meal plans based on your goals, dietary preferences, and restrictions.\n\nYou can find it in your dashboard. I'm here to help with general fitness coaching, motivation, and answering questions about training techniques! 💪",
+          content: "I see you're interested in meal planning! 🍽️\n\nFor personalized meal plans, I recommend using our dedicated **Meal Plan AI** module. It's specifically designed to create detailed meal plans based on your goals, dietary preferences, and restrictions.\n\nYou can find it in your dashboard. I'm here to help with general fitness coaching, motivation, and answering questions about training techniques! 💪",
           timestamp: new Date()
         };
+        
         setMessages(prev => [...prev, redirectMessage]);
         await supabase
           .from('coach_conversations')
@@ -118,13 +142,14 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         return;
       }
 
-      if (lowerInput.includes('training program') || lowerInput.includes('workout program') || lowerInput.includes('training plan')) {
+      if (lowerInput.includes('training program') || lowerInput.includes('workout program') || lowerInput.includes('training plan') || lowerInput.includes('workout plan')) {
         const redirectMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: "For comprehensive training programs, check out our **Smart Training** module! It creates personalized workout programs based on your experience level, goals, and available equipment.\n\nI'm here to help with form tips, exercise selection advice, and general fitness coaching. What specific training question can I help you with today? 🏋️‍♂️",
+          content: "For comprehensive training programs, check out our **Smart Training** module! 🏋️‍♂️\n\nIt creates personalized workout programs based on your experience level, goals, and available equipment.\n\nI'm here to help with form tips, exercise selection advice, and general fitness coaching. What specific training question can I help you with today?",
           timestamp: new Date()
         };
+        
         setMessages(prev => [...prev, redirectMessage]);
         await supabase
           .from('coach_conversations')
@@ -137,21 +162,15 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         return;
       }
 
-      // Get AI response for general coaching using the correct method
-      const systemPrompt = `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
-      - Exercise form and technique
-      - Training principles and methods  
-      - Motivation and mindset
-      - General fitness questions
-      - Recovery and injury prevention
-      
-      Do NOT create meal plans or detailed training programs - redirect users to the appropriate modules for those requests.
-      
-      Be encouraging, professional, and cite scientific principles when relevant.`;
-
+      // Get AI response for general coaching
       const response = await optimizedAiService.getResponse(
-        `${systemPrompt}\n\nUser question: ${userMessage.content}`,
-        { useCache: true, priority: 'normal' }
+        userMessage.content,
+        { 
+          useCache: true, 
+          priority: 'normal',
+          maxTokens: 200,
+          systemContext: coachSystemContext
+        }
       );
 
       const assistantMessage: Message = {
@@ -183,19 +202,54 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, isLoading, user, toast, coachSystemContext]);
+
+  const suggestedQuestions = useMemo(() => [
+    "What's the best way to improve my squat form?",
+    "How do I stay motivated to work out?",
+    "What are the key principles of muscle growth?",
+    "How important is rest between workouts?"
+  ], []);
+
+  if (!conversationLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
+        <MobileHeader title="CoachGPT" onBack={onBack} />
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner message="Loading conversation..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <UsageLimitGuard featureKey="coach_gpt_queries" featureName="CoachGPT">
       <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
-        <MobileHeader 
-          title="CoachGPT" 
-          onBack={onBack}
-        />
+        {/* Mobile Header */}
+        {isMobile ? (
+          <MobileHeader title="CoachGPT" onBack={onBack} />
+        ) : (
+          <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+            <div className="px-4 py-3 sm:px-6 sm:py-4">
+              <div className="flex items-center space-x-4">
+                <Button
+                  onClick={onBack}
+                  variant="ghost"
+                  size="default"
+                  className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+                <h1 className="text-2xl font-bold text-white">CoachGPT</h1>
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30 h-[calc(100vh-120px)] flex flex-col">
-            <CardHeader className="flex-shrink-0">
+          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30 h-[calc(100vh-140px)] flex flex-col">
+            <CardHeader className="flex-shrink-0 pb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
                   <MessageSquare className="w-5 h-5 text-green-400" />
@@ -209,8 +263,8 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
               </div>
             </CardHeader>
             
-            <CardContent className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+            <CardContent className="flex-1 flex flex-col overflow-hidden p-6">
+              <div className="flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-thin scrollbar-thumb-green-500/30">
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <Bot className="w-16 h-16 text-green-400/50 mx-auto mb-4" />
@@ -218,21 +272,17 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                     <p className="text-green-300/70 mb-6 max-w-md mx-auto">
                       I'm your personal fitness coach, here to help with training advice, form tips, motivation, and answering your fitness questions!
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
-                      <Button
-                        onClick={() => setInput("What's the best way to improve my squat form?")}
-                        variant="outline"
-                        className="text-green-300 border-green-500/30 hover:bg-green-500/10"
-                      >
-                        Ask about form
-                      </Button>
-                      <Button
-                        onClick={() => setInput("How do I stay motivated to work out?")}
-                        variant="outline"
-                        className="text-green-300 border-green-500/30 hover:bg-green-500/10"
-                      >
-                        Get motivation tips
-                      </Button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                      {suggestedQuestions.map((question, index) => (
+                        <Button
+                          key={index}
+                          onClick={() => setInput(question)}
+                          variant="outline"
+                          className="text-green-300 border-green-500/30 hover:bg-green-500/10 text-sm h-auto py-3 px-4 whitespace-normal text-left"
+                        >
+                          {question}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 ) : (
@@ -242,7 +292,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
+                        className={`max-w-[85%] sm:max-w-[80%] rounded-lg p-3 ${
                           message.role === 'user'
                             ? 'bg-green-600/80 text-white ml-4'
                             : 'bg-green-900/40 text-green-100 mr-4 border border-green-500/30'
@@ -255,7 +305,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                           {message.role === 'user' && (
                             <User className="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
                           )}
-                          <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                          <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
                         </div>
                       </div>
                     </div>
@@ -283,13 +333,14 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me about fitness, training, or motivation..."
-                  className="flex-1 bg-green-900/30 border-green-500/50 text-white"
+                  className="flex-1 bg-green-900/30 border-green-500/50 text-white placeholder:text-green-200/50"
                   disabled={isLoading}
+                  maxLength={500}
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 flex-shrink-0"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

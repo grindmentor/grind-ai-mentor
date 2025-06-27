@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+
+import React, { useState, useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { PageTransition } from '@/components/ui/page-transition';
-import { LoadingScreen } from '@/components/ui/loading-screen';
+import { LoadingScreen, LoadingSpinner } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Star, TrendingUp, Sparkles, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -12,7 +12,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import NotificationCenter from '@/components/NotificationCenter';
 
-// Lazy load heavy components
+// Lazy load heavy components with better fallbacks
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
 const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements').then(module => ({ default: module.RealGoalsAchievements })));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
@@ -29,56 +29,58 @@ const Dashboard = () => {
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
 
   // Optimized module click handler with debouncing
-  const handleModuleClick = useMemo(() => {
-    const handler = (module: any) => {
-      console.log('Module clicked:', module.id, 'at', new Date().toISOString());
-      try {
-        setSelectedModule(module);
-        setNavigationSource('dashboard');
-      } catch (error) {
-        console.error('Error setting selected module:', error);
-      }
-    };
-    return createDebouncedFunction(handler, 150) as (module: any) => void;
-  }, [createDebouncedFunction]);
+  const handleModuleClick = useCallback((module: any) => {
+    console.log('Module clicked:', module.id, 'at', new Date().toISOString());
+    try {
+      setSelectedModule(module);
+      setNavigationSource('dashboard');
+    } catch (error) {
+      console.error('Error setting selected module:', error);
+    }
+  }, []);
 
-  const handleBackToDashboard = useMemo(() => {
-    const handler = () => {
-      console.log('Returning to dashboard at', new Date().toISOString());
-      try {
-        setSelectedModule(null);
-        setShowNotifications(false);
-      } catch (error) {
-        console.error('Error returning to dashboard:', error);
-      }
-    };
-    return createDebouncedFunction(handler, 100) as () => void;
-  }, [createDebouncedFunction]);
+  const debouncedModuleClick = useMemo(() => 
+    createDebouncedFunction(handleModuleClick, 150)
+  , [createDebouncedFunction, handleModuleClick]);
 
-  const handleNotificationsClick = () => {
+  const handleBackToDashboard = useCallback(() => {
+    console.log('Returning to dashboard at', new Date().toISOString());
+    try {
+      setSelectedModule(null);
+      setShowNotifications(false);
+    } catch (error) {
+      console.error('Error returning to dashboard:', error);
+    }
+  }, []);
+
+  const handleNotificationsClick = useCallback(() => {
     setShowNotifications(true);
-  };
+  }, []);
 
-  const handleFoodLogged = useMemo(() => {
-    const handler = (data: any) => {
-      console.log('Food logged:', data);
-    };
-    return createDebouncedFunction(handler, 200) as (data: any) => void;
-  }, [createDebouncedFunction]);
+  const handleFoodLogged = useCallback((data: any) => {
+    console.log('Food logged:', data);
+  }, []);
 
-  // Memoized computed values
+  // Memoized computed values with error handling
   const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {
-    if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null, favoriteModules: [] };
+    if (!modules || modules.length === 0) {
+      return { regularModules: [], progressHubModule: null, favoriteModules: [] };
+    }
     
-    const regular = modules.filter(m => m.id !== 'progress-hub');
-    const progressHub = modules.find(m => m.id === 'progress-hub');
-    const favoritesList = regular.filter(module => favorites.includes(module.id));
-    
-    return {
-      regularModules: regular,
-      progressHubModule: progressHub,
-      favoriteModules: favoritesList
-    };
+    try {
+      const regular = modules.filter(m => m.id !== 'progress-hub');
+      const progressHub = modules.find(m => m.id === 'progress-hub') || null;
+      const favoritesList = regular.filter(module => favorites.includes(module.id));
+      
+      return {
+        regularModules: regular,
+        progressHubModule: progressHub,
+        favoriteModules: favoritesList
+      };
+    } catch (error) {
+      console.error('Error processing modules:', error);
+      return { regularModules: [], progressHubModule: null, favoriteModules: [] };
+    }
   }, [modules, favorites]);
 
   // Handle case where modules might not be loaded yet
@@ -129,8 +131,8 @@ const Dashboard = () => {
           <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <h1 className="text-xl sm:text-2xl font-bold text-white">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
                     Myotopia
                   </h1>
                 </div>
@@ -138,7 +140,7 @@ const Dashboard = () => {
                   onClick={handleNotificationsClick}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                  className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0"
                 >
                   <Bell className="w-5 h-5" />
                 </Button>
@@ -166,11 +168,11 @@ const Dashboard = () => {
                     <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
                     Your Favorites
                   </h2>
-                  <Suspense fallback={<div className="h-32 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                  <Suspense fallback={<LoadingSpinner message="Loading favorites..." />}>
                     <ModuleGrid
                       modules={favoriteModules}
                       favorites={favorites}
-                      onModuleClick={handleModuleClick}
+                      onModuleClick={debouncedModuleClick}
                       onToggleFavorite={toggleFavorite}
                     />
                   </Suspense>
@@ -197,8 +199,8 @@ const Dashboard = () => {
               {progressHubModule && (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <Button
-                    onClick={() => handleModuleClick(progressHubModule)}
-                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-white rounded-xl group touch-manipulation gpu-accelerated"
+                    onClick={() => debouncedModuleClick(progressHubModule)}
+                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-white rounded-xl group touch-manipulation"
                   >
                     <div className="flex items-center justify-between w-full px-4 sm:px-6">
                       <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
@@ -226,10 +228,10 @@ const Dashboard = () => {
               {/* Dashboard Content Grid - Performance optimized */}
               {!lowDataMode && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                  <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                  <Suspense fallback={<LoadingSpinner message="Loading goals..." />}>
                     <RealGoalsAchievements />
                   </Suspense>
-                  <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                  <Suspense fallback={<LoadingSpinner message="Loading research..." />}>
                     <LatestResearch />
                   </Suspense>
                 </div>

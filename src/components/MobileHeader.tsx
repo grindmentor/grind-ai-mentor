@@ -10,18 +10,20 @@ interface MobileHeaderProps {
   onBack?: () => void;
   showNotifications?: boolean;
   onNotificationsClick?: () => void;
+  className?: string;
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
   onBack,
   showNotifications = false,
-  onNotificationsClick
+  onNotificationsClick,
+  className = ""
 }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800/50">
+    <div className={`sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800/50 ${className}`}>
       <div className="px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
@@ -30,7 +32,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 onClick={onBack}
                 variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0"
+                className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
@@ -38,7 +40,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             
             {!onBack && (
               <div className="flex-shrink-0">
-                <Logo size={isMobile ? "sm" : "md"} />
+                <Logo size={isMobile ? "sm" : "md"} showText={!isMobile} />
               </div>
             )}
             
@@ -47,12 +49,12 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             </h1>
           </div>
 
-          {showNotifications && (
+          {showNotifications && onNotificationsClick && (
             <Button
               onClick={onNotificationsClick}
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0"
+              className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0 transition-colors"
             >
               <Bell className="w-5 h-5" />
             </Button>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { expandedWorkoutTemplates } from '@/data/expandedWorkoutTemplates';
 import { WorkoutDetailModal } from '@/components/ai-modules/WorkoutDetailModal';
 import { ExerciseDetailModal } from '@/components/ai-modules/ExerciseDetailModal';
+import { LoadingSpinner } from '@/components/ui/loading-screen';
 
 interface Exercise {
   id: string;
@@ -54,12 +55,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
 
-  useEffect(() => {
-    loadUserProfile();
-    loadWorkouts();
-  }, [user]);
-
-  const loadUserProfile = async () => {
+  const loadUserProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -73,9 +69,9 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
-  };
+  }, [user]);
 
-  const loadWorkouts = async () => {
+  const loadWorkouts = useCallback(async () => {
     setLoading(true);
     try {
       // Load expanded workout templates
@@ -90,9 +86,14 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const getPersonalizedRecommendations = () => {
+  useEffect(() => {
+    loadUserProfile();
+    loadWorkouts();
+  }, [loadUserProfile, loadWorkouts]);
+
+  const getPersonalizedRecommendations = useMemo(() => {
     if (!userProfile) return workouts.slice(0, 3);
 
     const userGoal = userProfile.goal;
@@ -111,57 +112,52 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
         return true;
       })
       .slice(0, 3);
-  };
+  }, [workouts, userProfile]);
 
-  const filteredWorkouts = workouts.filter(workout => {
-    const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         workout.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         workout.focus.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesCategory = selectedCategory === 'All' || workout.category === selectedCategory;
-    const matchesDifficulty = selectedDifficulty === 'All' || workout.difficulty === selectedDifficulty;
-    
-    return matchesSearch && matchesCategory && matchesDifficulty;
-  });
+  const filteredWorkouts = useMemo(() => {
+    return workouts.filter(workout => {
+      const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           workout.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           workout.focus.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesCategory = selectedCategory === 'All' || workout.category === selectedCategory;
+      const matchesDifficulty = selectedDifficulty === 'All' || workout.difficulty === selectedDifficulty;
+      
+      return matchesSearch && matchesCategory && matchesDifficulty;
+    });
+  }, [workouts, searchQuery, selectedCategory, selectedDifficulty]);
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = useCallback((category: string) => {
     switch (category) {
       case 'Split Programs': return <Dumbbell className="w-4 h-4" />;
       case 'Single Workouts': return <Target className="w-4 h-4" />;
       case 'Cardio': return <Heart className="w-4 h-4" />;
       default: return <Activity className="w-4 h-4" />;
     }
-  };
+  }, []);
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
       case 'Beginner': return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';
       case 'Intermediate': return 'bg-amber-500/20 text-amber-300 border-amber-400/30';
       case 'Advanced': return 'bg-rose-500/20 text-rose-300 border-rose-400/30';
       default: return 'bg-slate-500/20 text-slate-300 border-slate-400/30';
     }
-  };
+  }, []);
 
   if (loading) {
     return (
       <MobileModuleWrapper title="Blueprint AI" onBack={onBack}>
         <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/50 to-blue-900/30">
-          <div className="p-6 space-y-6">
-            <div className="animate-pulse space-y-6">
-              <div className="h-16 bg-blue-500/10 rounded-2xl border border-blue-500/20"></div>
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-32 bg-blue-500/10 rounded-2xl border border-blue-500/20"></div>
-                ))}
-              </div>
-            </div>
+          <div className="p-6 flex items-center justify-center h-64">
+            <LoadingSpinner message="Loading workout blueprints..." />
           </div>
         </div>
       </MobileModuleWrapper>
     );
   }
 
-  const personalizedWorkouts = getPersonalizedRecommendations();
+  const personalizedWorkouts = getPersonalizedRecommendations;
 
   return (
     <MobileModuleWrapper title="Blueprint AI" onBack={onBack}>
@@ -256,22 +252,22 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
             
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-300/70 w-5 h-5" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5" />
                 <Input
-                  placeholder="Search workouts, exercises, or goals..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 bg-blue-950/30 border-blue-400/30 text-white placeholder:text-blue-200/50 h-14 text-base rounded-2xl focus:border-blue-400/60 transition-all"
+                  placeholder="Search workouts, muscle groups, or focus areas..."
+                  className="pl-12 bg-blue-900/20 border-blue-500/30 text-white placeholder:text-blue-200/50"
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="bg-blue-950/30 border-blue-400/30 text-white h-12 rounded-xl">
-                    <Filter className="w-4 h-4 mr-2 text-blue-300" />
-                    <SelectValue placeholder="Category" />
+                  <SelectTrigger className="bg-blue-900/20 border-blue-500/30 text-white">
+                    <Filter className="w-4 h-4 mr-2 text-blue-400" />
+                    <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
-                  <SelectContent className="bg-blue-950/95 border-blue-400/30">
+                  <SelectContent className="bg-gray-900 border-gray-700">
                     <SelectItem value="All">All Categories</SelectItem>
                     <SelectItem value="Split Programs">Split Programs</SelectItem>
                     <SelectItem value="Single Workouts">Single Workouts</SelectItem>
@@ -280,10 +276,11 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                 </Select>
                 
                 <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                  <SelectTrigger className="bg-blue-950/30 border-blue-400/30 text-white h-12 rounded-xl">
-                    <SelectValue placeholder="Difficulty" />
+                  <SelectTrigger className="bg-blue-900/20 border-blue-500/30 text-white">
+                    <Target className="w-4 h-4 mr-2 text-blue-400" />
+                    <SelectValue placeholder="All Levels" />
                   </SelectTrigger>
-                  <SelectContent className="bg-blue-950/95 border-blue-400/30">
+                  <SelectContent className="bg-gray-900 border-gray-700">
                     <SelectItem value="All">All Levels</SelectItem>
                     <SelectItem value="Beginner">Beginner</SelectItem>
                     <SelectItem value="Intermediate">Intermediate</SelectItem>
@@ -294,42 +291,53 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
             </div>
           </div>
 
-          {/* Workout Templates Grid */}
+          {/* Workout Grid */}
           <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">
+                {filteredWorkouts.length} Workout{filteredWorkouts.length !== 1 ? 's' : ''} Available
+              </h3>
+            </div>
+            
             {filteredWorkouts.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-400/20">
-                  <Target className="w-10 h-10 text-blue-400/50" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">No blueprints found</h3>
-                <p className="text-blue-200/60">Try adjusting your search or filters</p>
+              <div className="text-center py-12">
+                <Search className="w-16 h-16 text-blue-400/50 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">No workouts found</h3>
+                <p className="text-blue-200/70">Try adjusting your search or filters</p>
               </div>
             ) : (
               <div className="grid gap-4">
                 {filteredWorkouts.map((workout) => (
                   <Card 
                     key={workout.id}
-                    className="group bg-gradient-to-br from-blue-900/20 to-slate-900/30 backdrop-blur-sm border-blue-400/20 hover:border-blue-400/40 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/5"
+                    className="group bg-gradient-to-br from-blue-900/20 to-blue-800/10 backdrop-blur-sm border-blue-500/20 hover:border-blue-400/40 transition-all duration-300"
                   >
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-400/30">
+                          <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-400/30">
                             {getCategoryIcon(workout.category)}
                           </div>
-                          <CardTitle className="text-white text-lg">{workout.title}</CardTitle>
+                          <div>
+                            <h3 className="font-semibold text-white text-lg">{workout.title}</h3>
+                            <div className="flex items-center space-x-3 text-sm text-blue-200/70 mt-1">
+                              <span className="flex items-center">
+                                <Timer className="w-3 h-3 mr-1" />
+                                {workout.duration}
+                              </span>
+                              <span>{workout.exercises.length} exercises</span>
+                            </div>
+                          </div>
                         </div>
                         <Badge className={getDifficultyColor(workout.difficulty)}>
                           {workout.difficulty}
                         </Badge>
                       </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      <p className="text-blue-100/70 text-sm leading-relaxed">{workout.description}</p>
                       
-                      <div className="flex flex-wrap gap-2">
-                        {workout.focus.map((focus, index) => (
+                      <p className="text-blue-100/80 text-sm mb-4 leading-relaxed">{workout.description}</p>
+                      
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {workout.focus.slice(0, 4).map((focus, index) => (
                           <Badge 
                             key={index}
                             variant="outline" 
@@ -340,38 +348,12 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                         ))}
                       </div>
 
-                      <div className="flex items-center justify-between text-sm text-blue-200/60 py-2">
-                        <span className="flex items-center">
-                          <Timer className="w-3 h-3 mr-1" />
-                          {workout.duration}
-                        </span>
-                        <span>{workout.exercises.length} exercises</span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {workout.exercises.slice(0, 2).map((exercise, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedExercise(exercise)}
-                            className="w-full text-left p-3 bg-blue-500/5 rounded-lg text-sm text-blue-100/80 hover:bg-blue-500/10 transition-colors border border-blue-500/10 hover:border-blue-500/20"
-                          >
-                            <span className="font-medium">{exercise.name}</span>
-                            <span className="text-blue-200/60 ml-2">• {exercise.sets} sets × {exercise.reps}</span>
-                          </button>
-                        ))}
-                        {workout.exercises.length > 2 && (
-                          <p className="text-xs text-blue-200/50 px-3">
-                            +{workout.exercises.length - 2} more exercises
-                          </p>
-                        )}
-                      </div>
-
                       <Button
                         onClick={() => setSelectedWorkout(workout)}
-                        className="w-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-white border border-blue-400/20 hover:border-blue-400/40 font-medium transition-all"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
                       >
                         <Eye className="w-4 h-4 mr-2" />
-                        View Full Workout
+                        View Workout Details
                       </Button>
                     </CardContent>
                   </Card>
@@ -380,23 +362,23 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
             )}
           </div>
         </div>
+
+        {/* Modals */}
+        {selectedWorkout && (
+          <WorkoutDetailModal
+            workout={selectedWorkout}
+            onClose={() => setSelectedWorkout(null)}
+            onExerciseClick={setSelectedExercise}
+          />
+        )}
+
+        {selectedExercise && (
+          <ExerciseDetailModal
+            exercise={selectedExercise}
+            onClose={() => setSelectedExercise(null)}
+          />
+        )}
       </div>
-
-      {/* Workout Detail Modal */}
-      {selectedWorkout && (
-        <WorkoutDetailModal
-          workout={selectedWorkout}
-          onClose={() => setSelectedWorkout(null)}
-        />
-      )}
-
-      {/* Exercise Detail Modal */}
-      {selectedExercise && (
-        <ExerciseDetailModal
-          exercise={selectedExercise}
-          onClose={() => setSelectedExercise(null)}
-        />
-      )}
     </MobileModuleWrapper>
   );
 };

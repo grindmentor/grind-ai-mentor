@@ -23,8 +23,8 @@ const Pricing = () => {
     setIsProcessing(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: { tier: tierKey }
+      const { data, error } = await supabase.functions.invoke('create-subscription', {
+        body: { tier: tierKey, billing: billingPeriod }
       });
 
       if (error) throw error;

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,10 +21,9 @@ const SubscriptionCard = ({
   billingPeriod,
   isProcessing = false
 }: SubscriptionCardProps) => {
-  const annualPrice = Math.round(tier.price * 10); // ~2 months free
-  const currentPrice = billingPeriod === 'monthly' ? tier.price : annualPrice;
-  const savings = billingPeriod === 'annual' && tier.price > 0 ? 
-    `Save $${(tier.price * 12) - annualPrice}/year` : null;
+  const currentPrice = billingPeriod === 'monthly' ? tier.monthlyPrice : tier.annualPrice;
+  const savings = billingPeriod === 'annual' && tier.monthlyPrice > 0 ? 
+    `Save $${(tier.monthlyPrice * 12) - tier.annualPrice}/year` : null;
 
   return (
     <Card className={`bg-gray-900 border-gray-800 relative ${
@@ -52,9 +50,9 @@ const SubscriptionCard = ({
         <CardTitle className="text-2xl text-white">{tier.name}</CardTitle>
         <div className="flex items-baseline justify-center space-x-1">
           <span className="text-4xl font-bold text-white">
-            ${tier.price === 0 ? '0' : currentPrice}
+            ${tier.monthlyPrice === 0 ? '0' : currentPrice}
           </span>
-          {tier.price > 0 && (
+          {tier.monthlyPrice > 0 && (
             <span className="text-gray-400">
               {billingPeriod === 'monthly' ? '/month' : '/year'}
             </span>

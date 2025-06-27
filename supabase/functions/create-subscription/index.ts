@@ -28,7 +28,7 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    const { tier } = await req.json();
+    const { tier, billing } = await req.json();
     
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -39,27 +39,41 @@ serve(async (req) => {
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+    } else {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { user_id: user.id }
+      });
+      customerId = customer.id;
     }
 
-    // Price mapping
+    // Price mapping for monthly and annual billing
     const prices = {
-      basic: 1000, // $10
-      premium: 1500, // $15
+      basic: {
+        monthly: 1000, // $10
+        annual: 10000  // $100 (save ~17%)
+      },
+      premium: {
+        monthly: 1500, // $15
+        annual: 15000  // $150 (save ~17%)
+      }
     };
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: { 
               name: `${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan`,
-              description: `Monthly subscription to ${tier} plan`
+              description: `${billing === 'annual' ? 'Annual' : 'Monthly'} subscription to ${tier} plan`
             },
-            unit_amount: prices[tier],
-            recurring: { interval: "month" },
+            unit_amount: prices[tier][billing],
+            recurring: { 
+              interval: billing === 'annual' ? 'year' : 'month',
+              interval_count: 1
+            },
           },
           quantity: 1,
         },
@@ -67,6 +81,11 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/app?payment=success`,
       cancel_url: `${req.headers.get("origin")}/pricing?payment=cancelled`,
+      metadata: {
+        user_id: user.id,
+        tier: tier,
+        billing: billing
+      }
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

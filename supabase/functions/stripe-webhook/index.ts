@@ -28,15 +28,9 @@ serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         
-        if (session.mode === "payment") {
-          // One-time payment completed
-          await supabase
-            .from("payments")
-            .update({
-              status: "completed",
-              stripe_customer_id: session.customer as string,
-            })
-            .eq("user_id", session.metadata?.user_id);
+        if (session.mode === "subscription") {
+          // Handle subscription checkout completion
+          console.log("Subscription checkout completed:", session.id);
         }
         break;
       }
@@ -45,21 +39,13 @@ serve(async (req) => {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         
-        // Handle subscription creation/update
-        const customer = await stripe.customers.retrieve(subscription.customer as string);
-        
-        if (customer && !customer.deleted) {
-          await supabase
-            .from("payments")
-            .insert({
-              user_id: customer.metadata?.user_id,
-              stripe_customer_id: customer.id,
-              payment_method: "stripe_subscription",
-              amount: subscription.items.data[0]?.price.unit_amount || 0,
-              subscription_tier: subscription.items.data[0]?.price.unit_amount === 1000 ? "basic" : "premium",
-              status: "completed",
-            });
-        }
+        // Log subscription creation/update
+        console.log(`Subscription ${event.type}:`, {
+          subscriptionId: subscription.id,
+          customerId: subscription.customer,
+          status: subscription.status,
+          currentPeriodEnd: subscription.current_period_end
+        });
         break;
       }
 
@@ -67,12 +53,34 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription;
         
         // Handle subscription cancellation
-        const customer = await stripe.customers.retrieve(subscription.customer as string);
+        console.log(`Subscription cancelled:`, {
+          subscriptionId: subscription.id,
+          customerId: subscription.customer
+        });
+        break;
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
         
-        if (customer && !customer.deleted) {
-          // Mark subscription as cancelled - user falls back to free tier
-          console.log(`Subscription cancelled for customer: ${customer.id}`);
-        }
+        // Handle successful recurring payment
+        console.log("Invoice payment succeeded:", {
+          invoiceId: invoice.id,
+          customerId: invoice.customer,
+          subscriptionId: invoice.subscription
+        });
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        
+        // Handle failed recurring payment
+        console.log("Invoice payment failed:", {
+          invoiceId: invoice.id,
+          customerId: invoice.customer,
+          subscriptionId: invoice.subscription
+        });
         break;
       }
     }

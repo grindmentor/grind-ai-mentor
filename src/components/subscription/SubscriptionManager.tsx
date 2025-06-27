@@ -11,7 +11,7 @@ import { useState } from "react";
 
 const SubscriptionManager = () => {
   const navigate = useNavigate();
-  const { currentTier, isSubscribed } = useSubscription();
+  const { currentTier, isSubscribed, billingCycle, subscriptionEnd } = useSubscription();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -52,6 +52,11 @@ const SubscriptionManager = () => {
     }
   };
 
+  const formatSubscriptionEnd = (endDate: string | null) => {
+    if (!endDate) return null;
+    return new Date(endDate).toLocaleDateString();
+  };
+
   return (
     <Card className="bg-card border-border">
       <CardHeader>
@@ -69,9 +74,19 @@ const SubscriptionManager = () => {
             <Badge className={`${isSubscribed ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}`}>
               {currentTier === 'free' ? 'Free Plan' : `${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Plan`}
             </Badge>
+            {billingCycle && (
+              <Badge className="ml-2 bg-blue-500/20 text-blue-400 border-blue-500/30">
+                {billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1)}
+              </Badge>
+            )}
             <p className="text-sm text-muted-foreground mt-1">
               {isSubscribed ? 'Premium features unlocked' : 'Limited AI interactions per month'}
             </p>
+            {subscriptionEnd && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Renews on {formatSubscriptionEnd(subscriptionEnd)}
+              </p>
+            )}
           </div>
         </div>
         

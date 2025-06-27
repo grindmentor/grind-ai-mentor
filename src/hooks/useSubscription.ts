@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface SubscriptionTier {
   name: string;
-  price: number;
+  monthlyPrice: number;
+  annualPrice: number;
   features: string[];
   limits: {
     coach_gpt_queries: number;
@@ -24,7 +25,8 @@ export interface SubscriptionTier {
 export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
   free: {
     name: 'Free',
-    price: 0,
+    monthlyPrice: 0,
+    annualPrice: 0,
     features: [
       'Basic AI coaching',
       'Limited usage',
@@ -45,7 +47,8 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
   },
   basic: {
     name: 'Basic',
-    price: 10,
+    monthlyPrice: 10,
+    annualPrice: 100,
     features: [
       '30 CoachGPT queries/month',
       '8 MealPlanAI generations',
@@ -71,7 +74,8 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
   },
   premium: {
     name: 'Premium',
-    price: 15,
+    monthlyPrice: 15,
+    annualPrice: 150,
     features: [
       'Unlimited CoachGPT queries',
       'Unlimited meal plans', 
@@ -100,9 +104,10 @@ export const useSubscription = () => {
   const { user } = useAuth();
   const [currentTier, setCurrentTier] = useState<string>('free');
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const lastCheckRef = useRef<number>(0);
-  const cacheRef = useRef<{ tier: string; end: string | null } | null>(null);
+  const cacheRef = useRef<{ tier: string; end: string | null; billing: 'monthly' | 'annual' | null } | null>(null);
   const initRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -114,6 +119,7 @@ export const useSubscription = () => {
       if (cached) {
         setCurrentTier(cached.tier);
         setSubscriptionEnd(cached.end);
+        setBillingCycle(cached.billing);
       }
       
       // Check subscription status
@@ -121,6 +127,7 @@ export const useSubscription = () => {
     } else if (!user) {
       setCurrentTier('free');
       setSubscriptionEnd(null);
+      setBillingCycle(null);
       cacheRef.current = null;
       initRef.current = false;
     }
@@ -134,9 +141,10 @@ export const useSubscription = () => {
 
       // Special handling for emilbelq@gmail.com
       if (user.email === 'emilbelq@gmail.com') {
-        const newStatus = { tier: 'premium', end: null };
+        const newStatus = { tier: 'premium', end: null, billing: null };
         setCurrentTier('premium');
         setSubscriptionEnd(null);
+        setBillingCycle(null);
         cacheRef.current = newStatus;
         lastCheckRef.current = Date.now();
         return;
@@ -148,42 +156,24 @@ export const useSubscription = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('payments')
-        .select('subscription_tier, created_at, status')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(1);
+      const { data, error } = await supabase.functions.invoke('check-subscription');
 
       if (error) {
         console.error('Error checking subscription:', error);
         return;
       }
 
-      let newTier = 'free';
-      let newEnd = null;
+      if (data) {
+        const newTier = data.subscription_tier?.toLowerCase() || 'free';
+        const newEnd = data.subscription_end;
+        const newBilling = data.billing_cycle;
 
-      if (data && data.length > 0) {
-        const subscription = data[0];
-        const tier = subscription.subscription_tier?.toLowerCase() || 'free';
-        
-        // Check if subscription is still valid (within 30 days)
-        const paymentDate = new Date(subscription.created_at);
-        const endDate = new Date(paymentDate);
-        endDate.setMonth(endDate.getMonth() + 1);
-        
-        if (new Date() <= endDate) {
-          newTier = tier;
-          newEnd = endDate.toISOString();
-        }
+        setCurrentTier(newTier);
+        setSubscriptionEnd(newEnd);
+        setBillingCycle(newBilling);
+        cacheRef.current = { tier: newTier, end: newEnd, billing: newBilling };
+        lastCheckRef.current = now;
       }
-
-      // Update state and cache
-      setCurrentTier(newTier);
-      setSubscriptionEnd(newEnd);
-      cacheRef.current = { tier: newTier, end: newEnd };
-      lastCheckRef.current = now;
     } catch (error) {
       console.error('Error checking subscription:', error);
     } finally {
@@ -198,6 +188,7 @@ export const useSubscription = () => {
     currentTier,
     currentTierData,
     subscriptionEnd,
+    billingCycle,
     isSubscribed,
     isLoading,
     refreshSubscription: checkSubscription

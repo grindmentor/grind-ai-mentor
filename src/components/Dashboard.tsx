@@ -63,6 +63,11 @@ const Dashboard = () => {
     }
   };
 
+  const handleFoodLogged = (data) => {
+    console.log('Food logged:', data);
+    // Handle food logging data if needed
+  };
+
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
     return (
@@ -101,7 +106,10 @@ const Dashboard = () => {
           </div>
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <ModuleComponent />
+            <ModuleComponent 
+              onBack={handleBackToDashboard}
+              onFoodLogged={handleFoodLogged}
+            />
           </div>
         </div>
       </PageTransition>

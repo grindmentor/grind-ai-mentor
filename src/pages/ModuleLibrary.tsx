@@ -73,7 +73,7 @@ const ModuleLibrary = () => {
       case 'name':
         return a.title.localeCompare(b.title);
       case 'newest':
-        return 0;
+        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
       case 'premium':
         return (b.isPremium ? 1 : 0) - (a.isPremium ? 1 : 0);
       default:

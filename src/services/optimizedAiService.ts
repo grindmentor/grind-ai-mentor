@@ -24,11 +24,12 @@ const openai = new OpenAI({
 // Enhanced caching with compression and expiration
 class OptimizedCache {
   private cache = new Map<string, { data: any; timestamp: number; compressed: boolean }>();
-  private readonly maxSize = 50; // Reduced for better memory management
-  private readonly ttl = 15 * 60 * 1000; // 15 minutes
+  private readonly maxSize = 100;
+  private readonly ttl = 30 * 60 * 1000; // 30 minutes
 
   private compress(data: string): string {
     try {
+      // Simple compression using built-in compression
       return btoa(encodeURIComponent(data));
     } catch {
       return data;
@@ -45,9 +46,6 @@ class OptimizedCache {
   }
 
   set(key: string, value: any): void {
-    // Clean expired entries first
-    this.cleanExpired();
-    
     // Remove oldest entries if cache is full
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
@@ -55,7 +53,7 @@ class OptimizedCache {
     }
 
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-    const compressed = stringValue.length > 500; // Compress smaller strings too
+    const compressed = stringValue.length > 1000;
     
     this.cache.set(key, {
       data: compressed ? this.compress(stringValue) : stringValue,
@@ -82,35 +80,15 @@ class OptimizedCache {
     }
   }
 
-  private cleanExpired(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > this.ttl) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
   clear(): void {
     this.cache.clear();
-  }
-
-  getStats(): { size: number; maxSize: number } {
-    return { size: this.cache.size, maxSize: this.maxSize };
   }
 }
 
 const optimizedCache = new OptimizedCache();
 
-// Request deduplication with cleanup
+// Request deduplication
 const pendingRequests = new Map<string, Promise<string>>();
-
-// Cleanup pending requests periodically
-setInterval(() => {
-  if (pendingRequests.size > 20) {
-    pendingRequests.clear();
-  }
-}, 60000);
 
 // Optimized debounce function
 const debounce = (func: Function, wait: number) => {
@@ -130,18 +108,15 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
   temperature?: number;
   useCache?: boolean;
   priority?: 'low' | 'normal' | 'high';
-  systemContext?: string;
 } = {}) => {
   const {
     maxTokens = 150,
     temperature = 0.7,
     useCache = true,
-    priority = 'normal',
-    systemContext = SCIENCE_FITNESS_CONTEXT
+    priority = 'normal'
   } = options;
 
-  // Create a shorter cache key to avoid memory issues
-  const cacheKey = `ai:${btoa(prompt.slice(0, 100))}:${maxTokens}:${temperature}`;
+  const cacheKey = `ai:${prompt}:${maxTokens}:${temperature}`.toLowerCase();
   
   // Check cache first
   if (useCache) {
@@ -154,26 +129,26 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
     return await pendingRequests.get(cacheKey)!;
   }
 
-  // Use gpt-4o-mini for all requests to optimize cost and speed
-  const model = 'gpt-4o-mini';
+  // Choose model based on priority and requirements
+  const model = priority === 'high' ? 'gpt-4o-mini' : 'gpt-4o-mini'; // Always use mini for cost optimization
 
   const requestPromise = async (): Promise<string> => {
     try {
       const completion = await openai.chat.completions.create({
         model,
         messages: [
-          { role: "system", content: systemContext },
+          { role: "system", content: SCIENCE_FITNESS_CONTEXT },
           { role: "user", content: prompt }
         ],
         max_tokens: maxTokens,
         temperature,
-        stream: false,
+        stream: false, // Disable streaming for better caching
       });
 
       const response = completion.choices[0].message.content || "I'm having trouble processing your request right now. Please try again later.";
       
       // Cache successful responses
-      if (useCache && response.length > 0) {
+      if (useCache) {
         optimizedCache.set(cacheKey, response);
       }
 
@@ -191,12 +166,13 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
   return await request;
 };
 
-// Batch processing for multiple requests with rate limiting
+// Batch processing for multiple requests
 export const batchAIRequests = async (requests: Array<{
   prompt: string;
   options?: Parameters<typeof getOptimizedAIResponse>[1];
 }>): Promise<string[]> => {
-  const chunkSize = 2; // Reduced for better rate limiting
+  // Process in chunks to avoid rate limits
+  const chunkSize = 3;
   const results: string[] = [];
 
   for (let i = 0; i < requests.length; i += chunkSize) {
@@ -206,31 +182,25 @@ export const batchAIRequests = async (requests: Array<{
     );
     results.push(...chunkResults);
     
-    // Delay between chunks to respect rate limits
+    // Small delay between chunks
     if (i + chunkSize < requests.length) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
   return results;
 };
 
-// Enhanced cleanup function
+// Cleanup function
 export const cleanupAIService = () => {
   optimizedCache.clear();
   pendingRequests.clear();
 };
 
-// Get cache statistics
-export const getCacheStats = () => {
-  return optimizedCache.getStats();
-};
-
 // Export optimized service with all methods
 export const optimizedAiService = {
   getResponse: getOptimizedAIResponse,
-  getCoachingAdvice: getOptimizedAIResponse,
+  getCoachingAdvice: getOptimizedAIResponse, // Add explicit alias
   batchRequests: batchAIRequests,
-  cleanup: cleanupAIService,
-  getCacheStats
+  cleanup: cleanupAIService
 };

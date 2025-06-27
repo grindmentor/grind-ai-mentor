@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { usePerformanceOptimization, useLowDataMode, useConnectionQuality } from '@/hooks/usePerformanceOptimization';
 
 interface PerformanceContextType {
@@ -17,48 +17,47 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { lowDataMode, toggleLowDataMode } = useLowDataMode();
   const connectionType = useConnectionQuality();
 
-  // Memoized performance settings
-  const performanceSettings = useMemo(() => ({
-    lowDataMode,
-    toggleLowDataMode,
-    connectionType,
-    optimizeImage,
-    createDebouncedFunction
-  }), [lowDataMode, connectionType, optimizeImage, createDebouncedFunction, toggleLowDataMode]);
+  // Preload critical resources
+  useEffect(() => {
+    const preloadCriticalResources = () => {
+      // Preload critical CSS
+      const criticalLinks = [
+        '/src/index.css'
+      ];
+
+      criticalLinks.forEach(href => {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'style';
+        link.href = href;
+        document.head.appendChild(link);
+      });
+    };
+
+    preloadCriticalResources();
+  }, []);
 
   // Apply performance optimizations based on connection and settings
   useEffect(() => {
     const root = document.documentElement;
     
-    // Set CSS custom properties for animations based on performance mode
-    const animationDuration = lowDataMode || connectionType === 'slow' ? '0.1s' : '0.3s';
-    const transitionDuration = lowDataMode || connectionType === 'slow' ? '0.1s' : '0.3s';
-    
-    root.style.setProperty('--animation-duration', animationDuration);
-    root.style.setProperty('--transition-duration', transitionDuration);
-
-    // Preload critical resources only on fast connections
-    if (connectionType === 'fast' && !lowDataMode) {
-      const preloadCriticalResources = () => {
-        const criticalLinks = ['/src/index.css'];
-        
-        criticalLinks.forEach(href => {
-          const existingLink = document.querySelector(`link[href="${href}"]`);
-          if (!existingLink) {
-            const link = document.createElement('link');
-            link.rel = 'preload';
-            link.as = 'style';
-            link.href = href;
-            document.head.appendChild(link);
-          }
-        });
-      };
-      preloadCriticalResources();
+    if (lowDataMode || connectionType === 'slow') {
+      root.style.setProperty('--animation-duration', '0.1s');
+      root.style.setProperty('--transition-duration', '0.1s');
+    } else {
+      root.style.setProperty('--animation-duration', '0.3s');
+      root.style.setProperty('--transition-duration', '0.3s');
     }
   }, [lowDataMode, connectionType]);
 
   return (
-    <PerformanceContext.Provider value={performanceSettings}>
+    <PerformanceContext.Provider value={{
+      lowDataMode,
+      toggleLowDataMode,
+      connectionType,
+      optimizeImage,
+      createDebouncedFunction
+    }}>
       {children}
     </PerformanceContext.Provider>
   );

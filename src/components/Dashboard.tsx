@@ -125,13 +125,7 @@ const Dashboard = () => {
               <NotificationCenter />
             </div>
 
-            {/* Dashboard Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-              <ScientificStudies />
-              <PersonalizedSummary />
-            </div>
-
-            {/* Show only favorites if they exist, otherwise show message */}
+            {/* Favorites Section - Moved to top */}
             {favorites.length > 0 ? (
               <div className="mb-8 sm:mb-12">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
@@ -162,6 +156,12 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
+
+            {/* Dashboard Content Grid - Scientific Studies and Personalized Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+              <ScientificStudies />
+              <PersonalizedSummary />
+            </div>
 
             {/* Progress Hub - Purple Button */}
             {progressHubModule && (

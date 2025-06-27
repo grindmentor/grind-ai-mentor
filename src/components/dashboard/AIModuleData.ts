@@ -1,4 +1,3 @@
-
 import { 
   MessageSquare, 
   Utensils, 
@@ -8,6 +7,7 @@ import {
   Timer, 
   Brain, 
   TrendingUp,
+  TrendingDown,
   Heart,
   CheckCircle,
   Camera,
@@ -28,7 +28,18 @@ import HabitTracker from '@/components/ai-modules/HabitTracker';
 import ProgressAI from '@/components/ai-modules/ProgressAI';
 import CutCalcPro from '@/components/ai-modules/CutCalcPro';
 
-export const aiModules = [
+export interface AIModule {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  gradient: string;
+  component: React.ComponentType<any>;
+  isPremium: boolean;
+  isNew?: boolean;
+}
+
+export const aiModules: AIModule[] = [
   {
     id: 'coach-gpt',
     title: 'Coach GPT',

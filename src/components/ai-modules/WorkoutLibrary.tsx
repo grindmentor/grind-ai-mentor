@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,17 +25,21 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
 
-  const { exercises, loading, error, fetchExercises } = useExerciseDatabase();
+  const { exercises, loading, getRandomExercises } = useExerciseDatabase();
 
   useEffect(() => {
-    fetchExercises();
-  }, []);
+    if (activeTab === 'exercises') {
+      getRandomExercises();
+    }
+  }, [activeTab]);
 
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          exercise.instructions.toLowerCase().includes(searchQuery.toLowerCase());
+                          (exercise.instructions && exercise.instructions.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesMuscle = muscleFilter.length === 0 || muscleFilter.some(muscle => exercise.muscle.includes(muscle));
+    const matchesMuscle = muscleFilter.length === 0 || muscleFilter.some(muscle => 
+      exercise.primary_muscles?.some(m => m.toLowerCase().includes(muscle.toLowerCase()))
+    );
     
     const matchesEquipment = !equipmentFilter || exercise.equipment === equipmentFilter;
 
@@ -46,7 +51,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       setChatHistory([...chatHistory, { type: 'user', message: chatMessage }]);
       // Simulate AI response
       setTimeout(() => {
-        setChatHistory([...chatHistory, { type: 'ai', message: `AI response to: ${chatMessage}` }]);
+        setChatHistory(prev => [...prev, { type: 'ai', message: `AI response to: ${chatMessage}` }]);
       }, 500);
       setChatMessage('');
     }
@@ -60,7 +65,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
             <Button
               variant="ghost"
               onClick={onBack}
-              className="text-white hover:bg-blue-500/20 backdrop-blur-sm hover:text-blue-400 transition-colors font-medium flex items-center space-x-2"
+              className="text-white hover:bg-blue-500/20 backdrop-blur-sm hover:text-blue-400 transition-colors font-medium flex items-center space-x-2 absolute z-50"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Dashboard</span>
@@ -80,7 +85,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
             <Button
               variant={activeTab === 'programs' ? 'default' : 'outline'}
               onClick={() => setActiveTab('programs')}
-              className={`flex-1 sm:flex-none transition-all duration-200 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2 ${
+              className={`flex-1 sm:flex-none transition-all duration-200 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2 touch-manipulation ${
                 activeTab === 'programs'
                   ? 'bg-blue-500/30 text-blue-300 border-blue-400/50'
                   : 'border-blue-500/30 text-blue-400 hover:bg-blue-500/20'
@@ -92,7 +97,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
             <Button
               variant={activeTab === 'exercises' ? 'default' : 'outline'}
               onClick={() => setActiveTab('exercises')}
-              className={`flex-1 sm:flex-none transition-all duration-200 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2 ${
+              className={`flex-1 sm:flex-none transition-all duration-200 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2 touch-manipulation ${
                 activeTab === 'exercises'
                   ? 'bg-blue-500/30 text-blue-300 border-blue-400/50'
                   : 'border-blue-500/30 text-blue-400 hover:bg-blue-500/20'
@@ -107,7 +112,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
           <Button
             variant="outline"
             onClick={() => setShowAIChat(!showAIChat)}
-            className="border-blue-500/30 text-blue-400 hover:bg-blue-500/20 w-full sm:w-auto"
+            className="border-blue-500/30 text-blue-400 hover:bg-blue-500/20 w-full sm:w-auto touch-manipulation"
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             AI Chat
@@ -165,7 +170,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 transition-all duration-200 ${
+                  className={`p-2 transition-all duration-200 touch-manipulation ${
                     viewMode === 'grid'
                       ? 'bg-blue-500/30 text-blue-300'
                       : 'hover:bg-blue-500/20 text-gray-400 hover:text-blue-400'
@@ -177,7 +182,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className={`p-2 transition-all duration-200 ${
+                  className={`p-2 transition-all duration-200 touch-manipulation ${
                     viewMode === 'list'
                       ? 'bg-blue-500/30 text-blue-300'
                       : 'hover:bg-blue-500/20 text-gray-400 hover:text-blue-400'
@@ -205,12 +210,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                   <LoadingSkeleton key={i} type="exercise" />
                 ))}
               </div>
-            ) : error ? (
-              <div className="text-center py-16">
-                <X className="w-12 h-12 text-red-400/50 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-red-200 mb-2">Error Loading Exercises</h3>
-                <p className="text-red-300/70">Please try again later</p>
-              </div>
             ) : filteredExercises.length === 0 ? (
               <div className="text-center py-16">
                 <Search className="w-16 h-16 text-blue-400/50 mx-auto mb-4" />
@@ -226,12 +225,16 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                         <Dumbbell className="w-4 h-4 text-blue-300" />
                         <div className="space-y-2 flex-1">
                           <CardTitle className="text-white text-sm font-semibold">{exercise.name}</CardTitle>
-                          <CardDescription className="text-blue-200/70 text-xs">{exercise.muscle.join(', ')}</CardDescription>
+                          <CardDescription className="text-blue-200/70 text-xs">
+                            {exercise.primary_muscles?.join(', ') || 'Various muscles'}
+                          </CardDescription>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-blue-200/80 text-xs">{exercise.instructions.substring(0, 100)}...</p>
+                      <p className="text-blue-200/80 text-xs">
+                        {exercise.instructions ? exercise.instructions.substring(0, 100) + '...' : 'Exercise instructions coming soon'}
+                      </p>
                     </CardContent>
                   </Card>
                 ))}

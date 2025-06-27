@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Dumbbell, Calendar, Heart, MessageSquare, Send, X, Filter, Grid, List, Clock, Target } from 'lucide-react';
+import { ArrowLeft, Search, Dumbbell, Calendar, Heart, MessageSquare, Send, X, Filter, Grid, List, Clock, Target, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -83,8 +83,10 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [exercisesPage, setExercisesPage] = useState(1);
+  const [hasMoreExercises, setHasMoreExercises] = useState(true);
 
-  // Static data - immediately available
+  // Static data - no database calls needed for these
   const workoutSplits: WorkoutSplit[] = [
     {
       id: 'push-pull-legs',
@@ -121,6 +123,15 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       difficulty: 'Advanced',
       focus: ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'],
       estimatedDuration: '45-60 min'
+    },
+    {
+      id: 'powerlifting',
+      name: 'Powerlifting Program',
+      description: 'Focus on the big three: squat, bench press, and deadlift for maximum strength',
+      days: 4,
+      difficulty: 'Advanced',
+      focus: ['Strength', 'Powerlifting', 'Competition'],
+      estimatedDuration: '90-120 min'
     }
   ];
 
@@ -178,6 +189,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     }
   ];
 
+  // Sample exercises - fallback data that doesn't require database
   const sampleExercises: Exercise[] = [
     {
       id: '1',
@@ -250,6 +262,30 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       category: 'Strength',
       difficulty_level: 'Beginner',
       mechanics: 'Compound'
+    },
+    {
+      id: '7',
+      name: 'Push-ups',
+      description: 'Classic bodyweight chest exercise',
+      instructions: 'Start in plank, lower body to ground, push back up',
+      primary_muscles: ['Chest'],
+      secondary_muscles: ['Triceps', 'Shoulders'],
+      equipment: 'Bodyweight',
+      category: 'Strength',
+      difficulty_level: 'Beginner',
+      mechanics: 'Compound'
+    },
+    {
+      id: '8',
+      name: 'Planks',
+      description: 'Core stability and endurance',
+      instructions: 'Hold straight-line position from head to heels',
+      primary_muscles: ['Core'],
+      secondary_muscles: ['Shoulders', 'Glutes'],
+      equipment: 'Bodyweight',
+      category: 'Core',
+      difficulty_level: 'Beginner',
+      mechanics: 'Isometric'
     }
   ];
 
@@ -316,24 +352,28 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     }
   ];
 
-  // Initialize component - runs once
+  // Initialize component with fallback data only - no database calls
   useEffect(() => {
-    console.log('WorkoutLibrary component initializing...');
+    console.log('WorkoutLibrary component initializing with fallback data...');
     try {
+      // Use sample exercises immediately instead of database loading
       setExercises(sampleExercises);
       setInitialized(true);
-      console.log('WorkoutLibrary component initialized successfully');
+      console.log('WorkoutLibrary component initialized successfully with fallback data');
     } catch (error) {
       console.error('Error initializing WorkoutLibrary:', error);
       toast({
         title: 'Initialization Error',
-        description: 'Failed to load workout library. Please refresh the page.',
+        description: 'Failed to load workout library. Using fallback data.',
         variant: 'destructive'
       });
+      // Still set as initialized with fallback data
+      setExercises(sampleExercises);
+      setInitialized(true);
     }
   }, []);
 
-  // Filter functions with safety checks
+  // Simplified filtering with safety checks
   const filteredSplits = workoutSplits.filter(split => {
     try {
       const matchesSearch = split.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -419,12 +459,12 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     }
   };
 
-  // Show loading state until initialized
+  // Show loading state only briefly
   if (!initialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
           <h2 className="text-xl font-semibold mb-2">Loading Workout Library</h2>
           <p className="text-orange-300/70">Preparing your fitness arsenal...</p>
         </div>
@@ -653,12 +693,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
           </TabsContent>
 
           <TabsContent value="exercises" className="mt-6">
-            {loading ? (
-              <div className="text-center py-16">
-                <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <div className="text-orange-400">Loading exercises...</div>
-              </div>
-            ) : filteredExercises.length === 0 ? (
+            {filteredExercises.length === 0 ? (
               <div className="text-center py-16">
                 <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
                 <h3 className="text-2xl font-semibold text-white mb-2">No Exercises Found</h3>

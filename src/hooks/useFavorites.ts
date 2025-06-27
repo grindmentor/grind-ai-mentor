@@ -64,7 +64,6 @@ export const useFavorites = () => {
 
       if (error) {
         console.error('Error saving favorites:', error);
-        // Only show sync warning once per session
         if (!hasShownSyncWarning) {
           toast({
             title: 'Sync Warning',

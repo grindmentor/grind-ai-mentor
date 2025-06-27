@@ -4,7 +4,7 @@ import { useModules } from '@/contexts/ModulesContext';
 import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen, LoadingSpinner } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { Star, TrendingUp, Sparkles, Bell, Plus } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -17,29 +17,18 @@ const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAch
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
 
-interface Module {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<any>;
-  gradient: string;
-  isPremium?: boolean;
-  isNew?: boolean;
-  component: React.ComponentType<any>;
-}
-
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
   const isMobile = useIsMobile();
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
 
   // Optimized module click handler with debouncing
-  const handleModuleClick = useCallback((module: Module) => {
+  const handleModuleClick = useCallback((module: any) => {
     console.log('Module clicked:', module.id, 'at', new Date().toISOString());
     try {
       setSelectedModule(module);
@@ -50,10 +39,9 @@ const Dashboard = () => {
   }, []);
 
   const debouncedModuleClick = useMemo(() => 
-    createDebouncedFunction(handleModuleClick, 150) as (module: Module) => void
+    createDebouncedFunction(handleModuleClick, 150) as (module: any) => void
   , [createDebouncedFunction, handleModuleClick]);
 
-  // Memoized computed values with error handling
   const handleBackToDashboard = useCallback(() => {
     console.log('Returning to dashboard at', new Date().toISOString());
     try {
@@ -143,7 +131,7 @@ const Dashboard = () => {
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate leading-tight">
                     Myotopia
                   </h1>
                 </div>
@@ -164,10 +152,10 @@ const Dashboard = () => {
             <div className="max-w-7xl mx-auto">
               {/* Welcome section with responsive text */}
               <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
-                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight px-2">
                   Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
                 </h1>
-                <p className="text-gray-400 text-xs sm:text-sm lg:text-base px-4">
+                <p className="text-gray-400 text-sm sm:text-base lg:text-lg px-4">
                   Ready to achieve your fitness goals with science-backed training?
                 </p>
               </div>
@@ -184,9 +172,8 @@ const Dashboard = () => {
                       onClick={() => window.location.href = '/modules'}
                       variant="outline"
                       size="sm"
-                      className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10 flex items-center"
+                      className="border-orange-500/40 text-orange-400 hover:bg-orange-500/10 text-xs sm:text-sm"
                     >
-                      <Plus className="w-4 h-4 mr-1" />
                       Add More
                     </Button>
                   </div>

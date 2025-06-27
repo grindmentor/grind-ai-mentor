@@ -32,7 +32,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationLoaded, setConversationLoaded] = useState(false);
-  const [initializationError, setInitializationError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Memoized system context to prevent recreation
@@ -74,35 +74,29 @@ If asked about meal plans or detailed training programs, politely redirect to th
     }
 
     try {
-      console.log('Loading conversation history for user:', user.id);
-      
-      const { data, error } = await supabase
+      setError(null);
+      const { data, error: loadError } = await supabase
         .from('coach_conversations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
         .limit(20);
 
-      if (error) {
-        console.error('Error loading conversation:', error);
-        setInitializationError('Failed to load conversation history');
-        return;
+      if (loadError) {
+        console.error('Error loading conversation:', loadError);
+        setError('Failed to load conversation history');
+      } else if (data) {
+        const conversationMessages = data.map(msg => ({
+          id: msg.id,
+          role: msg.message_role as 'user' | 'assistant',
+          content: msg.message_content,
+          timestamp: new Date(msg.created_at)
+        }));
+        setMessages(conversationMessages);
       }
-
-      console.log('Loaded conversation data:', data?.length || 0, 'messages');
-
-      const conversationMessages = (data || []).map(msg => ({
-        id: msg.id,
-        role: msg.message_role as 'user' | 'assistant',
-        content: msg.message_content,
-        timestamp: new Date(msg.created_at)
-      }));
-
-      setMessages(conversationMessages);
-      setInitializationError(null);
     } catch (error) {
-      console.error('Error in loadConversationHistory:', error);
-      setInitializationError('Failed to initialize conversation');
+      console.error('Error loading conversation:', error);
+      setError('Failed to load conversation history');
     } finally {
       setConversationLoaded(true);
     }
@@ -119,25 +113,22 @@ If asked about meal plans or detailed training programs, politely redirect to th
       timestamp: new Date()
     };
 
-    console.log('Sending message:', userMessage.content);
-    
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setError(null);
 
     try {
       // Save user message
-      const { error: saveError } = await supabase
-        .from('coach_conversations')
-        .insert({
-          user_id: user.id,
-          conversation_session: userMessage.id,
-          message_role: 'user',
-          message_content: userMessage.content
-        });
-
-      if (saveError) {
-        console.error('Error saving user message:', saveError);
+      if (user) {
+        await supabase
+          .from('coach_conversations')
+          .insert({
+            user_id: user.id,
+            conversation_session: userMessage.id,
+            message_role: 'user',
+            message_content: userMessage.content
+          });
       }
 
       // Check for meal plan or training program requests and redirect
@@ -152,14 +143,16 @@ If asked about meal plans or detailed training programs, politely redirect to th
         
         setMessages(prev => [...prev, redirectMessage]);
         
-        await supabase
-          .from('coach_conversations')
-          .insert({
-            user_id: user.id,
-            conversation_session: userMessage.id,
-            message_role: 'assistant',
-            message_content: redirectMessage.content
-          });
+        if (user) {
+          await supabase
+            .from('coach_conversations')
+            .insert({
+              user_id: user.id,
+              conversation_session: userMessage.id,
+              message_role: 'assistant',
+              message_content: redirectMessage.content
+            });
+        }
         return;
       }
 
@@ -173,20 +166,20 @@ If asked about meal plans or detailed training programs, politely redirect to th
         
         setMessages(prev => [...prev, redirectMessage]);
         
-        await supabase
-          .from('coach_conversations')
-          .insert({
-            user_id: user.id,
-            conversation_session: userMessage.id,
-            message_role: 'assistant',
-            message_content: redirectMessage.content
-          });
+        if (user) {
+          await supabase
+            .from('coach_conversations')
+            .insert({
+              user_id: user.id,
+              conversation_session: userMessage.id,
+              message_role: 'assistant',
+              message_content: redirectMessage.content
+            });
+        }
         return;
       }
 
       // Get AI response for general coaching
-      console.log('Getting AI response...');
-      
       const response = await optimizedAiService.getResponse(
         userMessage.content,
         { 
@@ -196,8 +189,6 @@ If asked about meal plans or detailed training programs, politely redirect to th
           systemContext: coachSystemContext
         }
       );
-
-      console.log('AI response received:', response.slice(0, 100) + '...');
 
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -209,30 +200,20 @@ If asked about meal plans or detailed training programs, politely redirect to th
       setMessages(prev => [...prev, assistantMessage]);
 
       // Save assistant message
-      await supabase
-        .from('coach_conversations')
-        .insert({
-          user_id: user.id,
-          conversation_session: userMessage.id,
-          message_role: 'assistant',
-          message_content: response
-        });
-
-      console.log('Message conversation completed successfully');
+      if (user) {
+        await supabase
+          .from('coach_conversations')
+          .insert({
+            user_id: user.id,
+            conversation_session: userMessage.id,
+            message_role: 'assistant',
+            message_content: response
+          });
+      }
 
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
-      
-      // Add error message to chat
-      const errorMessage: Message = {
-        id: (Date.now() + 3).toString(),
-        role: 'assistant',
-        content: "I'm sorry, I'm having trouble responding right now. Please try again in a moment. If the issue persists, try refreshing the page.",
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
-      
+      console.error('Error sending message:', error);
+      setError('Failed to send message. Please try again.');
       toast({
         title: 'Error',
         description: 'Failed to send message. Please try again.',
@@ -250,39 +231,12 @@ If asked about meal plans or detailed training programs, politely redirect to th
     "How important is rest between workouts?"
   ], []);
 
-  // Show loading screen while initializing
   if (!conversationLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
         <MobileHeader title="CoachGPT" onBack={onBack} />
         <div className="flex items-center justify-center h-64">
           <LoadingSpinner message="Loading conversation..." />
-        </div>
-      </div>
-    );
-  }
-
-  // Show error if initialization failed
-  if (initializationError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
-        <MobileHeader title="CoachGPT" onBack={onBack} />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-red-400 mb-2">Failed to Load</h3>
-            <p className="text-gray-400 mb-4">{initializationError}</p>
-            <Button
-              onClick={() => {
-                setInitializationError(null);
-                setConversationLoaded(false);
-                loadConversationHistory();
-              }}
-              variant="outline"
-              className="border-green-500/50 text-green-400 hover:bg-green-500/10"
-            >
-              Try Again
-            </Button>
-          </div>
         </div>
       </div>
     );
@@ -307,7 +261,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
-                <h1 className="text-2xl font-bold text-white">CoachGPT</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">CoachGPT</h1>
               </div>
             </div>
           </div>
@@ -321,12 +275,17 @@ If asked about meal plans or detailed training programs, politely redirect to th
                   <MessageSquare className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
-                  <CardDescription className="text-green-200/80">
+                  <CardTitle className="text-white text-lg sm:text-xl">CoachGPT</CardTitle>
+                  <CardDescription className="text-green-200/80 text-sm sm:text-base">
                     Your AI fitness coach and training companion
                   </CardDescription>
                 </div>
               </div>
+              {error && (
+                <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
             </CardHeader>
             
             <CardContent className="flex-1 flex flex-col overflow-hidden p-6">
@@ -334,8 +293,8 @@ If asked about meal plans or detailed training programs, politely redirect to th
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <Bot className="w-16 h-16 text-green-400/50 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-green-200 mb-2">Hello! I'm CoachGPT 💪</h3>
-                    <p className="text-green-300/70 mb-6 max-w-md mx-auto">
+                    <h3 className="text-lg sm:text-xl font-semibold text-green-200 mb-2">Hello! I'm CoachGPT 💪</h3>
+                    <p className="text-green-300/70 mb-6 max-w-md mx-auto text-sm sm:text-base">
                       I'm your personal fitness coach, here to help with training advice, form tips, motivation, and answering your fitness questions!
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
@@ -344,7 +303,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                           key={index}
                           onClick={() => setInput(question)}
                           variant="outline"
-                          className="text-green-300 border-green-500/30 hover:bg-green-500/10 text-sm h-auto py-3 px-4 whitespace-normal text-left"
+                          className="text-green-300 border-green-500/30 hover:bg-green-500/10 text-xs sm:text-sm h-auto py-3 px-4 whitespace-normal text-left"
                         >
                           {question}
                         </Button>
@@ -371,7 +330,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                           {message.role === 'user' && (
                             <User className="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
                           )}
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
+                          <div className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{message.content}</div>
                         </div>
                       </div>
                     </div>
@@ -399,7 +358,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me about fitness, training, or motivation..."
-                  className="flex-1 bg-green-900/30 border-green-500/50 text-white placeholder:text-green-200/50"
+                  className="flex-1 bg-green-900/30 border-green-500/50 text-white placeholder:text-green-200/50 text-sm sm:text-base"
                   disabled={isLoading}
                   maxLength={500}
                 />
@@ -407,6 +366,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                   type="submit"
                   disabled={isLoading || !input.trim()}
                   className="bg-green-600 hover:bg-green-700 flex-shrink-0"
+                  size={isMobile ? "sm" : "default"}
                 >
                   <Send className="w-4 h-4" />
                 </Button>

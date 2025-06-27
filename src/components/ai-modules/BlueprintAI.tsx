@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -162,7 +163,6 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     <MobileModuleWrapper title="Blueprint AI" onBack={onBack}>
       <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/50 to-blue-900/30">
         <div className="p-4 sm:p-6 space-y-8">
-          
           {/* Hero Section */}
           <div className="text-center space-y-4 py-8">
             <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center mb-4">
@@ -368,6 +368,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
           <WorkoutDetailModal
             workout={selectedWorkout}
             onClose={() => setSelectedWorkout(null)}
+            onExerciseClick={setSelectedExercise}
           />
         )}
 

@@ -55,17 +55,17 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-semibold text-white text-lg truncate">
+                      <h3 className="font-semibold text-white text-lg w-full truncate">
                         {module.title}
                       </h3>
                       {module.isNew && (
-                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">
+                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs flex-shrink-0">
                           <Sparkles className="w-3 h-3 mr-1" />
                           New
                         </Badge>
                       )}
                       {module.isPremium && (
-                        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs flex-shrink-0">
                           <Crown className="w-3 h-3 mr-1" />
                           Pro
                         </Badge>
@@ -131,7 +131,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                   }}
                   variant="ghost"
                   size="sm"
-                  className={`transition-colors ${
+                  className={`transition-colors flex-shrink-0 ${
                     isFavorited 
                       ? 'text-orange-400 hover:text-orange-300' 
                       : 'text-gray-400 hover:text-orange-400'
@@ -141,25 +141,26 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                 </Button>
               </div>
               
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <CardTitle className="text-white text-lg sm:text-xl font-bold group-hover:text-orange-100 transition-colors">
+              <div className="space-y-2 w-full">
+                <div className="flex items-center justify-between w-full">
+                  <CardTitle className="text-white text-lg sm:text-xl font-bold group-hover:text-orange-100 transition-colors flex-1 truncate pr-2">
                     {module.title}
                   </CardTitle>
-                  {module.isNew && (
-                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs animate-pulse">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      New
-                    </Badge>
-                  )}
+                  <div className="flex flex-col space-y-1 flex-shrink-0">
+                    {module.isNew && (
+                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs animate-pulse">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        New
+                      </Badge>
+                    )}
+                    {module.isPremium && (
+                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Pro
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                
-                {module.isPremium && (
-                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 w-fit">
-                    <Crown className="w-3 h-3 mr-1" />
-                    Premium
-                  </Badge>
-                )}
               </div>
             </CardHeader>
             

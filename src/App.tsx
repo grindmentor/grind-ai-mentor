@@ -18,6 +18,7 @@ import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Support from "./pages/Support";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ function App() {
                   <Route path="/about" element={<About />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
+                  <Route path="/support" element={<Support />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   
                   {/* Protected routes */}

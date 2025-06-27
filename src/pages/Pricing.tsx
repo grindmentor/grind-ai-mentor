@@ -85,7 +85,7 @@ const Pricing = () => {
                 Unlock your full potential
               </CardDescription>
               <div className="text-3xl font-bold text-white">
-                $19<span className="text-lg text-gray-400">/month</span>
+                $15<span className="text-lg text-gray-400">/month</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

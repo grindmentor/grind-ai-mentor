@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -78,6 +77,9 @@ const Index = () => {
               </Link>
               <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
                 Pricing
+              </Link>
+              <Link to="/support" className="text-gray-300 hover:text-white transition-colors">
+                Support
               </Link>
               <Link to="/privacy" className="text-gray-300 hover:text-white transition-colors">
                 Privacy
@@ -252,7 +254,7 @@ const Index = () => {
             <CardHeader>
               <CardTitle className="text-white text-2xl">Premium</CardTitle>
               <CardDescription className="text-orange-200">Unlock your full potential</CardDescription>
-              <div className="text-4xl font-bold text-white">$19<span className="text-lg text-gray-400">/mo</span></div>
+              <div className="text-4xl font-bold text-white">$15<span className="text-lg text-gray-400">/mo</span></div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">

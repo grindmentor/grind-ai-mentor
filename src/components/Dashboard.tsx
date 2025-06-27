@@ -7,7 +7,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
-import { Star, TrendingUp, Sparkles, Library } from 'lucide-react';
+import { Star, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
@@ -125,32 +125,10 @@ const Dashboard = () => {
               <NotificationCenter />
             </div>
 
-            {/* Browse Module Library Button */}
-            <div className="mb-8">
-              <Button
-                onClick={() => window.location.href = '/modules'}
-                className="w-full h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/40 backdrop-blur-sm border border-blue-500/30 hover:from-blue-500/30 hover:to-blue-600/50 transition-all duration-300 text-white rounded-xl group"
-              >
-                <div className="flex items-center justify-between w-full px-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                      <Library className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
-                        Browse Module Library
-                      </h3>
-                      <p className="text-sm text-gray-300">
-                        Explore all available AI fitness modules
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-5 h-5 text-blue-400" />
-                    <span className="text-sm text-blue-300">Explore</span>
-                  </div>
-                </div>
-              </Button>
+            {/* Dashboard Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+              <ScientificStudies />
+              <PersonalizedSummary />
             </div>
 
             {/* Show only favorites if they exist, otherwise show message */}
@@ -185,36 +163,30 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Dashboard Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-              <ScientificStudies />
-              <PersonalizedSummary />
-            </div>
-
-            {/* Progress Hub - Darker Purple Button */}
+            {/* Progress Hub - Purple Button */}
             {progressHubModule && (
               <div className="mb-8">
                 <Button
                   onClick={() => handleModuleClick(progressHubModule)}
-                  className="w-full h-20 bg-gradient-to-r from-purple-800/40 to-purple-900/60 backdrop-blur-sm border border-purple-700/40 hover:from-purple-800/50 hover:to-purple-900/70 transition-all duration-300 text-white rounded-xl group"
+                  className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"
                 >
                   <div className="flex items-center justify-between w-full px-6">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-700 to-purple-800 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
                         <TrendingUp className="w-6 h-6 text-white" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-200 transition-colors">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
                           Progress Hub
                         </h3>
-                        <p className="text-sm text-purple-100">
+                        <p className="text-sm text-gray-300">
                           Track your fitness journey with detailed analytics
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Sparkles className="w-5 h-5 text-purple-300" />
-                      <span className="text-sm text-purple-200">View Progress</span>
+                      <Sparkles className="w-5 h-5 text-purple-400" />
+                      <span className="text-sm text-purple-300">View Progress</span>
                     </div>
                   </div>
                 </Button>

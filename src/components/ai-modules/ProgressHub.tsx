@@ -10,21 +10,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 
-interface ProgressEntry {
-  id: string;
-  date: string;
-  weight?: number;
-  body_fat?: number;
-  muscle_mass?: number;
-  notes?: string;
-  measurements?: {
-    chest?: number;
-    waist?: number;
-    arms?: number;
-    thighs?: number;
-  };
-}
-
 interface WorkoutSession {
   id: string;
   workout_name: string;
@@ -50,7 +35,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const [entries, setEntries] = useState<ProgressEntry[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [userStats, setUserStats] = useState<UserStats>({
     dedication: 0,
@@ -60,42 +44,18 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     endurance: 0
   });
   const [loading, setLoading] = useState(true);
-  const [showAddEntry, setShowAddEntry] = useState(false);
-  const [currentEntry, setCurrentEntry] = useState({
-    weight: '',
-    body_fat: '',
-    muscle_mass: '',
-    notes: '',
-    chest: '',
-    waist: '',
-    arms: '',
-    thighs: ''
-  });
 
   useEffect(() => {
     if (user) {
-      loadAllProgressData();
+      loadProgressData();
     }
   }, [user]);
 
-  const loadAllProgressData = async () => {
+  const loadProgressData = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      
-      // Load progress entries with better error handling
-      const { data: progressData, error: progressError } = await supabase
-        .from('progress_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-
-      if (progressError) {
-        console.error('Progress entries error:', progressError);
-      } else if (progressData) {
-        setEntries(progressData);
-      }
 
       // Load workout sessions with better error handling
       const { data: workoutData, error: workoutError } = await supabase
@@ -103,7 +63,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         .select('*')
         .eq('user_id', user.id)
         .order('session_date', { ascending: false })
-        .limit(30);
+        .limit(50);
 
       if (workoutError) {
         console.error('Workout sessions error:', workoutError);
@@ -111,8 +71,8 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         setWorkoutSessions(workoutData);
       }
 
-      // Calculate stats even if some data is missing
-      calculateUserStats(workoutData || [], progressData || []);
+      // Calculate stats from workout data
+      calculateUserStats(workoutData || []);
 
     } catch (error) {
       console.error('Error loading progress data:', error);
@@ -126,7 +86,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     }
   };
 
-  const calculateUserStats = (workouts: WorkoutSession[], progress: ProgressEntry[]) => {
+  const calculateUserStats = (workouts: WorkoutSession[]) => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     
@@ -149,9 +109,9 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       : 0;
     const endurance = Math.min((avgCalories / 400) * 100, 100);
     
-    // Calculate recovery (progress entries frequency)
-    const recentProgress = progress.filter(p => new Date(p.date) >= thirtyDaysAgo);
-    const recovery = Math.min((recentProgress.length / 10) * 100, 100);
+    // Calculate recovery based on workout frequency (optimal is 3-4 times per week)
+    const weeklyWorkouts = recentWorkouts.length / 4; // approximate weeks in 30 days
+    const recovery = Math.min(Math.max((4 - Math.abs(weeklyWorkouts - 3.5)) / 4 * 100, 0), 100);
 
     setUserStats({
       dedication: Math.round(dedication),
@@ -160,68 +120,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       consistency: Math.round(consistency),
       endurance: Math.round(endurance)
     });
-  };
-
-  const handleAddEntry = async () => {
-    if (!user) return;
-
-    try {
-      const measurements = {
-        chest: parseFloat(currentEntry.chest) || undefined,
-        waist: parseFloat(currentEntry.waist) || undefined,
-        arms: parseFloat(currentEntry.arms) || undefined,
-        thighs: parseFloat(currentEntry.thighs) || undefined
-      };
-
-      const entryData = {
-        user_id: user.id,
-        date: new Date().toISOString().split('T')[0],
-        weight: parseFloat(currentEntry.weight) || null,
-        body_fat: parseFloat(currentEntry.body_fat) || null,
-        muscle_mass: parseFloat(currentEntry.muscle_mass) || null,
-        notes: currentEntry.notes || null,
-        measurements: Object.values(measurements).some(v => v !== undefined) ? measurements : null
-      };
-
-      const { error } = await supabase
-        .from('progress_entries')
-        .insert(entryData);
-
-      if (error) {
-        console.error('Error adding progress entry:', error);
-        toast({
-          title: 'Error adding entry',
-          description: 'Please try again later',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      toast({
-        title: 'Progress entry added',
-        description: 'Your progress has been recorded successfully'
-      });
-
-      setCurrentEntry({
-        weight: '',
-        body_fat: '',
-        muscle_mass: '',
-        notes: '',
-        chest: '',
-        waist: '',
-        arms: '',
-        thighs: ''
-      });
-      setShowAddEntry(false);
-      loadAllProgressData();
-    } catch (error) {
-      console.error('Error adding progress entry:', error);
-      toast({
-        title: 'Error adding entry',
-        description: 'Please try again',
-        variant: 'destructive'
-      });
-    }
   };
 
   const radarData = [
@@ -241,7 +139,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-950/90 via-purple-900/50 to-purple-800/70 text-white overflow-x-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-purple-800/30 text-white overflow-x-hidden">
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse space-y-4">
@@ -256,7 +154,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950/90 via-purple-900/50 to-purple-800/70 text-white overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-purple-800/30 text-white overflow-x-hidden">
       <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
         <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
           {/* Mobile-optimized Header */}
@@ -275,18 +173,9 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-purple-300 via-purple-200 to-purple-300 bg-clip-text text-transparent truncate">
                   Progress Hub
                 </h1>
-                <p className="text-purple-200/80 text-xs sm:text-sm lg:text-base truncate">Track your fitness journey</p>
+                <p className="text-purple-200/80 text-xs sm:text-sm lg:text-base truncate">Track your fitness journey with AI-powered insights</p>
               </div>
             </div>
-            
-            <SmoothButton
-              onClick={() => setShowAddEntry(true)}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 flex-shrink-0 touch-manipulation text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-2"
-              size={isMobile ? 'sm' : 'default'}
-            >
-              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              {!isMobile && <span>Add Entry</span>}
-            </SmoothButton>
           </div>
 
           {/* Mobile-optimized Stats Overview */}
@@ -326,21 +215,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
               <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
                 <CardTitle className="flex items-center text-white text-xs sm:text-sm">
-                  <Scale className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  Latest Weight
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-4 pt-0">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
-                  {entries[0]?.weight ? `${entries[0].weight} lbs` : 'Not recorded'}
-                </div>
-                <div className="text-xs text-purple-200/70 mt-1">Most recent</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
-                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
                   <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
                   Avg Duration
                 </CardTitle>
@@ -354,6 +228,27 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 <div className="text-xs text-purple-200/70 mt-1">Per workout</div>
               </CardContent>
             </Card>
+
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
+                  Weekly Avg
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 pt-0">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                  {workoutSessions.length > 0 
+                    ? Math.round(workoutSessions.filter(w => {
+                        const sessionDate = new Date(w.session_date);
+                        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                        return sessionDate >= thirtyDaysAgo;
+                      }).length / 4.3) // 30 days ≈ 4.3 weeks
+                    : 0}
+                </div>
+                <div className="text-xs text-purple-200/70 mt-1">Workouts/week</div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Mobile-optimized Hexagon Radar Chart */}
@@ -364,7 +259,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 Performance Metrics
               </CardTitle>
               <CardDescription className="text-purple-200/70 text-xs sm:text-sm">
-                Your comprehensive fitness progress visualization
+                AI-powered analysis of your fitness journey based on workout data
               </CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -419,153 +314,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </CardContent>
           </Card>
 
-          {/* Mobile-optimized Add Entry Form */}
-          {showAddEntry && (
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-6 sm:mb-8">
-              <CardHeader className="p-3 sm:p-4 lg:p-6">
-                <CardTitle className="text-white flex items-center text-base sm:text-lg lg:text-xl">
-                  <Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-300" />
-                  Add Progress Entry
-                </CardTitle>
-                <CardDescription className="text-purple-200/70 text-xs sm:text-sm">
-                  Record your current measurements and progress
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 lg:p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                      Weight (lbs)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentEntry.weight}
-                      onChange={(e) => setCurrentEntry(prev => ({...prev, weight: e.target.value}))}
-                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
-                      placeholder="Enter weight"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                      Body Fat %
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentEntry.body_fat}
-                      onChange={(e) => setCurrentEntry(prev => ({...prev, body_fat: e.target.value}))}
-                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
-                      placeholder="Enter body fat %"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                      Muscle Mass (lbs)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentEntry.muscle_mass}
-                      onChange={(e) => setCurrentEntry(prev => ({...prev, muscle_mass: e.target.value}))}
-                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
-                      placeholder="Enter muscle mass"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                      Chest (inches)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentEntry.chest}
-                      onChange={(e) => setCurrentEntry(prev => ({...prev, chest: e.target.value}))}
-                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
-                      placeholder="Chest"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                      Waist (inches)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentEntry.waist}
-                      onChange={(e) => setCurrentEntry(prev => ({...prev, waist: e.target.value}))}
-                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
-                      placeholder="Waist"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                      Arms (inches)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentEntry.arms}
-                      onChange={(e) => setCurrentEntry(prev => ({...prev, arms: e.target.value}))}
-                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
-                      placeholder="Arms"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                      Thighs (inches)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={currentEntry.thighs}
-                      onChange={(e) => setCurrentEntry(prev => ({...prev, thighs: e.target.value}))}
-                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
-                      placeholder="Thighs"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
-                    Notes
-                  </label>
-                  <textarea
-                    value={currentEntry.notes}
-                    onChange={(e) => setCurrentEntry(prev => ({...prev, notes: e.target.value}))}
-                    className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm resize-none"
-                    rows={3}
-                    placeholder="Add any notes about your progress..."
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                  <SmoothButton
-                    onClick={handleAddEntry}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 flex-1 touch-manipulation"
-                  >
-                    Save Entry
-                  </SmoothButton>
-                  <SmoothButton
-                    variant="outline"
-                    onClick={() => setShowAddEntry(false)}
-                    className="border-purple-600/50 text-purple-200 hover:bg-purple-800/50 flex-1 touch-manipulation"
-                  >
-                    Cancel
-                  </SmoothButton>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Recent Workouts */}
           <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-8">
             <CardHeader>
@@ -574,7 +322,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 Recent Workouts
               </CardTitle>
               <CardDescription className="text-purple-200/70">
-                Your latest training sessions
+                Your latest training sessions automatically tracked
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -582,7 +330,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 <div className="text-center py-8">
                   <Activity className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-purple-200 mb-2">No Workouts Yet</h3>
-                  <p className="text-purple-300/70">Start logging your workouts to see them here</p>
+                  <p className="text-purple-300/70">Start using the Workout Logger to see your progress here</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -609,86 +357,52 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </CardContent>
           </Card>
 
-          {/* Progress History */}
+          {/* AI Insights */}
           <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <Award className="w-5 h-5 mr-2 text-purple-300" />
-                Progress History
+                <Target className="w-5 h-5 mr-2 text-purple-300" />
+                AI Insights
               </CardTitle>
               <CardDescription className="text-purple-200/70">
-                Your recorded progress over time
+                Smart recommendations based on your workout patterns
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {entries.length === 0 ? (
-                <div className="text-center py-12">
-                  <TrendingUp className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-purple-200 mb-2">No Progress Entries Yet</h3>
-                  <p className="text-purple-300/70 mb-6">Start tracking your progress to see your fitness journey</p>
-                  <SmoothButton
-                    onClick={() => setShowAddEntry(true)}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                  >
-                    Add Your First Entry
-                  </SmoothButton>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {entries.map((entry, index) => (
-                    <div key={entry.id} className="bg-purple-800/30 rounded-lg p-4 border border-purple-600/30 backdrop-blur-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="text-lg font-semibold text-white">
-                          {new Date(entry.date).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
-                        </div>
-                        {index === 0 && (
-                          <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full text-xs border border-purple-500/30">
-                            Latest
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        {entry.weight && (
-                          <div>
-                            <span className="text-purple-300/70">Weight:</span>
-                            <span className="text-white ml-2">{entry.weight} lbs</span>
-                          </div>
-                        )}
-                        {entry.body_fat && (
-                          <div>
-                            <span className="text-purple-300/70">Body Fat:</span>
-                            <span className="text-white ml-2">{entry.body_fat}%</span>
-                          </div>
-                        )}
-                        {entry.muscle_mass && (
-                          <div>
-                            <span className="text-purple-300/70">Muscle Mass:</span>
-                            <span className="text-white ml-2">{entry.muscle_mass} lbs</span>
-                          </div>
-                        )}
-                        {entry.measurements && Object.values(entry.measurements).some(v => v) && (
-                          <div>
-                            <span className="text-purple-300/70">Measurements recorded</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {entry.notes && (
-                        <div className="mt-3 p-3 bg-purple-700/30 rounded border border-purple-600/20">
-                          <span className="text-purple-300/70 text-sm">Notes:</span>
-                          <p className="text-white text-sm mt-1">{entry.notes}</p>
-                        </div>
-                      )}
+              <div className="space-y-4">
+                {workoutSessions.length > 0 ? (
+                  <>
+                    <div className="bg-purple-800/30 rounded-lg p-4 border border-purple-600/30">
+                      <h4 className="font-semibold text-white mb-2">🎯 Training Consistency</h4>
+                      <p className="text-sm text-purple-200/70">
+                        {userStats.consistency > 80 
+                          ? "Excellent consistency! You're maintaining a great workout routine."
+                          : userStats.consistency > 60
+                          ? "Good consistency! Try to maintain regular workout schedules for better results."
+                          : "Focus on building consistency. Regular workouts lead to better long-term results."
+                        }
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="bg-purple-800/30 rounded-lg p-4 border border-purple-600/30">
+                      <h4 className="font-semibold text-white mb-2">💪 Workout Intensity</h4>
+                      <p className="text-sm text-purple-200/70">
+                        {userStats.strength > 75
+                          ? "Your workout duration suggests good training intensity. Keep challenging yourself!"
+                          : "Consider extending your workouts or increasing intensity for better strength gains."
+                        }
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <Target className="w-12 h-12 text-purple-400/50 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-purple-200 mb-2">Start Your Fitness Journey</h3>
+                    <p className="text-purple-300/70">
+                      Begin logging workouts to receive personalized AI insights and track your progress
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -71,7 +71,7 @@ const Dashboard = () => {
     return (
       <ErrorBoundary>
         <PageTransition>
-          <div className="min-h-screen bg-gradient-to-br from-black via-slate-900/10 to-gray-800/20 text-white overflow-x-hidden">
+          <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
             <ModuleComponent 
               onBack={handleBackToDashboard}
               onFoodLogged={handleFoodLogged}

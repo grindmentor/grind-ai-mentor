@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 

@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, Dumbbell, Clock, Target, Zap, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Dumbbell, Clock, Target, Zap, Save, Import } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
+import { useExerciseShare } from '@/contexts/ExerciseShareContext';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -30,11 +31,35 @@ interface WorkoutLoggerAIProps {
 export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { sharedExercises, clearExercises } = useExerciseShare();
   const isMobile = useIsMobile();
   const [workoutName, setWorkoutName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLogging, setIsLogging] = useState(false);
   const [showExerciseSearch, setShowExerciseSearch] = useState(false);
+
+  // Import shared exercises on component mount
+  useEffect(() => {
+    if (sharedExercises.length > 0) {
+      const importedExercises = sharedExercises.map(ex => ({
+        id: Date.now().toString() + Math.random().toString(),
+        name: ex.name,
+        sets: 3,
+        reps: 10,
+        weight: 0,
+        rpe: 7,
+        notes: ''
+      }));
+      setExercises(prev => [...prev, ...importedExercises]);
+      
+      toast({
+        title: 'Exercises Imported! 💪',
+        description: `Added ${sharedExercises.length} exercises from Blueprint AI.`
+      });
+      
+      clearExercises();
+    }
+  }, [sharedExercises, clearExercises, toast]);
 
   const addExercise = (exerciseData: any) => {
     const newExercise: Exercise = {
@@ -180,6 +205,12 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                 <div className="text-center py-8 text-blue-300/70">
                   <Dumbbell className="w-12 h-12 mx-auto mb-3 text-blue-400/50" />
                   <p>No exercises added yet. Search and add exercises to start logging your workout.</p>
+                  {sharedExercises.length > 0 && (
+                    <p className="mt-2 text-blue-400">
+                      <Import className="w-4 h-4 inline mr-1" />
+                      {sharedExercises.length} exercises ready to import from Blueprint AI
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">

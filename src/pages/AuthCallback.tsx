@@ -9,38 +9,25 @@ const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
 
-  // iOS PWA detection
-  const isIOSPWA = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    return isIOS && isStandalone;
-  };
-
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        console.log('Processing auth callback, iOS PWA:', isIOSPWA());
+        console.log('Processing auth callback');
         
-        // Get the session from the URL hash
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Auth callback error:', error);
           setError(error.message);
-          // Redirect to signin on error
           setTimeout(() => navigate('/signin'), 2000);
           return;
         }
 
         if (data.session) {
           console.log('Auth callback successful, user:', data.session.user.email);
-          
-          // For iOS PWA, add extra delay to ensure proper state management
-          const redirectDelay = isIOSPWA() ? 1500 : 500;
-          
           setTimeout(() => {
             navigate('/app', { replace: true });
-          }, redirectDelay);
+          }, 500);
         } else {
           console.log('No session found in auth callback');
           navigate('/signin', { replace: true });
@@ -54,9 +41,7 @@ const AuthCallback = () => {
       }
     };
 
-    // Add delay for iOS PWA to ensure URL parameters are properly parsed
-    const processingDelay = isIOSPWA() ? 1000 : 100;
-    setTimeout(handleAuthCallback, processingDelay);
+    setTimeout(handleAuthCallback, 100);
   }, [navigate]);
 
   if (error) {
@@ -74,24 +59,19 @@ const AuthCallback = () => {
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center">
       <div className="text-center space-y-6">
-        {/* Logo */}
         <div className="flex items-center justify-center space-x-3 mb-8">
           <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
             <Dumbbell className="w-8 h-8 text-white animate-pulse" />
           </div>
-          <span className="text-3xl font-bold text-white">GrindMentor</span>
+          <span className="text-3xl font-bold text-white">Myotopia</span>
         </div>
 
-        {/* Processing indicator */}
         <div className="space-y-4">
           <div className="w-48 bg-gray-800 rounded-full h-2 mx-auto">
             <div className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full animate-pulse w-full" />
           </div>
           <p className="text-gray-400 text-sm">
-            {isProcessing 
-              ? (isIOSPWA() ? 'Completing iOS authentication...' : 'Completing authentication...')
-              : 'Redirecting to dashboard...'
-            }
+            {isProcessing ? 'Completing authentication...' : 'Redirecting to dashboard...'}
           </p>
         </div>
       </div>

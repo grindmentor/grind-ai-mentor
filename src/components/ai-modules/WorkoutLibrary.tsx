@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WorkoutLibraryProps {
   onBack: () => void;
+  navigationSource?: 'dashboard' | 'library';
 }
 
 interface WorkoutSplit {
@@ -68,7 +69,7 @@ interface CardioSession {
   equipment: string;
 }
 
-const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
+const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack, navigationSource = 'dashboard' }) => {
   const { toast } = useToast();
   
   // Core state
@@ -80,7 +81,8 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedSplit, setSelectedSplit] = useState<string | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   
   // Chat state
   const [showAIChat, setShowAIChat] = useState(false);
@@ -135,31 +137,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     }
   ];
 
-  const sampleExercises: Exercise[] = [
-    {
-      id: '1',
-      name: 'Barbell Bench Press',
-      description: 'The king of chest exercises targeting the entire pectoral region',
-      primary_muscles: ['Chest'],
-      secondary_muscles: ['Triceps', 'Front Deltoids'],
-      equipment: 'Barbell',
-      category: 'Strength',
-      difficulty_level: 'Intermediate',
-      mechanics: 'Compound'
-    },
-    {
-      id: '2',
-      name: 'Pull-ups',
-      description: 'Bodyweight back width builder',
-      primary_muscles: ['Lats'],
-      secondary_muscles: ['Rhomboids', 'Biceps', 'Rear Delts'],
-      equipment: 'Pull-up Bar',
-      category: 'Strength',
-      difficulty_level: 'Intermediate',
-      mechanics: 'Compound'
-    }
-  ];
-
   const cardioSessions: CardioSession[] = [
     {
       id: 'hiit-fat-burn',
@@ -178,29 +155,68 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     }
   ];
 
-  // Initialize component
-  useEffect(() => {
-    const initializeComponent = () => {
-      try {
-        console.log('WorkoutLibrary: Initializing component');
-        setExercises(sampleExercises);
-        setLoading(false);
-        console.log('WorkoutLibrary: Component initialized successfully');
-      } catch (error) {
-        console.error('WorkoutLibrary: Initialization error:', error);
-        setLoading(false);
+  // Only load exercises when user searches
+  const searchExercises = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setExercises([]);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      console.log('Searching exercises for:', query);
+      
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,primary_muscles.cs.{${query}}`)
+        .eq('is_active', true)
+        .limit(20);
+
+      if (error) {
+        console.error('Exercise search error:', error);
         toast({
-          title: 'Loading Error',
-          description: 'Failed to load workout library',
+          title: 'Search Error',
+          description: 'Failed to search exercises. Using sample data.',
           variant: 'destructive'
         });
+        // Fallback to sample data
+        setExercises([
+          {
+            id: '1',
+            name: 'Barbell Bench Press',
+            description: 'The king of chest exercises targeting the entire pectoral region',
+            primary_muscles: ['Chest'],
+            secondary_muscles: ['Triceps', 'Front Deltoids'],
+            equipment: 'Barbell',
+            category: 'Strength',
+            difficulty_level: 'Intermediate',
+            mechanics: 'Compound'
+          }
+        ]);
+      } else {
+        console.log('Found exercises:', data?.length || 0);
+        setExercises(data || []);
       }
-    };
-
-    // Small delay to ensure smooth loading
-    const timer = setTimeout(initializeComponent, 100);
-    return () => clearTimeout(timer);
+    } catch (error) {
+      console.error('Exercise search error:', error);
+      setExercises([]);
+    } finally {
+      setSearchLoading(false);
+    }
   }, [toast]);
+
+  // Debounced search effect
+  useEffect(() => {
+    if (activeTab === 'exercises' && searchQuery.trim()) {
+      const timer = setTimeout(() => {
+        searchExercises(searchQuery);
+      }, 300);
+      return () => clearTimeout(timer);
+    } else if (activeTab === 'exercises' && !searchQuery.trim()) {
+      setExercises([]);
+    }
+  }, [searchQuery, activeTab, searchExercises]);
 
   // Safe filtering functions
   const getFilteredSplits = useCallback(() => {
@@ -214,7 +230,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
         return searchMatch && difficultyMatch;
       });
     } catch (error) {
-      console.error('WorkoutLibrary: Error filtering splits:', error);
+      console.error('Error filtering splits:', error);
       return workoutSplits;
     }
   }, [searchQuery, difficultyFilter]);
@@ -231,7 +247,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
         return searchMatch && splitMatch && difficultyMatch;
       });
     } catch (error) {
-      console.error('WorkoutLibrary: Error filtering days:', error);
+      console.error('Error filtering days:', error);
       return workoutDays;
     }
   }, [searchQuery, selectedSplit, difficultyFilter]);
@@ -240,9 +256,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     try {
       return exercises.filter(exercise => {
         if (!exercise) return false;
-        const searchMatch = !searchQuery || 
-          exercise.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          exercise.description?.toLowerCase().includes(searchQuery.toLowerCase());
         const muscleMatch = muscleFilter.length === 0 || 
           (exercise.primary_muscles && muscleFilter.some(muscle => 
             exercise.primary_muscles.some(pm => pm?.toLowerCase().includes(muscle.toLowerCase()))
@@ -250,13 +263,13 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
         const equipmentMatch = !equipmentFilter || 
           exercise.equipment?.toLowerCase().includes(equipmentFilter.toLowerCase());
         const difficultyMatch = !difficultyFilter || exercise.difficulty_level === difficultyFilter;
-        return searchMatch && muscleMatch && equipmentMatch && difficultyMatch;
+        return muscleMatch && equipmentMatch && difficultyMatch;
       });
     } catch (error) {
-      console.error('WorkoutLibrary: Error filtering exercises:', error);
+      console.error('Error filtering exercises:', error);
       return exercises;
     }
-  }, [exercises, searchQuery, muscleFilter, equipmentFilter, difficultyFilter]);
+  }, [exercises, muscleFilter, equipmentFilter, difficultyFilter]);
 
   const getFilteredCardio = useCallback(() => {
     try {
@@ -268,7 +281,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
         return searchMatch;
       });
     } catch (error) {
-      console.error('WorkoutLibrary: Error filtering cardio:', error);
+      console.error('Error filtering cardio:', error);
       return cardioSessions;
     }
   }, [searchQuery]);
@@ -294,7 +307,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       
       setChatMessage('');
     } catch (error) {
-      console.error('WorkoutLibrary: Chat error:', error);
+      console.error('Chat error:', error);
       toast({
         title: 'Chat Error',
         description: 'Failed to send message',
@@ -302,19 +315,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       });
     }
   }, [chatMessage, toast]);
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-500" />
-          <h2 className="text-xl font-semibold mb-2">Loading Workout Library</h2>
-          <p className="text-orange-300/70">Preparing your fitness arsenal...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Get filtered data
   const filteredSplits = getFilteredSplits();
@@ -324,8 +324,8 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white relative">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Button
@@ -334,7 +334,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
               className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors font-medium flex items-center space-x-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Dashboard</span>
+              <span>{navigationSource === 'library' ? 'Library' : 'Dashboard'}</span>
             </Button>
             <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
               Workout Library
@@ -351,296 +351,308 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Tab Navigation */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-orange-900/30 border-orange-500/40">
-            <TabsTrigger value="splits" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-              <Target className="w-4 h-4 mr-2" />
-              Splits
-            </TabsTrigger>
-            <TabsTrigger value="days" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-              <Calendar className="w-4 h-4 mr-2" />
-              Days
-            </TabsTrigger>
-            <TabsTrigger value="exercises" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-              <Dumbbell className="w-4 h-4 mr-2" />
-              Exercises
-            </TabsTrigger>
-            <TabsTrigger value="cardio" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
-              <Heart className="w-4 h-4 mr-2" />
-              Cardio
-            </TabsTrigger>
-          </TabsList>
+      {/* Main Content - Add top padding to account for fixed header */}
+      <div className="pt-16">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          {/* Tab Navigation */}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 bg-orange-900/30 border-orange-500/40">
+              <TabsTrigger value="splits" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
+                <Target className="w-4 h-4 mr-2" />
+                Splits
+              </TabsTrigger>
+              <TabsTrigger value="days" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
+                <Calendar className="w-4 h-4 mr-2" />
+                Days
+              </TabsTrigger>
+              <TabsTrigger value="exercises" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
+                <Dumbbell className="w-4 h-4 mr-2" />
+                Exercises
+              </TabsTrigger>
+              <TabsTrigger value="cardio" className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-300">
+                <Heart className="w-4 h-4 mr-2" />
+                Cardio
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Search and Filters */}
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
-              <Input
-                placeholder={`Search ${activeTab}...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl"
-              />
-            </div>
+            {/* Search and Filters */}
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
+                <Input
+                  placeholder={activeTab === 'exercises' ? 'Search exercises to load from database...' : `Search ${activeTab}...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl"
+                />
+                {searchLoading && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-orange-400" />
+                )}
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {activeTab === 'exercises' && (
-                <>
-                  <Select onValueChange={(value) => setMuscleFilter(value === '' ? [] : [value])}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                      <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                      <SelectValue placeholder="Filter by muscle" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                      <SelectItem value="">All Muscles</SelectItem>
-                      <SelectItem value="Chest">Chest</SelectItem>
-                      <SelectItem value="Back">Back</SelectItem>
-                      <SelectItem value="Shoulders">Shoulders</SelectItem>
-                      <SelectItem value="Biceps">Biceps</SelectItem>
-                      <SelectItem value="Triceps">Triceps</SelectItem>
-                      <SelectItem value="Quadriceps">Legs</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {activeTab === 'exercises' && (
+                  <>
+                    <Select onValueChange={(value) => setMuscleFilter(value === '' ? [] : [value])}>
+                      <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
+                        <Filter className="w-4 h-4 mr-2 text-orange-400" />
+                        <SelectValue placeholder="Filter by muscle" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
+                        <SelectItem value="">All Muscles</SelectItem>
+                        <SelectItem value="Chest">Chest</SelectItem>
+                        <SelectItem value="Back">Back</SelectItem>
+                        <SelectItem value="Shoulders">Shoulders</SelectItem>
+                        <SelectItem value="Biceps">Biceps</SelectItem>
+                        <SelectItem value="Triceps">Triceps</SelectItem>
+                        <SelectItem value="Quadriceps">Legs</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                  <Select onValueChange={setEquipmentFilter}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                      <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                      <SelectValue placeholder="Equipment" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                      <SelectItem value="">All Equipment</SelectItem>
-                      <SelectItem value="Barbell">Barbell</SelectItem>
-                      <SelectItem value="Dumbbell">Dumbbell</SelectItem>
-                      <SelectItem value="Machine">Machine</SelectItem>
-                      <SelectItem value="Bodyweight">Bodyweight</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </>
-              )}
+                    <Select onValueChange={setEquipmentFilter}>
+                      <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
+                        <Filter className="w-4 h-4 mr-2 text-orange-400" />
+                        <SelectValue placeholder="Equipment" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
+                        <SelectItem value="">All Equipment</SelectItem>
+                        <SelectItem value="Barbell">Barbell</SelectItem>
+                        <SelectItem value="Dumbbell">Dumbbell</SelectItem>
+                        <SelectItem value="Machine">Machine</SelectItem>
+                        <SelectItem value="Bodyweight">Bodyweight</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
 
-              <Select onValueChange={setDifficultyFilter}>
-                <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                  <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                  <SelectValue placeholder="Difficulty" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                  <SelectItem value="">All Levels</SelectItem>
-                  <SelectItem value="Beginner">Beginner</SelectItem>
-                  <SelectItem value="Intermediate">Intermediate</SelectItem>
-                  <SelectItem value="Advanced">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select onValueChange={setDifficultyFilter}>
+                  <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
+                    <Filter className="w-4 h-4 mr-2 text-orange-400" />
+                    <SelectValue placeholder="Difficulty" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
+                    <SelectItem value="">All Levels</SelectItem>
+                    <SelectItem value="Beginner">Beginner</SelectItem>
+                    <SelectItem value="Intermediate">Intermediate</SelectItem>
+                    <SelectItem value="Advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 transition-all duration-200 ${
-                    viewMode === 'grid'
-                      ? 'bg-orange-500/30 text-orange-300'
-                      : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
-                  }`}
-                >
-                  <Grid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 transition-all duration-200 ${
-                    viewMode === 'list'
-                      ? 'bg-orange-500/30 text-orange-300'
-                      : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 transition-all duration-200 ${
+                      viewMode === 'grid'
+                        ? 'bg-orange-500/30 text-orange-300'
+                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
+                    }`}
+                  >
+                    <Grid className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 transition-all duration-200 ${
+                      viewMode === 'list'
+                        ? 'bg-orange-500/30 text-orange-300'
+                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Tab Content */}
-          <TabsContent value="splits" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSplits.map(split => (
-                <Card key={split.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm hover:bg-orange-900/60 transition-all duration-200">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white text-lg">{split.name}</CardTitle>
-                      <Badge variant="outline" className="border-orange-400/50 text-orange-300">
-                        {split.days} days
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-orange-200/70">
-                      {split.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Difficulty</span>
-                        <Badge variant={split.difficulty === 'Advanced' ? 'destructive' : split.difficulty === 'Intermediate' ? 'default' : 'secondary'}>
-                          {split.difficulty}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Duration</span>
-                        <span className="text-orange-300 text-sm">{split.estimatedDuration}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {split.focus.map((focus, index) => (
-                          <Badge key={`${split.id}-focus-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
-                            {focus}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="days" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredDays.map(day => (
-                <Card key={day.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white text-lg">{day.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-orange-400" />
-                        <span className="text-orange-300 text-sm">{day.duration} min</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {day.focus.map((focus, index) => (
-                        <Badge key={`${day.id}-focus-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
-                          {focus}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {day.exercises.map((exercise, index) => (
-                        <div key={`${day.id}-exercise-${index}`} className="flex items-center justify-between p-2 bg-orange-800/20 rounded-lg">
-                          <div className="flex-1">
-                            <span className="text-white text-sm font-medium block">{exercise.name}</span>
-                            <span className="text-orange-400 text-xs">{exercise.weight} • Rest: {exercise.rest}</span>
-                          </div>
-                          <span className="text-orange-300 text-sm font-semibold">{exercise.sets}×{exercise.reps}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="exercises" className="mt-6">
-            {filteredExercises.length === 0 ? (
-              <div className="text-center py-16">
-                <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
-                <h3 className="text-2xl font-semibold text-white mb-2">No Exercises Found</h3>
-                <p className="text-orange-300/70">Try adjusting your search or filters</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredExercises.map(exercise => (
-                  <Card key={exercise.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm hover:bg-orange-900/60 transition-all duration-200">
+            {/* Tab Content */}
+            <TabsContent value="splits" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredSplits.map(split => (
+                  <Card key={split.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm hover:bg-orange-900/60 transition-all duration-200">
                     <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <CardTitle className="text-white text-base font-semibold">{exercise.name}</CardTitle>
-                          <div className="flex flex-wrap gap-1">
-                            {exercise.primary_muscles?.slice(0, 2).map((muscle, index) => (
-                              <Badge key={`${exercise.id}-muscle-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
-                                {muscle}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {exercise.difficulty_level}
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-white text-lg">{split.name}</CardTitle>
+                        <Badge variant="outline" className="border-orange-400/50 text-orange-300">
+                          {split.days} days
                         </Badge>
                       </div>
+                      <CardDescription className="text-orange-200/70">
+                        {split.description}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-400">Equipment</span>
-                          <span className="text-orange-300">{exercise.equipment}</span>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-400">Difficulty</span>
+                          <Badge variant={split.difficulty === 'Advanced' ? 'destructive' : split.difficulty === 'Intermediate' ? 'default' : 'secondary'}>
+                            {split.difficulty}
+                          </Badge>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-400">Type</span>
-                          <span className="text-orange-300">{exercise.mechanics}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-400">Duration</span>
+                          <span className="text-orange-300 text-sm">{split.estimatedDuration}</span>
                         </div>
-                        {exercise.description && (
-                          <p className="text-orange-200/80 text-xs mt-2">
-                            {exercise.description.substring(0, 100)}...
-                          </p>
-                        )}
+                        <div className="flex flex-wrap gap-1">
+                          {split.focus.map((focus, index) => (
+                            <Badge key={`${split.id}-focus-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
+                              {focus}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            )}
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="cardio" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredCardio.map(session => (
-                <Card key={session.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white text-lg">{session.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="border-red-400/50 text-red-300">
-                          {session.type}
-                        </Badge>
-                        <Badge variant={session.intensity === 'High' ? 'destructive' : session.intensity === 'Moderate' ? 'default' : 'secondary'}>
-                          {session.intensity}
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardDescription className="text-orange-200/70">
-                      {session.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
+            <TabsContent value="days" className="mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {filteredDays.map(day => (
+                  <Card key={day.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm">
+                    <CardHeader>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Duration</span>
-                        <div className="flex items-center space-x-1">
+                        <CardTitle className="text-white text-lg">{day.name}</CardTitle>
+                        <div className="flex items-center space-x-2">
                           <Clock className="w-4 h-4 text-orange-400" />
-                          <span className="text-orange-300">{session.duration} min</span>
+                          <span className="text-orange-300 text-sm">{day.duration} min</span>
                         </div>
                       </div>
+                      <div className="flex flex-wrap gap-1">
+                        {day.focus.map((focus, index) => (
+                          <Badge key={`${day.id}-focus-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
+                            {focus}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {day.exercises.map((exercise, index) => (
+                          <div key={`${day.id}-exercise-${index}`} className="flex items-center justify-between p-2 bg-orange-800/20 rounded-lg">
+                            <div className="flex-1">
+                              <span className="text-white text-sm font-medium block">{exercise.name}</span>
+                              <span className="text-orange-400 text-xs">{exercise.weight} • Rest: {exercise.rest}</span>
+                            </div>
+                            <span className="text-orange-300 text-sm font-semibold">{exercise.sets}×{exercise.reps}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="exercises" className="mt-6">
+              {!searchQuery.trim() ? (
+                <div className="text-center py-16">
+                  <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
+                  <h3 className="text-2xl font-semibold text-white mb-2">Search to Load Exercises</h3>
+                  <p className="text-orange-300/70">Enter a search term to load exercises from our database</p>
+                </div>
+              ) : filteredExercises.length === 0 && !searchLoading ? (
+                <div className="text-center py-16">
+                  <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
+                  <h3 className="text-2xl font-semibold text-white mb-2">No Exercises Found</h3>
+                  <p className="text-orange-300/70">Try a different search term or adjust your filters</p>
+                </div>
+              ) : (
+                <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
+                  {filteredExercises.map(exercise => (
+                    <Card key={exercise.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm hover:bg-orange-900/60 transition-all duration-200">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-2 flex-1">
+                            <CardTitle className="text-white text-base font-semibold">{exercise.name}</CardTitle>
+                            <div className="flex flex-wrap gap-1">
+                              {exercise.primary_muscles?.slice(0, 2).map((muscle, index) => (
+                                <Badge key={`${exercise.id}-muscle-${index}`} variant="outline" className="text-xs border-orange-500/30 text-orange-300">
+                                  {muscle}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">
+                            {exercise.difficulty_level}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">Equipment</span>
+                            <span className="text-orange-300">{exercise.equipment}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">Type</span>
+                            <span className="text-orange-300">{exercise.mechanics}</span>
+                          </div>
+                          {exercise.description && (
+                            <p className="text-orange-200/80 text-xs mt-2">
+                              {exercise.description.substring(0, 100)}...
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="cardio" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredCardio.map(session => (
+                  <Card key={session.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm">
+                    <CardHeader>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Equipment</span>
-                        <span className="text-orange-300 text-sm">{session.equipment}</span>
+                        <CardTitle className="text-white text-lg">{session.name}</CardTitle>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="border-red-400/50 text-red-300">
+                            {session.type}
+                          </Badge>
+                          <Badge variant={session.intensity === 'High' ? 'destructive' : session.intensity === 'Moderate' ? 'default' : 'secondary'}>
+                            {session.intensity}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <span className="text-sm text-gray-400">Instructions:</span>
-                        <ul className="list-disc list-inside space-y-1 text-orange-200/80 text-sm">
-                          {session.instructions.slice(0, 3).map((instruction, index) => (
-                            <li key={`${session.id}-instruction-${index}`}>{instruction}</li>
-                          ))}
-                        </ul>
+                      <CardDescription className="text-orange-200/70">
+                        {session.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-400">Duration</span>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-4 h-4 text-orange-400" />
+                            <span className="text-orange-300">{session.duration} min</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-400">Equipment</span>
+                          <span className="text-orange-300 text-sm">{session.equipment}</span>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-sm text-gray-400">Instructions:</span>
+                          <ul className="list-disc list-inside space-y-1 text-orange-200/80 text-sm">
+                            {session.instructions.slice(0, 3).map((instruction, index) => (
+                              <li key={`${session.id}-instruction-${index}`}>{instruction}</li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
 
       {/* AI Chat Sidebar */}

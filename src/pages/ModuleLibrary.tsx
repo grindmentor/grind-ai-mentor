@@ -94,27 +94,10 @@ const ModuleLibrary = () => {
     return (
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <button
-                  onClick={handleBackToLibrary}
-                  className="text-white hover:text-orange-400 transition-colors font-medium flex items-center space-x-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Library</span>
-                </button>
-                <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
-                  {selectedModule.title}
-                </h1>
-                <div className="w-20"></div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-            <ModuleComponent onBack={handleBackToLibrary} />
-          </div>
+          <ModuleComponent 
+            onBack={handleBackToLibrary}
+            navigationSource="library"
+          />
         </div>
       </PageTransition>
     );

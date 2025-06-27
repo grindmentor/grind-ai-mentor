@@ -9,11 +9,10 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { Star, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ScientificStudies from '@/components/homepage/ScientificStudies';
+import ScientificStudies from '@/components/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
-import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
-import GoalsAchievementsHub from '@/components/GoalsAchievementsHub';
+import CompactGoalsAchievements from '@/components/CompactGoalsAchievements';
 import { useFavorites } from '@/hooks/useFavorites';
 import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
 
@@ -22,12 +21,14 @@ const Dashboard = () => {
   const { modules } = useModules();
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
+  const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
 
   const handleModuleClick = (module) => {
     console.log('Module clicked:', module.id, 'at', new Date().toISOString());
     try {
       setSelectedModule(module);
+      setNavigationSource('dashboard');
     } catch (error) {
       console.error('Error setting selected module:', error);
     }
@@ -64,6 +65,7 @@ const Dashboard = () => {
                 <ModuleComponent 
                   onBack={handleBackToDashboard}
                   onFoodLogged={handleFoodLogged}
+                  navigationSource={navigationSource}
                 />
               </ModuleErrorBoundary>
             </div>
@@ -102,9 +104,9 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {/* Compact Notifications Summary */}
-              <div className="mb-6 sm:mb-8 lg:mb-12">
-                <NotificationsSummary />
+              {/* Scientific Studies Button */}
+              <div className="mb-6 sm:mb-8 text-center">
+                <ScientificStudies />
               </div>
 
               {/* Favorites Section with mobile-optimized layout */}
@@ -171,7 +173,7 @@ const Dashboard = () => {
 
               {/* Dashboard Content Grid - Mobile-optimized */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <GoalsAchievementsHub />
+                <CompactGoalsAchievements />
                 <PersonalizedSummary />
               </div>
             </div>

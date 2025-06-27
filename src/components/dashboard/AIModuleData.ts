@@ -1,3 +1,4 @@
+
 import { 
   MessageSquare, 
   Utensils, 
@@ -45,7 +46,7 @@ export const aiModules: AIModule[] = [
     title: 'Coach GPT',
     description: 'Your AI fitness coach for personalized guidance and motivation',
     icon: MessageSquare,
-    gradient: 'bg-gradient-to-br from-green-900/60 to-green-800/80 border-green-700/50',
+    gradient: 'from-green-600/80 to-green-800/90 border-green-500/60',
     component: CoachGPT,
     isPremium: false,
     isNew: true
@@ -55,7 +56,7 @@ export const aiModules: AIModule[] = [
     title: 'Smart Food Log',
     description: 'AI-powered nutrition tracking with instant macro analysis',
     icon: Utensils,
-    gradient: 'bg-gradient-to-br from-orange-900/60 to-orange-800/80 border-orange-700/50',
+    gradient: 'from-orange-600/80 to-orange-800/90 border-orange-500/60',
     component: SmartFoodLog,
     isPremium: false
   },
@@ -64,7 +65,7 @@ export const aiModules: AIModule[] = [
     title: 'Workout Logger',
     description: 'Track your workouts with AI-powered exercise recommendations',
     icon: Activity,
-    gradient: 'bg-gradient-to-br from-blue-900/60 to-blue-800/80 border-blue-700/50',
+    gradient: 'from-blue-600/80 to-blue-800/90 border-blue-500/60',
     component: WorkoutLoggerAI,
     isPremium: false
   },
@@ -73,7 +74,7 @@ export const aiModules: AIModule[] = [
     title: 'TDEE Calculator',
     description: 'Calculate your daily energy expenditure with precision',
     icon: Calculator,
-    gradient: 'bg-gradient-to-br from-indigo-900/60 to-indigo-800/80 border-indigo-700/50',
+    gradient: 'from-indigo-600/80 to-indigo-800/90 border-indigo-500/60',
     component: TDEECalculator,
     isPremium: false
   },
@@ -82,7 +83,7 @@ export const aiModules: AIModule[] = [
     title: 'Workout Library',
     description: 'Comprehensive database of exercises and workout programs',
     icon: Dumbbell,
-    gradient: 'bg-gradient-to-br from-blue-900/60 to-blue-800/80 border-blue-700/50',
+    gradient: 'from-orange-600/80 to-orange-800/90 border-orange-500/60',
     component: WorkoutLibrary,
     isPremium: false
   },
@@ -91,7 +92,7 @@ export const aiModules: AIModule[] = [
     title: 'CutCalc Pro',
     description: 'Advanced cutting calculator with timeline and macro targets',
     icon: TrendingDown,
-    gradient: 'bg-gradient-to-br from-red-900/60 to-red-800/80 border-red-700/50',
+    gradient: 'from-red-600/80 to-red-800/90 border-red-500/60',
     component: CutCalcPro,
     isPremium: true
   },
@@ -100,7 +101,7 @@ export const aiModules: AIModule[] = [
     title: 'Meal Plan AI',
     description: 'Generate personalized meal plans based on your goals',
     icon: Utensils,
-    gradient: 'bg-gradient-to-br from-orange-900/60 to-orange-800/80 border-orange-700/50',
+    gradient: 'from-orange-600/80 to-orange-800/90 border-orange-500/60',
     component: MealPlanAI,
     isPremium: true
   },
@@ -109,7 +110,7 @@ export const aiModules: AIModule[] = [
     title: 'Progress Hub',
     description: 'Track your fitness journey with detailed analytics',
     icon: TrendingUp,
-    gradient: 'bg-gradient-to-br from-purple-900/60 to-purple-800/80 border-purple-700/50',
+    gradient: 'from-purple-600/80 to-purple-800/90 border-purple-500/60',
     component: ProgressHub,
     isPremium: false
   },
@@ -118,7 +119,7 @@ export const aiModules: AIModule[] = [
     title: 'Recovery Coach',
     description: 'Optimize your recovery with personalized recommendations',
     icon: Heart,
-    gradient: 'bg-gradient-to-br from-teal-900/60 to-teal-800/80 border-teal-700/50',
+    gradient: 'from-teal-600/80 to-teal-800/90 border-teal-500/60',
     component: RecoveryCoach,
     isPremium: true
   },
@@ -127,7 +128,7 @@ export const aiModules: AIModule[] = [
     title: 'Habit Tracker',
     description: 'Build healthy habits with AI-powered tracking and insights',
     icon: CheckCircle,
-    gradient: 'bg-gradient-to-br from-emerald-900/60 to-emerald-800/80 border-emerald-700/50',
+    gradient: 'from-emerald-600/80 to-emerald-800/90 border-emerald-500/60',
     component: HabitTracker,
     isPremium: false
   },
@@ -136,7 +137,7 @@ export const aiModules: AIModule[] = [
     title: 'Physique AI',
     description: 'AI-powered physique analysis and progress tracking',
     icon: Camera,
-    gradient: 'bg-gradient-to-br from-slate-900/60 to-indigo-900/80 border-slate-700/50',
+    gradient: 'from-slate-600/80 to-indigo-800/90 border-slate-500/60',
     component: ProgressAI,
     isPremium: true
   }

@@ -24,7 +24,7 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
 }) => {
   return (
     <Card 
-      className={`bg-gradient-to-br ${gradient} backdrop-blur-sm border-0 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden`}
+      className={`bg-gradient-to-br ${gradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden`}
       onClick={onClick}
     >
       {/* Background pattern */}
@@ -40,7 +40,7 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
           </div>
           
           {/* Title */}
-          <h3 className="text-white font-bold text-lg leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-shadow-lg">
+          <h3 className="text-white font-bold text-lg leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             {title}
           </h3>
           

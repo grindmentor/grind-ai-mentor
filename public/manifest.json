@@ -106,7 +106,7 @@
       "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     }
   ],
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "edge_side_panel": {
     "preferred_width": 400
   }

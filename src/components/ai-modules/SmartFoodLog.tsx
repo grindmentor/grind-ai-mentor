@@ -1,86 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Utensils, Clock, Camera, Upload, Sparkles, Target, AlertCircle, Calculator } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import FoodLogEntry from "./FoodLogEntry";
-import { PageTransition } from "@/components/ui/page-transition";
-import { useIsMobile } from "@/hooks/use-mobile";
 
-interface SmartFoodLogProps {
-  onBack: () => void;
-}
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar, Plus, Utensils, BarChart3, Save, Search } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
+import { MobileHeader } from '@/components/MobileHeader';
+import FormattedAIResponse from '@/components/FormattedAIResponse';
 
 interface FoodEntry {
   id: string;
   food_name: string;
+  portion_size: string;
   meal_type: string;
   calories?: number;
   protein?: number;
   carbs?: number;
   fat?: number;
   fiber?: number;
-  portion_size?: string;
-  logged_date: string;
 }
 
-interface AnalyzedFood {
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  portion_size: string;
+interface SmartFoodLogProps {
+  onBack: () => void;
 }
 
-const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
+export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const [entries, setEntries] = useState<FoodEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
-  const [showCustomIngredient, setShowCustomIngredient] = useState(false);
-  const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
-  const [analyzedFoods, setAnalyzedFoods] = useState<AnalyzedFood[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [mealType, setMealType] = useState('lunch');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [newEntry, setNewEntry] = useState({
     food_name: '',
-    meal_type: '',
-    calories: '',
-    protein: '',
-    carbs: '',
-    fat: '',
-    fiber: '',
-    portion_size: ''
+    portion_size: '',
+    meal_type: 'breakfast'
   });
-  const [customIngredient, setCustomIngredient] = useState({
-    name: '',
-    meal_type: '',
-    calories_per_100g: '',
-    protein_per_100g: '',
-    carbs_per_100g: '',
-    fat_per_100g: '',
-    fiber_per_100g: '',
-    amount_consumed: '',
-    unit: 'g' // g, ml, oz, cups, etc.
-  });
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
-      loadEntries();
+      loadFoodEntries();
     }
-  }, [user]);
+  }, [user, selectedDate]);
 
-  const loadEntries = async () => {
+  const loadFoodEntries = async () => {
     if (!user) return;
 
     try {
@@ -88,784 +58,236 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
         .from('food_log_entries')
         .select('*')
         .eq('user_id', user.id)
-        .order('logged_date', { ascending: false });
+        .eq('logged_date', selectedDate)
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setEntries(data || []);
+
+      setFoodEntries(data || []);
     } catch (error) {
       console.error('Error loading food entries:', error);
+    }
+  };
+
+  const addFoodEntry = async () => {
+    if (!user || !newEntry.food_name.trim()) return;
+
+    setIsLoading(true);
+    try {
+      // Get nutritional analysis from AI
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `Analyze this food item and provide nutritional information in JSON format:
+          
+          Food: ${newEntry.food_name}
+          Portion: ${newEntry.portion_size || '1 serving'}
+          
+          Return ONLY a JSON object with these exact keys:
+          {
+            "calories": number,
+            "protein": number,
+            "carbs": number,
+            "fat": number,
+            "fiber": number
+          }
+          
+          Provide realistic estimates based on common portion sizes.`,
+          type: 'nutrition_analysis',
+          maxTokens: 200
+        }
+      });
+
+      let nutritionData = {};
+      if (!aiError && aiData?.response) {
+        try {
+          const cleanResponse = aiData.response.replace(/```json|```/g, '').trim();
+          nutritionData = JSON.parse(cleanResponse);
+        } catch (parseError) {
+          console.warn('Could not parse AI nutrition response:', parseError);
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('food_log_entries')
+        .insert({
+          user_id: user.id,
+          food_name: newEntry.food_name,
+          portion_size: newEntry.portion_size || '1 serving',
+          meal_type: newEntry.meal_type,
+          logged_date: selectedDate,
+          ...nutritionData
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setFoodEntries(prev => [...prev, data]);
+      setNewEntry({ food_name: '', portion_size: '', meal_type: 'breakfast' });
+      
       toast({
-        title: "Error loading entries",
-        description: "Please try again.",
-        variant: "destructive",
+        title: 'Food Added! 🍽️',
+        description: 'Food entry logged successfully.'
+      });
+    } catch (error) {
+      console.error('Error adding food entry:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add food entry.',
+        variant: 'destructive'
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-    } else {
+  const analyzeDailyIntake = async () => {
+    if (!user || foodEntries.length === 0) {
       toast({
-        title: "Invalid file type",
-        description: "Please select an image file.",
-        variant: "destructive",
+        title: 'No Data',
+        description: 'Add some food entries first to get an analysis.',
+        variant: 'destructive'
       });
+      return;
     }
-  };
 
-  const analyzePhoto = async () => {
-    if (!selectedFile || !user) return;
-
-    setAnalyzingPhoto(true);
+    setIsAnalyzing(true);
     try {
-      // Convert image to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(selectedFile);
-      });
-      
-      const base64Image = await base64Promise;
+      const totalCalories = foodEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0);
+      const totalProtein = foodEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0);
+      const totalCarbs = foodEntries.reduce((sum, entry) => sum + (entry.carbs || 0), 0);
+      const totalFat = foodEntries.reduce((sum, entry) => sum + (entry.fat || 0), 0);
 
-      const { data, error } = await supabase.functions.invoke('analyze-photo', {
+      const foodList = foodEntries.map(entry => 
+        `${entry.meal_type}: ${entry.food_name} (${entry.portion_size})`
+      ).join('\n');
+
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
-          image: base64Image,
-          weight: null, // We don't have user weight context here
-          height: null, // We don't have user height context here
-          context: `Food analysis for meal logging. Meal type: ${mealType}. Please identify all food items in the image and provide nutritional estimates for each item separately.`
+          prompt: `As a nutrition expert, analyze this daily food intake and provide insights:
+
+**Daily Summary:**
+- Total Calories: ${totalCalories}
+- Protein: ${totalProtein}g
+- Carbs: ${totalCarbs}g  
+- Fat: ${totalFat}g
+
+**Foods Consumed:**
+${foodList}
+
+Please provide:
+1. **Overall Assessment** of the nutritional quality
+2. **Macro Balance** analysis (protein/carbs/fat ratios)
+3. **Recommendations** for improvement
+4. **Missing Nutrients** that should be considered
+5. **Meal Timing** observations
+
+Keep the response practical and actionable. Use headings and bullet points for clarity.`,
+          type: 'nutrition_analysis',
+          maxTokens: 400
         }
       });
 
       if (error) throw error;
 
-      // Parse the analysis result to extract multiple food items
-      const analysisText = data.analysis || '';
-      const extractedFoods = extractFoodItems(analysisText);
-      
-      if (extractedFoods.length === 0) {
-        // Fallback: create a single entry from the general analysis
-        const calories = extractNutrientValue(analysisText, 'calories') || 0;
-        const protein = extractNutrientValue(analysisText, 'protein') || 0;
-        const carbs = extractNutrientValue(analysisText, 'carbs') || extractNutrientValue(analysisText, 'carbohydrates') || 0;
-        const fat = extractNutrientValue(analysisText, 'fat') || 0;
-        const fiber = extractNutrientValue(analysisText, 'fiber') || 0;
-
-        extractedFoods.push({
-          name: `Food from photo - ${selectedFile.name}`,
-          calories: Math.round(calories),
-          protein: Math.round(protein * 10) / 10,
-          carbs: Math.round(carbs * 10) / 10,
-          fat: Math.round(fat * 10) / 10,
-          fiber: Math.round(fiber * 10) / 10,
-          portion_size: 'AI estimated portion'
-        });
-      }
-
-      setAnalyzedFoods(extractedFoods);
-      
-      toast({
-        title: "Photo analyzed successfully!",
-        description: `Identified ${extractedFoods.length} food item(s). Review and save the entries.`,
-      });
-
+      setAnalysis(data?.response || 'Analysis not available at the moment.');
     } catch (error) {
-      console.error('Error analyzing photo:', error);
+      console.error('Error analyzing intake:', error);
       toast({
-        title: "Analysis failed",
-        description: "Please try again or add the food manually.",
-        variant: "destructive",
+        title: 'Analysis Error',
+        description: 'Failed to analyze your food intake.',
+        variant: 'destructive'
       });
     } finally {
-      setAnalyzingPhoto(false);
+      setIsAnalyzing(false);
     }
   };
 
-  const extractFoodItems = (analysisText: string): AnalyzedFood[] => {
-    const foods: AnalyzedFood[] = [];
-    
-    // Look for patterns like "1. Food Name:" or "- Food Name:"
-    const foodItemPattern = /(?:^\d+\.\s*|^-\s*|^•\s*)([^:]+):/gm;
-    const matches = [...analysisText.matchAll(foodItemPattern)];
-    
-    matches.forEach((match, index) => {
-      const foodName = match[1].trim();
-      const nextMatchIndex = matches[index + 1]?.index || analysisText.length;
-      const foodSection = analysisText.slice(match.index!, nextMatchIndex);
-      
-      const calories = extractNutrientValue(foodSection, 'calories') || 0;
-      const protein = extractNutrientValue(foodSection, 'protein') || 0;
-      const carbs = extractNutrientValue(foodSection, 'carbs') || extractNutrientValue(foodSection, 'carbohydrates') || 0;
-      const fat = extractNutrientValue(foodSection, 'fat') || 0;
-      const fiber = extractNutrientValue(foodSection, 'fiber') || 0;
-      
-      foods.push({
-        name: foodName,
-        calories: Math.round(calories),
-        protein: Math.round(protein * 10) / 10,
-        carbs: Math.round(carbs * 10) / 10,
-        fat: Math.round(fat * 10) / 10,
-        fiber: Math.round(fiber * 10) / 10,
-        portion_size: 'AI estimated'
-      });
-    });
-    
-    return foods;
+  const getTotalNutrition = () => {
+    return {
+      calories: foodEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0),
+      protein: foodEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0),
+      carbs: foodEntries.reduce((sum, entry) => sum + (entry.carbs || 0), 0),
+      fat: foodEntries.reduce((sum, entry) => sum + (entry.fat || 0), 0),
+      fiber: foodEntries.reduce((sum, entry) => sum + (entry.fiber || 0), 0)
+    };
   };
 
-  const extractNutrientValue = (text: string, nutrient: string): number | null => {
-    const patterns = [
-      new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)`, 'i'),
-      new RegExp(`([0-9]+(?:\\.[0-9]+)?)\\s*g?\\s*${nutrient}`, 'i'),
-      new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)\\s*g`, 'i'),
-    ];
-
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        return parseFloat(match[1]);
-      }
-    }
-    return null;
-  };
-
-  const saveAnalyzedFood = async (food: AnalyzedFood) => {
-    if (!user) return;
-
-    try {
-      const entryData = {
-        user_id: user.id,
-        food_name: food.name,
-        meal_type: mealType,
-        calories: food.calories,
-        protein: food.protein,
-        carbs: food.carbs,
-        fat: food.fat,
-        fiber: food.fiber,
-        portion_size: food.portion_size,
-        logged_date: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('food_log_entries')
-        .insert([entryData]);
-
-      if (error) throw error;
-
-      // Remove the saved food from analyzed foods
-      setAnalyzedFoods(prev => prev.filter(f => f !== food));
-      
-      toast({
-        title: "Food logged!",
-        description: `${food.name} has been added to your log.`,
-      });
-
-      loadEntries();
-    } catch (error) {
-      console.error('Error saving analyzed food:', error);
-      toast({
-        title: "Error saving food",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const saveAllAnalyzedFoods = async () => {
-    for (const food of analyzedFoods) {
-      await saveAnalyzedFood(food);
-    }
-  };
-
-  const handleAddEntry = async () => {
-    if (!user || !newEntry.food_name || !newEntry.meal_type) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in at least food name and meal type.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const entryData = {
-        user_id: user.id,
-        food_name: newEntry.food_name,
-        meal_type: newEntry.meal_type,
-        calories: newEntry.calories ? parseInt(newEntry.calories) : null,
-        protein: newEntry.protein ? parseFloat(newEntry.protein) : null,
-        carbs: newEntry.carbs ? parseFloat(newEntry.carbs) : null,
-        fat: newEntry.fat ? parseFloat(newEntry.fat) : null,
-        fiber: newEntry.fiber ? parseFloat(newEntry.fiber) : null,
-        portion_size: newEntry.portion_size || null,
-        logged_date: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('food_log_entries')
-        .insert([entryData]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Food logged!",
-        description: `${newEntry.food_name} has been added to your log.`,
-      });
-
-      // Reset form and reload entries
-      setNewEntry({
-        food_name: '',
-        meal_type: '',
-        calories: '',
-        protein: '',
-        carbs: '',
-        fat: '',
-        fiber: '',
-        portion_size: ''
-      });
-      setShowAddForm(false);
-      loadEntries();
-    } catch (error) {
-      console.error('Error adding food entry:', error);
-      toast({
-        title: "Error adding food",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCustomIngredientSubmit = async () => {
-    if (!user || !customIngredient.name || !customIngredient.meal_type || !customIngredient.amount_consumed) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in ingredient name, meal type, and amount consumed.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Calculate macros based on amount consumed
-      const amountInGrams = parseFloat(customIngredient.amount_consumed);
-      const multiplier = amountInGrams / 100; // Convert per 100g to actual amount
-
-      const calculatedCalories = Math.round((parseFloat(customIngredient.calories_per_100g) || 0) * multiplier);
-      const calculatedProtein = Math.round((parseFloat(customIngredient.protein_per_100g) || 0) * multiplier * 10) / 10;
-      const calculatedCarbs = Math.round((parseFloat(customIngredient.carbs_per_100g) || 0) * multiplier * 10) / 10;
-      const calculatedFat = Math.round((parseFloat(customIngredient.fat_per_100g) || 0) * multiplier * 10) / 10;
-      const calculatedFiber = Math.round((parseFloat(customIngredient.fiber_per_100g) || 0) * multiplier * 10) / 10;
-
-      const entryData = {
-        user_id: user.id,
-        food_name: customIngredient.name,
-        meal_type: customIngredient.meal_type,
-        calories: calculatedCalories,
-        protein: calculatedProtein,
-        carbs: calculatedCarbs,
-        fat: calculatedFat,
-        fiber: calculatedFiber,
-        portion_size: `${customIngredient.amount_consumed}${customIngredient.unit} (Custom)`,
-        logged_date: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('food_log_entries')
-        .insert([entryData]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Custom ingredient logged!",
-        description: `${customIngredient.name} (${calculatedCalories} cal) has been added to your log.`,
-      });
-
-      // Reset form and reload entries
-      setCustomIngredient({
-        name: '',
-        meal_type: '',
-        calories_per_100g: '',
-        protein_per_100g: '',
-        carbs_per_100g: '',
-        fat_per_100g: '',
-        fiber_per_100g: '',
-        amount_consumed: '',
-        unit: 'g'
-      });
-      setShowCustomIngredient(false);
-      loadEntries();
-    } catch (error) {
-      console.error('Error adding custom ingredient:', error);
-      toast({
-        title: "Error adding custom ingredient",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteEntry = (id: string) => {
-    setEntries(entries.filter(entry => entry.id !== id));
-  };
-
-  const todaysEntries = entries.filter(entry => {
-    const entryDate = new Date(entry.logged_date).toDateString();
-    const today = new Date().toDateString();
-    return entryDate === today;
-  });
-
-  const totalCalories = todaysEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0);
-  const totalProtein = todaysEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0);
-
-  if (loading) {
-    return (
-      <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-orange-900/30 text-white flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
-        </div>
-      </PageTransition>
-    );
-  }
+  const totals = getTotalNutrition();
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-orange-900/30 text-white">
-        <div className="p-3 sm:p-4 md:p-6">
-          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <Button 
-                variant="ghost" 
-                onClick={onBack}
-                className="text-white hover:bg-orange-800/50 backdrop-blur-sm w-fit"
-                size={isMobile ? "sm" : "default"}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {isMobile ? "Back" : "Back to Dashboard"}
-              </Button>
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-orange-500/30 to-amber-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-orange-400/30">
-                  <Utensils className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+    <UsageLimitGuard featureKey="food_log_analyses" featureName="Smart Food Log">
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-amber-900/30">
+        <MobileHeader 
+          title="Smart Food Log" 
+          onBack={onBack}
+        />
+        
+        <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Food Entry Section */}
+            <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/30 backdrop-blur-sm border-orange-500/30">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500/30 to-amber-500/40 rounded-xl flex items-center justify-center border border-orange-500/30">
+                    <Utensils className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-xl">Smart Food Log</CardTitle>
+                    <CardDescription className="text-orange-200/80">
+                      Track your meals with AI-powered nutrition analysis
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                    Smart Food Log
-                  </h1>
-                  <p className="text-xs sm:text-sm text-orange-200/80">AI-powered nutrition tracking</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Today's Summary */}
-            <Card className="bg-gradient-to-br from-orange-900/30 to-amber-900/20 backdrop-blur-sm border-orange-500/30">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white flex items-center text-lg sm:text-xl">
-                  <Clock className="w-5 h-5 mr-2 text-orange-400" />
-                  Today's Nutrition Summary
-                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="text-center bg-orange-800/20 rounded-lg p-3">
-                    <div className="text-xl sm:text-2xl font-bold text-orange-300">{todaysEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0)}</div>
-                    <div className="text-xs sm:text-sm text-orange-200/70">Calories</div>
-                  </div>
-                  <div className="text-center bg-orange-800/20 rounded-lg p-3">
-                    <div className="text-xl sm:text-2xl font-bold text-orange-300">{todaysEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0).toFixed(1)}g</div>
-                    <div className="text-xs sm:text-sm text-orange-200/70">Protein</div>
-                  </div>
-                  <div className="text-center bg-orange-800/20 rounded-lg p-3">
-                    <div className="text-xl sm:text-2xl font-bold text-orange-300">{todaysEntries.length}</div>
-                    <div className="text-xs sm:text-sm text-orange-200/70">Foods</div>
-                  </div>
-                  <div className="text-center bg-orange-800/20 rounded-lg p-3 flex items-center justify-center">
-                    <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/40">
-                      Active
-                    </Badge>
-                  </div>
+              
+              <CardContent className="space-y-6">
+                {/* Date Selection */}
+                <div className="space-y-2">
+                  <Label className="text-orange-200 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Date
+                  </Label>
+                  <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-orange-900/30 border-orange-500/50 text-white"
+                  />
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Add Entry Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
-              <Button 
-                onClick={() => setShowPhotoUpload(!showPhotoUpload)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
-                size={isMobile ? "default" : "lg"}
-              >
-                <Camera className="w-4 h-4 mr-2" />
-                {showPhotoUpload ? 'Cancel Photo' : 'Photo Analysis'}
-              </Button>
-              <Button 
-                onClick={() => setShowCustomIngredient(!showCustomIngredient)}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0"
-                size={isMobile ? "default" : "lg"}
-              >
-                <Calculator className="w-4 h-4 mr-2" />
-                {showCustomIngredient ? 'Cancel Custom' : 'Custom Ingredient'}
-              </Button>
-              <Button 
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0"
-                size={isMobile ? "default" : "lg"}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {showAddForm ? 'Cancel Manual' : 'Manual Entry'}
-              </Button>
-            </div>
-
-            {/* Photo Upload Section */}
-            {showPhotoUpload && (
-              <Card className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 backdrop-blur-sm border-blue-500/30 mt-4">
-                <CardHeader>
-                  <CardTitle className="text-white text-lg sm:text-xl flex items-center">
-                    <Camera className="w-5 h-5 mr-2 text-blue-400" />
-                    AI Photo Analysis
-                  </CardTitle>
-                  <CardDescription>Upload a photo to automatically identify and log multiple food items</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Photo Upload Tips */}
-                  <Card className="bg-blue-900/20 border-blue-500/30">
-                    <CardContent className="p-4">
-                      <h4 className="text-blue-300 font-medium mb-3 flex items-center">
-                        <Target className="w-4 h-4 mr-2" />
-                        📸 Best Results Tips
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-blue-200/80">
-                        <div>• Good lighting (natural light preferred)</div>
-                        <div>• Clear, focused image</div>
-                        <div>• Top-down angle works best</div>
-                        <div>• Separate different foods when possible</div>
-                        <div>• Include reference objects (utensils, plates)</div>
-                        <div>• Avoid blurry or dark photos</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* New Entry Form */}
+                <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
+                  <h3 className="text-lg font-semibold text-orange-200">Add Food Entry</h3>
+                  
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-white mb-2">Meal Type</label>
-                      <Select value={mealType} onValueChange={setMealType}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          <SelectItem value="breakfast">🌅 Breakfast</SelectItem>
-                          <SelectItem value="lunch">☀️ Lunch</SelectItem>
-                          <SelectItem value="dinner">🌙 Dinner</SelectItem>
-                          <SelectItem value="snack">🥨 Snack</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Upload Photo</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        id="food-photo-upload"
-                      />
-                      <label htmlFor="food-photo-upload">
-                        <div className="border-2 border-dashed border-gray-600 hover:border-blue-500 rounded-lg p-4 text-center cursor-pointer transition-colors">
-                          <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-300">
-                            {selectedFile ? selectedFile.name : 'Click to select photo'}
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={analyzePhoto}
-                    disabled={!selectedFile || analyzingPhoto}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {analyzingPhoto ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Analyzing Photo...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Analyze Food Photo
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Custom Ingredient Section */}
-            {showCustomIngredient && (
-              <Card className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 backdrop-blur-sm border-purple-500/30 mt-4">
-                <CardHeader>
-                  <CardTitle className="text-white text-lg sm:text-xl flex items-center">
-                    <Calculator className="w-5 h-5 mr-2 text-purple-400" />
-                    Custom Ingredient Calculator
-                  </CardTitle>
-                  <CardDescription>Add your own ingredient with nutritional values per 100g</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Ingredient Name</label>
-                      <Input
-                        value={customIngredient.name}
-                        onChange={(e) => setCustomIngredient({...customIngredient, name: e.target.value})}
-                        placeholder="e.g., Homemade Protein Bar"
-                        className="bg-gray-800 border-gray-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Meal Type</label>
-                      <Select value={customIngredient.meal_type} onValueChange={(value) => setCustomIngredient({...customIngredient, meal_type: value})}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                          <SelectValue placeholder="Select meal type" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          <SelectItem value="breakfast">🌅 Breakfast</SelectItem>
-                          <SelectItem value="lunch">☀️ Lunch</SelectItem>
-                          <SelectItem value="dinner">🌙 Dinner</SelectItem>
-                          <SelectItem value="snack">🥨 Snack</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
-                    <h4 className="text-purple-300 font-medium mb-3">Nutritional Values per 100g</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-purple-200 mb-1">Calories</label>
-                        <Input
-                          type="number"
-                          value={customIngredient.calories_per_100g}
-                          onChange={(e) => setCustomIngredient({...customIngredient, calories_per_100g: e.target.value})}
-                          placeholder="0"
-                          className="bg-gray-800 border-gray-700 text-white text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-purple-200 mb-1">Protein (g)</label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={customIngredient.protein_per_100g}
-                          onChange={(e) => setCustomIngredient({...customIngredient, protein_per_100g: e.target.value})}
-                          placeholder="0"
-                          className="bg-gray-800 border-gray-700 text-white text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-purple-200 mb-1">Carbs (g)</label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={customIngredient.carbs_per_100g}
-                          onChange={(e) => setCustomIngredient({...customIngredient, carbs_per_100g: e.target.value})}
-                          placeholder="0"
-                          className="bg-gray-800 border-gray-700 text-white text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-purple-200 mb-1">Fat (g)</label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={customIngredient.fat_per_100g}
-                          onChange={(e) => setCustomIngredient({...customIngredient, fat_per_100g: e.target.value})}
-                          placeholder="0"
-                          className="bg-gray-800 border-gray-700 text-white text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-4 w-full sm:w-1/4">
-                      <label className="block text-xs font-medium text-purple-200 mb-1">Fiber (g)</label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={customIngredient.fiber_per_100g}
-                        onChange={(e) => setCustomIngredient({...customIngredient, fiber_per_100g: e.target.value})}
-                        placeholder="0"
-                        className="bg-gray-800 border-gray-700 text-white text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                    <h4 className="text-green-300 font-medium mb-3">Amount Consumed</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-green-200 mb-2">Amount</label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={customIngredient.amount_consumed}
-                          onChange={(e) => setCustomIngredient({...customIngredient, amount_consumed: e.target.value})}
-                          placeholder="0"
-                          className="bg-gray-800 border-gray-700 text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-green-200 mb-2">Unit</label>
-                        <Select value={customIngredient.unit} onValueChange={(value) => setCustomIngredient({...customIngredient, unit: value})}>
-                          <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-gray-800 border-gray-700">
-                            <SelectItem value="g">Grams (g)</SelectItem>
-                            <SelectItem value="ml">Milliliters (ml)</SelectItem>
-                            <SelectItem value="oz">Ounces (oz)</SelectItem>
-                            <SelectItem value="cups">Cups</SelectItem>
-                            <SelectItem value="tbsp">Tablespoons</SelectItem>
-                            <SelectItem value="tsp">Teaspoons</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Calculated Values Preview */}
-                    {customIngredient.amount_consumed && (
-                      <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
-                        <h5 className="text-green-300 font-medium mb-2">Calculated Macros:</h5>
-                        <div className="grid grid-cols-4 gap-4 text-sm">
-                          <div className="text-center">
-                            <div className="text-white font-medium">
-                              {Math.round((parseFloat(customIngredient.calories_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100)}
-                            </div>
-                            <div className="text-gray-400">cal</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-white font-medium">
-                              {(Math.round((parseFloat(customIngredient.protein_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100 * 10) / 10).toFixed(1)}g
-                            </div>
-                            <div className="text-gray-400">protein</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-white font-medium">
-                              {(Math.round((parseFloat(customIngredient.carbs_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100 * 10) / 10).toFixed(1)}g
-                            </div>
-                            <div className="text-gray-400">carbs</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-white font-medium">
-                              {(Math.round((parseFloat(customIngredient.fat_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100 * 10) / 10).toFixed(1)}g
-                            </div>
-                            <div className="text-gray-400">fat</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <Button 
-                    onClick={handleCustomIngredientSubmit}
-                    className="bg-purple-500 hover:bg-purple-600 text-white w-full"
-                  >
-                    Add Custom Ingredient
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Analyzed Foods Results */}
-            {analyzedFoods.length > 0 && (
-              <Card className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 backdrop-blur-sm border-blue-500/30 mt-4">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center justify-between">
-                    <span className="flex items-center">
-                      <Sparkles className="w-5 h-5 mr-2 text-blue-400" />
-                      AI Analysis Results ({analyzedFoods.length} items)
-                    </span>
-                    <Button 
-                      onClick={saveAllAnalyzedFoods}
-                      size="sm"
-                      className="bg-green-500 hover:bg-green-600"
-                    >
-                      Save All
-                    </Button>
-                  </CardTitle>
-                  <CardDescription>Review and save the identified food items</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {analyzedFoods.map((food, index) => (
-                    <div key={index} className="p-4 bg-blue-800/50 rounded-lg border border-blue-700/50">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold text-white mb-1">{food.name}</h4>
-                          <p className="text-sm text-gray-400">Portion: {food.portion_size}</p>
-                        </div>
-                        <Button
-                          onClick={() => saveAnalyzedFood(food)}
-                          size="sm"
-                          className="bg-green-500 hover:bg-green-600"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Save
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
-                        <div className="text-center">
-                          <div className="text-white font-medium">{food.calories}</div>
-                          <div className="text-gray-400">cal</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-white font-medium">{food.protein}g</div>
-                          <div className="text-gray-400">protein</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-white font-medium">{food.carbs}g</div>
-                          <div className="text-gray-400">carbs</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-white font-medium">{food.fat}g</div>
-                          <div className="text-gray-400">fat</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-white font-medium">{food.fiber}g</div>
-                          <div className="text-gray-400">fiber</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Manual Add Entry Form */}
-            {showAddForm && (
-              <Card className="bg-gradient-to-br from-orange-900/30 to-amber-900/20 backdrop-blur-sm border-orange-500/30 mt-4">
-                <CardHeader>
-                  <CardTitle className="text-white text-lg sm:text-xl">Add Food Entry</CardTitle>
-                  <CardDescription>Log your food intake with nutritional details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Food Name</label>
+                      <Label className="text-orange-200">Food Item</Label>
                       <Input
                         value={newEntry.food_name}
-                        onChange={(e) => setNewEntry({...newEntry, food_name: e.target.value})}
-                        placeholder="e.g., Grilled Chicken"
-                        className="bg-gray-800 border-gray-700 text-white"
+                        onChange={(e) => setNewEntry(prev => ({ ...prev, food_name: e.target.value }))}
+                        placeholder="e.g., Grilled chicken breast"
+                        className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
                       />
                     </div>
+                    
                     <div>
-                      <label className="block text-sm font-medium text-white mb-2">Meal Type</label>
-                      <Select value={newEntry.meal_type} onValueChange={(value) => setNewEntry({...newEntry, meal_type: value})}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                          <SelectValue placeholder="Select meal type" />
+                      <Label className="text-orange-200">Portion Size</Label>
+                      <Input
+                        value={newEntry.portion_size}
+                        onChange={(e) => setNewEntry(prev => ({ ...prev, portion_size: e.target.value }))}
+                        placeholder="e.g., 6 oz, 1 cup, 2 slices"
+                        className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-orange-200">Meal Type</Label>
+                      <Select value={newEntry.meal_type} onValueChange={(value) => setNewEntry(prev => ({ ...prev, meal_type: value }))}>
+                        <SelectTrigger className="bg-orange-800/50 border-orange-500/30 text-white">
+                          <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectContent className="bg-orange-800 border-orange-500/30">
                           <SelectItem value="breakfast">Breakfast</SelectItem>
                           <SelectItem value="lunch">Lunch</SelectItem>
                           <SelectItem value="dinner">Dinner</SelectItem>
@@ -874,101 +296,131 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
                       </Select>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Calories</label>
-                      <Input
-                        type="number"
-                        value={newEntry.calories}
-                        onChange={(e) => setNewEntry({...newEntry, calories: e.target.value})}
-                        placeholder="0"
-                        className="bg-gray-800 border-gray-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Protein (g)</label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={newEntry.protein}
-                        onChange={(e) => setNewEntry({...newEntry, protein: e.target.value})}
-                        placeholder="0"
-                        className="bg-gray-800 border-gray-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Carbs (g)</label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={newEntry.carbs}
-                        onChange={(e) => setNewEntry({...newEntry, carbs: e.target.value})}
-                        placeholder="0"
-                        className="bg-gray-800 border-gray-700 text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Fat (g)</label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={newEntry.fat}
-                        onChange={(e) => setNewEntry({...newEntry, fat: e.target.value})}
-                        placeholder="0"
-                        className="bg-gray-800 border-gray-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Portion Size</label>
-                      <Input
-                        value={newEntry.portion_size}
-                        onChange={(e) => setNewEntry({...newEntry, portion_size: e.target.value})}
-                        placeholder="e.g., 1 cup, 100g"
-                        className="bg-gray-800 border-gray-700 text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <Button 
-                    onClick={handleAddEntry}
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white w-full"
+                  
+                  <Button
+                    onClick={addFoodEntry}
+                    disabled={!newEntry.food_name.trim() || isLoading}
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                   >
-                    Add Food Entry
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Food
+                      </>
+                    )}
                   </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Food Entries */}
-            <div className="space-y-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-orange-200">Recent Entries</h2>
-              {entries.length === 0 ? (
-                <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/10 backdrop-blur-sm border-orange-500/30">
-                  <CardContent className="p-6 sm:p-8 text-center">
-                    <Utensils className="w-12 h-12 sm:w-16 sm:h-16 text-orange-400/50 mx-auto mb-4" />
-                    <p className="text-orange-200/70 text-sm sm:text-base">No food entries yet. Start logging your meals!</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  {entries.map((entry) => (
-                    <FoodLogEntry 
-                      key={entry.id} 
-                      entry={entry} 
-                      onDelete={handleDeleteEntry}
-                    />
-                  ))}
                 </div>
-              )}
-            </div>
+
+                {/* Daily Summary */}
+                {foodEntries.length > 0 && (
+                  <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
+                    <h3 className="text-lg font-semibold text-orange-200">Daily Totals</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-400">{totals.calories}</div>
+                        <div className="text-sm text-orange-300">Calories</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-400">{totals.protein}g</div>
+                        <div className="text-sm text-orange-300">Protein</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-400">{totals.carbs}g</div>
+                        <div className="text-sm text-orange-300">Carbs</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-400">{totals.fat}g</div>
+                        <div className="text-sm text-orange-300">Fat</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-400">{totals.fiber}g</div>
+                        <div className="text-sm text-orange-300">Fiber</div>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      onClick={analyzeDailyIntake}
+                      disabled={isAnalyzing}
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <BarChart3 className="w-4 h-4 mr-2" />
+                          Analyze Daily Intake
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Food Entries & Analysis Section */}
+            <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/30 backdrop-blur-sm border-orange-500/30">
+              <CardHeader>
+                <CardTitle className="text-white">Food Entries & Analysis</CardTitle>
+                <CardDescription className="text-orange-200/80">
+                  Your meals for {new Date(selectedDate).toLocaleDateString()}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {foodEntries.length === 0 ? (
+                  <div className="text-center py-8 text-orange-300/70">
+                    <Utensils className="w-12 h-12 mx-auto mb-3 text-orange-400/50" />
+                    <p>No food entries for this date yet.</p>
+                    <p className="text-sm mt-1">Start by adding your meals!</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Food Entries List */}
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {foodEntries.map((entry) => (
+                        <div key={entry.id} className="p-3 bg-orange-900/30 rounded-lg border border-orange-500/20">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium text-white">{entry.food_name}</div>
+                              <div className="text-sm text-orange-300">{entry.portion_size}</div>
+                              <div className="text-xs text-orange-400 capitalize">{entry.meal_type}</div>
+                            </div>
+                            {entry.calories && (
+                              <div className="text-right">
+                                <div className="text-orange-200 font-medium">{entry.calories} cal</div>
+                                <div className="text-xs text-orange-300">
+                                  P: {entry.protein}g | C: {entry.carbs}g | F: {entry.fat}g
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* AI Analysis */}
+                    {analysis && (
+                      <div className="p-4 bg-orange-900/30 rounded-lg border border-orange-500/20">
+                        <h4 className="text-lg font-semibold text-orange-200 mb-3">AI Nutrition Analysis</h4>
+                        <FormattedAIResponse content={analysis} moduleType="food-log" />
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-    </PageTransition>
+    </UsageLimitGuard>
   );
 };
 

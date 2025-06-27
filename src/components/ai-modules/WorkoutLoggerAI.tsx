@@ -62,16 +62,17 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   }, [sharedExercises, clearExercises, toast]);
 
   const addExercise = (exerciseData: any) => {
+    // Handle both string and object exercise data
     const newExercise: Exercise = {
-      id: Date.now().toString(),
-      name: exerciseData.name || exerciseData,
+      id: Date.now().toString() + Math.random().toString(),
+      name: typeof exerciseData === 'string' ? exerciseData : exerciseData.name,
       sets: 3,
       reps: 10,
       weight: 0,
       rpe: 7,
       notes: ''
     };
-    setExercises([...exercises, newExercise]);
+    setExercises(prev => [...prev, newExercise]);
     setShowExerciseSearch(false);
   };
 
@@ -174,7 +175,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                 value={workoutName}
                 onChange={(e) => setWorkoutName(e.target.value)}
                 placeholder="e.g., Push Day, Leg Day, Full Body"
-                className="bg-blue-900/30 border-blue-500/50 text-white"
+                className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
               />
             </div>
 
@@ -277,7 +278,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                             value={exercise.notes || ''}
                             onChange={(e) => updateExercise(exercise.id, 'notes', e.target.value)}
                             placeholder="Form notes, how it felt, etc."
-                            className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                            className="bg-blue-800/50 border-blue-500/30 text-white text-sm placeholder:text-blue-400/50"
                           />
                         </div>
                       </CardContent>

@@ -118,27 +118,28 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (profile) {
         console.log("UserDataContext - Profile data loaded:", profile);
         
+        // Fixed age calculation
         let age = null;
         if (profile.birthday) {
           const today = new Date();
           const birthDate = new Date(profile.birthday);
           age = today.getFullYear() - birthDate.getFullYear();
           const monthDiff = today.getMonth() - birthDate.getMonth();
+          // More precise age calculation
           if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
             age--;
           }
         }
 
-        // Convert weight from lbs to preferred unit
+        // Convert weight and height from stored values (kg/cm) to display values based on preferences
         let weight = profile.weight;
-        if (weight && preferences?.weight_unit === 'kg') {
-          weight = Math.round(weight * 0.453592);
+        if (weight && preferences?.weight_unit === 'lbs') {
+          weight = Math.round(weight * 2.20462); // Convert kg to lbs for display
         }
 
-        // Convert height from inches to preferred unit
         let height = profile.height;
-        if (height && preferences?.height_unit === 'cm') {
-          height = Math.round(height * 2.54);
+        if (height && preferences?.height_unit === 'ft-in') {
+          height = Math.round(height / 2.54); // Convert cm to inches for display
         }
 
         // Get latest TDEE calculation

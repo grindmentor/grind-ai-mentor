@@ -58,10 +58,11 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         let weightValue = parseFloat(localProfile.weight);
         if (isNaN(weightValue)) weightValue = 0;
         
-        // Convert to kg if input is in lbs
+        // Convert to kg for storage (database stores in kg)
         if (preferences.weight_unit === 'lbs') {
           weightValue = weightValue / 2.20462; // Convert lbs to kg
         }
+        // If unit is kg, store as is
         updates.weight = Math.round(weightValue);
       }
       
@@ -69,10 +70,12 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         let heightValue = parseFloat(localProfile.height);
         if (isNaN(heightValue)) heightValue = 0;
         
-        // Convert to cm if input is in inches
+        // Convert to cm for storage (database stores in cm)
         if (preferences.height_unit === 'ft-in') {
-          heightValue = heightValue * 2.54; // Convert inches to cm
+          // Convert inches to cm
+          heightValue = heightValue * 2.54;
         }
+        // If unit is cm, store as is
         updates.height = Math.round(heightValue);
       }
       

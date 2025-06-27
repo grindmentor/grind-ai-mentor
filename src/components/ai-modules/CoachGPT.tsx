@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -273,8 +274,8 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                       <div
                         className={`max-w-[85%] rounded-lg p-4 ${
                           message.role === 'user'
-                            ? 'bg-green-600/80 text-white ml-4'
-                            : 'bg-green-900/40 text-green-100 mr-4 border border-green-500/30'
+                            ? 'bg-green-600/80 text-white ml-4 shadow-lg'
+                            : 'bg-green-900/40 text-green-100 mr-4 border border-green-500/30 shadow-lg'
                         }`}
                       >
                         <div className="flex items-start space-x-3">
@@ -298,7 +299,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                 )}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="max-w-[85%] bg-green-900/40 text-green-100 mr-4 border border-green-500/30 rounded-lg p-4">
+                    <div className="max-w-[85%] bg-green-900/40 text-green-100 mr-4 border border-green-500/30 rounded-lg p-4 shadow-lg">
                       <div className="flex items-center space-x-3">
                         <Bot className="w-5 h-5 text-green-400" />
                         <div className="flex space-x-1">

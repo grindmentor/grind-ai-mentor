@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 
@@ -123,10 +122,12 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
         return <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}><SmartFoodLog onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} /></React.Suspense>;
       
       case 'workout-library':
+        // Import the WorkoutLibrary component directly
         const WorkoutLibrary = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutLibrary').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Workout Library" {...props} /> })
-          )
+          import('@/components/ai-modules/WorkoutLibrary').catch((error) => {
+            console.error('Failed to load WorkoutLibrary:', error);
+            return { default: (props: any) => <PlaceholderComponent title="Workout Library" {...props} /> };
+          })
         );
         return <React.Suspense fallback={<PlaceholderComponent title="Workout Library" onBack={onBack} />}><WorkoutLibrary onBack={onBack || (() => {})} /></React.Suspense>;
       
@@ -179,7 +180,7 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
   }
 };
 
-export const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
+const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
   const modules: Module[] = [
     {
       id: 'smart-training',

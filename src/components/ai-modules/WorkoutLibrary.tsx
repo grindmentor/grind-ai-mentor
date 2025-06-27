@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,6 +51,8 @@ const mockExercises = [
 ];
 
 const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
+  console.log('WorkoutLibrary component is rendering');
+  
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<'programs' | 'exercises'>('exercises');
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,6 +95,8 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     }
   };
 
+  console.log('WorkoutLibrary rendering with', filteredExercises.length, 'exercises');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/10 to-blue-800/20 text-white">
       {/* Header */}
@@ -101,7 +104,10 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Button
-              onClick={onBack}
+              onClick={() => {
+                console.log('Back button clicked');
+                onBack();
+              }}
               variant="ghost"
               className="text-white hover:bg-blue-500/20 backdrop-blur-sm hover:text-blue-400 transition-all duration-200 font-medium flex items-center space-x-2 px-3 py-2 rounded-lg"
             >

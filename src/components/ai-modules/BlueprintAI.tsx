@@ -1,19 +1,15 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MobileModuleWrapper } from '@/components/ui/mobile-module-wrapper';
-import { Search, Filter, Eye, Zap, Heart, Target, Dumbbell, Timer, Star, Flame, Activity } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { expandedWorkoutTemplates } from '@/data/expandedWorkoutTemplates';
-import { WorkoutDetailModal } from '@/components/ai-modules/WorkoutDetailModal';
-import { ExerciseDetailModal } from '@/components/ai-modules/ExerciseDetailModal';
-import { LoadingSpinner } from '@/components/ui/loading-screen';
+import { ArrowLeft, Dumbbell, Clock, Target, Zap, Search, Filter, Star } from 'lucide-react';
+import { WorkoutDetailModal } from './WorkoutDetailModal';
+import { MobileHeader } from '@/components/MobileHeader';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Exercise {
   id: string;
@@ -43,245 +39,184 @@ interface BlueprintAIProps {
   onBack: () => void;
 }
 
-const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
-  const [workouts, setWorkouts] = useState<WorkoutTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+export const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
+  const isMobile = useIsMobile();
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutTemplate | null>(null);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterDifficulty, setFilterDifficulty] = useState<string>('all');
 
-  const loadUserProfile = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      setUserProfile(profile);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
+  // Mock workout data
+  const workoutTemplates: WorkoutTemplate[] = [
+    {
+      id: '1',
+      title: 'Push Pull Legs',
+      category: 'Split Programs',
+      duration: '60-75 min',
+      difficulty: 'Intermediate',
+      description: 'A classic 3-day split focusing on push movements, pull movements, and legs. Perfect for building strength and muscle mass.',
+      focus: ['Strength', 'Hypertrophy', 'Upper Body', 'Lower Body'],
+      exercises: [
+        {
+          id: 'e1',
+          name: 'Bench Press',
+          sets: 4,
+          reps: '6-8',
+          rest: '3 min',
+          primary_muscles: ['Chest', 'Triceps'],
+          equipment: 'Barbell',
+          difficulty_level: 'Intermediate'
+        },
+        {
+          id: 'e2',
+          name: 'Incline Dumbbell Press',
+          sets: 3,
+          reps: '8-10',
+          rest: '2-3 min',
+          primary_muscles: ['Upper Chest', 'Shoulders'],
+          equipment: 'Dumbbells',
+          difficulty_level: 'Intermediate'
+        }
+      ],
+      color: 'from-blue-900/40 to-indigo-900/60'
+    },
+    {
+      id: '2',
+      title: 'Full Body Strength',
+      category: 'Single Workouts',
+      duration: '45-60 min',
+      difficulty: 'Beginner',
+      description: 'Complete full-body workout targeting all major muscle groups. Ideal for beginners or those with limited time.',
+      focus: ['Strength', 'Full Body', 'Compound Movements'],
+      exercises: [
+        {
+          id: 'e3',
+          name: 'Squats',
+          sets: 3,
+          reps: '8-12',
+          rest: '2-3 min',
+          primary_muscles: ['Quadriceps', 'Glutes'],
+          equipment: 'Barbell',
+          difficulty_level: 'Beginner'
+        }
+      ],
+      color: 'from-green-900/40 to-emerald-900/60'
+    },
+    {
+      id: '3',
+      title: 'HIIT Cardio Blast',
+      category: 'Cardio',
+      duration: '20-30 min',
+      difficulty: 'Advanced',
+      description: 'High-intensity interval training designed to burn fat and improve cardiovascular fitness quickly.',
+      focus: ['Cardio', 'Fat Loss', 'Conditioning'],
+      exercises: [
+        {
+          id: 'e4',
+          name: 'Burpees',
+          sets: 4,
+          reps: '30 sec',
+          rest: '30 sec',
+          primary_muscles: ['Full Body'],
+          equipment: 'Bodyweight',
+          difficulty_level: 'Advanced'
+        }
+      ],
+      color: 'from-red-900/40 to-rose-900/60'
     }
-  }, [user]);
+  ];
 
-  const loadWorkouts = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Load expanded workout templates
-      setWorkouts(expandedWorkoutTemplates);
-    } catch (error) {
-      console.error('Error loading workouts:', error);
-      toast({
-        title: 'Error loading workouts',
-        description: 'Failed to load workout templates.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+  const filteredWorkouts = workoutTemplates.filter(workout => {
+    const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         workout.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         workout.focus.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesCategory = filterCategory === 'all' || workout.category === filterCategory;
+    const matchesDifficulty = filterDifficulty === 'all' || workout.difficulty === filterDifficulty;
+    
+    return matchesSearch && matchesCategory && matchesDifficulty;
+  });
 
-  useEffect(() => {
-    loadUserProfile();
-    loadWorkouts();
-  }, [loadUserProfile, loadWorkouts]);
-
-  const getPersonalizedRecommendations = useMemo(() => {
-    if (!userProfile) return workouts.slice(0, 3);
-
-    const userGoal = userProfile.goal;
-    const userExperience = userProfile.experience;
-
-    return workouts
-      .filter(workout => {
-        if (userGoal === 'lose_weight') return workout.category === 'Cardio' || workout.focus.includes('Fat Loss');
-        if (userGoal === 'build_muscle') return workout.focus.includes('Hypertrophy');
-        if (userGoal === 'improve_strength') return workout.focus.includes('Strength');
-        return true;
-      })
-      .filter(workout => {
-        if (userExperience === 'beginner') return workout.difficulty === 'Beginner';
-        if (userExperience === 'intermediate') return workout.difficulty !== 'Advanced';
-        return true;
-      })
-      .slice(0, 3);
-  }, [workouts, userProfile]);
-
-  const filteredWorkouts = useMemo(() => {
-    return workouts.filter(workout => {
-      const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           workout.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           workout.focus.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      const matchesCategory = selectedCategory === 'All' || workout.category === selectedCategory;
-      const matchesDifficulty = selectedDifficulty === 'All' || workout.difficulty === selectedDifficulty;
-      
-      return matchesSearch && matchesCategory && matchesDifficulty;
-    });
-  }, [workouts, searchQuery, selectedCategory, selectedDifficulty]);
-
-  const getCategoryIcon = useCallback((category: string) => {
-    switch (category) {
-      case 'Split Programs': return <Dumbbell className="w-4 h-4" />;
-      case 'Single Workouts': return <Target className="w-4 h-4" />;
-      case 'Cardio': return <Heart className="w-4 h-4" />;
-      default: return <Activity className="w-4 h-4" />;
-    }
-  }, []);
-
-  const getDifficultyColor = useCallback((difficulty: string) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Beginner': return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';
       case 'Intermediate': return 'bg-amber-500/20 text-amber-300 border-amber-400/30';
       case 'Advanced': return 'bg-rose-500/20 text-rose-300 border-rose-400/30';
       default: return 'bg-slate-500/20 text-slate-300 border-slate-400/30';
     }
-  }, []);
+  };
 
-  if (loading) {
-    return (
-      <MobileModuleWrapper title="Blueprint AI" onBack={onBack}>
-        <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/50 to-blue-900/30">
-          <div className="p-6 flex items-center justify-center h-64">
-            <LoadingSpinner message="Loading workout blueprints..." />
-          </div>
-        </div>
-      </MobileModuleWrapper>
-    );
-  }
-
-  const personalizedWorkouts = getPersonalizedRecommendations;
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Split Programs': return <Target className="w-4 h-4" />;
+      case 'Single Workouts': return <Dumbbell className="w-4 h-4" />;
+      case 'Cardio': return <Zap className="w-4 h-4" />;
+      default: return <Dumbbell className="w-4 h-4" />;
+    }
+  };
 
   return (
-    <MobileModuleWrapper title="Blueprint AI" onBack={onBack}>
-      <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/50 to-blue-900/30">
-        <div className="p-4 sm:p-6 space-y-8">
-          {/* Hero Section */}
-          <div className="text-center space-y-4 py-8">
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center mb-4">
-              <Zap className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-orange-900/30">
+      <MobileHeader 
+        title="Blueprint AI" 
+        onBack={onBack}
+      />
+      
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+        <Card className="bg-gradient-to-br from-orange-900/20 to-red-900/30 backdrop-blur-sm border-orange-500/30">
+          <CardHeader>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-orange-500/30 to-red-500/40 rounded-xl flex items-center justify-center border border-orange-500/30">
+                <Target className="w-5 h-5 text-orange-400" />
+              </div>
+              <div>
+                <CardTitle className="text-white text-xl">Blueprint AI</CardTitle>
+                <CardDescription className="text-orange-200/80">
+                  Discover science-backed workout templates and training programs
+                </CardDescription>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold text-white">AI-Powered Workout Blueprints</h1>
-            <p className="text-blue-200/80 max-w-md mx-auto">
-              Scientifically crafted workout plans tailored to your fitness goals
-            </p>
-          </div>
-
-          {/* AI Recommendations */}
-          {personalizedWorkouts.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center">
-                  <Star className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
-                  <p className="text-blue-200/70 text-sm">Based on your fitness profile</p>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {/* Search and Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-orange-200">Search Workouts</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-4 h-4" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name, focus, or muscle..."
+                    className="pl-10 bg-orange-900/30 border-orange-500/50 text-white placeholder:text-orange-200/50"
+                  />
                 </div>
               </div>
               
-              <div className="grid gap-4">
-                {personalizedWorkouts.map((workout) => (
-                  <Card 
-                    key={`rec-${workout.id}`}
-                    className="group bg-gradient-to-br from-blue-500/10 to-cyan-500/5 backdrop-blur-sm border-blue-400/20 hover:border-blue-400/40 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-400/30">
-                            {getCategoryIcon(workout.category)}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-white text-lg">{workout.title}</h3>
-                            <div className="flex items-center space-x-3 text-sm text-blue-200/70 mt-1">
-                              <span className="flex items-center">
-                                <Timer className="w-3 h-3 mr-1" />
-                                {workout.duration}
-                              </span>
-                              <span>{workout.exercises.length} exercises</span>
-                            </div>
-                          </div>
-                        </div>
-                        <Badge className={getDifficultyColor(workout.difficulty)}>
-                          {workout.difficulty}
-                        </Badge>
-                      </div>
-                      
-                      <p className="text-blue-100/80 text-sm mb-4 leading-relaxed">{workout.description}</p>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {workout.focus.slice(0, 3).map((focus, index) => (
-                          <Badge 
-                            key={index}
-                            variant="outline" 
-                            className="border-blue-400/20 text-blue-300 bg-blue-500/5 text-xs"
-                          >
-                            {focus}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <Button
-                        onClick={() => setSelectedWorkout(workout)}
-                        className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 font-medium"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Full Workout
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Search and Filters */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-white flex items-center">
-              <Flame className="w-5 h-5 mr-2 text-blue-400" />
-              Explore All Blueprints
-            </h2>
-            
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search workouts, muscle groups, or focus areas..."
-                  className="pl-12 bg-blue-900/20 border-blue-500/30 text-white placeholder:text-blue-200/50"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="bg-blue-900/20 border-blue-500/30 text-white">
-                    <Filter className="w-4 h-4 mr-2 text-blue-400" />
-                    <SelectValue placeholder="All Categories" />
+              <div className="space-y-2">
+                <Label className="text-orange-200">Category</Label>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="bg-orange-900/30 border-orange-500/50 text-white">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-gray-700">
-                    <SelectItem value="All">All Categories</SelectItem>
+                  <SelectContent className="bg-orange-900 border-orange-500">
+                    <SelectItem value="all">All Categories</SelectItem>
                     <SelectItem value="Split Programs">Split Programs</SelectItem>
                     <SelectItem value="Single Workouts">Single Workouts</SelectItem>
                     <SelectItem value="Cardio">Cardio</SelectItem>
                   </SelectContent>
                 </Select>
-                
-                <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                  <SelectTrigger className="bg-blue-900/20 border-blue-500/30 text-white">
-                    <Target className="w-4 h-4 mr-2 text-blue-400" />
-                    <SelectValue placeholder="All Levels" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-orange-200">Difficulty</Label>
+                <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
+                  <SelectTrigger className="bg-orange-900/30 border-orange-500/50 text-white">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900 border-gray-700">
-                    <SelectItem value="All">All Levels</SelectItem>
+                  <SelectContent className="bg-orange-900 border-orange-500">
+                    <SelectItem value="all">All Levels</SelectItem>
                     <SelectItem value="Beginner">Beginner</SelectItem>
                     <SelectItem value="Intermediate">Intermediate</SelectItem>
                     <SelectItem value="Advanced">Advanced</SelectItem>
@@ -289,97 +224,102 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                 </Select>
               </div>
             </div>
-          </div>
 
-          {/* Workout Grid */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">
-                {filteredWorkouts.length} Workout{filteredWorkouts.length !== 1 ? 's' : ''} Available
-              </h3>
-            </div>
-            
-            {filteredWorkouts.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="w-16 h-16 text-blue-400/50 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No workouts found</h3>
-                <p className="text-blue-200/70">Try adjusting your search or filters</p>
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {filteredWorkouts.map((workout) => (
-                  <Card 
-                    key={workout.id}
-                    className="group bg-gradient-to-br from-blue-900/20 to-blue-800/10 backdrop-blur-sm border-blue-500/20 hover:border-blue-400/40 transition-all duration-300"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-400/30">
+            {/* Workout Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredWorkouts.map((workout) => (
+                <Card 
+                  key={workout.id} 
+                  className={`bg-gradient-to-br ${workout.color} backdrop-blur-sm border-orange-500/30 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl group`}
+                  onClick={() => setSelectedWorkout(workout)}
+                >
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      {/* Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <h3 className="font-semibold text-white text-sm group-hover:text-orange-100 transition-colors">
+                            {workout.title}
+                          </h3>
+                          <div className="flex items-center space-x-2 text-xs text-orange-200/80">
                             {getCategoryIcon(workout.category)}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-white text-lg">{workout.title}</h3>
-                            <div className="flex items-center space-x-3 text-sm text-blue-200/70 mt-1">
-                              <span className="flex items-center">
-                                <Timer className="w-3 h-3 mr-1" />
-                                {workout.duration}
-                              </span>
-                              <span>{workout.exercises.length} exercises</span>
-                            </div>
+                            <span>{workout.category}</span>
                           </div>
                         </div>
                         <Badge className={getDifficultyColor(workout.difficulty)}>
                           {workout.difficulty}
                         </Badge>
                       </div>
-                      
-                      <p className="text-blue-100/80 text-sm mb-4 leading-relaxed">{workout.description}</p>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {workout.focus.slice(0, 4).map((focus, index) => (
+
+                      {/* Duration */}
+                      <div className="flex items-center space-x-2 text-orange-200/90">
+                        <Clock className="w-3 h-3" />
+                        <span className="text-xs">{workout.duration}</span>
+                      </div>
+
+                      {/* Focus Areas */}
+                      <div className="flex flex-wrap gap-1">
+                        {workout.focus.slice(0, 3).map((focus, index) => (
                           <Badge 
                             key={index}
                             variant="outline" 
-                            className="border-blue-400/20 text-blue-300 bg-blue-500/5 text-xs"
+                            className="border-orange-400/30 text-orange-300 bg-orange-500/10 text-xs"
                           >
                             {focus}
                           </Badge>
                         ))}
+                        {workout.focus.length > 3 && (
+                          <Badge variant="outline" className="border-orange-400/30 text-orange-300 bg-orange-500/10 text-xs">
+                            +{workout.focus.length - 3}
+                          </Badge>
+                        )}
                       </div>
 
-                      <Button
-                        onClick={() => setSelectedWorkout(workout)}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Workout Details
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                      {/* Description */}
+                      <p className="text-orange-100/80 text-xs line-clamp-2">
+                        {workout.description}
+                      </p>
+
+                      {/* Exercise Count */}
+                      <div className="flex items-center justify-between pt-2 border-t border-orange-500/20">
+                        <div className="flex items-center space-x-1 text-orange-200/80">
+                          <Dumbbell className="w-3 h-3" />
+                          <span className="text-xs">{workout.exercises.length} exercises</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="bg-orange-600/80 hover:bg-orange-600 text-xs h-6 px-2"
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredWorkouts.length === 0 && (
+              <div className="text-center py-12">
+                <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-orange-200 mb-2">No workouts found</h3>
+                <p className="text-orange-300/70">
+                  Try adjusting your search criteria or filters
+                </p>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Modals */}
-        {selectedWorkout && (
-          <WorkoutDetailModal
-            workout={selectedWorkout}
-            onClose={() => setSelectedWorkout(null)}
-            onExerciseClick={setSelectedExercise}
-          />
-        )}
-
-        {selectedExercise && (
-          <ExerciseDetailModal
-            exercise={selectedExercise}
-            onClose={() => setSelectedExercise(null)}
-          />
-        )}
+          </CardContent>
+        </Card>
       </div>
-    </MobileModuleWrapper>
+
+      {/* Workout Detail Modal */}
+      {selectedWorkout && (
+        <WorkoutDetailModal
+          workout={selectedWorkout}
+          onClose={() => setSelectedWorkout(null)}
+        />
+      )}
+    </div>
   );
 };
 

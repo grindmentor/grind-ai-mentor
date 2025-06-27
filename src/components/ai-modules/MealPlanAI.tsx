@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Utensils, Zap, Target, Calendar, Apple, Clock } from 'lucide-react';
+import { Utensils, Zap, Target, Calendar, Apple, Clock, Crown, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface MealPlanAIProps {
   onBack: () => void;
@@ -21,6 +22,8 @@ interface MealPlanAIProps {
 export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const { currentTier } = useSubscription();
   const [isGenerating, setIsGenerating] = useState(false);
   const [planData, setPlanData] = useState({
     goal: '',
@@ -33,6 +36,8 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   });
   const [generatedPlan, setGeneratedPlan] = useState<any>(null);
   const [savedPlans, setSavedPlans] = useState<any[]>([]);
+
+  const isPaidUser = currentTier !== 'free';
 
   useEffect(() => {
     if (user) {
@@ -63,6 +68,15 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
       toast({
         title: 'Missing Information',
         description: 'Please fill in your goal and diet type.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!isPaidUser) {
+      toast({
+        title: 'Premium Feature',
+        description: 'Upgrade to generate custom meal plans',
         variant: 'destructive'
       });
       return;
@@ -170,6 +184,79 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
     }
   };
 
+  if (!isPaidUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
+        <MobileHeader 
+          title="Meal Plan AI" 
+          onBack={onBack}
+        />
+        
+        <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
+                  <Utensils className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-white text-lg sm:text-xl flex items-center">
+                    Meal Plan AI
+                    <Crown className="w-5 h-5 ml-2 text-yellow-400" />
+                  </CardTitle>
+                  <CardDescription className="text-green-200/80 text-sm sm:text-base">
+                    Premium feature - Generate personalized meal plans
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              <div className="text-center py-8">
+                <Lock className="w-16 h-16 text-green-400/50 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-green-200 mb-2">Premium Feature</h3>
+                <p className="text-green-300/70 mb-6 max-w-md mx-auto">
+                  Unlock personalized meal plans with science-backed nutrition recommendations. 
+                  Get custom plans tailored to your goals, dietary preferences, and restrictions.
+                </p>
+                
+                {/* Preview Interface */}
+                <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-6 mb-6 opacity-60">
+                  <h4 className="text-green-200 font-medium mb-4">Preview: Sample Meal Plan</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                    <div className="space-y-2">
+                      <h5 className="text-green-300 font-medium text-sm">Breakfast</h5>
+                      <p className="text-green-200/80 text-xs">Protein Overnight Oats</p>
+                      <p className="text-green-300/60 text-xs">350 cal • 25g protein</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h5 className="text-green-300 font-medium text-sm">Lunch</h5>
+                      <p className="text-green-200/80 text-xs">Grilled Chicken Salad</p>
+                      <p className="text-green-300/60 text-xs">450 cal • 35g protein</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h5 className="text-green-300 font-medium text-sm">Dinner</h5>
+                      <p className="text-green-200/80 text-xs">Salmon with Sweet Potato</p>
+                      <p className="text-green-300/60 text-xs">500 cal • 40g protein</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button
+                  onClick={() => window.location.href = '/subscription'}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Upgrade to Premium
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <UsageLimitGuard featureKey="meal_plan_generations" featureName="Meal Plan AI">
       <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
@@ -186,8 +273,8 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                   <Utensils className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-white text-xl">Meal Plan AI</CardTitle>
-                  <CardDescription className="text-green-200/80">
+                  <CardTitle className="text-white text-lg sm:text-xl">Meal Plan AI</CardTitle>
+                  <CardDescription className="text-green-200/80 text-sm sm:text-base">
                     Generate personalized meal plans based on your goals
                   </CardDescription>
                 </div>
@@ -199,9 +286,9 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-green-200">Primary Goal</Label>
+                      <Label className="text-green-200 text-sm sm:text-base">Primary Goal</Label>
                       <Select value={planData.goal} onValueChange={(value) => setPlanData({...planData, goal: value})}>
-                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
+                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white text-sm sm:text-base">
                           <SelectValue placeholder="Select your goal" />
                         </SelectTrigger>
                         <SelectContent className="bg-green-900 border-green-500">
@@ -214,9 +301,9 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Diet Type</Label>
+                      <Label className="text-green-200 text-sm sm:text-base">Diet Type</Label>
                       <Select value={planData.dietType} onValueChange={(value) => setPlanData({...planData, dietType: value})}>
-                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
+                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white text-sm sm:text-base">
                           <SelectValue placeholder="Select diet type" />
                         </SelectTrigger>
                         <SelectContent className="bg-green-900 border-green-500">
@@ -233,20 +320,20 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-green-200">Target Calories</Label>
+                      <Label className="text-green-200 text-sm sm:text-base">Target Calories</Label>
                       <Input
                         type="number"
                         value={planData.calories}
                         onChange={(e) => setPlanData({...planData, calories: e.target.value})}
                         placeholder="e.g., 2000"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        className="bg-green-900/30 border-green-500/50 text-white text-sm sm:text-base"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Meals per Day</Label>
+                      <Label className="text-green-200 text-sm sm:text-base">Meals per Day</Label>
                       <Select value={planData.meals} onValueChange={(value) => setPlanData({...planData, meals: value})}>
-                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
+                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white text-sm sm:text-base">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-green-900 border-green-500">
@@ -259,35 +346,35 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Duration (days)</Label>
+                      <Label className="text-green-200 text-sm sm:text-base">Duration (days)</Label>
                       <Input
                         type="number"
                         value={planData.duration}
                         onChange={(e) => setPlanData({...planData, duration: e.target.value})}
                         placeholder="7"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        className="bg-green-900/30 border-green-500/50 text-white text-sm sm:text-base"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-green-200">Food Allergies/Restrictions</Label>
+                      <Label className="text-green-200 text-sm sm:text-base">Food Allergies/Restrictions</Label>
                       <Textarea
                         value={planData.allergies}
                         onChange={(e) => setPlanData({...planData, allergies: e.target.value})}
                         placeholder="e.g., nuts, dairy, gluten"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        className="bg-green-900/30 border-green-500/50 text-white placeholder:text-green-200/50 text-sm sm:text-base"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Food Preferences</Label>
+                      <Label className="text-green-200 text-sm sm:text-base">Food Preferences</Label>
                       <Textarea
                         value={planData.preferences}
                         onChange={(e) => setPlanData({...planData, preferences: e.target.value})}
                         placeholder="e.g., loves chicken, dislikes fish"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        className="bg-green-900/30 border-green-500/50 text-white placeholder:text-green-200/50 text-sm sm:text-base"
                       />
                     </div>
                   </div>
@@ -295,7 +382,7 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                   <Button
                     onClick={generateMealPlan}
                     disabled={isGenerating || !planData.goal || !planData.dietType}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-sm sm:text-base"
                   >
                     {isGenerating ? (
                       <>
@@ -314,14 +401,14 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
-                      <h2 className="text-2xl font-bold text-white">{generatedPlan.title}</h2>
-                      <p className="text-green-200">{generatedPlan.duration} days • {generatedPlan.calories} calories/day</p>
+                      <h2 className="text-xl sm:text-2xl font-bold text-white">{generatedPlan.title}</h2>
+                      <p className="text-green-200 text-sm sm:text-base">{generatedPlan.duration} days • {generatedPlan.calories} calories/day</p>
                     </div>
                     <div className="space-x-2">
-                      <Button onClick={saveMealPlan} className="bg-green-600 hover:bg-green-700">
+                      <Button onClick={saveMealPlan} className="bg-green-600 hover:bg-green-700" size="sm">
                         Save Plan
                       </Button>
-                      <Button onClick={() => setGeneratedPlan(null)} variant="outline">
+                      <Button onClick={() => setGeneratedPlan(null)} variant="outline" size="sm">
                         Generate New
                       </Button>
                     </div>
@@ -331,7 +418,7 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                     {generatedPlan.meals.map((day: any, index: number) => (
                       <Card key={index} className="bg-green-900/40 border-green-500/40">
                         <CardHeader>
-                          <CardTitle className="text-green-200 flex items-center">
+                          <CardTitle className="text-green-200 flex items-center text-sm sm:text-base">
                             <Calendar className="w-4 h-4 mr-2" />
                             {day.day}
                           </CardTitle>
@@ -341,20 +428,20 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
                             {Object.entries(day).filter(([key]) => key !== 'day').map(([mealType, meal]: [string, any]) => (
                               <div key={mealType} className="p-4 bg-green-800/30 rounded-lg">
                                 <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-white capitalize flex items-center">
+                                  <h4 className="font-semibold text-white capitalize flex items-center text-sm sm:text-base">
                                     <Apple className="w-4 h-4 mr-2" />
                                     {mealType}: {meal.name}
                                   </h4>
-                                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                                     {meal.calories} cal
                                   </Badge>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
+                                <div className="grid grid-cols-3 gap-2 mb-3 text-xs sm:text-sm">
                                   <div className="text-green-200">P: {meal.macros.protein}g</div>
                                   <div className="text-green-200">C: {meal.macros.carbs}g</div>
                                   <div className="text-green-200">F: {meal.macros.fat}g</div>
                                 </div>
-                                <div className="text-green-300 text-sm">
+                                <div className="text-green-300 text-xs sm:text-sm">
                                   <strong>Ingredients:</strong> {meal.ingredients.join(', ')}
                                 </div>
                               </div>
@@ -369,17 +456,17 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
 
               {savedPlans.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-green-200">Your Saved Meal Plans</h3>
+                  <h3 className="text-lg font-semibold text-green-200 text-sm sm:text-base">Your Saved Meal Plans</h3>
                   <div className="grid gap-3">
                     {savedPlans.map((plan) => (
                       <Card key={plan.id} className="bg-green-900/40 border-green-500/40">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-medium text-white">{plan.title}</h4>
-                              <p className="text-green-300 text-sm">{plan.user_requirements}</p>
+                              <h4 className="font-medium text-white text-sm sm:text-base">{plan.title}</h4>
+                              <p className="text-green-300 text-xs sm:text-sm">{plan.user_requirements}</p>
                             </div>
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                               Saved
                             </Badge>
                           </div>

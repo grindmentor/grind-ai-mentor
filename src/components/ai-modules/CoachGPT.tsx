@@ -77,9 +77,12 @@ If asked about meal plans or detailed training programs, politely redirect to th
         .order('created_at', { ascending: true })
         .limit(20); // Limit to recent messages for better performance
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading conversation:', error);
+        // Continue without throwing to prevent blocking the UI
+      }
 
-      const conversationMessages = data.map(msg => ({
+      const conversationMessages = (data || []).map(msg => ({
         id: msg.id,
         role: msg.message_role as 'user' | 'assistant',
         content: msg.message_content,
@@ -241,7 +244,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
-                <h1 className="text-2xl font-bold text-white">CoachGPT</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">CoachGPT</h1>
               </div>
             </div>
           </div>
@@ -255,8 +258,8 @@ If asked about meal plans or detailed training programs, politely redirect to th
                   <MessageSquare className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
-                  <CardDescription className="text-green-200/80">
+                  <CardTitle className="text-white text-lg sm:text-xl">CoachGPT</CardTitle>
+                  <CardDescription className="text-green-200/80 text-sm sm:text-base">
                     Your AI fitness coach and training companion
                   </CardDescription>
                 </div>
@@ -268,8 +271,8 @@ If asked about meal plans or detailed training programs, politely redirect to th
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <Bot className="w-16 h-16 text-green-400/50 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-green-200 mb-2">Hello! I'm CoachGPT 💪</h3>
-                    <p className="text-green-300/70 mb-6 max-w-md mx-auto">
+                    <h3 className="text-lg sm:text-xl font-semibold text-green-200 mb-2">Hello! I'm CoachGPT 💪</h3>
+                    <p className="text-green-300/70 mb-6 max-w-md mx-auto text-sm sm:text-base">
                       I'm your personal fitness coach, here to help with training advice, form tips, motivation, and answering your fitness questions!
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
@@ -278,7 +281,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                           key={index}
                           onClick={() => setInput(question)}
                           variant="outline"
-                          className="text-green-300 border-green-500/30 hover:bg-green-500/10 text-sm h-auto py-3 px-4 whitespace-normal text-left"
+                          className="text-green-300 border-green-500/30 hover:bg-green-500/10 text-xs sm:text-sm h-auto py-3 px-4 whitespace-normal text-left"
                         >
                           {question}
                         </Button>
@@ -305,7 +308,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                           {message.role === 'user' && (
                             <User className="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
                           )}
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
+                          <div className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{message.content}</div>
                         </div>
                       </div>
                     </div>
@@ -333,7 +336,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me about fitness, training, or motivation..."
-                  className="flex-1 bg-green-900/30 border-green-500/50 text-white placeholder:text-green-200/50"
+                  className="flex-1 bg-green-900/30 border-green-500/50 text-white placeholder:text-green-200/50 text-sm sm:text-base"
                   disabled={isLoading}
                   maxLength={500}
                 />

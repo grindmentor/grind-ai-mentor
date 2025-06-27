@@ -134,8 +134,8 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                 <Dumbbell className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <CardTitle className="text-white text-xl">Workout Logger AI</CardTitle>
-                <CardDescription className="text-blue-200/80">
+                <CardTitle className="text-white text-lg sm:text-xl">Workout Logger AI</CardTitle>
+                <CardDescription className="text-blue-200/80 text-sm sm:text-base">
                   Log your workouts with intelligent exercise tracking
                 </CardDescription>
               </div>
@@ -144,21 +144,21 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
           
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label className="text-blue-200">Workout Name</Label>
+              <Label className="text-blue-200 text-sm sm:text-base">Workout Name</Label>
               <Input
                 value={workoutName}
                 onChange={(e) => setWorkoutName(e.target.value)}
                 placeholder="e.g., Push Day, Leg Day, Full Body"
-                className="bg-blue-900/30 border-blue-500/50 text-white"
+                className="bg-blue-900/30 border-blue-500/50 text-white text-sm sm:text-base"
               />
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-blue-200">Exercises</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-blue-200">Exercises</h3>
                 <Button
                   onClick={() => setShowExerciseSearch(!showExerciseSearch)}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700 text-sm"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Exercise
@@ -179,7 +179,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
               {exercises.length === 0 ? (
                 <div className="text-center py-8 text-blue-300/70">
                   <Dumbbell className="w-12 h-12 mx-auto mb-3 text-blue-400/50" />
-                  <p>No exercises added yet. Search and add exercises to start logging your workout.</p>
+                  <p className="text-sm sm:text-base">No exercises added yet. Search and add exercises to start logging your workout.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -187,12 +187,12 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                     <Card key={exercise.id} className="bg-blue-900/40 border-blue-500/40">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-semibold text-white">{exercise.name}</h4>
+                          <h4 className="font-semibold text-white text-sm sm:text-base">{exercise.name}</h4>
                           <Button
                             onClick={() => removeExercise(exercise.id)}
                             variant="ghost"
                             size="sm"
-                            className="text-red-400 hover:text-red-300"
+                            className="text-red-400 hover:text-red-300 text-xs sm:text-sm"
                           >
                             Remove
                           </Button>
@@ -200,53 +200,53 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           <div>
-                            <Label className="text-blue-200 text-xs">Sets</Label>
+                            <Label className="text-blue-200 text-xs sm:text-sm">Sets</Label>
                             <Input
                               type="number"
                               value={exercise.sets}
                               onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value))}
-                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-xs sm:text-sm"
                             />
                           </div>
                           <div>
-                            <Label className="text-blue-200 text-xs">Reps</Label>
+                            <Label className="text-blue-200 text-xs sm:text-sm">Reps</Label>
                             <Input
                               type="number"
                               value={exercise.reps}
                               onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value))}
-                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-xs sm:text-sm"
                             />
                           </div>
                           <div>
-                            <Label className="text-blue-200 text-xs">Weight (lbs)</Label>
+                            <Label className="text-blue-200 text-xs sm:text-sm">Weight (lbs)</Label>
                             <Input
                               type="number"
                               step="0.5"
                               value={exercise.weight}
                               onChange={(e) => updateExercise(exercise.id, 'weight', parseFloat(e.target.value))}
-                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-xs sm:text-sm"
                             />
                           </div>
                           <div>
-                            <Label className="text-blue-200 text-xs">RPE</Label>
+                            <Label className="text-blue-200 text-xs sm:text-sm">RPE</Label>
                             <Input
                               type="number"
                               min="1"
                               max="10"
                               value={exercise.rpe}
                               onChange={(e) => updateExercise(exercise.id, 'rpe', parseInt(e.target.value))}
-                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-xs sm:text-sm"
                             />
                           </div>
                         </div>
                         
                         <div className="mt-3">
-                          <Label className="text-blue-200 text-xs">Notes (optional)</Label>
+                          <Label className="text-blue-200 text-xs sm:text-sm">Notes (optional)</Label>
                           <Input
                             value={exercise.notes || ''}
                             onChange={(e) => updateExercise(exercise.id, 'notes', e.target.value)}
                             placeholder="Form notes, how it felt, etc."
-                            className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                            className="bg-blue-800/50 border-blue-500/30 text-white text-xs sm:text-sm"
                           />
                         </div>
                       </CardContent>
@@ -260,7 +260,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
               <Button
                 onClick={logWorkout}
                 disabled={isLogging || !workoutName.trim()}
-                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 py-3"
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 py-3 text-sm sm:text-base"
               >
                 {isLogging ? (
                   <>

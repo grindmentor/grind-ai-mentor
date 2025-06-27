@@ -1,506 +1,267 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Activity, 
-  TrendingUp, 
-  Calendar, 
-  Target, 
-  Zap,
-  BarChart3,
-  Clock,
-  Award,
-  Settings,
-  Library,
-  User,
-  Bell,
-  ChevronRight,
-  Flame,
-  Droplets,
-  Moon,
-  Heart
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { SmoothButton } from "@/components/ui/smooth-button";
-import { MobileOptimized } from "@/components/ui/mobile-optimized";
-import { useMobileEnhancements } from "@/hooks/useMobileEnhancements";
-import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
-import GoalsAchievementsHubOptimized from './GoalsAchievementsHubOptimized';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useModules } from '@/contexts/ModulesContext';
+import { PageTransition } from '@/components/ui/page-transition';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
+import { Star, TrendingUp, Sparkles, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import ScientificStudies from '@/components/homepage/ScientificStudies';
+import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
+import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
+import { useIsMobile } from '@/hooks/use-mobile';
+import GoalsAchievementsHub from '@/components/GoalsAchievementsHub';
+import { useFavorites } from '@/hooks/useFavorites';
+import { InstantLoader } from '@/components/ui/instant-loader';
+import { SmoothTransition } from '@/components/ui/smooth-transition';
+import { MobileOptimized, TouchButton } from '@/components/ui/mobile-optimized';
+import { useInstantModule } from '@/hooks/useInstantModule';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const { modules } = useModules();
   const isMobile = useIsMobile();
-  const { hapticFeedback, safeArea } = useMobileEnhancements();
-  const performanceMetrics = usePerformanceMonitor();
-  
-  const [activeTab, setActiveTab] = useState('overview');
-  const [quickStats, setQuickStats] = useState({
-    workoutsThisWeek: 0,
-    caloriesBurned: 0,
-    activeMinutes: 0,
-    streak: 0
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [showModuleSelector, setShowModuleSelector] = useState(false);
+  const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
+
+  // Preload module data for instant access
+  const { isLoading: dashboardLoading } = useInstantModule({
+    moduleId: 'dashboard',
+    preloadData: async () => {
+      // Preload user profile data, favorites, and other dashboard data
+      return { loaded: true };
+    },
+    minLoadTime: 100
   });
 
-  useEffect(() => {
-    // Simulate loading user stats
-    const loadStats = async () => {
-      // In a real app, this would fetch from your backend
-      setQuickStats({
-        workoutsThisWeek: 4,
-        caloriesBurned: 1250,
-        activeMinutes: 180,
-        streak: 7
-      });
-    };
+  // Memoize filtered modules for better performance
+  const { regularModules, progressHubModule } = useMemo(() => {
+    if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null };
     
-    if (user) {
-      loadStats();
-    }
-  }, [user]);
+    return {
+      regularModules: modules.filter(m => m.id !== 'progress-hub'),
+      progressHubModule: modules.find(m => m.id === 'progress-hub')
+    };
+  }, [modules]);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Signed out successfully",
-        description: "See you next time!",
-      });
-      navigate('/');
-    } catch (error) {
-      toast({
-        title: "Error signing out",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleModuleClick = (module) => {
+    console.log('Module clicked:', module.id);
+    setSelectedModule(module);
   };
 
-  const quickActions = [
-    {
-      title: "Start Workout",
-      description: "Begin your training session",
-      icon: Zap,
-      color: "from-orange-500 to-red-500",
-      action: () => {
-        hapticFeedback('medium');
-        navigate('/workout');
-      }
-    },
-    {
-      title: "Log Nutrition",
-      description: "Track your meals",
-      icon: Droplets,
-      color: "from-green-500 to-emerald-500",
-      action: () => {
-        hapticFeedback('light');
-        navigate('/nutrition');
-      }
-    },
-    {
-      title: "View Progress",
-      description: "Check your stats",
-      icon: TrendingUp,
-      color: "from-blue-500 to-purple-500",
-      action: () => {
-        hapticFeedback('light');
-        navigate('/progress');
-      }
-    },
-    {
-      title: "Recovery",
-      description: "Rest and recover",
-      icon: Moon,
-      color: "from-indigo-500 to-blue-500",
-      action: () => {
-        hapticFeedback('light');
-        navigate('/recovery');
-      }
-    }
-  ];
+  const handleBackToDashboard = () => {
+    setSelectedModule(null);
+  };
 
-  const todaySchedule = [
-    {
-      time: "9:00 AM",
-      title: "Morning Cardio",
-      type: "Workout",
-      duration: "30 min",
-      completed: true
-    },
-    {
-      time: "1:00 PM",
-      title: "Protein Shake",
-      type: "Nutrition",
-      duration: "5 min",
-      completed: true
-    },
-    {
-      time: "6:00 PM",
-      title: "Strength Training",
-      type: "Workout",
-      duration: "45 min",
-      completed: false
-    },
-    {
-      time: "9:00 PM",
-      title: "Evening Stretch",
-      type: "Recovery",
-      duration: "15 min",
-      completed: false
-    }
-  ];
+  const handleFoodLogged = (data) => {
+    console.log('Food logged:', data);
+  };
 
-  if (!user) {
+  // Show instant loader only if both modules and dashboard are loading
+  if (dashboardLoading || !modules || modules.length === 0) {
+    return <InstantLoader isLoading={true} variant="module" />;
+  }
+
+  if (selectedModule) {
+    const ModuleComponent = selectedModule.component;
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-black/40 backdrop-blur-sm border-orange-500/30">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="w-8 h-8 text-orange-400" />
+      <ErrorBoundary>
+        <MobileOptimized>
+          <SmoothTransition show={true} type="slideUp">
+            <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-hidden">
+              <ModuleComponent 
+                onBack={handleBackToDashboard}
+                onFoodLogged={handleFoodLogged}
+              />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Welcome to Myotopia</h2>
-            <p className="text-gray-400 mb-6">Sign in to access your personalized fitness dashboard</p>
-            <Button 
-              onClick={() => navigate('/auth')}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-            >
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </SmoothTransition>
+        </MobileOptimized>
+      </ErrorBoundary>
     );
   }
 
+  const favoriteModules = regularModules.filter(module => favorites.includes(module.id));
+  const availableModules = regularModules.filter(module => !favorites.includes(module.id));
+
   return (
-    <MobileOptimized className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20">
-      <div 
-        className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6"
-        style={{ 
-          paddingTop: `max(${safeArea.top}px, 1rem)`,
-          paddingBottom: `max(${safeArea.bottom}px, 1rem)`
-        }}
-      >
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
-          <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-              Welcome back, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'Athlete'}!
-            </h1>
-            <p className="text-gray-400 text-sm sm:text-base">
-              {new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <SmoothButton
-              onClick={() => navigate('/module-library')}
-              variant="outline"
-              className="text-orange-400 border-orange-500/40 hover:bg-orange-500/20 backdrop-blur-sm"
-              size={isMobile ? "sm" : "default"}
-            >
-              <Library className="w-4 h-4 mr-2" />
-              Modules
-            </SmoothButton>
-            
-            <SmoothButton
-              onClick={() => navigate('/profile')}
-              variant="outline"
-              className="text-orange-400 border-orange-500/40 hover:bg-orange-500/20 backdrop-blur-sm"
-              size={isMobile ? "sm" : "default"}
-            >
-              <Settings className="w-4 h-4" />
-              {!isMobile && <span className="ml-2">Settings</span>}
-            </SmoothButton>
-          </div>
-        </div>
+    <ErrorBoundary>
+      <MobileOptimized>
+        <PageTransition className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-hidden">
+          <DashboardHeader />
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/30 backdrop-blur-sm border-orange-500/30">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500/30 rounded-lg flex items-center justify-center">
-                  <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full">
+            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+              {/* Welcome section - Mobile optimized */}
+              <SmoothTransition show={true} type="slideUp">
+                <div className="text-center space-y-3 sm:space-y-4">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight bg-gradient-to-r from-white via-orange-100 to-orange-200 bg-clip-text text-transparent">
+                    Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
+                  </h1>
+                  <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto">
+                    Ready to achieve your fitness goals with science-backed training?
+                  </p>
                 </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-orange-200/80">Workouts</p>
-                  <p className="text-lg sm:text-xl font-bold text-white">{quickStats.workoutsThisWeek}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </SmoothTransition>
 
-          <Card className="bg-gradient-to-r from-green-500/20 to-emerald-500/30 backdrop-blur-sm border-green-500/30">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500/30 rounded-lg flex items-center justify-center">
-                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-green-200/80">Calories</p>
-                  <p className="text-lg sm:text-xl font-bold text-white">{quickStats.caloriesBurned}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Notifications Summary - Faster loading */}
+              <SmoothTransition show={true} type="fade">
+                <NotificationsSummary />
+              </SmoothTransition>
 
-          <Card className="bg-gradient-to-r from-blue-500/20 to-purple-500/30 backdrop-blur-sm border-blue-500/30">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/30 rounded-lg flex items-center justify-center">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-blue-200/80">Active Min</p>
-                  <p className="text-lg sm:text-xl font-bold text-white">{quickStats.activeMinutes}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Favorites Section */}
+              <SmoothTransition show={!favoritesLoading} type="slideUp">
+                {favoriteModules.length > 0 ? (
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
+                        <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
+                        Your Favorites
+                      </h2>
+                      
+                      <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
+                        <SheetTrigger asChild>
+                          <TouchButton 
+                            onClick={() => setShowModuleSelector(true)}
+                            className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                          >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Add More
+                          </TouchButton>
+                        </SheetTrigger>
+                        <SheetContent side="right" className="w-full sm:max-w-md bg-black/95 backdrop-blur-md border-l border-gray-800/50">
+                          <SheetHeader>
+                            <SheetTitle className="text-white flex items-center">
+                              <Star className="w-5 h-5 mr-2 text-yellow-400" />
+                              Add to Favorites
+                            </SheetTitle>
+                          </SheetHeader>
+                          <ScrollArea className="mt-6 h-[calc(100vh-8rem)]">
+                            <div className="space-y-3 pr-4">
+                              {availableModules.map((module) => (
+                                <div
+                                  key={module.id}
+                                  className="flex items-center justify-between p-4 bg-gray-900/40 border border-gray-700/50 rounded-xl hover:bg-gray-800/60 transition-all duration-200"
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500/20 to-red-600/30 flex items-center justify-center">
+                                      <module.icon className="w-5 h-5 text-orange-400" />
+                                    </div>
+                                    <div>
+                                      <h3 className="text-white font-medium text-sm">{module.title}</h3>
+                                      <p className="text-gray-400 text-xs">{module.description}</p>
+                                    </div>
+                                  </div>
+                                  <TouchButton
+                                    onClick={() => {
+                                      toggleFavorite(module.id);
+                                      setShowModuleSelector(false);
+                                    }}
+                                    className="text-yellow-400 hover:bg-yellow-500/20 p-2 rounded-lg transition-colors"
+                                  >
+                                    <Star className="w-4 h-4" />
+                                  </TouchButton>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </SheetContent>
+                      </Sheet>
+                    </div>
+                    
+                    <ModuleGrid
+                      modules={favoriteModules}
+                      favorites={favorites}
+                      onModuleClick={handleModuleClick}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                    
+                    {/* Add More button below modules */}
+                    <div className="flex justify-center pt-4">
+                      <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
+                        <SheetTrigger asChild>
+                          <TouchButton 
+                            onClick={() => setShowModuleSelector(true)}
+                            className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Add More Favorites</span>
+                          </TouchButton>
+                        </SheetTrigger>
+                      </Sheet>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
+                      <Star className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500 mx-auto mb-4" />
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-3 sm:mb-4">No Favorites Yet</h2>
+                      <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
+                        Visit the Module Library to explore and favorite modules you'd like to see here.
+                      </p>
+                      <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
+                        <SheetTrigger asChild>
+                          <TouchButton
+                            onClick={() => setShowModuleSelector(true)}
+                            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-150 active:scale-95"
+                          >
+                            Browse Modules
+                          </TouchButton>
+                        </SheetTrigger>
+                      </Sheet>
+                    </div>
+                  </div>
+                )}
+              </SmoothTransition>
 
-          <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/30 backdrop-blur-sm border-yellow-500/30">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500/30 rounded-lg flex items-center justify-center">
-                  <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-yellow-200/80">Streak</p>
-                  <p className="text-lg sm:text-xl font-bold text-white">{quickStats.streak} days</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="bg-gradient-to-r from-gray-900/40 to-gray-800/50 backdrop-blur-sm border-gray-700/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-white text-lg sm:text-xl flex items-center">
-              <Zap className="w-5 h-5 mr-2 text-orange-400" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {quickActions.map((action, index) => {
-                const IconComponent = action.icon;
-                return (
-                  <SmoothButton
-                    key={index}
-                    onClick={action.action}
-                    className={`p-3 sm:p-4 h-auto bg-gradient-to-r ${action.color} bg-opacity-20 hover:bg-opacity-30 border border-white/20 hover:border-white/30 backdrop-blur-sm transition-all duration-200`}
+              {/* Progress Hub - Enhanced mobile experience */}
+              {progressHubModule && (
+                <SmoothTransition show={true} type="slideUp">
+                  <TouchButton
+                    onClick={() => handleModuleClick(progressHubModule)}
+                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-300 text-white rounded-xl group transform hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <div className="text-center space-y-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg flex items-center justify-center mx-auto">
-                        <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium text-xs sm:text-sm">{action.title}</p>
-                        <p className="text-white/70 text-xs">{action.description}</p>
-                      </div>
-                    </div>
-                  </SmoothButton>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900/50 backdrop-blur-sm">
-            <TabsTrigger 
-              value="overview" 
-              className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-200 text-xs sm:text-sm"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="schedule" 
-              className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-200 text-xs sm:text-sm"
-            >
-              Schedule
-            </TabsTrigger>
-            <TabsTrigger 
-              value="progress" 
-              className="data-[state=active]:bg-orange-500/30 data-[state=active]:text-orange-200 text-xs sm:text-sm"
-            >
-              Progress
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-            {/* Goals & Achievements */}
-            <GoalsAchievementsHubOptimized />
-
-            {/* Recent Activity */}
-            <Card className="bg-gradient-to-r from-purple-900/20 to-pink-900/30 backdrop-blur-sm border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-white text-lg sm:text-xl flex items-center">
-                  <Activity className="w-5 h-5 mr-2 text-purple-400" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-purple-500/10 rounded-lg">
-                    <div className="w-8 h-8 bg-purple-500/30 rounded-full flex items-center justify-center">
-                      <Zap className="w-4 h-4 text-purple-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">Completed Upper Body Workout</p>
-                      <p className="text-purple-300/70 text-xs">2 hours ago • 45 minutes</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-3 bg-green-500/10 rounded-lg">
-                    <div className="w-8 h-8 bg-green-500/30 rounded-full flex items-center justify-center">
-                      <Droplets className="w-4 h-4 text-green-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">Logged Protein Shake</p>
-                      <p className="text-green-300/70 text-xs">4 hours ago • 25g protein</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-3 bg-blue-500/10 rounded-lg">
-                    <div className="w-8 h-8 bg-blue-500/30 rounded-full flex items-center justify-center">
-                      <Heart className="w-4 h-4 text-blue-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">Morning Cardio Session</p>
-                      <p className="text-blue-300/70 text-xs">Yesterday • 30 minutes</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="schedule" className="space-y-4">
-            <Card className="bg-gradient-to-r from-indigo-900/20 to-blue-900/30 backdrop-blur-sm border-indigo-500/30">
-              <CardHeader>
-                <CardTitle className="text-white text-lg sm:text-xl flex items-center">
-                  <Calendar className="w-5 h-5 mr-2 text-indigo-400" />
-                  Today's Schedule
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {todaySchedule.map((item, index) => (
-                    <div 
-                      key={index}
-                      className={`flex items-center space-x-3 p-3 rounded-lg border ${
-                        item.completed 
-                          ? 'bg-green-500/10 border-green-500/30' 
-                          : 'bg-gray-500/10 border-gray-500/30'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        item.completed ? 'bg-green-500/30' : 'bg-gray-500/30'
-                      }`}>
-                        {item.completed ? (
-                          <Award className="w-4 h-4 text-green-400" />
-                        ) : (
-                          <Clock className="w-4 h-4 text-gray-400" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className={`font-medium text-sm ${
-                            item.completed ? 'text-green-200 line-through' : 'text-white'
-                          }`}>
-                            {item.title}
-                          </p>
-                          <Badge variant="outline" className="text-xs">
-                            {item.duration}
-                          </Badge>
+                    <div className="flex items-center justify-between w-full px-4 sm:px-6">
+                      <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r from-purple-800/80 to-purple-900/90 border border-purple-700/40 flex items-center justify-center flex-shrink-0">
+                          <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-200" />
                         </div>
-                        <p className="text-xs text-gray-400">{item.time} • {item.type}</p>
+                        <div className="text-left min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-semibold text-purple-100 group-hover:text-purple-50 transition-colors truncate">
+                            Progress Hub
+                          </h3>
+                          <p className="text-xs sm:text-sm text-purple-200/80 truncate">
+                            Track your fitness journey with detailed analytics
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300/80 animate-pulse" />
+                        <span className="text-xs sm:text-sm text-purple-200/90 hidden sm:inline">View Progress</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </TouchButton>
+                </SmoothTransition>
+              )}
 
-          <TabsContent value="progress" className="space-y-4">
-            <Card className="bg-gradient-to-r from-teal-900/20 to-cyan-900/30 backdrop-blur-sm border-teal-500/30">
-              <CardHeader>
-                <CardTitle className="text-white text-lg sm:text-xl flex items-center">
-                  <BarChart3 className="w-5 h-5 mr-2 text-teal-400" />
-                  Weekly Progress
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-teal-200">Workout Goal</span>
-                      <span className="text-teal-400">4/5 sessions</span>
-                    </div>
-                    <div className="w-full bg-teal-900/30 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-2 rounded-full" style={{ width: '80%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-teal-200">Nutrition Tracking</span>
-                      <span className="text-teal-400">6/7 days</span>
-                    </div>
-                    <div className="w-full bg-teal-900/30 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-2 rounded-full" style={{ width: '86%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-teal-200">Sleep Quality</span>
-                      <span className="text-teal-400">7.2/10 avg</span>
-                    </div>
-                    <div className="w-full bg-teal-900/30 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-teal-500 to-cyan-500 h-2 rounded-full" style={{ width: '72%' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* Performance Debug (only in development) */}
-        {process.env.NODE_ENV === 'development' && (
-          <Card className="bg-gray-900/20 backdrop-blur-sm border-gray-700/30">
-            <CardHeader>
-              <CardTitle className="text-gray-400 text-sm">Performance Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
-                <div>Load Time: {performanceMetrics.loadTime.toFixed(2)}ms</div>
-                <div>Render Time: {performanceMetrics.renderTime.toFixed(2)}ms</div>
-                <div>Memory: {performanceMetrics.memoryUsage.toFixed(1)}MB</div>
-                <div>Frame Drops: {performanceMetrics.frameDrops.toFixed(0)}</div>
+              {/* Dashboard Content Grid - Staggered animations */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <SmoothTransition show={true} type="slideUp">
+                  <GoalsAchievementsHub />
+                </SmoothTransition>
+                <SmoothTransition show={true} type="slideUp">
+                  <PersonalizedSummary />
+                </SmoothTransition>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </MobileOptimized>
+            </div>
+          </div>
+        </PageTransition>
+      </MobileOptimized>
+    </ErrorBoundary>
   );
 };
 

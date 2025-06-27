@@ -1,183 +1,192 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Calculator, ArrowLeft, Activity, Target, TrendingUp, Info } from "lucide-react";
-import { useState } from "react";
+import React, { useState, useCallback, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Calculator, Target, Zap, Info } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { MobileHeader } from '@/components/MobileHeader';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TDEECalculatorProps {
   onBack: () => void;
 }
 
-const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
-  const [age, setAge] = useState("");
-  const [weight, setWeight] = useState("");
-  const [height, setHeight] = useState("");
-  const [bodyFat, setBodyFat] = useState("");
-  const [gender, setGender] = useState("");
-  const [activityLevel, setActivityLevel] = useState("");
-  const [results, setResults] = useState<any>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
+interface TDEEResult {
+  bmr: number;
+  tdee: number;
+  maintenance: number;
+  mildDeficit: number;
+  moderateDeficit: number;
+  aggressiveDeficit: number;
+  mildSurplus: number;
+  moderateSurplus: number;
+}
 
-  const calculateTDEE = async () => {
-    if (!age || !weight || !height || !gender || !activityLevel) {
+export const TDEECalculator: React.FC<TDEECalculatorProps> = ({ onBack }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [formData, setFormData] = useState({
+    age: '',
+    gender: '',
+    weight: '',
+    height: '',
+    activityLevel: '',
+    unit: 'imperial'
+  });
+  const [result, setResult] = useState<TDEEResult | null>(null);
+
+  const handleInputChange = useCallback((field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const calculateTDEE = useCallback(() => {
+    const { age, gender, weight, height, activityLevel, unit } = formData;
+    
+    if (!age || !gender || !weight || !height || !activityLevel) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill in all fields to calculate your TDEE.',
+        variant: 'destructive'
+      });
       return;
     }
 
-    setIsCalculating(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    let weightKg = parseFloat(weight);
+    let heightCm = parseFloat(height);
 
-    const ageNum = parseFloat(age);
-    const weightNum = parseFloat(weight);
-    const heightNum = parseFloat(height);
-    const bodyFatNum = bodyFat ? parseFloat(bodyFat) : null;
-    
-    // Calculate BMR using Mifflin-St Jeor Equation
-    let bmr: number;
-    if (gender === "male") {
-      bmr = (10 * weightNum * 0.453592) + (6.25 * heightNum * 2.54) - (5 * ageNum) + 5;
-    } else {
-      bmr = (10 * weightNum * 0.453592) + (6.25 * heightNum * 2.54) - (5 * ageNum) - 161;
+    if (unit === 'imperial') {
+      weightKg = weightKg * 0.453592; // lbs to kg
+      heightCm = heightCm * 2.54; // inches to cm
     }
-    
+
+    // Mifflin-St Jeor Equation
+    let bmr: number;
+    if (gender === 'male') {
+      bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * parseFloat(age)) + 5;
+    } else {
+      bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * parseFloat(age)) - 161;
+    }
+
     // Activity multipliers
     const activityMultipliers: { [key: string]: number } = {
-      "sedentary": 1.2,
-      "light": 1.375,
-      "moderate": 1.55,
-      "active": 1.725,
-      "very_active": 1.9
+      'sedentary': 1.2,
+      'lightly-active': 1.375,
+      'moderately-active': 1.55,
+      'very-active': 1.725,
+      'super-active': 1.9
     };
-    
+
     const tdee = bmr * activityMultipliers[activityLevel];
-    
-    // Calculate BMI
-    const heightM = heightNum * 0.0254;
-    const weightKg = weightNum * 0.453592;
-    const bmi = weightKg / (heightM * heightM);
-    
-    let additionalMetrics = null;
-    if (bodyFatNum) {
-      // Calculate lean body mass and muscle mass
-      const fatMass = (weightNum * bodyFatNum) / 100;
-      const leanBodyMass = weightNum - fatMass;
-      const muscleMass = leanBodyMass * 0.45; // Approximate muscle mass as 45% of LBM
-      
-      // Calculate FFMI (Fat-Free Mass Index)
-      const ffmi = (leanBodyMass * 0.453592) / (heightM * heightM);
-      const normalizedFFMI = ffmi + (6.1 * (1.8 - heightM));
-      
-      additionalMetrics = {
-        fatMass: Math.round(fatMass * 10) / 10,
-        leanBodyMass: Math.round(leanBodyMass * 10) / 10,
-        muscleMass: Math.round(muscleMass * 10) / 10,
-        ffmi: Math.round(ffmi * 10) / 10,
-        normalizedFFMI: Math.round(normalizedFFMI * 10) / 10
-      };
-    }
-    
-    const calculatedResults = {
+
+    const calculatedResult: TDEEResult = {
       bmr: Math.round(bmr),
       tdee: Math.round(tdee),
-      bmi: Math.round(bmi * 10) / 10,
-      additionalMetrics,
-      goals: {
-        cutting: Math.round(tdee - 500),
-        bulking: Math.round(tdee + 300),
-        maintenance: Math.round(tdee)
-      }
+      maintenance: Math.round(tdee),
+      mildDeficit: Math.round(tdee - 250),
+      moderateDeficit: Math.round(tdee - 500),
+      aggressiveDeficit: Math.round(tdee - 750),
+      mildSurplus: Math.round(tdee + 250),
+      moderateSurplus: Math.round(tdee + 500)
     };
-    
-    setResults(calculatedResults);
-    setIsCalculating(false);
-  };
 
-  const getBMICategory = (bmi: number) => {
-    if (bmi < 18.5) return { category: "Underweight", color: "text-blue-400" };
-    if (bmi < 25) return { category: "Normal", color: "text-green-400" };
-    if (bmi < 30) return { category: "Overweight", color: "text-yellow-400" };
-    return { category: "Obese", color: "text-red-400" };
-  };
+    setResult(calculatedResult);
 
-  const getFFMICategory = (ffmi: number) => {
-    if (ffmi < 16) return { category: "Below Average", color: "text-blue-400" };
-    if (ffmi < 18) return { category: "Average", color: "text-green-400" };
-    if (ffmi < 20) return { category: "Above Average", color: "text-yellow-400" };
-    if (ffmi < 25) return { category: "Excellent", color: "text-orange-400" };
-    return { category: "Elite/Suspicious", color: "text-red-400" };
+    // Save to user profile if authenticated
+    if (user) {
+      supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          tdee_data: calculatedResult,
+          last_tdee_calculation: new Date().toISOString()
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('Error saving TDEE data:', error);
+          }
+        });
+    }
+  }, [formData, toast, user]);
+
+  const getActivityDescription = (level: string) => {
+    const descriptions: { [key: string]: string } = {
+      'sedentary': 'Little to no exercise',
+      'lightly-active': 'Light exercise 1-3 days/week',
+      'moderately-active': 'Moderate exercise 3-5 days/week',
+      'very-active': 'Heavy exercise 6-7 days/week',
+      'super-active': 'Very heavy exercise, physical job'
+    };
+    return descriptions[level] || '';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-green-900/20 to-green-700 text-white p-6 animate-fade-in">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              onClick={onBack} 
-              className="text-slate-400 hover:text-white hover:bg-slate-800/50"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Dashboard
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
+      {isMobile ? (
+        <MobileHeader title="TDEE Calculator" onBack={onBack} />
+      ) : (
+        <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+          <div className="px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500/20 to-green-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 border border-green-400/20">
-                <Calculator className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
-                  TDEE & FFMI Calculator
-                </h1>
-                <p className="text-slate-400 text-lg">Complete metabolic and body composition analysis</p>
-              </div>
+              <Button
+                onClick={onBack}
+                variant="ghost"
+                size="default"
+                className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <h1 className="text-xl sm:text-2xl font-bold text-white">TDEE Calculator</h1>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Status Badge */}
-        <div className="flex justify-center">
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm">
-            <Activity className="w-4 h-4 mr-2" />
-            Advanced body composition & metabolic analysis
-          </Badge>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Input Panel */}
-          <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Input Form */}
+          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Target className="w-5 h-5 mr-2 text-green-400" />
-                Body Metrics
-              </CardTitle>
-              <CardDescription className="text-slate-400">
-                Enter your information for comprehensive analysis
-              </CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
+                  <Calculator className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-white text-lg sm:text-xl">TDEE Calculator</CardTitle>
+                  <CardDescription className="text-green-200/80 text-sm sm:text-base">
+                    Calculate your Total Daily Energy Expenditure
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Age</Label>
+            
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="age" className="text-green-200 text-sm">Age</Label>
                   <Input
+                    id="age"
                     type="number"
+                    value={formData.age}
+                    onChange={(e) => handleInputChange('age', e.target.value)}
                     placeholder="25"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    className="bg-slate-800/50 border-slate-600/50 text-white focus:border-green-500"
+                    className="bg-green-900/30 border-green-500/50 text-white text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Gender</Label>
-                  <Select value={gender} onValueChange={setGender}>
-                    <SelectTrigger className="bg-slate-800/50 border-slate-600/50 text-white">
+                <div>
+                  <Label htmlFor="gender" className="text-green-200 text-sm">Gender</Label>
+                  <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                    <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white text-sm">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-green-500/40">
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
                     </SelectContent>
@@ -185,209 +194,157 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Weight (lbs)</Label>
-                  <Input
-                    type="number"
-                    placeholder="180"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="bg-slate-800/50 border-slate-600/50 text-white focus:border-green-500"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Height (inches)</Label>
-                  <Input
-                    type="number"
-                    placeholder="70"
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                    className="bg-slate-800/50 border-slate-600/50 text-white focus:border-green-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-slate-300">Body Fat % (optional - for advanced metrics)</Label>
-                <Input
-                  type="number"
-                  placeholder="15"
-                  value={bodyFat}
-                  onChange={(e) => setBodyFat(e.target.value)}
-                  className="bg-slate-800/50 border-slate-600/50 text-white focus:border-green-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-slate-300">Activity Level</Label>
-                <Select value={activityLevel} onValueChange={setActivityLevel}>
-                  <SelectTrigger className="bg-slate-800/50 border-slate-600/50 text-white">
-                    <SelectValue placeholder="Select activity level" />
+              <div>
+                <Label htmlFor="unit" className="text-green-200 text-sm">Units</Label>
+                <Select value={formData.unit} onValueChange={(value) => handleInputChange('unit', value)}>
+                  <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white text-sm">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sedentary">Sedentary (desk job, no exercise)</SelectItem>
-                    <SelectItem value="light">Light (1-3 days/week exercise)</SelectItem>
-                    <SelectItem value="moderate">Moderate (3-5 days/week exercise)</SelectItem>
-                    <SelectItem value="active">Active (6-7 days/week exercise)</SelectItem>
-                    <SelectItem value="very_active">Very Active (2x/day or intense training)</SelectItem>
+                  <SelectContent className="bg-gray-900/95 backdrop-blur-md border-green-500/40">
+                    <SelectItem value="imperial">Imperial (lbs, inches)</SelectItem>
+                    <SelectItem value="metric">Metric (kg, cm)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <Button 
-                onClick={calculateTDEE}
-                disabled={!age || !weight || !height || !gender || !activityLevel || isCalculating}
-                className="w-full bg-gradient-to-r from-green-500/80 to-emerald-600/80 hover:from-green-600/80 hover:to-emerald-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/25"
-              >
-                {isCalculating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Calculating...
-                  </>
-                ) : (
-                  <>
-                    <Calculator className="w-4 h-4 mr-2" />
-                    Calculate Metrics
-                  </>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="weight" className="text-green-200 text-sm">
+                    Weight ({formData.unit === 'imperial' ? 'lbs' : 'kg'})
+                  </Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    value={formData.weight}
+                    onChange={(e) => handleInputChange('weight', e.target.value)}
+                    placeholder={formData.unit === 'imperial' ? '180' : '82'}
+                    className="bg-green-900/30 border-green-500/50 text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="height" className="text-green-200 text-sm">
+                    Height ({formData.unit === 'imperial' ? 'inches' : 'cm'})
+                  </Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={formData.height}
+                    onChange={(e) => handleInputChange('height', e.target.value)}
+                    placeholder={formData.unit === 'imperial' ? '70' : '178'}
+                    className="bg-green-900/30 border-green-500/50 text-white text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="activity" className="text-green-200 text-sm">Activity Level</Label>
+                <Select value={formData.activityLevel} onValueChange={(value) => handleInputChange('activityLevel', value)}>
+                  <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white text-sm">
+                    <SelectValue placeholder="Select activity level" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900/95 backdrop-blur-md border-green-500/40">
+                    <SelectItem value="sedentary">Sedentary</SelectItem>
+                    <SelectItem value="lightly-active">Lightly Active</SelectItem>
+                    <SelectItem value="moderately-active">Moderately Active</SelectItem>
+                    <SelectItem value="very-active">Very Active</SelectItem>
+                    <SelectItem value="super-active">Super Active</SelectItem>
+                  </SelectContent>
+                </Select>
+                {formData.activityLevel && (
+                  <p className="text-xs text-green-300/70 mt-1">
+                    {getActivityDescription(formData.activityLevel)}
+                  </p>
                 )}
+              </div>
+
+              <Button
+                onClick={calculateTDEE}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-sm"
+              >
+                <Target className="w-4 h-4 mr-2" />
+                Calculate TDEE
               </Button>
             </CardContent>
           </Card>
 
-          {/* Results Panel */}
-          <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+          {/* Results */}
+          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-green-400" />
-                Your Results
-              </CardTitle>
-              <CardDescription className="text-slate-400">
-                Complete metabolic and body composition analysis
-              </CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
+                  <Zap className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-white text-lg sm:text-xl">Your Results</CardTitle>
+                  <CardDescription className="text-green-200/80 text-sm sm:text-base">
+                    Daily calorie targets for your goals
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
+            
             <CardContent>
-              {results ? (
-                <div className="space-y-6">
-                  {/* Basic Metrics */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
-                      <div className="text-2xl font-bold text-green-400">{results.bmr}</div>
-                      <div className="text-slate-400 text-sm">BMR (calories/day)</div>
+              {result ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-3 bg-green-800/30 rounded-lg border border-green-500/30">
+                      <p className="text-green-300 text-xs font-medium">BMR</p>
+                      <p className="text-white text-lg font-bold">{result.bmr}</p>
+                      <p className="text-green-400 text-xs">cal/day</p>
                     </div>
-                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
-                      <div className="text-2xl font-bold text-blue-400">{results.tdee}</div>
-                      <div className="text-slate-400 text-sm">TDEE (calories/day)</div>
-                    </div>
-                  </div>
-
-                  {/* BMI */}
-                  <div className="bg-slate-800/20 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-white font-medium">Body Mass Index (BMI)</h4>
-                      <Info className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-white">{results.bmi}</span>
-                      <span className={`font-medium ${getBMICategory(results.bmi).color}`}>
-                        {getBMICategory(results.bmi).category}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-2">
-                      BMI is a simple height-to-weight ratio. Normal range: 18.5-24.9
-                    </p>
-                  </div>
-
-                  {/* Advanced Metrics (if body fat provided) */}
-                  {results.additionalMetrics && (
-                    <div className="space-y-4">
-                      <div className="bg-slate-800/20 rounded-xl p-4">
-                        <h4 className="text-white font-medium mb-3 flex items-center">
-                          <TrendingUp className="w-4 h-4 mr-2 text-green-400" />
-                          Body Composition
-                        </h4>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-slate-400">Fat Mass:</span>
-                            <span className="text-red-400 ml-2 font-medium">{results.additionalMetrics.fatMass} lbs</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400">Lean Mass:</span>
-                            <span className="text-green-400 ml-2 font-medium">{results.additionalMetrics.leanBodyMass} lbs</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400">Muscle Mass:</span>
-                            <span className="text-blue-400 ml-2 font-medium">{results.additionalMetrics.muscleMass} lbs</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-2">
-                          Muscle mass estimated as ~45% of lean body mass
-                        </p>
-                      </div>
-
-                      <div className="bg-slate-800/20 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-white font-medium">Fat-Free Mass Index (FFMI)</h4>
-                          <Info className="w-4 h-4 text-slate-400" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-2xl font-bold text-white">{results.additionalMetrics.ffmi}</span>
-                          <span className={`font-medium ${getFFMICategory(results.additionalMetrics.ffmi).color}`}>
-                            {getFFMICategory(results.additionalMetrics.ffmi).category}
-                          </span>
-                        </div>
-                        <div className="text-sm text-slate-400 mt-2">
-                          <div>Normalized FFMI: {results.additionalMetrics.normalizedFFMI}</div>
-                          <p className="text-xs mt-1">
-                            FFMI measures muscle mass relative to height. Natural limit ~25, average 16-18
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Calorie Goals */}
-                  <div className="bg-slate-800/20 rounded-xl p-4">
-                    <h4 className="text-white font-medium mb-3 flex items-center">
-                      <Target className="w-4 h-4 mr-2 text-green-400" />
-                      Calorie Goals
-                    </h4>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div className="text-center">
-                        <div className="text-red-400 font-bold">{results.goals.cutting}</div>
-                        <div className="text-slate-400">Cutting</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-white font-bold">{results.goals.maintenance}</div>
-                        <div className="text-slate-400">Maintain</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-green-400 font-bold">{results.goals.bulking}</div>
-                        <div className="text-slate-400">Bulking</div>
-                      </div>
+                    <div className="text-center p-3 bg-green-800/30 rounded-lg border border-green-500/30">
+                      <p className="text-green-300 text-xs font-medium">TDEE</p>
+                      <p className="text-white text-lg font-bold">{result.tdee}</p>
+                      <p className="text-green-400 text-xs">cal/day</p>
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl p-4 border border-green-500/20">
-                    <h4 className="text-green-300 font-medium mb-2">💡 Key Insights</h4>
-                    <ul className="text-sm text-slate-300 space-y-1">
-                      <li>• TDEE is your daily calorie maintenance level</li>
-                      <li>• For fat loss: eat 300-500 below TDEE</li>
-                      <li>• For muscle gain: eat 200-400 above TDEE</li>
-                      {results.additionalMetrics && (
-                        <li>• FFMI shows your muscle development potential</li>
-                      )}
-                    </ul>
+                  <div className="space-y-3">
+                    <h3 className="text-green-200 font-semibold text-sm">Fat Loss Goals</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-2 bg-red-900/20 rounded border border-red-500/30">
+                        <span className="text-red-200 text-sm">Mild Deficit (0.5 lb/week)</span>
+                        <Badge variant="outline" className="border-red-500/30 text-red-400 text-xs">
+                          {result.mildDeficit} cal
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-red-900/20 rounded border border-red-500/30">
+                        <span className="text-red-200 text-sm">Moderate Deficit (1 lb/week)</span>
+                        <Badge variant="outline" className="border-red-500/30 text-red-400 text-xs">
+                          {result.moderateDeficit} cal
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-red-900/20 rounded border border-red-500/30">
+                        <span className="text-red-200 text-sm">Aggressive Deficit (1.5 lb/week)</span>
+                        <Badge variant="outline" className="border-red-500/30 text-red-400 text-xs">
+                          {result.aggressiveDeficit} cal
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <h3 className="text-green-200 font-semibold text-sm pt-3">Muscle Gain Goals</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-2 bg-blue-900/20 rounded border border-blue-500/30">
+                        <span className="text-blue-200 text-sm">Lean Bulk (0.5 lb/week)</span>
+                        <Badge variant="outline" className="border-blue-500/30 text-blue-400 text-xs">
+                          {result.mildSurplus} cal
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-blue-900/20 rounded border border-blue-500/30">
+                        <span className="text-blue-200 text-sm">Moderate Bulk (1 lb/week)</span>
+                        <Badge variant="outline" className="border-blue-500/30 text-blue-400 text-xs">
+                          {result.moderateSurplus} cal
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Calculator className="w-8 h-8 text-slate-500" />
-                  </div>
-                  <h3 className="text-white font-medium mb-2">Ready to Calculate</h3>
-                  <p className="text-slate-400 text-sm">
-                    Enter your body metrics for complete analysis
+                <div className="text-center py-8">
+                  <Info className="w-16 h-16 text-green-500/50 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-green-200 mb-2">Ready to Calculate</h3>
+                  <p className="text-green-300/70 text-sm">
+                    Fill out the form to get your personalized TDEE and calorie targets
                   </p>
                 </div>
               )}

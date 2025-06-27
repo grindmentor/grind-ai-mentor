@@ -21,7 +21,7 @@ import SignUp from "./pages/SignUp";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
-import ModulesProvider from "@/contexts/ModulesContext";
+import { ModulesProvider } from "@/contexts/ModulesContext";
 import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 

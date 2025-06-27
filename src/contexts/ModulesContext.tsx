@@ -60,7 +60,7 @@ import {
   User, 
   TrendingUp, 
   Activity, 
-  Stretch,
+  Move,
   Apple,
   CheckSquare
 } from 'lucide-react';
@@ -175,7 +175,7 @@ export const ModulesProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: 'stretching-guide',
       title: 'Stretching Guide',
       description: 'Comprehensive mobility and flexibility routines for better recovery',
-      icon: Stretch,
+      icon: Move,
       component: StretchingGuide,
       category: 'AI Training',
       gradient: 'from-pink-900/40 to-rose-900/60'
@@ -220,3 +220,5 @@ export const ModulesProvider: React.FC<{ children: React.ReactNode }> = ({ child
     </ModulesContext.Provider>
   );
 };
+
+export default ModulesProvider;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -47,7 +46,7 @@ const Dashboard = () => {
 
   const debouncedModuleClick = useMemo(() => 
     createDebouncedFunction((module: Module) => handleModuleClick(module), 150)
-  , [createDebouncedFunction, handleModuleClick]);
+  , [createDebouncedFunction, handleModuleClick]) as (module: Module) => void;
 
   const handleBackToDashboard = useCallback(() => {
     console.log('Returning to dashboard at', new Date().toISOString());

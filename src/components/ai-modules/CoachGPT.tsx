@@ -32,6 +32,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationLoaded, setConversationLoaded] = useState(false);
+  const [initializationError, setInitializationError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Memoized system context to prevent recreation
@@ -67,19 +68,30 @@ If asked about meal plans or detailed training programs, politely redirect to th
   }, []);
 
   const loadConversationHistory = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setConversationLoaded(true);
+      return;
+    }
 
     try {
+      console.log('Loading conversation history for user:', user.id);
+      
       const { data, error } = await supabase
         .from('coach_conversations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
-        .limit(20); // Limit to recent messages for better performance
+        .limit(20);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading conversation:', error);
+        setInitializationError('Failed to load conversation history');
+        return;
+      }
 
-      const conversationMessages = data.map(msg => ({
+      console.log('Loaded conversation data:', data?.length || 0, 'messages');
+
+      const conversationMessages = (data || []).map(msg => ({
         id: msg.id,
         role: msg.message_role as 'user' | 'assistant',
         content: msg.message_content,
@@ -87,8 +99,10 @@ If asked about meal plans or detailed training programs, politely redirect to th
       }));
 
       setMessages(conversationMessages);
+      setInitializationError(null);
     } catch (error) {
-      console.error('Error loading conversation:', error);
+      console.error('Error in loadConversationHistory:', error);
+      setInitializationError('Failed to initialize conversation');
     } finally {
       setConversationLoaded(true);
     }
@@ -105,13 +119,15 @@ If asked about meal plans or detailed training programs, politely redirect to th
       timestamp: new Date()
     };
 
+    console.log('Sending message:', userMessage.content);
+    
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
       // Save user message
-      await supabase
+      const { error: saveError } = await supabase
         .from('coach_conversations')
         .insert({
           user_id: user.id,
@@ -119,6 +135,10 @@ If asked about meal plans or detailed training programs, politely redirect to th
           message_role: 'user',
           message_content: userMessage.content
         });
+
+      if (saveError) {
+        console.error('Error saving user message:', saveError);
+      }
 
       // Check for meal plan or training program requests and redirect
       const lowerInput = input.toLowerCase();
@@ -131,6 +151,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
         };
         
         setMessages(prev => [...prev, redirectMessage]);
+        
         await supabase
           .from('coach_conversations')
           .insert({
@@ -151,6 +172,7 @@ If asked about meal plans or detailed training programs, politely redirect to th
         };
         
         setMessages(prev => [...prev, redirectMessage]);
+        
         await supabase
           .from('coach_conversations')
           .insert({
@@ -163,6 +185,8 @@ If asked about meal plans or detailed training programs, politely redirect to th
       }
 
       // Get AI response for general coaching
+      console.log('Getting AI response...');
+      
       const response = await optimizedAiService.getResponse(
         userMessage.content,
         { 
@@ -172,6 +196,8 @@ If asked about meal plans or detailed training programs, politely redirect to th
           systemContext: coachSystemContext
         }
       );
+
+      console.log('AI response received:', response.slice(0, 100) + '...');
 
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -192,8 +218,21 @@ If asked about meal plans or detailed training programs, politely redirect to th
           message_content: response
         });
 
+      console.log('Message conversation completed successfully');
+
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error in handleSubmit:', error);
+      
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 3).toString(),
+        role: 'assistant',
+        content: "I'm sorry, I'm having trouble responding right now. Please try again in a moment. If the issue persists, try refreshing the page.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
       toast({
         title: 'Error',
         description: 'Failed to send message. Please try again.',
@@ -211,12 +250,39 @@ If asked about meal plans or detailed training programs, politely redirect to th
     "How important is rest between workouts?"
   ], []);
 
+  // Show loading screen while initializing
   if (!conversationLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
         <MobileHeader title="CoachGPT" onBack={onBack} />
         <div className="flex items-center justify-center h-64">
           <LoadingSpinner message="Loading conversation..." />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if initialization failed
+  if (initializationError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
+        <MobileHeader title="CoachGPT" onBack={onBack} />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <h3 className="text-xl font-semibold text-red-400 mb-2">Failed to Load</h3>
+            <p className="text-gray-400 mb-4">{initializationError}</p>
+            <Button
+              onClick={() => {
+                setInitializationError(null);
+                setConversationLoaded(false);
+                loadConversationHistory();
+              }}
+              variant="outline"
+              className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+            >
+              Try Again
+            </Button>
+          </div>
         </div>
       </div>
     );

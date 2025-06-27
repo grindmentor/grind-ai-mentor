@@ -15,6 +15,12 @@ const DashboardHeader = memo(() => {
   const isMobile = useIsMobile();
   const { lowDataMode } = usePerformanceContext();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navigateToPage = (path: string) => {
+    window.location.href = path;
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-800/50 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
@@ -24,17 +30,42 @@ const DashboardHeader = memo(() => {
           <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
             <Logo size="sm" showText={!isMobile} className="flex-shrink-0" />
             {isMobile && (
-              <span className="text-base font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text whitespace-nowrap tracking-wide font-mono">
+              <span className="text-sm sm:text-base font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text whitespace-nowrap tracking-wide font-mono truncate">
                 Myotopia
               </span>
             )}
           </div>
 
-          {/* Right Side Logo */}
+          {/* Desktop Navigation - Hidden on mobile */}
+          <div className="hidden sm:flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+              onClick={() => navigateToPage('/modules')}
+            >
+              Modules
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+              onClick={() => navigateToPage('/profile')}
+            >
+              Profile
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+              onClick={() => navigateToPage('/settings')}
+            >
+              Settings
+            </Button>
+          </div>
+
+          {/* Right Side Actions */}
           <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
-            {/* Logo on the right */}
-            <Logo size="sm" showText={false} className="flex-shrink-0" />
-            
             {/* Low Data Toggle - only show if not in low data mode or on mobile */}
             {(!lowDataMode || !isMobile) && (
               <div className="hidden sm:block">
@@ -54,35 +85,14 @@ const DashboardHeader = memo(() => {
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-orange-500 rounded-full"></span>
             </Button>
 
-            {/* Profile */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
-              onClick={() => window.location.href = '/profile'}
-              aria-label="Profile"
-            >
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Button>
-
-            {/* Settings */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
-              onClick={() => window.location.href = '/settings'}
-              aria-label="Settings"
-            >
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Button>
-
-            {/* Mobile Menu - only on very small screens */}
+            {/* Mobile Menu Button */}
             {isMobile && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 sm:hidden"
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
                 aria-label="Menu"
+                onClick={() => setIsMobileMenuOpen(true)}
               >
                 <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
@@ -90,6 +100,53 @@ const DashboardHeader = memo(() => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Sheet */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md bg-black/95 backdrop-blur-md border-l border-gray-800/50">
+          <SheetHeader>
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-white">Menu</SheetTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            <Button
+              onClick={() => navigateToPage('/modules')}
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-gray-800/50"
+            >
+              Module Library
+            </Button>
+            <Button
+              onClick={() => navigateToPage('/profile')}
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-gray-800/50"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </Button>
+            <Button
+              onClick={() => navigateToPage('/settings')}
+              variant="ghost"
+              className="w-full justify-start text-white hover:bg-gray-800/50"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
+            <div className="pt-4 border-t border-gray-800/50">
+              <LowDataToggle />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Notification Center Sheet */}
       <Sheet open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>

@@ -70,32 +70,11 @@ const Dashboard = () => {
     return (
       <ErrorBoundary>
         <PageTransition>
-          <div className="min-h-screen bg-white overflow-x-hidden">
-            {/* Mobile-optimized sticky header */}
-            <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
-              <div className="px-4 sm:px-6">
-                <div className="flex items-center justify-between h-14 sm:h-16">
-                  <button
-                    onClick={handleBackToDashboard}
-                    className="text-gray-700 hover:text-orange-500 transition-colors font-medium text-sm sm:text-base py-2 px-3 rounded-lg hover:bg-gray-100 touch-manipulation"
-                  >
-                    ← Back
-                  </button>
-                  <h1 className="text-base sm:text-lg font-semibold text-center flex-1 px-4 truncate text-gray-900">
-                    {selectedModule.title}
-                  </h1>
-                  <div className="w-20 sm:w-24"></div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Module content with mobile-optimized padding */}
-            <div className="overflow-x-hidden">
-              <ModuleComponent 
-                onBack={handleBackToDashboard}
-                onFoodLogged={handleFoodLogged}
-              />
-            </div>
+          <div className="min-h-screen bg-gradient-to-br from-black via-slate-900/10 to-gray-800/20 text-white overflow-x-hidden">
+            <ModuleComponent 
+              onBack={handleBackToDashboard}
+              onFoodLogged={handleFoodLogged}
+            />
           </div>
         </PageTransition>
       </ErrorBoundary>

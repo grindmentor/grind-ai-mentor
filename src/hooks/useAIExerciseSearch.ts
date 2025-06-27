@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -132,20 +131,19 @@ export const useAIExerciseSearch = () => {
              exercise.equipment.toLowerCase().includes('rack') ||
              exercise.equipment.toLowerCase() === 'bodyweight');
           
-          // Exclude cardio terms
+          // Exclude cardio terms - check name and description for cardio keywords
           const exerciseName = exercise.name.toLowerCase();
-          const isCardio = exerciseName.includes('running') || 
-                          exerciseName.includes('cycling') || 
-                          exerciseName.includes('treadmill') ||
-                          exerciseName.includes('elliptical') ||
-                          exerciseName.includes('rowing machine') ||
-                          exerciseName.includes('jump') ||
-                          exercise.category === 'Cardio';
+          const exerciseDesc = exercise.description.toLowerCase();
+          const cardioKeywords = ['running', 'cycling', 'treadmill', 'elliptical', 'rowing machine', 'jump', 'cardio', 'hiit'];
+          const isCardio = cardioKeywords.some(keyword => 
+            exerciseName.includes(keyword) || exerciseDesc.includes(keyword)
+          );
 
           // Exclude stretching/flexibility
-          const isStretching = exerciseName.includes('stretch') ||
-                             exerciseName.includes('yoga') ||
-                             exerciseName.includes('mobility');
+          const stretchingKeywords = ['stretch', 'yoga', 'mobility'];
+          const isStretching = stretchingKeywords.some(keyword =>
+            exerciseName.includes(keyword) || exerciseDesc.includes(keyword)
+          );
           
           return isStrengthOnly && hasGymEquipment && !isCardio && !isStretching;
         });

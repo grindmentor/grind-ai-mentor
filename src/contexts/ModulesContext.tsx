@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 
@@ -62,6 +63,8 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
   onBack?: () => void;
   onFoodLogged?: (data: any) => void;
 }) => {
+  console.log('SafeComponent called with moduleName:', moduleName);
+  
   try {
     // Dynamically import components with error handling
     switch (moduleName) {
@@ -122,9 +125,12 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
         return <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}><SmartFoodLog onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} /></React.Suspense>;
       
       case 'workout-library':
-        // Import the WorkoutLibrary component directly
+        console.log('Loading WorkoutLibrary component...');
         const WorkoutLibrary = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutLibrary').catch((error) => {
+          import('@/components/ai-modules/WorkoutLibrary').then(module => {
+            console.log('WorkoutLibrary module loaded successfully:', module);
+            return module;
+          }).catch((error) => {
             console.error('Failed to load WorkoutLibrary:', error);
             return { default: (props: any) => <PlaceholderComponent title="Workout Library" {...props} /> };
           })
@@ -172,6 +178,7 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
         return <React.Suspense fallback={<PlaceholderComponent title="Physique AI" onBack={onBack} />}><PhysiqueAI onBack={onBack || (() => {})} /></React.Suspense>;
       
       default:
+        console.log('Unknown module name:', moduleName);
         return <PlaceholderComponent title={moduleName} onBack={onBack} />;
     }
   } catch (error) {
@@ -181,6 +188,8 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
 };
 
 const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
+  console.log('ModulesProvider initializing...');
+  
   const modules: Module[] = [
     {
       id: 'smart-training',
@@ -286,7 +295,10 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Workout Library',
       description: 'AI-powered exercise database with personalized recommendations',
       icon: BookOpen,
-      component: (props: any) => <SafeComponent moduleName="workout-library" {...props} />,
+      component: (props: any) => {
+        console.log('WorkoutLibrary component called with props:', props);
+        return <SafeComponent moduleName="workout-library" {...props} />;
+      },
       gradient: 'bg-gradient-to-br from-slate-500 to-gray-500',
       usageKey: 'workout_library',
       isPremium: false,
@@ -326,6 +338,9 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       isNew: false
     }
   ];
+
+  console.log('ModulesProvider modules loaded:', modules.length);
+  console.log('Workout Library module found:', modules.find(m => m.id === 'workout-library'));
 
   return (
     <ModulesContext.Provider value={{ modules }}>

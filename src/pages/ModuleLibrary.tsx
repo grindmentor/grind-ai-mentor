@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Star, ArrowLeft, Zap } from "lucide-react";
+import { Crown, Star, ArrowLeft, Zap, Brain, Users, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useModules } from "@/contexts/ModulesContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -104,6 +104,9 @@ const ModuleLibrary = () => {
     }
   }
 
+  // Filter out Progress Hub from module library display
+  const displayModules = modules.filter(module => module.id !== 'progress-hub');
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white animate-fade-in">
@@ -126,16 +129,98 @@ const ModuleLibrary = () => {
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-                    Module Library
+                    AI Module Library
                   </h1>
                   <p className="text-xs sm:text-sm md:text-base text-gray-400">Discover all available fitness modules</p>
                 </div>
               </div>
             </div>
 
+            {/* Recent Scientific Studies */}
+            <Card className="bg-gradient-to-r from-blue-500/10 to-indigo-500/20 backdrop-blur-sm border-blue-500/30 mb-6">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center text-lg">
+                  <Brain className="w-5 h-5 mr-2 text-blue-400" />
+                  Latest Scientific Insights
+                </CardTitle>
+                <CardDescription className="text-blue-200">
+                  Evidence-based fitness research powering our AI recommendations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-blue-900/20 rounded-lg border border-blue-500/20">
+                  <h4 className="font-semibold text-blue-200 mb-1">Progressive Overload Optimization</h4>
+                  <p className="text-sm text-blue-300/80">Recent studies show 2.5-5% weekly load increases maximize strength gains while minimizing injury risk.</p>
+                </div>
+                <div className="p-3 bg-blue-900/20 rounded-lg border border-blue-500/20">
+                  <h4 className="font-semibold text-blue-200 mb-1">Recovery Window Analysis</h4>
+                  <p className="text-sm text-blue-300/80">New research indicates optimal protein synthesis occurs 24-48h post-workout, informing our training schedules.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* User Data Insights */}
+            <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/20 backdrop-blur-sm border-green-500/30 mb-6">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center text-lg">
+                  <Users className="w-5 h-5 mr-2 text-green-400" />
+                  Your Fitness Journey
+                </CardTitle>
+                <CardDescription className="text-green-200">
+                  Personalized insights based on your activity and goals
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-green-900/20 rounded-lg border border-green-500/20">
+                  <div className="text-2xl font-bold text-green-400 mb-1">0</div>
+                  <div className="text-sm text-green-300">Workouts Logged</div>
+                </div>
+                <div className="text-center p-4 bg-green-900/20 rounded-lg border border-green-500/20">
+                  <div className="text-2xl font-bold text-green-400 mb-1">{favorites.length}</div>
+                  <div className="text-sm text-green-300">Favorite Modules</div>
+                </div>
+                <div className="text-center p-4 bg-green-900/20 rounded-lg border border-green-500/20">
+                  <div className="text-2xl font-bold text-green-400 mb-1">0</div>
+                  <div className="text-sm text-green-300">Days Active</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Premium Subscription Ad */}
+            <Card className="bg-gradient-to-r from-yellow-500/10 to-orange-500/20 backdrop-blur-sm border-yellow-500/30 mb-8">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center text-lg">
+                  <Crown className="w-5 h-5 mr-2 text-yellow-400" />
+                  Unlock Pro Features
+                </CardTitle>
+                <CardDescription className="text-yellow-200">
+                  Get unlimited access to premium AI modules and advanced analytics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div className="mb-4 sm:mb-0">
+                    <div className="flex items-center space-x-4 mb-2">
+                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                        Smart Training
+                      </Badge>
+                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                        Meal Plan Generator
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-yellow-300">Plus unlimited usage on all modules</p>
+                  </div>
+                  <SmoothButton className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white">
+                    Upgrade to Pro
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </SmoothButton>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Modules Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-              {modules.map((module) => {
+              {displayModules.map((module) => {
                 const isFavorited = favorites.includes(module.id);
                 const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
                 

@@ -9,10 +9,12 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { Star, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
+  const navigate = useNavigate();
   const [selectedModule, setSelectedModule] = useState(null);
   const [favorites, setFavorites] = useState([]);
 
@@ -148,12 +150,12 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Favorites Section - Only show if there are favorites */}
+            {/* Favorites Section */}
             {favoriteModules.length > 0 && (
               <div className="mb-8 sm:mb-12">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
                   <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
-                  Favorites
+                  Your Favorites
                 </h2>
                 <ModuleGrid
                   modules={favoriteModules}
@@ -164,21 +166,22 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* All Modules - Only show if no favorites */}
+            {/* No Favorites State */}
             {favoriteModules.length === 0 && (
-              <div className="mb-8 sm:mb-12">
-                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
-                  Explore Modules
-                </h2>
-                <p className="text-gray-400 mb-6">
-                  Star your favorite modules to see them here. All modules are available to explore.
-                </p>
-                <ModuleGrid
-                  modules={otherModules}
-                  favorites={favorites}
-                  onModuleClick={handleModuleClick}
-                  onToggleFavorite={toggleFavorite}
-                />
+              <div className="mb-8 sm:mb-12 text-center">
+                <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
+                  <Star className="w-12 h-12 mx-auto mb-4 text-yellow-500 opacity-50" />
+                  <h2 className="text-xl font-bold text-white mb-3">No Favorite Modules Yet</h2>
+                  <p className="text-gray-400 mb-6">
+                    Visit the Module Library to discover and star your favorite fitness tools.
+                  </p>
+                  <Button
+                    onClick={() => navigate('/modules')}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+                  >
+                    Explore Module Library
+                  </Button>
+                </div>
               </div>
             )}
           </div>

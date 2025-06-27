@@ -210,10 +210,10 @@ if (isIOS) {
 // Enhanced network status monitoring for better offline UX
 function updateOnlineStatus() {
   const isOnline = navigator.onLine;
-  const event = new CustomEvent('networkstatus', { 
+  const networkStatusEvent = new CustomEvent('networkstatus', { 
     detail: { online: isOnline } 
   });
-  window.dispatchEvent(event);
+  window.dispatchEvent(networkStatusEvent);
   
   // Show user-friendly offline/online notifications
   if (!isOnline) {

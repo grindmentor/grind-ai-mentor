@@ -44,12 +44,12 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
           return (
             <Card 
               key={module.id}
-              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl backdrop-blur-sm border-opacity-30 hover:border-opacity-60 bg-gradient-to-br ${module.gradient} bg-opacity-80 backdrop-blur-md`}
+              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl backdrop-blur-md border-opacity-20 hover:border-opacity-40 bg-gradient-to-br ${module.gradient} bg-opacity-30 backdrop-blur-lg`}
               onClick={() => onModuleClick(module)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
                     <IconComponent className="w-6 h-6 text-white" />
                   </div>
                   
@@ -59,13 +59,13 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                         {module.title}
                       </h3>
                       {module.isNew && (
-                        <Badge className="bg-orange-500/30 text-orange-200 border-orange-400/40 text-xs backdrop-blur-sm">
+                        <Badge className="bg-orange-500/20 text-orange-200 border-orange-400/30 text-xs backdrop-blur-sm">
                           <Sparkles className="w-3 h-3 mr-1" />
                           New
                         </Badge>
                       )}
                       {module.isPremium && (
-                        <Badge className="bg-yellow-500/30 text-yellow-200 border-yellow-400/40 text-xs backdrop-blur-sm">
+                        <Badge className="bg-yellow-500/20 text-yellow-200 border-yellow-400/30 text-xs backdrop-blur-sm">
                           <Crown className="w-3 h-3 mr-1" />
                           Pro
                         </Badge>
@@ -113,15 +113,15 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         return (
           <Card 
             key={module.id}
-            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl backdrop-blur-md border-opacity-30 hover:border-opacity-60 relative overflow-hidden bg-gradient-to-br ${module.gradient} bg-opacity-80`}
+            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl backdrop-blur-lg border-opacity-20 hover:border-opacity-40 relative overflow-hidden bg-gradient-to-br ${module.gradient} bg-opacity-30`}
             onClick={() => onModuleClick(module)}
           >
             {/* Animated background gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             
             <CardHeader className="relative z-10 pb-2">
               <div className="flex items-start justify-between mb-3">
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                   <IconComponent className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-lg" />
                 </div>
                 <Button
@@ -147,7 +147,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                     {module.title}
                   </CardTitle>
                   {module.isNew && (
-                    <Badge className="bg-orange-500/30 text-orange-200 border-orange-400/40 text-xs animate-pulse backdrop-blur-sm">
+                    <Badge className="bg-orange-500/20 text-orange-200 border-orange-400/30 text-xs animate-pulse backdrop-blur-sm">
                       <Sparkles className="w-3 h-3 mr-1" />
                       New
                     </Badge>
@@ -155,7 +155,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                 </div>
                 
                 {module.isPremium && (
-                  <Badge className="bg-yellow-500/30 text-yellow-200 border-yellow-400/40 w-fit backdrop-blur-sm">
+                  <Badge className="bg-yellow-500/20 text-yellow-200 border-yellow-400/30 w-fit backdrop-blur-sm">
                     <Crown className="w-3 h-3 mr-1" />
                     Premium
                   </Badge>

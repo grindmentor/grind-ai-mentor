@@ -24,12 +24,12 @@ const NotificationSystem = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Initialize with some default notifications
+    // Initialize with some default notifications with easter eggs
     const defaultNotifications: Notification[] = [
       {
         id: '1',
-        title: 'Stay Hydrated!',
-        message: 'Remember to drink water throughout your workout',
+        title: 'Stay Hydrated! 💧',
+        message: 'Remember: proper hydration improves performance by up to 15% according to sports science research',
         type: 'hydration',
         timestamp: new Date(),
         read: false,
@@ -37,8 +37,8 @@ const NotificationSystem = () => {
       },
       {
         id: '2',
-        title: 'Training Time',
-        message: 'Your scheduled workout starts in 30 minutes',
+        title: 'Training Time 🔥',
+        message: 'Your scheduled workout starts in 30 minutes. Progressive overload awaits!',
         type: 'training',
         timestamp: new Date(Date.now() - 30 * 60 * 1000),
         read: false,
@@ -46,8 +46,8 @@ const NotificationSystem = () => {
       },
       {
         id: '3',
-        title: 'New Module Available',
-        message: 'Check out the updated Workout Library with new exercises',
+        title: 'Science Easter Egg 🧬',
+        message: 'Did you know? Muscle protein synthesis peaks 1-3 hours post-workout and remains elevated for up to 48 hours!',
         type: 'module',
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
         read: false,
@@ -57,35 +57,25 @@ const NotificationSystem = () => {
 
     setNotifications(defaultNotifications);
 
-    // Set up hydration reminders every 2 hours
+    // Set up hydration reminders every 2 hours with easter eggs
     const hydrationInterval = setInterval(() => {
+      const easterEggs = [
+        'Fun fact: Your muscles are 75% water! Stay hydrated for optimal performance.',
+        'Research shows: Even 2% dehydration can reduce performance by 10-15%.',
+        'Pro tip: Pre-hydrating 2-3 hours before training is more effective than drinking during.',
+        'Science nugget: Proper hydration helps maintain blood volume for better nutrient delivery.'
+      ];
+      
       addNotification({
-        title: 'Hydration Reminder',
-        message: 'Time to drink some water! Stay hydrated for optimal performance.',
+        title: 'Hydration Reminder 💧',
+        message: easterEggs[Math.floor(Math.random() * easterEggs.length)],
         type: 'hydration',
         icon: <Droplets className="w-4 h-4" />
       });
     }, 2 * 60 * 60 * 1000);
 
-    // Set up daily training reminder
-    const now = new Date();
-    const tomorrow6PM = new Date();
-    tomorrow6PM.setDate(now.getDate() + 1);
-    tomorrow6PM.setHours(18, 0, 0, 0);
-    
-    const timeUntilReminder = tomorrow6PM.getTime() - now.getTime();
-    const trainingTimeout = setTimeout(() => {
-      addNotification({
-        title: 'Training Reminder',
-        message: 'Your scheduled workout is starting soon. Time to get moving!',
-        type: 'training',
-        icon: <Dumbbell className="w-4 h-4" />
-      });
-    }, timeUntilReminder);
-
     return () => {
       clearInterval(hydrationInterval);
-      clearTimeout(trainingTimeout);
     };
   }, [user]);
 
@@ -116,12 +106,12 @@ const NotificationSystem = () => {
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'hydration': return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-      case 'training': return 'text-orange-400 bg-orange-500/10 border-orange-500/20';
-      case 'module': return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
-      case 'reminder': return 'text-green-400 bg-green-500/10 border-green-500/20';
-      case 'achievement': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
-      default: return 'text-gray-400 bg-gray-500/10 border-gray-500/20';
+      case 'hydration': return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
+      case 'training': return 'text-orange-400 bg-orange-500/20 border-orange-500/30';
+      case 'module': return 'text-purple-400 bg-purple-500/20 border-purple-500/30';
+      case 'reminder': return 'text-green-400 bg-green-500/20 border-green-500/30';
+      case 'achievement': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
+      default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
     }
   };
 
@@ -129,32 +119,35 @@ const NotificationSystem = () => {
 
   return (
     <div className="fixed top-4 right-4 z-50">
-      {/* Notification Bell */}
+      {/* Enhanced Notification Bell with better visibility */}
       <div className="relative">
         <SmoothButton
           onClick={() => setShowNotifications(!showNotifications)}
-          className="relative bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 hover:bg-gray-800/80"
+          className="relative bg-gray-900/90 backdrop-blur-sm border-2 border-orange-500/50 hover:bg-gray-800/90 hover:border-orange-400/70 shadow-xl shadow-orange-500/20 transition-all duration-300"
           size="sm"
         >
-          <Bell className="w-5 h-5" />
+          <Bell className="w-5 h-5 text-orange-400" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs min-w-[20px] h-5 flex items-center justify-center p-0">
+            <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs min-w-[20px] h-5 flex items-center justify-center p-0 animate-pulse">
               {unreadCount}
             </Badge>
           )}
         </SmoothButton>
 
-        {/* Notifications Panel */}
+        {/* Enhanced Notifications Panel */}
         {showNotifications && (
-          <div className="absolute top-12 right-0 w-80 max-h-96 overflow-y-auto bg-gray-900/95 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-2xl animate-fade-in">
-            <div className="p-4 border-b border-gray-700/50">
+          <div className="absolute top-12 right-0 w-80 max-h-96 overflow-y-auto bg-gray-900/95 backdrop-blur-md border border-orange-500/30 rounded-xl shadow-2xl shadow-orange-500/20 animate-fade-in">
+            <div className="p-4 border-b border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-red-500/10">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-semibold">Notifications</h3>
+                <h3 className="text-white font-semibold flex items-center">
+                  <Bell className="w-4 h-4 mr-2 text-orange-400" />
+                  Notifications
+                </h3>
                 <SmoothButton
                   onClick={() => setShowNotifications(false)}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-white hover:bg-gray-800/50"
                 >
                   <X className="w-4 h-4" />
                 </SmoothButton>
@@ -171,8 +164,8 @@ const NotificationSystem = () => {
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 border-b border-gray-700/30 hover:bg-gray-800/30 transition-colors ${
-                      !notification.read ? 'bg-gray-800/20' : ''
+                    className={`p-4 border-b border-gray-700/30 hover:bg-gray-800/30 transition-colors cursor-pointer ${
+                      !notification.read ? 'bg-orange-500/5 border-l-4 border-l-orange-500/50' : ''
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
@@ -195,7 +188,7 @@ const NotificationSystem = () => {
                             <X className="w-3 h-3" />
                           </button>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-gray-400 mt-1 leading-relaxed">
                           {notification.message}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">

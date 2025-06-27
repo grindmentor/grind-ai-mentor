@@ -6,11 +6,9 @@ import { Crown, Star, ArrowLeft, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useModules } from "@/contexts/ModulesContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SmoothButton } from "@/components/ui/smooth-button";
 import { PageTransition } from "@/components/ui/page-transition";
-import { playSuccessSound, playClickSound } from "@/utils/soundEffects";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const ModuleLibrary = () => {
@@ -24,63 +22,35 @@ const ModuleLibrary = () => {
   const [showModule, setShowModule] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      loadFavorites();
-    }
-  }, [user]);
-
-  const loadFavorites = async () => {
-    if (!user) return;
-
+    // Load favorites from localStorage (matching Dashboard behavior)
     try {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('favorite_modules')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading favorites:', error);
-        return;
-      }
-
-      if (data?.favorite_modules) {
-        setFavorites(data.favorite_modules);
+      const savedFavorites = localStorage.getItem('module-favorites');
+      if (savedFavorites) {
+        setFavorites(JSON.parse(savedFavorites));
       }
     } catch (error) {
       console.error('Error loading favorites:', error);
+      setFavorites([]);
     }
-  };
+  }, []);
 
-  const toggleFavorite = async (moduleId: string, event: React.MouseEvent) => {
+  const toggleFavorite = (moduleId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    if (!user) return;
-
-    const isFavorited = favorites.includes(moduleId);
-    const newFavorites = isFavorited
-      ? favorites.filter(id => id !== moduleId)
-      : [...favorites, moduleId];
-
-    setFavorites(newFavorites);
-    playSuccessSound();
-
+    
     try {
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          favorite_modules: newFavorites
-        });
+      const newFavorites = favorites.includes(moduleId)
+        ? favorites.filter(id => id !== moduleId)
+        : [...favorites, moduleId];
 
-      if (error) throw error;
+      setFavorites(newFavorites);
+      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
 
       toast({
-        title: isFavorited ? "Removed from favorites" : "Added to favorites",
-        description: `Module ${isFavorited ? 'removed from' : 'added to'} your dashboard`,
+        title: favorites.includes(moduleId) ? "Removed from favorites" : "Added to favorites",
+        description: `Module ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your dashboard`,
       });
     } catch (error) {
       console.error('Error updating favorites:', error);
-      setFavorites(favorites);
       toast({
         title: "Error updating favorites",
         description: "Please try again",
@@ -94,7 +64,6 @@ const ModuleLibrary = () => {
     if (module) {
       setSelectedModule(moduleId);
       setShowModule(true);
-      playClickSound();
     }
   };
 
@@ -153,7 +122,7 @@ const ModuleLibrary = () => {
               </SmoothButton>
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500/20 to-orange-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-orange-400/20">
-                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-orange-400" />
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
@@ -239,11 +208,11 @@ const ModuleLibrary = () => {
             <div className="mt-8 sm:mt-12 text-center">
               <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm">
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">
-                  🔬 Science-Backed Modules
+                  🔬 Science-Backed Training
                 </h2>
                 <p className="text-sm sm:text-base text-gray-400 max-w-3xl mx-auto leading-relaxed">
-                  Each module uses the best available information from scientific research. 
-                  Our AI provides recommendations based on evidence, though it can make mistakes. 
+                  Each module uses evidence-based methodologies from exercise science research. 
+                  Our AI provides recommendations backed by peer-reviewed studies and proven training principles. 
                   Click the star to add modules to your dashboard favorites.
                 </p>
               </div>

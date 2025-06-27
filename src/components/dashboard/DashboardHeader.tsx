@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { User, Settings, Crown } from 'lucide-react';
+import { User, Settings, Crown, Library } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -29,6 +29,15 @@ export const DashboardHeader: React.FC = () => {
             <Logo size="sm" />
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
+            <Button
+              onClick={() => navigate('/modules')}
+              variant="ghost"
+              size="sm"
+              className="text-orange-400 hover:bg-orange-500/10 border border-orange-500/30"
+            >
+              <Library className="w-4 h-4 mr-2" />
+              {isMobile ? 'Modules' : 'Module Library'}
+            </Button>
             {!isMobile && (
               <>
                 <Button

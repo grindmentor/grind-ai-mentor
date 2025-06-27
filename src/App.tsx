@@ -1,180 +1,70 @@
 
-import React, { useState, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import ModulesProvider from "./contexts/ModulesContext";
-import { PreferencesProvider } from "./contexts/PreferencesContext";
-import { UserDataProvider } from "./contexts/UserDataContext";
-import { SoundEffects } from "./utils/soundEffects";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Index from "./pages/Index";
-import Pricing from "./pages/Pricing";
-import Account from "./pages/Account";
+import Auth from "./pages/Auth";
+import AppPage from "./pages/App";
 import Settings from "./pages/Settings";
-import Notifications from "./pages/Notifications";
-import Onboarding from "./pages/Onboarding";
+import Profile from "./pages/Profile";
+import Pricing from "./pages/Pricing";
 import Support from "./pages/Support";
-import About from "./pages/About";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
-import NotFound from "./pages/NotFound";
-import SignIn from "./pages/SignIn";
-import AuthCallback from "./pages/AuthCallback";
-import AppPage from "./pages/App";
-import Profile from "./pages/Profile";
-import { useAuth } from "./contexts/AuthContext";
-import { PageTransition } from "@/components/ui/page-transition";
-import { Skeleton } from "@/components/ui/skeleton";
+import About from "./pages/About";
 import ModuleLibrary from "./pages/ModuleLibrary";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ModulesProvider from "@/contexts/ModulesContext";
+import { AppPreloader } from "@/components/AppPreloader";
 
-const AuthenticatedApp = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+const queryClient = new QueryClient();
 
-  useEffect(() => {
-    // Only redirect if we're not loading and there's no user
-    // And we're not already on a public route
-    if (!loading && !user && location.pathname === '/app') {
-      navigate("/signin", { replace: true });
-    }
-  }, [user, loading, navigate, location.pathname]);
-
-  if (loading) {
-    return (
-      <PageTransition>
-        <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <Skeleton className="w-[300px] h-[50px] mb-4 bg-gray-800" />
-          <Skeleton className="w-[200px] h-[30px] bg-gray-700" />
-        </div>
-      </PageTransition>
-    );
-  }
-
-  // If no user and we're on /app, show loading while redirect happens
-  if (!user && location.pathname === '/app') {
-    return (
-      <PageTransition>
-        <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-gray-400">Redirecting to sign in...</p>
-          </div>
-        </div>
-      </PageTransition>
-    );
-  }
-
-  // Only render app if we have a user
-  return user ? (
-    <PreferencesProvider>
-      <UserDataProvider>
-        <AppPage />
-      </UserDataProvider>
-    </PreferencesProvider>
-  ) : null;
-};
-
-const App = () => {
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+function App() {
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load audio preference from localStorage
-    const storedAudioPreference = localStorage.getItem('audioEnabled');
-    if (storedAudioPreference !== null) {
-      setIsAudioEnabled(storedAudioPreference === 'true');
-      SoundEffects.setEnabled(storedAudioPreference === 'true');
-    } else {
-      // Set default audio preference to true if not found in localStorage
-      localStorage.setItem('audioEnabled', 'true');
-      SoundEffects.setEnabled(true);
-    }
+    // Simulate app initialization
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Update localStorage when audio preference changes
-  useEffect(() => {
-    localStorage.setItem('audioEnabled', isAudioEnabled.toString());
-    SoundEffects.setEnabled(isAudioEnabled);
-  }, [isAudioEnabled]);
+  if (isLoading) {
+    return <AppPreloader />;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20">
-      <Router>
-        <AuthProvider>
-          <ModulesProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/app" element={<AuthenticatedApp />} />
-              <Route 
-                path="/profile" 
-                element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Profile />
-                    </UserDataProvider>
-                  </PreferencesProvider>
-                } 
-              />
-              <Route 
-                path="/modules" 
-                element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <ModuleLibrary />
-                    </UserDataProvider>
-                  </PreferencesProvider>
-                } 
-              />
-              <Route 
-                path="/pricing" 
-                element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Pricing />
-                    </UserDataProvider>
-                  </PreferencesProvider>
-                } 
-              />
-              <Route 
-                path="/account" 
-                element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Account />
-                    </UserDataProvider>
-                  </PreferencesProvider>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Settings />
-                    </UserDataProvider>
-                  </PreferencesProvider>
-                } 
-              />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ModulesProvider>
-        </AuthProvider>
-      </Router>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ModulesProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/app" element={<AppPage />} />
+                <Route path="/modules" element={<ModuleLibrary />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/about" element={<About />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ModulesProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;

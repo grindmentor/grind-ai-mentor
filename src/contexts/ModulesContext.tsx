@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
-import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, Speaker, TrendingUp } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen } from 'lucide-react';
 
 type ModuleId =
   | 'dashboard'
@@ -10,10 +10,13 @@ type ModuleId =
   | 'meal-plan-generator'
   | 'recovery-coach'
   | 'workout-logger'
-  | 'food-photo-logger'
-  | 'exercise-database'
-  | 'supplement-assistant'
-  | 'progress-hub';
+  | 'smart-food-log'
+  | 'workout-library'
+  | 'progress-hub'
+  | 'progressive-overload-ai'
+  | 'workout-timer'
+  | 'cut-calc-pro'
+  | 'habit-tracker';
 
 export interface Module {
   id: ModuleId;
@@ -111,21 +114,21 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
         );
         return <React.Suspense fallback={<PlaceholderComponent title="Workout Logger" onBack={onBack} />}><WorkoutLoggerAI onBack={onBack || (() => {})} /></React.Suspense>;
       
-      case 'food-photo-logger':
-        const FoodPhotoLogger = React.lazy(() => 
-          import('@/components/ai-modules/FoodPhotoLogger').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Food Photo Logger" {...props} /> })
+      case 'smart-food-log':
+        const SmartFoodLog = React.lazy(() => 
+          import('@/components/ai-modules/SmartFoodLog').catch(() => 
+            ({ default: (props: any) => <PlaceholderComponent title="Smart Food Log" {...props} /> })
           )
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Food Photo Logger" onBack={onBack} />}><FoodPhotoLogger onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} /></React.Suspense>;
+        return <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}><SmartFoodLog onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} /></React.Suspense>;
       
-      case 'exercise-database':
+      case 'workout-library':
         const WorkoutLibrary = React.lazy(() => 
           import('@/components/ai-modules/WorkoutLibrary').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Exercise Database" {...props} /> })
+            ({ default: (props: any) => <PlaceholderComponent title="Workout Library" {...props} /> })
           )
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Exercise Database" onBack={onBack} />}><WorkoutLibrary onBack={onBack || (() => {})} /></React.Suspense>;
+        return <React.Suspense fallback={<PlaceholderComponent title="Workout Library" onBack={onBack} />}><WorkoutLibrary onBack={onBack || (() => {})} /></React.Suspense>;
       
       case 'progress-hub':
         const ProgressHub = React.lazy(() => 
@@ -134,6 +137,38 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
           )
         );
         return <React.Suspense fallback={<PlaceholderComponent title="Progress Hub" onBack={onBack} />}><ProgressHub onBack={onBack || (() => {})} /></React.Suspense>;
+      
+      case 'progressive-overload-ai':
+        const ProgressiveOverloadAI = React.lazy(() => 
+          import('@/components/ai-modules/ProgressiveOverloadAI').catch(() => 
+            ({ default: (props: any) => <PlaceholderComponent title="Progressive Overload AI" {...props} /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Progressive Overload AI" onBack={onBack} />}><ProgressiveOverloadAI onBack={onBack || (() => {})} /></React.Suspense>;
+      
+      case 'workout-timer':
+        const WorkoutTimer = React.lazy(() => 
+          import('@/components/ai-modules/WorkoutTimer').catch(() => 
+            ({ default: (props: any) => <PlaceholderComponent title="Workout Timer" {...props} /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Workout Timer" onBack={onBack} />}><WorkoutTimer onBack={onBack || (() => {})} /></React.Suspense>;
+      
+      case 'cut-calc-pro':
+        const CutCalcPro = React.lazy(() => 
+          import('@/components/ai-modules/CutCalcPro').catch(() => 
+            ({ default: (props: any) => <PlaceholderComponent title="CutCalc Pro" {...props} /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="CutCalc Pro" onBack={onBack} />}><CutCalcPro onBack={onBack || (() => {})} /></React.Suspense>;
+      
+      case 'habit-tracker':
+        const HabitTracker = React.lazy(() => 
+          import('@/components/ai-modules/HabitTracker').catch(() => 
+            ({ default: (props: any) => <PlaceholderComponent title="Habit Tracker" {...props} /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Habit Tracker" onBack={onBack} />}><HabitTracker onBack={onBack || (() => {})} /></React.Suspense>;
       
       default:
         return <PlaceholderComponent title={moduleName} onBack={onBack} />;
@@ -149,7 +184,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
     {
       id: 'smart-training',
       title: 'Smart Training',
-      description: 'AI-powered workout recommendations',
+      description: 'AI-powered workout recommendations with scientific backing',
       icon: Flame,
       component: (props: any) => <SafeComponent moduleName="smart-training" {...props} />,
       gradient: 'from-red-500 to-pink-500',
@@ -160,7 +195,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
     {
       id: 'coach-gpt',
       title: 'Coach GPT',
-      description: 'Your AI fitness coach',
+      description: 'Your AI fitness coach with research-based guidance',
       icon: MessageSquare,
       component: (props: any) => <SafeComponent moduleName="coach-gpt" {...props} />,
       gradient: 'from-green-500 to-emerald-500',
@@ -169,9 +204,20 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       isNew: false
     },
     {
+      id: 'progressive-overload-ai',
+      title: 'Progressive Overload AI',
+      description: 'Scientific progressive overload planning and tracking',
+      icon: TrendingUp,
+      component: (props: any) => <SafeComponent moduleName="progressive-overload-ai" {...props} />,
+      gradient: 'from-purple-500 to-indigo-500',
+      usageKey: 'progressive_overload',
+      isPremium: false,
+      isNew: true
+    },
+    {
       id: 'tdee-calculator',
       title: 'TDEE Calculator',
-      description: 'Calculate your Total Daily Energy Expenditure',
+      description: 'Calculate your Total Daily Energy Expenditure scientifically',
       icon: BarChart3,
       component: (props: any) => <SafeComponent moduleName="tdee-calculator" {...props} />,
       gradient: 'from-blue-500 to-cyan-500',
@@ -180,32 +226,54 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       isNew: false
     },
     {
+      id: 'cut-calc-pro',
+      title: 'CutCalc Pro',
+      description: 'Advanced cutting calculator with comprehensive analysis',
+      icon: Target,
+      component: (props: any) => <SafeComponent moduleName="cut-calc-pro" {...props} />,
+      gradient: 'from-red-500 to-red-700',
+      usageKey: 'cut_calc_pro',
+      isPremium: false,
+      isNew: false
+    },
+    {
       id: 'meal-plan-generator',
       title: 'Meal Plan Generator',
-      description: 'Generate personalized meal plans',
+      description: 'Generate personalized, science-based meal plans',
       icon: ChefHat,
       component: (props: any) => <SafeComponent moduleName="meal-plan-generator" {...props} />,
       gradient: 'from-yellow-500 to-orange-500',
       usageKey: 'meal_plan_generator',
-      isPremium: true,
+      isPremium: false,
+      isNew: false
+    },
+    {
+      id: 'smart-food-log',
+      title: 'Smart Food Log',
+      description: 'AI-powered food logging with photo analysis and nutrition tracking',
+      icon: Pizza,
+      component: (props: any) => <SafeComponent moduleName="smart-food-log" {...props} />,
+      gradient: 'from-orange-500 to-amber-500',
+      usageKey: 'smart_food_log',
+      isPremium: false,
       isNew: false
     },
     {
       id: 'recovery-coach',
       title: 'Recovery Coach',
-      description: 'Optimize your recovery with AI guidance',
+      description: 'Optimize your recovery with AI guidance and research',
       icon: Activity,
       component: (props: any) => <SafeComponent moduleName="recovery-coach" {...props} />,
       gradient: 'from-teal-500 to-green-500',
       usageKey: 'recovery_coach',
-      isPremium: true,
+      isPremium: false,
       isNew: false
     },
     {
       id: 'workout-logger',
       title: 'Workout Logger',
-      description: 'Log and track your workouts',
-      icon: ListChecks,
+      description: 'Log and track your workouts with intelligent insights',
+      icon: NotebookPen,
       component: (props: any) => <SafeComponent moduleName="workout-logger" {...props} />,
       gradient: 'from-purple-500 to-indigo-500',
       usageKey: 'workout_logger',
@@ -213,36 +281,36 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       isNew: false
     },
     {
-      id: 'food-photo-logger',
-      title: 'Food Photo Logger',
-      description: 'Log your meals with photos',
-      icon: Pizza,
-      component: (props: any) => <SafeComponent moduleName="food-photo-logger" {...props} />,
-      gradient: 'from-orange-500 to-amber-500',
-      usageKey: 'food_photo_logger',
-      isPremium: true,
-      isNew: false
-    },
-    {
-      id: 'exercise-database',
-      title: 'Exercise Database',
-      description: 'Browse a comprehensive exercise library',
-      icon: BookOpen,
-      component: (props: any) => <SafeComponent moduleName="exercise-database" {...props} />,
-      gradient: 'from-slate-500 to-gray-500',
-      usageKey: 'exercise_database',
+      id: 'workout-timer',
+      title: 'Workout Timer',
+      description: 'Time your workouts with smart rest period recommendations',
+      icon: Timer,
+      component: (props: any) => <SafeComponent moduleName="workout-timer" {...props} />,
+      gradient: 'from-cyan-500 to-blue-500',
+      usageKey: 'workout_timer',
       isPremium: false,
       isNew: false
     },
     {
-      id: 'supplement-assistant',
-      title: 'Supplement Assistant',
-      description: 'Get AI-powered supplement recommendations',
-      icon: Speaker,
-      component: (props: any) => <PlaceholderComponent title="Supplement Assistant" {...props} />,
-      gradient: 'from-stone-500 to-zinc-500',
-      usageKey: 'supplement_assistant',
-      isPremium: true,
+      id: 'workout-library',
+      title: 'Workout Library',
+      description: 'Comprehensive exercise database with proper form guidance',
+      icon: BookOpen,
+      component: (props: any) => <SafeComponent moduleName="workout-library" {...props} />,
+      gradient: 'from-slate-500 to-gray-500',
+      usageKey: 'workout_library',
+      isPremium: false,
+      isNew: false
+    },
+    {
+      id: 'habit-tracker',
+      title: 'Habit Tracker',
+      description: 'Build lasting fitness habits with behavioral science',
+      icon: Zap,
+      component: (props: any) => <SafeComponent moduleName="habit-tracker" {...props} />,
+      gradient: 'from-yellow-500 to-yellow-700',
+      usageKey: 'habit_tracker',
+      isPremium: false,
       isNew: false
     },
     {

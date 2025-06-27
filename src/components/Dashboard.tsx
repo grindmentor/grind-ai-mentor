@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -6,7 +7,8 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
-import { Star } from 'lucide-react';
+import { Star, TrendingUp, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -94,6 +96,10 @@ const Dashboard = () => {
     );
   }
 
+  // Separate Progress Hub from other modules
+  const progressHubModule = modules.find(m => m.id === 'progress-hub');
+  const otherModules = modules.filter(m => m.id !== 'progress-hub');
+
   return (
     <ErrorBoundary>
       <PageTransition>
@@ -107,7 +113,7 @@ const Dashboard = () => {
                 Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
               </h1>
               <p className="text-gray-400 text-base sm:text-lg">
-                Ready to crush your fitness goals today?
+                Ready to achieve your fitness goals with science-backed training?
               </p>
             </div>
 
@@ -119,7 +125,7 @@ const Dashboard = () => {
                   Favorites
                 </h2>
                 <ModuleGrid
-                  modules={modules.filter(module => favorites.includes(module.id))}
+                  modules={otherModules.filter(module => favorites.includes(module.id))}
                   favorites={favorites}
                   onModuleClick={handleModuleClick}
                   onToggleFavorite={toggleFavorite}
@@ -133,12 +139,42 @@ const Dashboard = () => {
                 All Modules
               </h2>
               <ModuleGrid
-                modules={modules}
+                modules={otherModules}
                 favorites={favorites}
                 onModuleClick={handleModuleClick}
                 onToggleFavorite={toggleFavorite}
               />
             </div>
+
+            {/* Progress Hub - Long Rectangular Button */}
+            {progressHubModule && (
+              <div className="mb-8">
+                <Button
+                  onClick={() => handleModuleClick(progressHubModule)}
+                  className="w-full h-20 bg-gradient-to-r from-blue-500/20 to-blue-600/40 backdrop-blur-sm border border-blue-500/30 hover:from-blue-500/30 hover:to-blue-600/50 transition-all duration-300 text-white rounded-xl group"
+                >
+                  <div className="flex items-center justify-between w-full px-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
+                          Progress Hub
+                        </h3>
+                        <p className="text-sm text-gray-300">
+                          Track your fitness journey with detailed analytics
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-5 h-5 text-blue-400" />
+                      <span className="text-sm text-blue-300">View Progress</span>
+                    </div>
+                  </div>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </PageTransition>

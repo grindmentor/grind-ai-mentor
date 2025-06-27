@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -12,6 +11,73 @@ import { Button } from '@/components/ui/button';
 import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import NotificationCenter from '@/components/NotificationCenter';
+
+// Create proper fallback components
+const GenericFallback = ({ error, reset }: { error?: Error; reset: () => void }) => (
+  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">
+    Unable to load component
+    {error && (
+      <button onClick={reset} className="ml-2 text-orange-400 hover:text-orange-300 underline">
+        Try Again
+      </button>
+    )}
+  </div>
+);
+
+const ScientificStudiesFallback = ({ error, reset }: { error?: Error; reset: () => void }) => (
+  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">
+    Unable to load scientific studies
+    {error && (
+      <button onClick={reset} className="ml-2 text-orange-400 hover:text-orange-300 underline">
+        Try Again
+      </button>
+    )}
+  </div>
+);
+
+const PersonalizedSummaryFallback = ({ error, reset }: { error?: Error; reset: () => void }) => (
+  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">
+    Unable to load personalized summary
+    {error && (
+      <button onClick={reset} className="ml-2 text-orange-400 hover:text-orange-300 underline">
+        Try Again
+      </button>
+    )}
+  </div>
+);
+
+const NotificationCenterFallback = ({ error, reset }: { error?: Error; reset: () => void }) => (
+  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">
+    Unable to load notifications
+    {error && (
+      <button onClick={reset} className="ml-2 text-orange-400 hover:text-orange-300 underline">
+        Try Again
+      </button>
+    )}
+  </div>
+);
+
+const FavoriteModulesFallback = ({ error, reset }: { error?: Error; reset: () => void }) => (
+  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">
+    Unable to load favorite modules
+    {error && (
+      <button onClick={reset} className="ml-2 text-orange-400 hover:text-orange-300 underline">
+        Try Again
+      </button>
+    )}
+  </div>
+);
+
+const ProgressHubFallback = ({ error, reset }: { error?: Error; reset: () => void }) => (
+  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">
+    Unable to load Progress Hub
+    {error && (
+      <button onClick={reset} className="ml-2 text-orange-400 hover:text-orange-300 underline">
+        Try Again
+      </button>
+    )}
+  </div>
+);
 
 const Dashboard = () => {
   console.log('Dashboard component rendering - start');
@@ -167,17 +233,17 @@ const Dashboard = () => {
 
             {/* Dashboard Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 sm:mb-12">
-              <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load scientific studies</div>}>
+              <ErrorBoundary fallback={ScientificStudiesFallback}>
                 <ScientificStudies />
               </ErrorBoundary>
-              <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load personalized summary</div>}>
+              <ErrorBoundary fallback={PersonalizedSummaryFallback}>
                 <PersonalizedSummary />
               </ErrorBoundary>
             </div>
 
             {/* Notification Center */}
             <div className="mb-8 sm:mb-12">
-              <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load notifications</div>}>
+              <ErrorBoundary fallback={NotificationCenterFallback}>
                 <NotificationCenter />
               </ErrorBoundary>
             </div>
@@ -189,7 +255,7 @@ const Dashboard = () => {
                   <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
                   Your Favorites
                 </h2>
-                <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load favorite modules</div>}>
+                <ErrorBoundary fallback={FavoriteModulesFallback}>
                   <ModuleGrid
                     modules={regularModules.filter(module => module && favorites.includes(module.id))}
                     favorites={favorites}
@@ -219,7 +285,7 @@ const Dashboard = () => {
             {/* Progress Hub - Purple Button */}
             {progressHubModule && (
               <div className="mb-8">
-                <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load Progress Hub</div>}>
+                <ErrorBoundary fallback={ProgressHubFallback}>
                   <Button
                     onClick={() => handleModuleClick(progressHubModule)}
                     className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -38,7 +37,7 @@ const Dashboard = () => {
         console.error('Error setting selected module:', error);
       }
     };
-    return createDebouncedFunction(handler, 150);
+    return createDebouncedFunction(handler, 150) as (module: any) => void;
   }, [createDebouncedFunction]);
 
   const handleBackToDashboard = useMemo(() => {
@@ -50,14 +49,14 @@ const Dashboard = () => {
         console.error('Error returning to dashboard:', error);
       }
     };
-    return createDebouncedFunction(handler, 100);
+    return createDebouncedFunction(handler, 100) as () => void;
   }, [createDebouncedFunction]);
 
   const handleFoodLogged = useMemo(() => {
     const handler = (data: any) => {
       console.log('Food logged:', data);
     };
-    return createDebouncedFunction(handler, 200);
+    return createDebouncedFunction(handler, 200) as (data: any) => void;
   }, [createDebouncedFunction]);
 
   // Memoized computed values

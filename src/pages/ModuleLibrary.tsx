@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,6 +72,8 @@ const ModuleLibrary = () => {
     switch (sortBy) {
       case 'name':
         return a.title.localeCompare(b.title);
+      case 'newest':
+        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
       case 'premium':
         return (b.isPremium ? 1 : 0) - (a.isPremium ? 1 : 0);
       default:
@@ -210,6 +211,7 @@ const ModuleLibrary = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
                       <SelectItem value="name">Name</SelectItem>
+                      <SelectItem value="newest">Newest</SelectItem>
                       <SelectItem value="premium">Premium First</SelectItem>
                     </SelectContent>
                   </Select>

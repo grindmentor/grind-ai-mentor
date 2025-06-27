@@ -127,7 +127,7 @@ const ModuleLibrary = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate('/app')}
-                  className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors"
+                  className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Dashboard
@@ -145,7 +145,7 @@ const ModuleLibrary = () => {
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className="bg-orange-500/20 hover:bg-orange-500/30 border-orange-500/30"
+                  className="bg-gray-800/50 hover:bg-gray-700/50"
                 >
                   <Grid className="w-4 h-4" />
                 </Button>
@@ -153,7 +153,7 @@ const ModuleLibrary = () => {
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className="bg-orange-500/20 hover:bg-orange-500/30 border-orange-500/30"
+                  className="bg-gray-800/50 hover:bg-gray-700/50"
                 >
                   <List className="w-4 h-4" />
                 </Button>
@@ -161,27 +161,27 @@ const ModuleLibrary = () => {
             </div>
 
             {/* Search and Filters */}
-            <div className="bg-orange-900/20 backdrop-blur-sm border border-orange-500/30 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
               <div className="flex flex-col lg:flex-row gap-4">
                 {/* Search */}
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder="Search modules..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 min-h-[48px] focus:border-orange-400"
+                    className="pl-10 bg-gray-800/50 border-gray-600 text-white min-h-[48px]"
                   />
                 </div>
                 
                 {/* Filters */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="w-full sm:w-40 bg-orange-800/30 border-orange-500/40 text-white min-h-[48px]">
-                      <Filter className="w-4 h-4 mr-2 text-orange-400" />
+                    <SelectTrigger className="w-full sm:w-40 bg-gray-800/50 border-gray-600 text-white min-h-[48px]">
+                      <Filter className="w-4 h-4 mr-2" />
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-orange-500/40">
+                    <SelectContent className="bg-gray-800 border-gray-600">
                       <SelectItem value="all">All Modules</SelectItem>
                       <SelectItem value="free">Free</SelectItem>
                       <SelectItem value="premium">Premium</SelectItem>
@@ -190,10 +190,10 @@ const ModuleLibrary = () => {
                   </Select>
                   
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-40 bg-orange-800/30 border-orange-500/40 text-white min-h-[48px]">
+                    <SelectTrigger className="w-full sm:w-40 bg-gray-800/50 border-gray-600 text-white min-h-[48px]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-orange-500/40">
+                    <SelectContent className="bg-gray-800 border-gray-600">
                       <SelectItem value="name">Name</SelectItem>
                       <SelectItem value="newest">Newest</SelectItem>
                       <SelectItem value="premium">Premium First</SelectItem>
@@ -205,17 +205,17 @@ const ModuleLibrary = () => {
 
             {/* Module Count and Stats */}
             <div className="flex flex-wrap items-center gap-3 mb-6">
-              <Badge variant="outline" className="border-orange-500/40 text-orange-300 bg-orange-500/10">
+              <Badge variant="outline" className="border-gray-600 text-gray-300">
                 {sortedModules.length} modules found
               </Badge>
-              <Badge variant="outline" className="border-green-500/40 text-green-400 bg-green-500/10">
+              <Badge variant="outline" className="border-green-600 text-green-400">
                 {sortedModules.filter(m => !m.isPremium).length} free
               </Badge>
-              <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 bg-yellow-500/10">
+              <Badge variant="outline" className="border-orange-600 text-orange-400">
                 <Crown className="w-3 h-3 mr-1" />
                 {sortedModules.filter(m => m.isPremium).length} premium
               </Badge>
-              <Badge variant="outline" className="border-orange-500/40 text-orange-400 bg-orange-500/10">
+              <Badge variant="outline" className="border-yellow-600 text-yellow-400">
                 <Star className="w-3 h-3 mr-1" />
                 {favorites.length} favorites
               </Badge>
@@ -225,9 +225,9 @@ const ModuleLibrary = () => {
             <div className="space-y-6">
               {sortedModules.length === 0 ? (
                 <div className="text-center py-12">
-                  <Search className="w-16 h-16 text-orange-500/50 mx-auto mb-4" />
+                  <Search className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">No modules found</h3>
-                  <p className="text-orange-300/70">Try adjusting your search or filters</p>
+                  <p className="text-gray-400">Try adjusting your search or filters</p>
                 </div>
               ) : (
                 <ModuleGrid

@@ -13,7 +13,7 @@ const loadingStates = new Map<string, boolean>();
 export const useInstantModule = ({ 
   moduleId, 
   preloadData, 
-  minLoadTime = 0 // Removed artificial delay for instant performance
+  minLoadTime = 100 // Reduced for instant feel
 }: UseInstantModuleProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState(() => moduleCache.get(moduleId) || null);
@@ -32,7 +32,7 @@ export const useInstantModule = ({
         setData(cachedData);
         setIsLoading(false);
         
-        // Background refresh for fresh data - no artificial delay
+        // Background refresh for fresh data
         if (preloadData) {
           loadingStates.set(moduleId, true);
           preloadData().then(freshData => {
@@ -45,11 +45,20 @@ export const useInstantModule = ({
         return;
       }
 
-      // Load fresh data instantly
+      // Load fresh data with minimal delay
       setIsLoading(true);
       loadingStates.set(moduleId, true);
       
+      const startTime = Date.now();
       const result = preloadData ? await preloadData() : { loaded: true };
+      
+      // Minimal load time for smooth UX
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, minLoadTime - elapsed);
+      
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
 
       // Cache in memory for instant future access
       moduleCache.set(moduleId, result);
@@ -61,7 +70,7 @@ export const useInstantModule = ({
       setIsLoading(false);
       loadingStates.delete(moduleId);
     }
-  }, [moduleId, preloadData]);
+  }, [moduleId, preloadData, minLoadTime]);
 
   useEffect(() => {
     loadModule();
@@ -72,7 +81,7 @@ export const useInstantModule = ({
     loadModule();
   }, [moduleId, loadModule]);
 
-  // Clear cache on unmount to prevent memory leaks - reduced timeout
+  // Clear cache on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
       // Keep cache for a short time for potential re-access
@@ -80,7 +89,7 @@ export const useInstantModule = ({
         if (!loadingStates.get(moduleId)) {
           moduleCache.delete(moduleId);
         }
-      }, 5000); // Reduced from 30 seconds to 5 seconds
+      }, 30000); // 30 seconds
     };
   }, [moduleId]);
 

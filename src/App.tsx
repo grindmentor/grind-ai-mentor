@@ -15,13 +15,12 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import ModuleLibrary from "./pages/ModuleLibrary";
-import GoalsManager from "./pages/GoalsManager";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
-import { ModulesProvider } from "@/contexts/ModulesContext";
+import ModulesProvider from "@/contexts/ModulesContext";
 import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 

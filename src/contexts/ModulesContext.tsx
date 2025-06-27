@@ -189,7 +189,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="smart-training" {...props} />,
       gradient: 'from-red-500 to-pink-500',
       usageKey: 'smart_training',
-      isPremium: false,
+      isPremium: true, // Made premium
       isNew: false
     },
     {
@@ -244,7 +244,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="meal-plan-generator" {...props} />,
       gradient: 'from-yellow-500 to-orange-500',
       usageKey: 'meal_plan_generator',
-      isPremium: false,
+      isPremium: true, // Made premium
       isNew: false
     },
     {
@@ -266,7 +266,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="recovery-coach" {...props} />,
       gradient: 'from-teal-500 to-green-500',
       usageKey: 'recovery_coach',
-      isPremium: false,
+      isPremium: false, // Made free
       isNew: false
     },
     {
@@ -275,7 +275,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Log and track your workouts with intelligent insights',
       icon: NotebookPen,
       component: (props: any) => <SafeComponent moduleName="workout-logger" {...props} />,
-      gradient: 'from-purple-500 to-indigo-500',
+      gradient: 'from-indigo-500 to-violet-500',
       usageKey: 'workout_logger',
       isPremium: false,
       isNew: false
@@ -294,7 +294,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
     {
       id: 'workout-library',
       title: 'Workout Library',
-      description: 'Comprehensive exercise database with proper form guidance',
+      description: 'AI-powered exercise database with personalized recommendations',
       icon: BookOpen,
       component: (props: any) => <SafeComponent moduleName="workout-library" {...props} />,
       gradient: 'from-slate-500 to-gray-500',

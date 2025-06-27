@@ -1,39 +1,31 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Dumbbell, Play, Save, Minus, Search, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Plus, Search, Play, Save, Minus, Sparkles, Zap, Timer, Trophy, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PageTransition } from "@/components/ui/page-transition";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useAIExerciseSearch, AIExercise } from "@/hooks/useAIExerciseSearch";
 
 interface WorkoutLoggerAIProps {
   onBack: () => void;
-}
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscle_group: string;
-  equipment?: string;
-  user_id?: string;
 }
 
 interface WorkoutSet {
   id: string;
   reps: number;
   weight: number;
-  rir: number; // Reps in Reserve
+  rir: number;
 }
 
 interface WorkoutExercise {
   id: string;
-  exercise: Exercise;
+  exercise: AIExercise;
   sets: WorkoutSet[];
   notes?: string;
 }
@@ -47,23 +39,11 @@ interface WorkoutSession {
   notes?: string;
 }
 
-const COMMON_EXERCISES: Exercise[] = [
-  { id: 'squat', name: 'Barbell Squat', muscle_group: 'Legs', equipment: 'Barbell' },
-  { id: 'bench', name: 'Bench Press', muscle_group: 'Chest', equipment: 'Barbell' },
-  { id: 'deadlift', name: 'Deadlift', muscle_group: 'Back', equipment: 'Barbell' },
-  { id: 'ohp', name: 'Overhead Press', muscle_group: 'Shoulders', equipment: 'Barbell' },
-  { id: 'row', name: 'Barbell Row', muscle_group: 'Back', equipment: 'Barbell' },
-  { id: 'pullup', name: 'Pull-up', muscle_group: 'Back', equipment: 'Bodyweight' },
-  { id: 'dip', name: 'Dips', muscle_group: 'Chest', equipment: 'Bodyweight' },
-  { id: 'curls', name: 'Barbell Curls', muscle_group: 'Arms', equipment: 'Barbell' },
-  { id: 'tricep', name: 'Tricep Extensions', muscle_group: 'Arms', equipment: 'Dumbbell' },
-  { id: 'lat_pulldown', name: 'Lat Pulldown', muscle_group: 'Back', equipment: 'Cable' }
-];
-
 const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   const [workout, setWorkout] = useState<WorkoutSession>({
     name: 'New Workout',
@@ -72,73 +52,42 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     notes: ''
   });
   
-  const [exercises, setExercises] = useState<Exercise[]>(COMMON_EXERCISES);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newExerciseName, setNewExerciseName] = useState('');
-  const [showAddExercise, setShowAddExercise] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
+  const [workoutDuration, setWorkoutDuration] = useState(0);
+  const { exercises: searchResults, loading: searchLoading, searchExercises } = useAIExerciseSearch();
 
+  // Timer for workout duration
   useEffect(() => {
-    if (user) {
-      loadUserExercises();
+    let interval: NodeJS.Timeout;
+    if (isWorkoutActive) {
+      interval = setInterval(() => {
+        const startTime = new Date(workout.start_time).getTime();
+        const now = new Date().getTime();
+        setWorkoutDuration(Math.floor((now - startTime) / 1000));
+      }, 1000);
     }
-  }, [user]);
+    return () => clearInterval(interval);
+  }, [isWorkoutActive, workout.start_time]);
 
-  const loadUserExercises = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_exercises')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      
-      if (data) {
-        setExercises([...COMMON_EXERCISES, ...data]);
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchExercises(searchQuery);
       }
-    } catch (error) {
-      console.error('Error loading user exercises:', error);
-    }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchExercises]);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const addCustomExercise = async () => {
-    if (!user || !newExerciseName.trim()) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_exercises')
-        .insert([{
-          user_id: user.id,
-          name: newExerciseName,
-          muscle_group: 'Custom',
-          equipment: 'Various'
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setExercises([...exercises, data]);
-      setNewExerciseName('');
-      setShowAddExercise(false);
-      
-      toast({
-        title: "Exercise added!",
-        description: `${newExerciseName} has been added to your exercise database.`,
-      });
-    } catch (error) {
-      console.error('Error adding custom exercise:', error);
-      toast({
-        title: "Error adding exercise",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const addExerciseToWorkout = (exercise: Exercise) => {
+  const addExerciseToWorkout = (exercise: AIExercise) => {
     const newExercise: WorkoutExercise = {
       id: Date.now().toString(),
       exercise,
@@ -155,6 +104,12 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       ...prev,
       exercises: [...prev.exercises, newExercise]
     }));
+
+    setSearchQuery('');
+    toast({
+      title: "Exercise added! 💪",
+      description: `${exercise.name} has been added to your workout.`,
+    });
   };
 
   const addSet = (exerciseId: string) => {
@@ -213,30 +168,31 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }));
   };
 
-  const addSectionBreak = () => {
-    const sectionBreak: WorkoutExercise = {
-      id: `section-${Date.now()}`,
-      exercise: { id: 'section', name: '--- Section Break ---', muscle_group: 'Break' },
-      sets: [],
-      notes: ''
-    };
-
-    setWorkout(prev => ({
-      ...prev,
-      exercises: [...prev.exercises, sectionBreak]
-    }));
-  };
-
   const startWorkout = () => {
     setIsWorkoutActive(true);
     setWorkout(prev => ({
       ...prev,
       start_time: new Date().toISOString()
     }));
+    toast({
+      title: "Workout started! 🔥",
+      description: "Time to crush those goals!",
+    });
   };
 
   const finishWorkout = async () => {
     if (!user) return;
+
+    const totalSets = workout.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
+    
+    if (totalSets === 0) {
+      toast({
+        title: "Add some exercises first!",
+        description: "Your workout needs at least one set to be saved.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const workoutData = {
@@ -245,9 +201,9 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         start_time: workout.start_time,
         end_time: new Date().toISOString(),
         notes: workout.notes,
-        exercises: workout.exercises.filter(ex => ex.exercise.id !== 'section'), // Remove section breaks
-        total_sets: workout.exercises.reduce((sum, ex) => sum + ex.sets.length, 0),
-        duration_minutes: Math.round((new Date().getTime() - new Date(workout.start_time).getTime()) / 60000)
+        exercises: workout.exercises,
+        total_sets: totalSets,
+        duration_minutes: Math.round(workoutDuration / 60)
       };
 
       const { error } = await supabase
@@ -257,8 +213,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       if (error) throw error;
 
       toast({
-        title: "Workout saved!",
-        description: `${workout.name} has been logged successfully.`,
+        title: "Workout completed! 🎉",
+        description: `Great job! You completed ${totalSets} sets in ${Math.round(workoutDuration / 60)} minutes.`,
       });
 
       // Reset workout
@@ -269,6 +225,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         notes: ''
       });
       setIsWorkoutActive(false);
+      setWorkoutDuration(0);
     } catch (error) {
       console.error('Error saving workout:', error);
       toast({
@@ -279,17 +236,30 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
   };
 
-  const filteredExercises = exercises.filter(ex => 
-    ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ex.muscle_group.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Beginner': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'Intermediate': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'Advanced': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Cardio': return <Zap className="w-4 h-4" />;
+      case 'Strength': return <Target className="w-4 h-4" />;
+      case 'Full Workout': return <Trophy className="w-4 h-4" />;
+      default: return <Sparkles className="w-4 h-4" />;
+    }
+  };
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-black via-indigo-900/10 to-violet-800/20 text-white">
         <div className="p-3 sm:p-4 md:p-6">
           <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-            {/* Header */}
+            {/* Enhanced Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <Button 
@@ -301,258 +271,265 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   {isMobile ? "Back" : "Back to Dashboard"}
                 </Button>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500/20 to-purple-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-blue-400/20">
-                    <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-indigo-500/20 to-violet-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-indigo-400/20">
+                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" />
                   </div>
                   <div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                      Workout Logger
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">
+                      AI Workout Logger
                     </h1>
-                    <p className="text-xs sm:text-sm text-gray-400">Track your training sessions</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Smart training with AI-powered insights</p>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                {isWorkoutActive ? (
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    <Play className="w-3 h-3 mr-1" />
-                    Active
-                  </Badge>
-                ) : (
+              <div className="flex items-center space-x-3">
+                {isWorkoutActive && (
+                  <div className="flex items-center space-x-2 bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30">
+                    <Timer className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400 font-mono">{formatDuration(workoutDuration)}</span>
+                  </div>
+                )}
+                {!isWorkoutActive ? (
                   <Button 
                     onClick={startWorkout}
-                    className="bg-green-500 hover:bg-green-600 text-white"
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
                     size={isMobile ? "sm" : "default"}
                   >
                     <Play className="w-4 h-4 mr-2" />
                     Start Workout
                   </Button>
+                ) : (
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-3 py-1">
+                    <Play className="w-3 h-3 mr-1" />
+                    Active
+                  </Badge>
                 )}
               </div>
             </div>
 
             {/* Workout Name */}
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+            <Card className="bg-gradient-to-r from-indigo-900/40 to-violet-900/40 backdrop-blur-sm border-indigo-500/30">
               <CardContent className="p-4">
                 <Input
                   value={workout.name}
                   onChange={(e) => setWorkout(prev => ({ ...prev, name: e.target.value }))}
-                  className="bg-gray-800 border-gray-700 text-white text-lg font-semibold"
-                  placeholder="Workout name..."
+                  className="bg-gray-800/50 border-indigo-500/30 text-white text-lg font-semibold focus:border-indigo-400"
+                  placeholder="Give your workout a name..."
                 />
               </CardContent>
             </Card>
 
-            {/* Add Exercise */}
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+            {/* AI Exercise Search */}
+            <Card className="bg-gradient-to-r from-violet-900/40 to-purple-900/40 backdrop-blur-sm border-violet-500/30">
               <CardHeader>
                 <CardTitle className="text-white flex items-center text-lg sm:text-xl">
-                  <Plus className="w-5 h-5 mr-2 text-blue-500" />
-                  Add Exercise
+                  <Sparkles className="w-5 h-5 mr-2 text-violet-400" />
+                  AI Exercise Search
                 </CardTitle>
+                <CardDescription className="text-violet-300">
+                  Describe what you want to train and AI will suggest exercises
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search exercises..."
-                      className="bg-gray-800 border-gray-700 text-white pl-10"
-                    />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-violet-400" />
+                  <Input
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="e.g., 'chest workout', 'cardio for fat loss', 'leg day'..."
+                    className="bg-gray-800/50 border-violet-500/30 text-white pl-12 focus:border-violet-400"
+                  />
+                  {searchLoading && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Search Results */}
+                {searchResults.length > 0 && (
+                  <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+                    {searchResults.map((exercise, index) => (
+                      <Card
+                        key={index}
+                        onClick={() => addExerciseToWorkout(exercise)}
+                        className="bg-gray-800/30 border-gray-600/50 hover:bg-gray-700/40 transition-all cursor-pointer group"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              {getCategoryIcon(exercise.category)}
+                              <h4 className="font-semibold text-white group-hover:text-violet-300">
+                                {exercise.name}
+                              </h4>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge className={getDifficultyColor(exercise.difficulty)}>
+                                {exercise.difficulty}
+                              </Badge>
+                              <Badge variant="outline" className="border-gray-500 text-gray-300">
+                                {exercise.category}
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className="text-gray-400 text-sm mb-2">{exercise.description}</p>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>🎯 {exercise.muscle_groups.join(', ')}</span>
+                            <span>⏱️ {exercise.estimated_duration}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  <Dialog open={showAddExercise} onOpenChange={setShowAddExercise}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Custom
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-gray-900 border-gray-700">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">Add Custom Exercise</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <Input
-                          value={newExerciseName}
-                          onChange={(e) => setNewExerciseName(e.target.value)}
-                          placeholder="Exercise name..."
-                          className="bg-gray-800 border-gray-700 text-white"
-                        />
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={addCustomExercise}
-                            className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
-                          >
-                            Add Exercise
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            onClick={() => setShowAddExercise(false)}
-                            className="border-gray-600 text-white hover:bg-gray-800"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                  {filteredExercises.map((exercise) => (
-                    <Button
-                      key={exercise.id}
-                      onClick={() => addExerciseToWorkout(exercise)}
-                      variant="outline"
-                      className="justify-start border-gray-600 text-white hover:bg-gray-800 text-left p-3"
-                    >
-                      <div>
-                        <div className="font-medium">{exercise.name}</div>
-                        <div className="text-xs text-gray-400">{exercise.muscle_group}</div>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={addSectionBreak}
-                    variant="outline"
-                    className="border-gray-600 text-white hover:bg-gray-800"
-                  >
-                    <MoreHorizontal className="w-4 h-4 mr-2" />
-                    Add Section Break
-                  </Button>
-                </div>
+                {searchQuery && !searchLoading && searchResults.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>No exercises found. Try a different search term!</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Workout Exercises */}
             <div className="space-y-4">
               {workout.exercises.map((workoutExercise, exerciseIndex) => (
-                <Card key={workoutExercise.id} className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                  {workoutExercise.exercise.id === 'section' ? (
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-center">
-                        <div className="flex-1 h-px bg-gray-600"></div>
-                        <div className="px-4 text-gray-400 font-medium">Section Break</div>
-                        <div className="flex-1 h-px bg-gray-600"></div>
-                        <Button
-                          onClick={() => removeExercise(workoutExercise.id)}
-                          variant="ghost"
-                          size="sm"
-                          className="ml-2 text-red-400 hover:text-red-300"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </Button>
+                <Card key={workoutExercise.id} className="bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-sm border-gray-600/50">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {getCategoryIcon(workoutExercise.exercise.category)}
+                        <div>
+                          <CardTitle className="text-white text-lg">{workoutExercise.exercise.name}</CardTitle>
+                          <CardDescription className="flex items-center space-x-2">
+                            <span>{workoutExercise.exercise.muscle_groups.join(', ')}</span>
+                            <Badge className={getDifficultyColor(workoutExercise.exercise.difficulty)}>
+                              {workoutExercise.exercise.difficulty}
+                            </Badge>
+                          </CardDescription>
+                        </div>
                       </div>
-                    </CardContent>
-                  ) : (
-                    <>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="text-white text-lg">{workoutExercise.exercise.name}</CardTitle>
-                            <CardDescription>{workoutExercise.exercise.muscle_group}</CardDescription>
+                      <Button
+                        onClick={() => removeExercise(workoutExercise.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Sets */}
+                    <div className="space-y-2">
+                      {workoutExercise.sets.map((set, setIndex) => (
+                        <div key={set.id} className="flex items-center space-x-2 sm:space-x-3 p-3 bg-gray-800/40 rounded-lg border border-gray-700/30">
+                          <div className="w-12 text-center text-sm font-medium text-violet-400">
+                            Set {setIndex + 1}
                           </div>
-                          <Button
-                            onClick={() => removeExercise(workoutExercise.id)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {/* Sets */}
-                        <div className="space-y-2">
-                          {workoutExercise.sets.map((set, setIndex) => (
-                            <div key={set.id} className="flex items-center space-x-2 sm:space-x-3 p-3 bg-gray-800/50 rounded-lg">
-                              <div className="w-12 text-center text-sm font-medium text-gray-400">
-                                Set {setIndex + 1}
-                              </div>
-                              <div className="flex-1 grid grid-cols-3 gap-2">
-                                <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Weight</label>
-                                  <Input
-                                    type="number"
-                                    value={set.weight}
-                                    onChange={(e) => updateSet(workoutExercise.id, set.id, 'weight', parseFloat(e.target.value) || 0)}
-                                    className="bg-gray-700 border-gray-600 text-white text-center"
-                                    placeholder="0"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Reps</label>
-                                  <Input
-                                    type="number"
-                                    value={set.reps}
-                                    onChange={(e) => updateSet(workoutExercise.id, set.id, 'reps', parseInt(e.target.value) || 0)}
-                                    className="bg-gray-700 border-gray-600 text-white text-center"
-                                    placeholder="0"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs text-gray-400 mb-1">RIR</label>
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    max="5"
-                                    value={set.rir}
-                                    onChange={(e) => updateSet(workoutExercise.id, set.id, 'rir', parseInt(e.target.value) || 0)}
-                                    className="bg-gray-700 border-gray-600 text-white text-center"
-                                    placeholder="2"
-                                  />
-                                </div>
-                              </div>
-                              {workoutExercise.sets.length > 1 && (
-                                <Button
-                                  onClick={() => removeSet(workoutExercise.id, set.id)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-400 hover:text-red-300"
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </Button>
-                              )}
+                          <div className="flex-1 grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-xs text-gray-400 mb-1">Weight</label>
+                              <Input
+                                type="number"
+                                value={set.weight}
+                                onChange={(e) => updateSet(workoutExercise.id, set.id, 'weight', parseFloat(e.target.value) || 0)}
+                                className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
+                                placeholder="0"
+                              />
                             </div>
-                          ))}
+                            <div>
+                              <label className="block text-xs text-gray-400 mb-1">Reps</label>
+                              <Input
+                                type="number"
+                                value={set.reps}
+                                onChange={(e) => updateSet(workoutExercise.id, set.id, 'reps', parseInt(e.target.value) || 0)}
+                                className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
+                                placeholder="0"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-400 mb-1">RIR</label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                value={set.rir}
+                                onChange={(e) => updateSet(workoutExercise.id, set.id, 'rir', parseInt(e.target.value) || 0)}
+                                className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
+                                placeholder="2"
+                              />
+                            </div>
+                          </div>
+                          {workoutExercise.sets.length > 1 && (
+                            <Button
+                              onClick={() => removeSet(workoutExercise.id, set.id)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
+                      ))}
+                    </div>
 
-                        <Button
-                          onClick={() => addSet(workoutExercise.id)}
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-600 text-white hover:bg-gray-800 w-full"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Set
-                        </Button>
-                      </CardContent>
-                    </>
-                  )}
+                    <Button
+                      onClick={() => addSet(workoutExercise.id)}
+                      variant="outline"
+                      size="sm"
+                      className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20 hover:border-violet-400 w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Set
+                    </Button>
+                  </CardContent>
                 </Card>
               ))}
             </div>
 
             {/* Finish Workout */}
             {workout.exercises.length > 0 && (
-              <div className="flex justify-center">
+              <div className="flex justify-center pt-4">
                 <Button 
                   onClick={finishWorkout}
-                  className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 text-lg"
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 text-lg shadow-lg"
                   size="lg"
                 >
                   <Save className="w-5 h-5 mr-2" />
-                  Finish Workout
+                  Complete Workout
                 </Button>
               </div>
+            )}
+
+            {workout.exercises.length === 0 && (
+              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                <CardContent className="p-8 text-center">
+                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-violet-400 opacity-50" />
+                  <h3 className="text-xl font-semibold text-white mb-2">Ready to start training?</h3>
+                  <p className="text-gray-400 mb-4">
+                    Use the AI search above to find exercises, or describe what you want to train!
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {['chest workout', 'leg day', 'cardio hiit', 'full body'].map((suggestion) => (
+                      <Button
+                        key={suggestion}
+                        onClick={() => setSearchQuery(suggestion)}
+                        variant="outline"
+                        size="sm"
+                        className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20"
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>

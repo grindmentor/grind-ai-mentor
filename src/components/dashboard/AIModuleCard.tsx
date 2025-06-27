@@ -24,34 +24,34 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
 }) => {
   return (
     <Card 
-      className={`bg-gradient-to-br ${gradient} backdrop-blur-sm border-0 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden`}
+      className={`bg-gray-900/40 backdrop-blur-sm border-gray-700/50 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-gray-800/50 group relative overflow-hidden`}
       onClick={onClick}
     >
       {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
       </div>
       
       <CardContent className="p-6 relative z-10">
         <div className="flex flex-col items-center text-center space-y-4">
           {/* Icon */}
-          <div className="w-16 h-16 bg-black/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform duration-300">
+          <div className={`w-16 h-16 bg-gradient-to-br ${gradient} backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform duration-300`}>
             <Icon className="w-8 h-8 text-white drop-shadow-lg" />
           </div>
           
           {/* Title */}
-          <h3 className="text-white font-bold text-lg leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-shadow-lg">
+          <h3 className="text-white font-bold text-lg leading-tight">
             {title}
           </h3>
           
           {/* Description */}
-          <p className="text-white/90 text-sm leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-medium">
+          <p className="text-gray-400 text-sm leading-relaxed font-medium">
             {description}
           </p>
           
           {/* Premium Badge */}
           {isPremium && (
-            <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
+            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-400/30 backdrop-blur-sm">
               <Crown className="w-3 h-3 mr-1" />
               Premium
             </Badge>

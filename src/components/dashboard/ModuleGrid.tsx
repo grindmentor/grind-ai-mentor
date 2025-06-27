@@ -25,22 +25,108 @@ interface ModuleGridProps {
   viewMode?: 'grid' | 'list';
 }
 
+// Enhanced function to get module-specific background colors and themes
+const getModuleTheme = (moduleId: string, gradient: string) => {
+  const moduleThemes: { [key: string]: { bg: string; border: string; iconColor: string; accent: string } } = {
+    'cut-calc-pro': {
+      bg: 'bg-gradient-to-br from-red-900/50 to-red-800/60',
+      border: 'border-red-500/40',
+      iconColor: 'text-red-400',
+      accent: 'text-red-300'
+    },
+    'smart-training': {
+      bg: 'bg-gradient-to-br from-blue-900/50 to-blue-800/60',
+      border: 'border-blue-500/40',
+      iconColor: 'text-blue-400',
+      accent: 'text-blue-300'
+    },
+    'meal-plan-ai': {
+      bg: 'bg-gradient-to-br from-green-900/50 to-green-800/60',
+      border: 'border-green-500/40',
+      iconColor: 'text-green-400',
+      accent: 'text-green-300'
+    },
+    'recovery-coach': {
+      bg: 'bg-gradient-to-br from-purple-900/50 to-purple-800/60',
+      border: 'border-purple-500/40',
+      iconColor: 'text-purple-400',
+      accent: 'text-purple-300'
+    },
+    'progress-hub': {
+      bg: 'bg-gradient-to-br from-purple-900/50 to-purple-800/60',
+      border: 'border-purple-500/40',
+      iconColor: 'text-purple-400',
+      accent: 'text-purple-300'
+    },
+    'tdee-calculator': {
+      bg: 'bg-gradient-to-br from-orange-900/50 to-orange-800/60',
+      border: 'border-orange-500/40',
+      iconColor: 'text-orange-400',
+      accent: 'text-orange-300'
+    },
+    'smart-food-log': {
+      bg: 'bg-gradient-to-br from-teal-900/50 to-teal-800/60',
+      border: 'border-teal-500/40',
+      iconColor: 'text-teal-400',
+      accent: 'text-teal-300'
+    },
+    'habit-tracker': {
+      bg: 'bg-gradient-to-br from-pink-900/50 to-pink-800/60',
+      border: 'border-pink-500/40',
+      iconColor: 'text-pink-400',
+      accent: 'text-pink-300'
+    },
+    'cardio-ai': {
+      bg: 'bg-gradient-to-br from-indigo-900/50 to-indigo-800/60',
+      border: 'border-indigo-500/40',
+      iconColor: 'text-indigo-400',
+      accent: 'text-indigo-300'
+    },
+    'workout-timer': {
+      bg: 'bg-gradient-to-br from-yellow-900/50 to-yellow-800/60',
+      border: 'border-yellow-500/40',
+      iconColor: 'text-yellow-400',
+      accent: 'text-yellow-300'
+    },
+    'coach-gpt': {
+      bg: 'bg-gradient-to-br from-cyan-900/50 to-cyan-800/60',
+      border: 'border-cyan-500/40',
+      iconColor: 'text-cyan-400',
+      accent: 'text-cyan-300'
+    },
+    'workout-logger-ai': {
+      bg: 'bg-gradient-to-br from-emerald-900/50 to-emerald-800/60',
+      border: 'border-emerald-500/40',
+      iconColor: 'text-emerald-400',
+      accent: 'text-emerald-300'
+    }
+  };
+
+  // Return specific theme or fallback to gradient-based theme
+  return moduleThemes[moduleId] || {
+    bg: getModuleBackgroundColor(gradient),
+    border: 'border-gray-700/50',
+    iconColor: getIconColor(gradient),
+    accent: 'text-gray-300'
+  };
+};
+
 // Function to convert gradient classes to background colors with opacity
 const getModuleBackgroundColor = (gradient: string) => {
   const gradientMap: { [key: string]: string } = {
-    'from-blue-900/60 to-indigo-900/80': 'bg-blue-900/50',
-    'from-green-900/60 to-emerald-900/80': 'bg-green-900/50',
-    'from-orange-900/60 to-red-900/80': 'bg-orange-900/50',
-    'from-purple-900/60 to-violet-900/80': 'bg-purple-900/50',
-    'from-red-900/60 to-pink-900/80': 'bg-red-900/50',
-    'from-teal-900/60 to-cyan-900/80': 'bg-teal-900/50',
-    'from-yellow-900/60 to-orange-900/80': 'bg-yellow-900/50',
-    'from-pink-900/60 to-rose-900/80': 'bg-pink-900/50',
-    'from-indigo-900/60 to-blue-900/80': 'bg-indigo-900/50',
-    'from-gray-900/60 to-slate-900/80': 'bg-gray-900/50',
+    'from-blue-900/60 to-indigo-900/80': 'bg-gradient-to-br from-blue-900/50 to-indigo-800/60',
+    'from-green-900/60 to-emerald-900/80': 'bg-gradient-to-br from-green-900/50 to-emerald-800/60',
+    'from-orange-900/60 to-red-900/80': 'bg-gradient-to-br from-orange-900/50 to-red-800/60',
+    'from-purple-900/60 to-violet-900/80': 'bg-gradient-to-br from-purple-900/50 to-violet-800/60',
+    'from-red-900/60 to-pink-900/80': 'bg-gradient-to-br from-red-900/50 to-pink-800/60',
+    'from-teal-900/60 to-cyan-900/80': 'bg-gradient-to-br from-teal-900/50 to-cyan-800/60',
+    'from-yellow-900/60 to-orange-900/80': 'bg-gradient-to-br from-yellow-900/50 to-orange-800/60',
+    'from-pink-900/60 to-rose-900/80': 'bg-gradient-to-br from-pink-900/50 to-rose-800/60',
+    'from-indigo-900/60 to-blue-900/80': 'bg-gradient-to-br from-indigo-900/50 to-blue-800/60',
+    'from-gray-900/60 to-slate-900/80': 'bg-gradient-to-br from-gray-900/50 to-slate-800/60',
   };
   
-  return gradientMap[gradient] || 'bg-gray-900/50';
+  return gradientMap[gradient] || 'bg-gradient-to-br from-gray-900/50 to-gray-800/60';
 };
 
 // Function to get icon color based on module theme
@@ -76,19 +162,18 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         {modules.map((module) => {
           const IconComponent = module.icon;
           const isFavorited = favorites.includes(module.id);
-          const bgColor = getModuleBackgroundColor(module.gradient);
-          const iconColor = getIconColor(module.gradient);
+          const theme = getModuleTheme(module.id, module.gradient);
           
           return (
             <Card 
               key={module.id}
-              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${bgColor} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 border-gray-700/50`}
+              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`}
               onClick={() => onModuleClick(module)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0`}>
-                    <IconComponent className={`w-6 h-6 ${iconColor}`} />
+                  <div className={`w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/20`}>
+                    <IconComponent className={`w-6 h-6 ${theme.iconColor}`} />
                   </div>
                   
                   <div className="flex-1 min-w-0">
@@ -109,7 +194,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                         </Badge>
                       )}
                     </div>
-                    <p className="text-gray-300 text-sm line-clamp-2">
+                    <p className={`text-sm line-clamp-2 ${theme.accent}`}>
                       {module.description}
                     </p>
                   </div>
@@ -147,13 +232,12 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
       {modules.map((module) => {
         const IconComponent = module.icon;
         const isFavorited = favorites.includes(module.id);
-        const bgColor = getModuleBackgroundColor(module.gradient);
-        const iconColor = getIconColor(module.gradient);
+        const theme = getModuleTheme(module.id, module.gradient);
         
         return (
           <Card 
             key={module.id}
-            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ${bgColor} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 relative overflow-hidden border-gray-700/50`}
+            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 relative overflow-hidden`}
             onClick={() => onModuleClick(module)}
           >
             {/* Animated background gradient */}
@@ -161,8 +245,8 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
             
             <CardHeader className="relative z-10 pb-2">
               <div className="flex items-start justify-between mb-3">
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                  <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${iconColor}`} />
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-white/20`}>
+                  <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${theme.iconColor}`} />
                 </div>
                 <Button
                   onClick={(e) => {
@@ -205,7 +289,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
             </CardHeader>
             
             <CardContent className="relative z-10 pt-0">
-              <CardDescription className="text-gray-300 text-sm leading-relaxed">
+              <CardDescription className={`text-sm leading-relaxed ${theme.accent}`}>
                 {module.description}
               </CardDescription>
             </CardContent>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -95,7 +96,7 @@ const OptimizedDashboard = () => {
   const handleModuleClick = async (module: any) => {
     try {
       setSelectedModule(module);
-      const Component = await loadModule(module.id, module.loadComponent || (() => import(`@/components/ai-modules/${module.id}`)));
+      const Component = await loadModule(module.id, module.component);
       setModuleComponent(() => Component);
     } catch (error) {
       console.error('Failed to load module:', error);

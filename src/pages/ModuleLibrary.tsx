@@ -57,9 +57,9 @@ const ModuleLibrary = () => {
       case 'name':
         return a.title.localeCompare(b.title);
       case 'newest':
-        return b.isNew - a.isNew;
+        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
       case 'premium':
-        return b.isPremium - a.isPremium;
+        return (b.isPremium ? 1 : 0) - (a.isPremium ? 1 : 0);
       default:
         return 0;
     }
@@ -235,7 +235,6 @@ const ModuleLibrary = () => {
                   favorites={favorites}
                   onModuleClick={handleModuleClick}
                   onToggleFavorite={toggleFavorite}
-                  viewMode={viewMode}
                 />
               )}
             </div>

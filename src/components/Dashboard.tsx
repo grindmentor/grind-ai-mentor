@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -18,18 +17,29 @@ const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAch
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
 
+interface Module {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  gradient: string;
+  isPremium?: boolean;
+  isNew?: boolean;
+  component: React.ComponentType<any>;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
   const isMobile = useIsMobile();
-  const [selectedModule, setSelectedModule] = useState(null);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
 
   // Optimized module click handler with debouncing
-  const handleModuleClick = useCallback((module: any) => {
+  const handleModuleClick = useCallback((module: Module) => {
     console.log('Module clicked:', module.id, 'at', new Date().toISOString());
     try {
       setSelectedModule(module);

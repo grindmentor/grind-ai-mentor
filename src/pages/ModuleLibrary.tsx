@@ -10,6 +10,9 @@ import { useModules } from '@/contexts/ModulesContext';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+
+type ViewMode = 'grid' | 'list';
 
 const ModuleLibrary = () => {
   const navigate = useNavigate();
@@ -19,22 +22,42 @@ const ModuleLibrary = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState(null);
   const [favorites, setFavorites] = useState([]);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load favorites from localStorage
+  // Load preferences from localStorage
   useEffect(() => {
     try {
       const savedFavorites = localStorage.getItem('module-favorites');
       if (savedFavorites) {
         setFavorites(JSON.parse(savedFavorites));
       }
+
+      const savedViewMode = localStorage.getItem('module-view-mode') as ViewMode;
+      if (savedViewMode && (savedViewMode === 'grid' || savedViewMode === 'list')) {
+        setViewMode(savedViewMode);
+      }
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      console.error('Error loading preferences:', error);
       setFavorites([]);
+      setViewMode('grid');
+    } finally {
+      // Simulate loading delay for smooth transition
+      setTimeout(() => setIsLoading(false), 500);
     }
   }, []);
+
+  // Save view mode preference
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('module-view-mode', mode);
+    } catch (error) {
+      console.error('Error saving view mode:', error);
+    }
+  };
 
   // Filter modules to exclude Progress Hub from the library
   const libraryModules = modules.filter(module => module.id !== 'progress-hub');
@@ -116,6 +139,24 @@ const ModuleLibrary = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+          <div className="p-4 sm:p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 bg-orange-500/20 rounded animate-pulse" />
+                <div className="h-8 w-48 bg-orange-500/20 rounded animate-pulse" />
+              </div>
+              <LoadingSkeleton type="card" count={6} />
+            </div>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
@@ -141,21 +182,29 @@ const ModuleLibrary = () => {
                   </div>
                 </div>
                 
-                {/* View Mode Toggle - Always visible */}
+                {/* View Mode Toggle */}
                 <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 ${viewMode === 'grid' ? 'bg-orange-500/30' : 'hover:bg-orange-500/20'}`}
+                    onClick={() => handleViewModeChange('grid')}
+                    className={`p-2 transition-all duration-200 ${
+                      viewMode === 'grid' 
+                        ? 'bg-orange-500/30 text-orange-300' 
+                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
+                    }`}
                   >
                     <Grid className="w-4 h-4" />
                   </Button>
                   <Button
                     variant={viewMode === 'list' ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 ${viewMode === 'list' ? 'bg-orange-500/30' : 'hover:bg-orange-500/20'}`}
+                    onClick={() => handleViewModeChange('list')}
+                    className={`p-2 transition-all duration-200 ${
+                      viewMode === 'list' 
+                        ? 'bg-orange-500/30 text-orange-300' 
+                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
+                    }`}
                   >
                     <List className="w-4 h-4" />
                   </Button>
@@ -173,14 +222,14 @@ const ModuleLibrary = () => {
                     placeholder="Search modules..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl"
+                    className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl transition-all duration-200"
                   />
                 </div>
                 
                 {/* Filters */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
                       <Filter className="w-4 h-4 mr-2 text-orange-400" />
                       <SelectValue />
                     </SelectTrigger>
@@ -193,7 +242,7 @@ const ModuleLibrary = () => {
                   </Select>
                   
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
                       <SelectValue placeholder="Sort by..." />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">

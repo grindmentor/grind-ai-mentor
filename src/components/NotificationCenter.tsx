@@ -1,259 +1,207 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Bell, Settings, X, Target, Dumbbell, Trophy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Bell, Trophy, Target, Calendar, Zap, CheckCircle, TrendingUp, Award } from 'lucide-react';
 
-interface Notification {
-  id: string;
-  type: 'motivation' | 'achievement' | 'reminder';
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  actionable?: boolean;
-}
+const NotificationCenter = () => {
+  const [activeTab, setActiveTab] = useState('goals');
 
-const NotificationCenter: React.FC = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [showSettings, setShowSettings] = useState(false);
-  const [enableMotivational, setEnableMotivational] = useState(true);
+  const goals = [
+    {
+      id: 1,
+      title: "Weekly Workout Goal",
+      description: "Complete 4 workouts this week",
+      progress: 75,
+      current: 3,
+      target: 4,
+      deadline: "2 days left",
+      priority: "high",
+      category: "Training"
+    },
+    {
+      id: 2,
+      title: "Daily Protein Target",
+      description: "Reach 150g protein daily for 5 consecutive days",
+      progress: 60,
+      current: 3,
+      target: 5,
+      deadline: "Ongoing",
+      priority: "medium",
+      category: "Nutrition"
+    },
+    {
+      id: 3,
+      title: "Weight Loss Milestone",
+      description: "Lose 2kg this month",
+      progress: 40,
+      current: 0.8,
+      target: 2,
+      deadline: "12 days left",
+      priority: "high",
+      category: "Progress"
+    }
+  ];
 
-  // Load user preferences and generate motivational notifications
-  useEffect(() => {
-    const loadNotifications = () => {
-      const saved = localStorage.getItem('notifications_enabled');
-      const enabled = saved ? JSON.parse(saved) : true;
-      setEnableMotivational(enabled);
+  const achievements = [
+    {
+      id: 1,
+      title: "7-Day Streak Champion",
+      description: "Completed workouts for 7 consecutive days",
+      category: "Consistency",
+      points: 100,
+      time: "2 hours ago",
+      color: "bg-gradient-to-r from-yellow-500/20 to-orange-500/30 border-yellow-500/40"
+    },
+    {
+      id: 2,
+      title: "Protein Master",
+      description: "Hit your protein target 5 days in a row",
+      category: "Nutrition",
+      points: 75,
+      time: "1 day ago",
+      color: "bg-gradient-to-r from-green-500/20 to-emerald-500/30 border-green-500/40"
+    },
+    {
+      id: 3,
+      title: "Strength Milestone",
+      description: "Deadlifted 2x your bodyweight for the first time",
+      category: "Strength",
+      points: 200,
+      time: "3 days ago",
+      color: "bg-gradient-to-r from-red-500/20 to-pink-500/30 border-red-500/40"
+    }
+  ];
 
-      if (enabled) {
-        const motivationalNotifications: Notification[] = [
-          {
-            id: '1',
-            type: 'motivation',
-            title: 'Ready to crush today?',
-            message: 'Your next workout is waiting. Science shows consistency beats intensity!',
-            timestamp: new Date(),
-            read: false,
-            actionable: true
-          }
-        ];
-        setNotifications(motivationalNotifications);
-      } else {
-        setNotifications([]);
-      }
-    };
-
-    loadNotifications();
-  }, []);
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
-  };
-
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const toggleMotivationalNotifications = () => {
-    const newValue = !enableMotivational;
-    setEnableMotivational(newValue);
-    localStorage.setItem('notifications_enabled', JSON.stringify(newValue));
-    
-    if (!newValue) {
-      setNotifications([]);
-    } else {
-      // Re-add motivational notification
-      const motivational: Notification = {
-        id: Date.now().toString(),
-        type: 'motivation',
-        title: 'Welcome back!',
-        message: 'Ready to continue your fitness journey?',
-        timestamp: new Date(),
-        read: false,
-        actionable: true
-      };
-      setNotifications([motivational]);
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-400';
+      case 'medium': return 'text-orange-400';
+      case 'low': return 'text-green-400';
+      default: return 'text-gray-400';
     }
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'motivation':
-        return <Target className="w-5 h-5 text-orange-400" />;
-      case 'achievement':
-        return <Trophy className="w-5 h-5 text-yellow-400" />;
-      case 'reminder':
-        return <Dumbbell className="w-5 h-5 text-blue-400" />;
-      default:
-        return <Bell className="w-5 h-5 text-gray-400" />;
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Training': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'Nutrition': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'Progress': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'Consistency': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'Strength': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/app')}
-              className="text-white hover:bg-orange-500/20 hover:text-orange-400 transition-colors font-medium flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Dashboard</span>
-            </Button>
-            
-            <h1 className="text-lg font-semibold">Notifications</h1>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSettings(!showSettings)}
-              className="text-white hover:bg-gray-800/50"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
+    <Card className="bg-gradient-to-r from-blue-900/20 to-indigo-900/30 backdrop-blur-sm border-blue-500/30">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500/30 to-indigo-500/40 rounded-xl flex items-center justify-center border border-blue-500/30">
+              <Bell className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <CardTitle className="text-white text-xl">Notification Center</CardTitle>
+              <CardDescription className="text-blue-200/80">
+                Track your goals and celebrate achievements
+              </CardDescription>
+            </div>
           </div>
         </div>
-      </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 bg-blue-900/30 backdrop-blur-sm">
+            <TabsTrigger 
+              value="goals" 
+              className="data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200 flex items-center space-x-2"
+            >
+              <Target className="w-4 h-4" />
+              <span>Goals</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="achievements" 
+              className="data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200 flex items-center space-x-2"
+            >
+              <Trophy className="w-4 h-4" />
+              <span>Achievements</span>
+            </TabsTrigger>
+          </TabsList>
 
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-        {/* Settings Panel */}
-        {showSettings && (
-          <Card className="bg-gray-900/60 border-gray-700/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center space-x-2">
-                <Settings className="w-5 h-5" />
-                <span>Notification Settings</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-white font-medium">Motivational Messages</h3>
-                  <p className="text-gray-400 text-sm">Get encouraging workout reminders</p>
-                </div>
-                <Button
-                  variant={enableMotivational ? "default" : "outline"}
-                  size="sm"
-                  onClick={toggleMotivationalNotifications}
-                  className={enableMotivational 
-                    ? "bg-orange-500 hover:bg-orange-600" 
-                    : "border-gray-600 text-gray-400 hover:bg-gray-800"
-                  }
-                >
-                  {enableMotivational ? 'Enabled' : 'Enable'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Notifications List */}
-        {notifications.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-800/30 flex items-center justify-center">
-              <Bell className="w-10 h-10 text-gray-500" />
-            </div>
-            <h3 className="text-2xl font-semibold text-white mb-2">All caught up!</h3>
-            <p className="text-gray-400 text-lg mb-4">
-              {enableMotivational 
-                ? "No new notifications right now."
-                : "Enable motivational messages to get workout reminders."
-              }
-            </p>
-            {!enableMotivational && (
-              <Button
-                onClick={toggleMotivationalNotifications}
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+          <TabsContent value="goals" className="space-y-4">
+            {goals.map((goal) => (
+              <div 
+                key={goal.id} 
+                className="p-4 bg-gray-900/40 rounded-lg border border-gray-700/50 backdrop-blur-sm"
               >
-                Enable Motivational Messages
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {notifications.map((notification) => (
-              <Card 
-                key={notification.id}
-                className={`transition-all duration-200 ${
-                  notification.read 
-                    ? 'bg-gray-900/40 border-gray-700/30' 
-                    : 'bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-500/30'
-                }`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3 flex-1">
-                      {getNotificationIcon(notification.type)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-white font-medium">{notification.title}</h3>
-                          {!notification.read && (
-                            <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 text-xs">
-                              New
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-gray-300 text-sm mb-2">{notification.message}</p>
-                        <p className="text-gray-500 text-xs">
-                          {notification.timestamp.toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </p>
-                      </div>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="text-white font-semibold text-sm">{goal.title}</h3>
+                      <Badge className={getCategoryColor(goal.category)}>
+                        {goal.category}
+                      </Badge>
                     </div>
-                    
-                    <div className="flex items-center space-x-2 ml-4">
-                      {!notification.read && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => markAsRead(notification.id)}
-                          className="text-orange-400 hover:bg-orange-500/20 text-xs"
-                        >
-                          Mark Read
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteNotification(notification.id)}
-                        className="text-gray-400 hover:bg-red-500/20 hover:text-red-400 p-1"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+                    <p className="text-gray-400 text-xs mb-2">{goal.description}</p>
+                    <div className="flex items-center space-x-4 text-xs">
+                      <span className="text-gray-300">
+                        Progress: {goal.current}/{goal.target}
+                      </span>
+                      <span className={getPriorityColor(goal.priority)}>
+                        {goal.deadline}
+                      </span>
                     </div>
                   </div>
-                  
-                  {notification.actionable && (
-                    <div className="mt-3 flex space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={() => navigate('/app')}
-                        className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-xs"
-                      >
-                        Start Workout
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">{goal.progress}% Complete</span>
+                    <span className="text-blue-400">{goal.progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${goal.progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             ))}
-          </div>
-        )}
-      </div>
-    </div>
+          </TabsContent>
+
+          <TabsContent value="achievements" className="space-y-4">
+            {achievements.map((achievement) => (
+              <div 
+                key={achievement.id} 
+                className={`p-4 rounded-lg border backdrop-blur-sm ${achievement.color}`}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-yellow-500/30 to-orange-500/40 rounded-lg flex items-center justify-center border border-yellow-500/30">
+                    <Trophy className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="text-white font-semibold text-sm">{achievement.title}</h3>
+                      <Badge className={getCategoryColor(achievement.category)}>
+                        {achievement.category}
+                      </Badge>
+                      <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 text-xs">
+                        +{achievement.points} pts
+                      </Badge>
+                    </div>
+                    <p className="text-gray-300 text-xs mb-2">{achievement.description}</p>
+                    <p className="text-gray-500 text-xs">{achievement.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -13,43 +13,43 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "16x16",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "32x32",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "256x256",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any maskable"
@@ -57,14 +57,14 @@
   ],
   "screenshots": [
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Myotopia AI Fitness Coach"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "form_factor": "wide",
@@ -78,14 +78,14 @@
       "short_name": "CoachGPT",
       "description": "AI-powered fitness coaching",
       "url": "/app?module=coachgpt",
-      "icons": [{ "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     },
     {
       "name": "Workout Timer",
       "short_name": "Timer",
       "description": "Smart workout timing",
       "url": "/app?module=timer",
-      "icons": [{ "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     }
   ],
   "display_override": ["standalone", "minimal-ui"],

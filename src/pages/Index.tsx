@@ -80,11 +80,15 @@ const Index = () => {
             <div className="mx-auto max-w-4xl text-center animate-fade-in">
               {/* Logo */}
               <div className="mb-8">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-orange-500/25">
-                  <div className="text-2xl sm:text-3xl font-bold text-white">GM</div>
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 shadow-2xl shadow-orange-500/25">
+                  <img 
+                    src="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" 
+                    alt="Myotopia Logo"
+                    className="w-full h-full rounded-2xl"
+                  />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                  GrindMentor
+                  Myotopia
                 </h2>
               </div>
               
@@ -249,7 +253,7 @@ const Index = () => {
             </div>
             <div className="mt-6 sm:mt-8 text-center">
               <p className="text-xs text-gray-500">
-                © 2024 GrindMentor. All rights reserved.
+                © 2024 Myotopia. All rights reserved.
               </p>
             </div>
           </div>

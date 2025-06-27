@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -5,15 +6,16 @@ import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { Star, TrendingUp, Sparkles } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
+import NotificationCenter from '@/components/NotificationCenter';
 
 // Lazy load heavy components
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
-const CompactGoalsAchievements = lazy(() => import('@/components/CompactGoalsAchievements'));
+const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements'));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
 
@@ -22,6 +24,7 @@ const Dashboard = () => {
   const { modules } = useModules();
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
@@ -45,12 +48,17 @@ const Dashboard = () => {
       console.log('Returning to dashboard at', new Date().toISOString());
       try {
         setSelectedModule(null);
+        setShowNotifications(false);
       } catch (error) {
         console.error('Error returning to dashboard:', error);
       }
     };
     return createDebouncedFunction(handler, 100) as () => void;
   }, [createDebouncedFunction]);
+
+  const handleNotificationsClick = () => {
+    setShowNotifications(true);
+  };
 
   const handleFoodLogged = useMemo(() => {
     const handler = (data: any) => {
@@ -77,7 +85,12 @@ const Dashboard = () => {
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
     console.log('Modules not loaded yet, showing loading screen');
-    return <LoadingScreen message="Loading modules..." />;
+    return <LoadingScreen message="Loading Myotopia modules..." />;
+  }
+
+  // Show notifications
+  if (showNotifications) {
+    return <NotificationCenter onBack={handleBackToDashboard} />;
   }
 
   if (selectedModule) {
@@ -113,7 +126,26 @@ const Dashboard = () => {
     <ErrorBoundary>
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-          <DashboardHeader />
+          {/* Enhanced header with notifications */}
+          <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+            <div className="px-4 py-3 sm:px-6 sm:py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white">
+                    Myotopia
+                  </h1>
+                </div>
+                <Button
+                  onClick={handleNotificationsClick}
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                >
+                  <Bell className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
 
           {/* Main Content with mobile-optimized spacing */}
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full overflow-x-hidden">
@@ -196,7 +228,7 @@ const Dashboard = () => {
               {!lowDataMode && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
                   <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
-                    <CompactGoalsAchievements />
+                    <RealGoalsAchievements />
                   </Suspense>
                   <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
                     <LatestResearch />

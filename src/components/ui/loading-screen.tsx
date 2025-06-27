@@ -26,12 +26,18 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
           <span className="text-white text-lg font-medium">{message}</span>
         </div>
+        <div className="text-sm text-gray-400 max-w-xs">
+          {message === "Loading..." ? "Initializing Myotopia..." : message}
+        </div>
       </div>
     </div>
   );
 };
 
-export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ size = 'md' }) => {
+export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg'; message?: string }> = ({ 
+  size = 'md', 
+  message 
+}) => {
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-6 h-6',
@@ -39,6 +45,11 @@ export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ size =
   };
 
   return (
-    <Loader2 className={`animate-spin text-orange-500 ${sizeClasses[size]}`} />
+    <div className="flex flex-col items-center justify-center space-y-2">
+      <Loader2 className={`animate-spin text-orange-500 ${sizeClasses[size]}`} />
+      {message && (
+        <span className="text-sm text-gray-400">{message}</span>
+      )}
+    </div>
   );
 };

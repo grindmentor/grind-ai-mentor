@@ -97,48 +97,49 @@ const NotificationSystem = () => {
           )}
         </SmoothButton>
 
-        {/* Clean notifications panel */}
+        {/* Enhanced notifications panel with better width and mobile responsiveness */}
         {showNotifications && (
-          <div className="absolute top-14 right-0 w-80 max-h-96 overflow-y-auto bg-black/95 backdrop-blur-md border border-orange-500/20 rounded-lg shadow-2xl animate-fade-in">
-            <div className="p-3 border-b border-orange-500/20">
+          <div className="absolute top-14 right-0 w-80 sm:w-96 max-h-96 overflow-y-auto bg-black/95 backdrop-blur-md border border-orange-500/20 rounded-lg shadow-2xl animate-fade-in">
+            <div className="p-4 border-b border-orange-500/20">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-medium text-sm flex items-center">
-                  <Bell className="w-4 h-4 mr-2 text-orange-400" />
+                <h3 className="text-white font-medium text-base flex items-center">
+                  <Bell className="w-5 h-5 mr-2 text-orange-400" />
                   Notifications
                 </h3>
                 <SmoothButton
                   onClick={() => setShowNotifications(false)}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-white hover:bg-orange-500/10 w-6 h-6 p-0"
+                  className="text-gray-400 hover:text-white hover:bg-orange-500/10 w-8 h-8 p-0 rounded-full"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-4 h-4" />
                 </SmoothButton>
               </div>
             </div>
 
             <div className="max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
-                <div className="p-6 text-center text-gray-400">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No notifications</p>
+                <div className="p-8 text-center text-gray-400">
+                  <Bell className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                  <p className="text-base font-medium mb-1">No notifications</p>
+                  <p className="text-sm opacity-75">You're all caught up!</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 border-b border-orange-500/10 hover:bg-orange-500/5 transition-colors cursor-pointer ${
-                      !notification.read ? 'bg-orange-500/10 border-l-2 border-l-orange-500' : ''
+                    className={`p-4 border-b border-orange-500/10 hover:bg-orange-500/5 transition-colors cursor-pointer ${
+                      !notification.read ? 'bg-orange-500/10 border-l-4 border-l-orange-500' : ''
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
                     <div className="flex items-start space-x-3">
-                      <div className={`p-1.5 rounded-lg ${getNotificationColor(notification.type)}`}>
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${getNotificationColor(notification.type)}`}>
                         {notification.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className={`text-sm font-medium ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
+                        <div className="flex items-start justify-between mb-1">
+                          <h4 className={`text-sm font-medium leading-tight ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
                             {notification.title}
                           </h4>
                           <button
@@ -146,15 +147,15 @@ const NotificationSystem = () => {
                               e.stopPropagation();
                               dismissNotification(notification.id);
                             }}
-                            className="text-gray-500 hover:text-gray-300 transition-colors"
+                            className="text-gray-500 hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-700/50"
                           >
                             <X className="w-3 h-3" />
                           </button>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                        <p className="text-xs text-gray-400 mb-2 leading-relaxed">
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500">
                           {notification.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
@@ -163,6 +164,17 @@ const NotificationSystem = () => {
                 ))
               )}
             </div>
+
+            {notifications.length > 0 && (
+              <div className="p-3 border-t border-orange-500/10 bg-black/50">
+                <button
+                  onClick={() => setNotifications([])}
+                  className="w-full text-xs text-gray-400 hover:text-white transition-colors py-2 rounded-md hover:bg-orange-500/10"
+                >
+                  Clear all notifications
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

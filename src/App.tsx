@@ -16,6 +16,8 @@ import Settings from "./pages/Settings";
 import ModuleLibrary from "./pages/ModuleLibrary";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ function App() {
                   <Route path="/signup" element={<SignUp />} />
                   <Route path="/pricing" element={<Pricing />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   
                   {/* Protected routes */}

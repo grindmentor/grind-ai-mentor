@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
+import { FormattedAIResponse } from '@/components/FormattedAIResponse';
 
 interface Message {
   id: string;
@@ -71,39 +71,6 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       setMessages(conversationMessages);
     } catch (error) {
       console.error('Error loading conversation:', error);
-    }
-  };
-
-  const getAIResponse = async (userMessage: string): Promise<string> => {
-    try {
-      // Use the fitness-ai edge function instead of direct OpenAI calls
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: {
-          prompt: `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
-          - Exercise form and technique
-          - Training principles and methods  
-          - Motivation and mindset
-          - General fitness questions
-          - Recovery and injury prevention
-          
-          Do NOT create meal plans or detailed training programs - redirect users to the appropriate modules for those requests.
-          
-          Be encouraging, professional, and cite scientific principles when relevant.
-          
-          User question: ${userMessage}`,
-          maxTokens: 300
-        }
-      });
-
-      if (error) {
-        console.error('AI Response Error:', error);
-        return "I'm having trouble processing your request right now. Please try again later.";
-      }
-
-      return data?.response || "I'm having trouble processing your request right now. Please try again later.";
-    } catch (error) {
-      console.error('AI Response Error:', error);
-      return "I'm having trouble processing your request right now. Please try again later.";
     }
   };
 
@@ -186,7 +153,31 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       }
 
       // Get AI response for general coaching
-      const response = await getAIResponse(userMessage.content);
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
+          - Exercise form and technique
+          - Training principles and methods  
+          - Motivation and mindset
+          - General fitness questions
+          - Recovery and injury prevention
+          
+          Do NOT create meal plans or detailed training programs - redirect users to the appropriate modules for those requests.
+          
+          Be encouraging, professional, and cite scientific principles when relevant.
+          
+          User question: ${userMessage.content}`,
+          type: 'coaching',
+          maxTokens: 300
+        }
+      });
+
+      if (error) {
+        console.error('AI Response Error:', error);
+        throw error;
+      }
+
+      const response = data?.response || "I'm having trouble processing your request right now. Please try again later.";
 
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -280,20 +271,26 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
+                        className={`max-w-[85%] rounded-lg p-4 ${
                           message.role === 'user'
                             ? 'bg-green-600/80 text-white ml-4'
                             : 'bg-green-900/40 text-green-100 mr-4 border border-green-500/30'
                         }`}
                       >
-                        <div className="flex items-start space-x-2">
+                        <div className="flex items-start space-x-3">
                           {message.role === 'assistant' && (
-                            <Bot className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                            <Bot className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
                           )}
                           {message.role === 'user' && (
-                            <User className="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                            <User className="w-5 h-5 text-white mt-1 flex-shrink-0" />
                           )}
-                          <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                          <div className="flex-1">
+                            {message.role === 'assistant' ? (
+                              <FormattedAIResponse content={message.content} moduleType="coach" />
+                            ) : (
+                              <div className="text-sm leading-relaxed">{message.content}</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -301,9 +298,9 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                 )}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="max-w-[80%] bg-green-900/40 text-green-100 mr-4 border border-green-500/30 rounded-lg p-3">
-                      <div className="flex items-center space-x-2">
-                        <Bot className="w-4 h-4 text-green-400" />
+                    <div className="max-w-[85%] bg-green-900/40 text-green-100 mr-4 border border-green-500/30 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <Bot className="w-5 h-5 text-green-400" />
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
                           <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>

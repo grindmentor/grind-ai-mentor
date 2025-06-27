@@ -423,7 +423,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
   if (loading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-orange-900/30 text-white flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
         </div>
       </PageTransition>
@@ -432,7 +432,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-orange-900/30 text-white">
         <div className="p-3 sm:p-4 md:p-6">
           <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {/* Header */}
@@ -440,49 +440,49 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
               <Button 
                 variant="ghost" 
                 onClick={onBack}
-                className="text-white hover:bg-gray-800/50 backdrop-blur-sm w-fit"
+                className="text-white hover:bg-orange-800/50 backdrop-blur-sm w-fit"
                 size={isMobile ? "sm" : "default"}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {isMobile ? "Back" : "Back to Dashboard"}
               </Button>
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-500/20 to-emerald-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-green-400/20">
-                  <Utensils className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-orange-500/30 to-amber-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-orange-400/30">
+                  <Utensils className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
                     Smart Food Log
                   </h1>
-                  <p className="text-xs sm:text-sm text-gray-400">Track your nutrition intake</p>
+                  <p className="text-xs sm:text-sm text-orange-200/80">AI-powered nutrition tracking</p>
                 </div>
               </div>
             </div>
 
             {/* Today's Summary */}
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+            <Card className="bg-gradient-to-br from-orange-900/30 to-amber-900/20 backdrop-blur-sm border-orange-500/30">
               <CardHeader className="pb-4">
                 <CardTitle className="text-white flex items-center text-lg sm:text-xl">
-                  <Clock className="w-5 h-5 mr-2 text-green-500" />
-                  Today's Summary
+                  <Clock className="w-5 h-5 mr-2 text-orange-400" />
+                  Today's Nutrition Summary
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-white">{todaysEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0)}</div>
-                    <div className="text-xs sm:text-sm text-gray-400">Calories</div>
+                  <div className="text-center bg-orange-800/20 rounded-lg p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-300">{todaysEntries.reduce((sum, entry) => sum + (entry.calories || 0), 0)}</div>
+                    <div className="text-xs sm:text-sm text-orange-200/70">Calories</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-white">{todaysEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0).toFixed(1)}g</div>
-                    <div className="text-xs sm:text-sm text-gray-400">Protein</div>
+                  <div className="text-center bg-orange-800/20 rounded-lg p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-300">{todaysEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0).toFixed(1)}g</div>
+                    <div className="text-xs sm:text-sm text-orange-200/70">Protein</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-white">{todaysEntries.length}</div>
-                    <div className="text-xs sm:text-sm text-gray-400">Foods</div>
+                  <div className="text-center bg-orange-800/20 rounded-lg p-3">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-300">{todaysEntries.length}</div>
+                    <div className="text-xs sm:text-sm text-orange-200/70">Foods</div>
                   </div>
-                  <div className="text-center">
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                  <div className="text-center bg-orange-800/20 rounded-lg p-3 flex items-center justify-center">
+                    <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/40">
                       Active
                     </Badge>
                   </div>
@@ -494,7 +494,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
             <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
               <Button 
                 onClick={() => setShowPhotoUpload(!showPhotoUpload)}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
                 size={isMobile ? "default" : "lg"}
               >
                 <Camera className="w-4 h-4 mr-2" />
@@ -502,7 +502,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
               </Button>
               <Button 
                 onClick={() => setShowCustomIngredient(!showCustomIngredient)}
-                className="bg-purple-500 hover:bg-purple-600 text-white"
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0"
                 size={isMobile ? "default" : "lg"}
               >
                 <Calculator className="w-4 h-4 mr-2" />
@@ -510,7 +510,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
               </Button>
               <Button 
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="bg-green-500 hover:bg-green-600 text-white"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0"
                 size={isMobile ? "default" : "lg"}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -520,7 +520,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
             {/* Photo Upload Section */}
             {showPhotoUpload && (
-              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+              <Card className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 backdrop-blur-sm border-blue-500/30 mt-4">
                 <CardHeader>
                   <CardTitle className="text-white text-lg sm:text-xl flex items-center">
                     <Camera className="w-5 h-5 mr-2 text-blue-400" />
@@ -586,7 +586,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
                   <Button
                     onClick={analyzePhoto}
                     disabled={!selectedFile || analyzingPhoto}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     {analyzingPhoto ? (
                       <>
@@ -606,7 +606,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
             {/* Custom Ingredient Section */}
             {showCustomIngredient && (
-              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+              <Card className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 backdrop-blur-sm border-purple-500/30 mt-4">
                 <CardHeader>
                   <CardTitle className="text-white text-lg sm:text-xl flex items-center">
                     <Calculator className="w-5 h-5 mr-2 text-purple-400" />
@@ -779,7 +779,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
             {/* Analyzed Foods Results */}
             {analyzedFoods.length > 0 && (
-              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+              <Card className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 backdrop-blur-sm border-blue-500/30 mt-4">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center justify-between">
                     <span className="flex items-center">
@@ -798,7 +798,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {analyzedFoods.map((food, index) => (
-                    <div key={index} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                    <div key={index} className="p-4 bg-blue-800/50 rounded-lg border border-blue-700/50">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h4 className="font-semibold text-white mb-1">{food.name}</h4>
@@ -843,7 +843,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
             {/* Manual Add Entry Form */}
             {showAddForm && (
-              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+              <Card className="bg-gradient-to-br from-orange-900/30 to-amber-900/20 backdrop-blur-sm border-orange-500/30 mt-4">
                 <CardHeader>
                   <CardTitle className="text-white text-lg sm:text-xl">Add Food Entry</CardTitle>
                   <CardDescription>Log your food intake with nutritional details</CardDescription>
@@ -935,7 +935,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
                   <Button 
                     onClick={handleAddEntry}
-                    className="bg-green-500 hover:bg-green-600 text-white w-full"
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white w-full"
                   >
                     Add Food Entry
                   </Button>
@@ -945,12 +945,12 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
 
             {/* Food Entries */}
             <div className="space-y-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-white">Recent Entries</h2>
+              <h2 className="text-lg sm:text-xl font-semibold text-orange-200">Recent Entries</h2>
               {entries.length === 0 ? (
-                <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/10 backdrop-blur-sm border-orange-500/30">
                   <CardContent className="p-6 sm:p-8 text-center">
-                    <Utensils className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400 text-sm sm:text-base">No food entries yet. Start logging your meals!</p>
+                    <Utensils className="w-12 h-12 sm:w-16 sm:h-16 text-orange-400/50 mx-auto mb-4" />
+                    <p className="text-orange-200/70 text-sm sm:text-base">No food entries yet. Start logging your meals!</p>
                   </CardContent>
                 </Card>
               ) : (

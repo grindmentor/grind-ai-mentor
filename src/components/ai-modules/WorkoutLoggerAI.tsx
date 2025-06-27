@@ -64,7 +64,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   const addExercise = (exerciseData: any) => {
     const newExercise: Exercise = {
       id: Date.now().toString(),
-      name: exerciseData.name,
+      name: exerciseData.name || exerciseData,
       sets: 3,
       reps: 10,
       weight: 0,
@@ -235,7 +235,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                             <Input
                               type="number"
                               value={exercise.sets}
-                              onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value))}
+                              onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value) || 0)}
                               className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
                             />
                           </div>
@@ -244,7 +244,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                             <Input
                               type="number"
                               value={exercise.reps}
-                              onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value))}
+                              onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value) || 0)}
                               className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
                             />
                           </div>
@@ -254,7 +254,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                               type="number"
                               step="0.5"
                               value={exercise.weight}
-                              onChange={(e) => updateExercise(exercise.id, 'weight', parseFloat(e.target.value))}
+                              onChange={(e) => updateExercise(exercise.id, 'weight', parseFloat(e.target.value) || 0)}
                               className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
                             />
                           </div>
@@ -265,7 +265,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                               min="1"
                               max="10"
                               value={exercise.rpe}
-                              onChange={(e) => updateExercise(exercise.id, 'rpe', parseInt(e.target.value))}
+                              onChange={(e) => updateExercise(exercise.id, 'rpe', parseInt(e.target.value) || 7)}
                               className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
                             />
                           </div>

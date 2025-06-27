@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -32,9 +31,9 @@ const Dashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
-  const { lowDataMode } = usePerformanceContext();
+  const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
 
-  // Fixed module click handler with proper typing
+  // Optimized module click handler with debouncing
   const handleModuleClick = useCallback((module: Module) => {
     console.log('Module clicked:', module.id, 'at', new Date().toISOString());
     try {
@@ -44,6 +43,10 @@ const Dashboard = () => {
       console.error('Error setting selected module:', error);
     }
   }, []);
+
+  const debouncedModuleClick = useMemo(() => 
+    createDebouncedFunction((module: Module) => handleModuleClick(module), 150)
+  , [createDebouncedFunction, handleModuleClick]) as (module: Module) => void;
 
   const handleBackToDashboard = useCallback(() => {
     console.log('Returning to dashboard at', new Date().toISOString());
@@ -174,7 +177,7 @@ const Dashboard = () => {
                     <ModuleGrid
                       modules={favoriteModules}
                       favorites={favorites}
-                      onModuleClick={handleModuleClick}
+                      onModuleClick={debouncedModuleClick}
                       onToggleFavorite={toggleFavorite}
                     />
                   </Suspense>
@@ -201,7 +204,7 @@ const Dashboard = () => {
               {progressHubModule && (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <Button
-                    onClick={() => handleModuleClick(progressHubModule)}
+                    onClick={() => debouncedModuleClick(progressHubModule)}
                     className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-white rounded-xl group touch-manipulation"
                   >
                     <div className="flex items-center justify-between w-full px-4 sm:px-6">

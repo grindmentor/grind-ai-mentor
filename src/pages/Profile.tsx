@@ -2,17 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, TrendingUp, User, Activity, Target, Calendar, Award, Flame, Trophy, Zap } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, TrendingUp, User, Activity, Target, Calendar, Award, Flame, Trophy, Zap, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/ui/page-transition';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const { user } = useAuth();
+  const { preferences } = usePreferences();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -33,12 +39,63 @@ const Profile = () => {
         return;
       }
 
-      setProfile(data);
+      setProfile(data || {
+        display_name: '',
+        email: user?.email || '',
+        weight: '',
+        height: '',
+        birthday: '',
+        body_fat_percentage: '',
+        experience: '',
+        activity: '',
+        goal: ''
+      });
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveProfile = async () => {
+    if (!user || saving) return;
+
+    setSaving(true);
+    try {
+      const profileData = {
+        id: user.id,
+        email: profile.email,
+        display_name: profile.display_name || null,
+        weight: profile.weight ? parseInt(profile.weight) : null,
+        height: profile.height ? parseInt(profile.height) : null,
+        birthday: profile.birthday || null,
+        experience: profile.experience || null,
+        activity: profile.activity || null,
+        goal: profile.goal || null,
+        body_fat_percentage: profile.body_fat_percentage ? parseFloat(profile.body_fat_percentage) : null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(profileData);
+
+      if (error) throw error;
+
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onInputChange = (field: string, value: string) => {
+    setProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const calculateAge = (birthday) => {
@@ -53,12 +110,31 @@ const Profile = () => {
     return age;
   };
 
+  const getWeightDisplay = () => {
+    if (!profile?.weight) return 'Not set';
+    return `${profile.weight} ${preferences.weight_unit}`;
+  };
+
+  const getHeightDisplay = () => {
+    if (!profile?.height) return 'Not set';
+    if (preferences.height_unit === 'ft-in') {
+      const totalInches = profile.height;
+      const feet = Math.floor(totalInches / 12);
+      const inches = totalInches % 12;
+      return `${feet}'${inches}"`;
+    } else {
+      return `${profile.height} cm`;
+    }
+  };
+
   const getGoalDisplay = (goal) => {
     switch (goal) {
-      case 'weight_loss': return 'Cut';
-      case 'muscle_gain': return 'Bulk';
-      case 'general_fitness': return 'Maintenance';
-      case 'body_recomposition': return 'Recomp';
+      case 'weight_loss': return 'Weight Loss';
+      case 'muscle_gain': return 'Muscle Gain';
+      case 'strength': return 'Strength';
+      case 'endurance': return 'Endurance';
+      case 'general_fitness': return 'General Fitness';
+      case 'body_recomposition': return 'Body Recomposition';
       default: return goal ? goal.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not set';
     }
   };
@@ -150,7 +226,7 @@ const Profile = () => {
             ))}
           </div>
 
-          {/* Profile Information */}
+          {/* Editable Profile Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
               <CardHeader>
@@ -162,42 +238,75 @@ const Profile = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">Email</p>
-                    <p className="text-white">{user?.email}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Display Name</label>
+                    <Input
+                      value={profile?.display_name || ''}
+                      onChange={(e) => onInputChange('display_name', e.target.value)}
+                      placeholder="Enter display name"
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Display Name</p>
-                    <p className="text-white">{profile?.display_name || 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Email</label>
+                    <Input
+                      value={profile?.email || user?.email || ''}
+                      disabled
+                      className="bg-gray-800 border-gray-700 text-gray-400"
+                    />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">Age</p>
-                    <p className="text-white">
-                      {profile?.birthday ? calculateAge(profile.birthday) : 'Not set'}
-                    </p>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Weight ({preferences.weight_unit})
+                    </label>
+                    <Input
+                      type="number"
+                      value={profile?.weight || ''}
+                      onChange={(e) => onInputChange('weight', e.target.value)}
+                      placeholder={`Weight in ${preferences.weight_unit}`}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Weight</p>
-                    <p className="text-white">{profile?.weight ? `${profile.weight} lbs` : 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Height ({preferences.height_unit === 'ft-in' ? 'inches' : 'cm'})
+                    </label>
+                    <Input
+                      type="number"
+                      value={profile?.height || ''}
+                      onChange={(e) => onInputChange('height', e.target.value)}
+                      placeholder={`Height in ${preferences.height_unit === 'ft-in' ? 'total inches' : 'cm'}`}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">Height</p>
-                    <p className="text-white">{profile?.height ? `${profile.height}"` : 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Birthday</label>
+                    <Input
+                      type="date"
+                      value={profile?.birthday || ''}
+                      onChange={(e) => onInputChange('birthday', e.target.value)}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
+                    {profile?.birthday && (
+                      <p className="text-sm text-gray-400 mt-1">Age: {calculateAge(profile.birthday)}</p>
+                    )}
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Body Fat</p>
-                    <p className="text-white">{profile?.body_fat_percentage ? `${profile.body_fat_percentage}%` : 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Body Fat %</label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={profile?.body_fat_percentage || ''}
+                      onChange={(e) => onInputChange('body_fat_percentage', e.target.value)}
+                      placeholder="Optional"
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
-                </div>
-                <div className="pt-2">
-                  <Link to="/settings">
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                      Edit Profile
-                    </Button>
-                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -211,29 +320,90 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Primary Goal</p>
-                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 mt-1">
-                    {getGoalDisplay(profile?.goal)}
-                  </Badge>
+                  <label className="block text-sm font-medium text-white mb-2">Primary Goal</label>
+                  <Select value={profile?.goal || ''} onValueChange={(value) => onInputChange('goal', value)}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select your primary goal" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="weight_loss">Weight Loss</SelectItem>
+                      <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
+                      <SelectItem value="strength">Strength</SelectItem>
+                      <SelectItem value="endurance">Endurance</SelectItem>
+                      <SelectItem value="general_fitness">General Fitness</SelectItem>
+                      <SelectItem value="body_recomposition">Body Recomposition</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
                 <div>
-                  <p className="text-gray-400 text-sm">Experience Level</p>
-                  <p className="text-white">{getExperienceDisplay(profile?.experience)}</p>
+                  <label className="block text-sm font-medium text-white mb-2">Experience Level</label>
+                  <Select value={profile?.experience || ''} onValueChange={(value) => onInputChange('experience', value)}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="beginner">Beginner (0-1 years)</SelectItem>
+                      <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
+                      <SelectItem value="advanced">Advanced (3+ years)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
                 <div>
-                  <p className="text-gray-400 text-sm">Activity Level</p>
-                  <p className="text-white">{getActivityDisplay(profile?.activity)}</p>
+                  <label className="block text-sm font-medium text-white mb-2">Activity Level</label>
+                  <Select value={profile?.activity || ''} onValueChange={(value) => onInputChange('activity', value)}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select activity level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="sedentary">Sedentary</SelectItem>
+                      <SelectItem value="lightly_active">Lightly Active</SelectItem>
+                      <SelectItem value="moderately_active">Moderately Active</SelectItem>
+                      <SelectItem value="very_active">Very Active</SelectItem>
+                      <SelectItem value="extremely_active">Extremely Active</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="pt-2">
-                  <Link to="/settings">
-                    <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800/50">
-                      Update Fitness Profile
-                    </Button>
-                  </Link>
-                </div>
+
+                <Button 
+                  onClick={saveProfile}
+                  disabled={saving}
+                  className="bg-orange-500 hover:bg-orange-600 text-white w-full"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Profile'}
+                </Button>
               </CardContent>
             </Card>
           </div>
+
+          {/* Current Profile Display */}
+          <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white text-lg sm:text-xl">Current Profile Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-gray-400 text-sm">Weight</p>
+                  <p className="text-white font-medium">{getWeightDisplay()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Height</p>
+                  <p className="text-white font-medium">{getHeightDisplay()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Goal</p>
+                  <p className="text-white font-medium">{getGoalDisplay(profile?.goal)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Experience</p>
+                  <p className="text-white font-medium">{getExperienceDisplay(profile?.experience)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Achievements */}
           <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
@@ -282,31 +452,6 @@ const Profile = () => {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Progress Chart Placeholder */}
-          <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white text-lg sm:text-xl flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-orange-400" />
-                Progress Tracking
-              </CardTitle>
-              <CardDescription>
-                Your fitness journey progress over time
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-gray-500" />
-              </div>
-              <h3 className="text-white font-semibold text-lg mb-2">Start Tracking Progress</h3>
-              <p className="text-gray-400 mb-6">Begin logging your workouts and measurements to see your progress here</p>
-              <Link to="/app">
-                <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
-                  Start Logging Data
-                </Button>
-              </Link>
             </CardContent>
           </Card>
         </div>

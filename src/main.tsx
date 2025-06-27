@@ -1,7 +1,9 @@
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { PerformanceProvider } from '@/components/ui/performance-provider'
 
 // Enhanced PWA registration with iOS optimizations
 if ('serviceWorker' in navigator) {
@@ -52,7 +54,7 @@ const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigat
 function createIOSInstallPrompt() {
   if (isIOS && !isInStandaloneMode) {
     const iosPrompt = document.createElement('div');
-    iosPrompt.className = 'fixed bottom-6 left-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between';
+    iosPrompt.className = 'fixed bottom-6 left-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between transform transition-all duration-300';
     iosPrompt.innerHTML = `
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -70,21 +72,21 @@ function createIOSInstallPrompt() {
     
     document.body.appendChild(iosPrompt);
     
-    // Auto-hide after 15 seconds
+    // Auto-hide after 12 seconds (reduced from 15)
     setTimeout(() => {
       if (iosPrompt.parentNode) {
         iosPrompt.style.opacity = '0';
         iosPrompt.style.transform = 'translateY(100%)';
         setTimeout(() => iosPrompt.remove(), 300);
       }
-    }, 15000);
+    }, 12000);
     
     return iosPrompt;
   }
   return null;
 }
 
-// Standard PWA install prompt
+// Standard PWA install prompt with performance optimizations
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
@@ -92,9 +94,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
   // Don't show standard prompt on iOS devices
   if (isIOS) return;
   
-  // Create modern install button for non-iOS devices
+  // Create optimized install button for non-iOS devices
   installButton = document.createElement('button');
-  installButton.className = 'fixed bottom-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 transform hover:scale-105';
+  installButton.className = 'fixed bottom-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 touch-manipulation';
   installButton.innerHTML = '📱 Install Myotopia';
   
   installButton.onclick = async () => {
@@ -110,10 +112,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
   };
   
-  // Show on devices that support standard install prompt
   document.body.appendChild(installButton);
   
-  // Auto-hide after 15 seconds
+  // Auto-hide after 12 seconds (reduced from 15)
   setTimeout(() => {
     if (installButton && installButton.parentNode) {
       installButton.style.opacity = '0';
@@ -125,7 +126,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
         }
       }, 300);
     }
-  }, 15000);
+  }, 12000);
 });
 
 // Handle successful app installation
@@ -138,14 +139,14 @@ window.addEventListener('appinstalled', () => {
   }
 });
 
-// iOS-specific optimizations
+// iOS-specific optimizations with performance improvements
 if (isIOS) {
-  // Show iOS install prompt after a delay
+  // Show iOS install prompt after optimized delay
   setTimeout(() => {
     createIOSInstallPrompt();
-  }, 3000);
+  }, 2000); // Reduced from 3000ms
   
-  // Prevent zoom on double tap
+  // Optimized double-tap zoom prevention
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (event) => {
     const now = Date.now();
@@ -153,9 +154,9 @@ if (isIOS) {
       event.preventDefault();
     }
     lastTouchEnd = now;
-  }, false);
+  }, { passive: false });
   
-  // Handle iOS safe areas
+  // Handle iOS safe areas with performance optimization
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.getElementById('root');
     if (root) {
@@ -167,24 +168,20 @@ if (isIOS) {
   });
 }
 
-// Performance optimizations for iOS
+// Optimized resource preloading for iOS
 if (isIOS) {
-  // Preload critical resources
-  const criticalResources = [
-    '/src/index.css',
-    '/icon-192.png'
-  ];
+  const criticalResources = ['/src/index.css'];
   
   criticalResources.forEach(resource => {
     const link = document.createElement('link');
     link.rel = 'preload';
     link.href = resource;
-    link.as = resource.endsWith('.css') ? 'style' : 'image';
+    link.as = 'style';
     document.head.appendChild(link);
   });
 }
 
-// Network status monitoring for offline functionality
+// Enhanced network status monitoring
 function updateOnlineStatus() {
   const isOnline = navigator.onLine;
   const event = new CustomEvent('networkstatus', { 
@@ -201,12 +198,12 @@ function updateOnlineStatus() {
 
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
-
-// Initial network status check
 updateOnlineStatus();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <PerformanceProvider>
+      <App />
+    </PerformanceProvider>
   </StrictMode>,
 )

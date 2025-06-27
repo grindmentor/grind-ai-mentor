@@ -1,19 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { Star, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import CompactGoalsAchievements from '@/components/CompactGoalsAchievements';
-import LatestResearch from '@/components/homepage/LatestResearch';
 import { useFavorites } from '@/hooks/useFavorites';
-import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
+import { usePerformanceContext } from '@/components/ui/performance-provider';
+
+// Lazy load heavy components
+const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
+const CompactGoalsAchievements = lazy(() => import('@/components/CompactGoalsAchievements'));
+const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
+const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -22,29 +25,52 @@ const Dashboard = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
+  const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
 
-  const handleModuleClick = (module) => {
-    console.log('Module clicked:', module.id, 'at', new Date().toISOString());
-    try {
-      setSelectedModule(module);
-      setNavigationSource('dashboard');
-    } catch (error) {
-      console.error('Error setting selected module:', error);
-    }
-  };
+  // Optimized module click handler with debouncing
+  const handleModuleClick = useMemo(() => 
+    createDebouncedFunction((module) => {
+      console.log('Module clicked:', module.id, 'at', new Date().toISOString());
+      try {
+        setSelectedModule(module);
+        setNavigationSource('dashboard');
+      } catch (error) {
+        console.error('Error setting selected module:', error);
+      }
+    }, 150), [createDebouncedFunction]
+  );
 
-  const handleBackToDashboard = () => {
-    console.log('Returning to dashboard at', new Date().toISOString());
-    try {
-      setSelectedModule(null);
-    } catch (error) {
-      console.error('Error returning to dashboard:', error);
-    }
-  };
+  const handleBackToDashboard = useMemo(() => 
+    createDebouncedFunction(() => {
+      console.log('Returning to dashboard at', new Date().toISOString());
+      try {
+        setSelectedModule(null);
+      } catch (error) {
+        console.error('Error returning to dashboard:', error);
+      }
+    }, 100), [createDebouncedFunction]
+  );
 
-  const handleFoodLogged = (data) => {
-    console.log('Food logged:', data);
-  };
+  const handleFoodLogged = useMemo(() => 
+    createDebouncedFunction((data) => {
+      console.log('Food logged:', data);
+    }, 200), [createDebouncedFunction]
+  );
+
+  // Memoized computed values
+  const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {
+    if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null, favoriteModules: [] };
+    
+    const regular = modules.filter(m => m.id !== 'progress-hub');
+    const progressHub = modules.find(m => m.id === 'progress-hub');
+    const favoritesList = regular.filter(module => favorites.includes(module.id));
+    
+    return {
+      regularModules: regular,
+      progressHubModule: progressHub,
+      favoriteModules: favoritesList
+    };
+  }, [modules, favorites]);
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
@@ -60,27 +86,24 @@ const Dashboard = () => {
         <ErrorBoundary>
           <PageTransition>
             <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-              <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
-                <ModuleComponent 
-                  onBack={handleBackToDashboard}
-                  onFoodLogged={handleFoodLogged}
-                  navigationSource={navigationSource}
-                />
-              </ModuleErrorBoundary>
+              <Suspense fallback={<LoadingScreen message="Loading module..." />}>
+                <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
+                  <ModuleComponent 
+                    onBack={handleBackToDashboard}
+                    onFoodLogged={handleFoodLogged}
+                    navigationSource={navigationSource}
+                  />
+                </ModuleErrorBoundary>
+              </Suspense>
             </div>
           </PageTransition>
         </ErrorBoundary>
       );
     } catch (error) {
       console.error('Error rendering selected module:', error);
-      // Fall back to dashboard
       setSelectedModule(null);
     }
   }
-
-  // Filter out Progress Hub from regular modules
-  const regularModules = modules.filter(m => m.id !== 'progress-hub');
-  const progressHubModule = modules.find(m => m.id === 'progress-hub');
 
   console.log('Rendering dashboard with', modules.length, 'total modules');
 
@@ -103,19 +126,21 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {/* Favorites Section with mobile-optimized layout */}
-              {!favoritesLoading && favorites.length > 0 ? (
+              {/* Favorites Section with performance optimization */}
+              {!favoritesLoading && favoriteModules.length > 0 ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
                     <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
                     Your Favorites
                   </h2>
-                  <ModuleGrid
-                    modules={regularModules.filter(module => favorites.includes(module.id))}
-                    favorites={favorites}
-                    onModuleClick={handleModuleClick}
-                    onToggleFavorite={toggleFavorite}
-                  />
+                  <Suspense fallback={<div className="h-32 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                    <ModuleGrid
+                      modules={favoriteModules}
+                      favorites={favorites}
+                      onModuleClick={handleModuleClick}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  </Suspense>
                 </div>
               ) : !favoritesLoading ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
@@ -135,12 +160,12 @@ const Dashboard = () => {
                 </div>
               ) : null}
 
-              {/* Progress Hub - Mobile-optimized - Moved up after favorites */}
+              {/* Progress Hub - Optimized */}
               {progressHubModule && (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <Button
                     onClick={() => handleModuleClick(progressHubModule)}
-                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-300 text-white rounded-xl group touch-manipulation"
+                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-white rounded-xl group touch-manipulation gpu-accelerated"
                   >
                     <div className="flex items-center justify-between w-full px-4 sm:px-6">
                       <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
@@ -165,11 +190,17 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Dashboard Content Grid - Mobile-optimized */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <CompactGoalsAchievements />
-                <LatestResearch />
-              </div>
+              {/* Dashboard Content Grid - Performance optimized */}
+              {!lowDataMode && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
+                  <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                    <CompactGoalsAchievements />
+                  </Suspense>
+                  <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                    <LatestResearch />
+                  </Suspense>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -25,7 +25,7 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
         />
       </div>
       {showText && (
-        <span className={`${sizes.text} font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text font-mono tracking-wide`}>
+        <span className={`${sizes.text} font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text font-orbitron tracking-wide`}>
           Myotopia
         </span>
       )}

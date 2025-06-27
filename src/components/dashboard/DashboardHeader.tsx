@@ -8,6 +8,7 @@ import { LowDataToggle } from '@/components/ui/low-data-toggle';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import NotificationCenter from '@/components/NotificationCenter';
+import Logo from '@/components/ui/logo';
 
 const DashboardHeader = memo(() => {
   const { user } = useAuth();
@@ -19,20 +20,21 @@ const DashboardHeader = memo(() => {
     <header className="sticky top-0 z-40 w-full border-b border-gray-800/50 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 items-center justify-between">
-          {/* Logo/Brand */}
+          {/* Logo/Brand - Left Side */}
           <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
-            <div className="flex items-center space-x-2 min-w-0">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-xs sm:text-sm">M</span>
-              </div>
-              <span className="text-lg sm:text-xl font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text whitespace-nowrap tracking-wide font-mono">
+            <Logo size="sm" showText={!isMobile} className="flex-shrink-0" />
+            {isMobile && (
+              <span className="text-base font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text whitespace-nowrap tracking-wide font-mono">
                 Myotopia
               </span>
-            </div>
+            )}
           </div>
 
-          {/* Navigation Items */}
+          {/* Right Side Logo */}
           <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
+            {/* Logo on the right */}
+            <Logo size="sm" showText={false} className="flex-shrink-0" />
+            
             {/* Low Data Toggle - only show if not in low data mode or on mobile */}
             {(!lowDataMode || !isMobile) && (
               <div className="hidden sm:block">

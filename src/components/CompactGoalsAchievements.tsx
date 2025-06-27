@@ -7,48 +7,63 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Trophy, Target, ChevronDown, ChevronUp, Award, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
-// Preset goals for first-time users
+// Enhanced preset goals for first-time users
 const PRESET_GOALS = [
   {
     title: "Lose 10 pounds",
-    description: "Achieve sustainable weight loss",
+    description: "Achieve sustainable weight loss through consistent effort",
     target_value: 10,
     unit: "lbs",
     category: "weight_loss"
   },
   {
     title: "Gain 5 pounds of muscle",
-    description: "Build lean muscle mass",
+    description: "Build lean muscle mass with progressive training",
     target_value: 5,
     unit: "lbs",
     category: "muscle_gain"
   },
   {
     title: "Exercise 4 times per week",
-    description: "Maintain consistent workout routine",
+    description: "Maintain consistent workout routine for 4 weeks",
     target_value: 4,
-    unit: "workouts",
+    unit: "workouts/week",
     category: "consistency"
   },
   {
     title: "Reach 150g protein daily",
-    description: "Meet daily protein intake goals",
+    description: "Meet daily protein intake goals for muscle growth",
     target_value: 150,
     unit: "grams",
     category: "nutrition"
+  },
+  {
+    title: "Deadlift bodyweight",
+    description: "Build strength to deadlift your own bodyweight",
+    target_value: 1,
+    unit: "x bodyweight",
+    category: "strength"
+  },
+  {
+    title: "Walk 10,000 steps daily",
+    description: "Increase daily activity with consistent walking",
+    target_value: 10000,
+    unit: "steps",
+    category: "cardio"
   }
 ];
 
 const CompactGoalsAchievements = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [goals, setGoals] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPresets, setShowPresets] = useState(false);
+  const [creatingGoal, setCreatingGoal] = useState(false);
 
   const [quickStats, setQuickStats] = useState({
     activeGoals: 0,
@@ -131,8 +146,9 @@ const CompactGoalsAchievements = () => {
   };
 
   const createGoalFromPreset = async (preset: typeof PRESET_GOALS[0]) => {
-    if (!user) return;
+    if (!user || creatingGoal) return;
 
+    setCreatingGoal(true);
     try {
       const { data, error } = await supabase
         .from('user_goals')
@@ -151,13 +167,29 @@ const CompactGoalsAchievements = () => {
 
       if (error) {
         console.error('Error creating goal:', error);
+        toast({
+          title: "Error creating goal",
+          description: "Please try again later.",
+          variant: "destructive"
+        });
       } else {
         setGoals(prev => [data, ...prev]);
         setQuickStats(prev => ({ ...prev, activeGoals: prev.activeGoals + 1 }));
         setShowPresets(false);
+        toast({
+          title: "Goal created!",
+          description: `"${preset.title}" has been added to your goals.`,
+        });
       }
     } catch (error) {
       console.error('Error creating goal:', error);
+      toast({
+        title: "Error creating goal",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setCreatingGoal(false);
     }
   };
 
@@ -225,7 +257,10 @@ const CompactGoalsAchievements = () => {
                     size="sm"
                     variant="ghost"
                     className="text-orange-400 hover:bg-orange-500/10 h-6 px-2"
-                    onClick={() => setShowPresets(!showPresets)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPresets(!showPresets);
+                    }}
                   >
                     <Plus className="w-3 h-3 mr-1" />
                     Add Goal
@@ -242,7 +277,8 @@ const CompactGoalsAchievements = () => {
                           key={index}
                           size="sm"
                           variant="ghost"
-                          className="text-left text-xs p-2 h-auto bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white"
+                          disabled={creatingGoal}
+                          className="text-left text-xs p-2 h-auto bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white disabled:opacity-50"
                           onClick={() => createGoalFromPreset(preset)}
                         >
                           <div>

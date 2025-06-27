@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Calendar, Target, Activity, Info } from "lucide-react";
+import { User, Calendar, Target, Activity, Info, Zap } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BasicInformationProps {
@@ -28,7 +28,7 @@ interface BasicInformationProps {
   getHeightDisplay: () => string;
 }
 
-// Function to format goal display
+// Function to format goal display properly
 const formatGoal = (goal: string) => {
   const goalMap: { [key: string]: string } = {
     'lose_weight': 'Lose Weight',
@@ -46,7 +46,7 @@ const formatGoal = (goal: string) => {
   ).join(' ');
 };
 
-// Function to format activity level
+// Function to format activity level properly
 const formatActivityLevel = (activity: string) => {
   const activityMap: { [key: string]: string } = {
     'sedentary': 'Sedentary',
@@ -61,19 +61,32 @@ const formatActivityLevel = (activity: string) => {
   ).join(' ');
 };
 
-// Goal tooltips
+// Goal tooltips with clear explanations
 const getGoalTooltip = (goal: string) => {
   const tooltips: { [key: string]: string } = {
-    'cut': 'Fat loss while maintaining strength and muscle mass',
-    'bulk': 'Muscle gain with controlled fat gain',
-    'maintain': 'Maintain current weight and body composition',
-    'lose_weight': 'Primary focus on reducing overall body weight',
-    'gain_weight': 'Primary focus on increasing overall body weight',
-    'build_muscle': 'Focus on increasing muscle mass',
-    'recomp': 'Simultaneously lose fat and gain muscle'
+    'cut': 'Fat loss while maintaining strength and muscle mass - ideal for reducing body fat percentage',
+    'bulk': 'Muscle gain with controlled fat gain - focus on building size and strength',
+    'maintain': 'Maintain current weight and body composition while improving performance',
+    'lose_weight': 'Primary focus on reducing overall body weight for health or aesthetics',
+    'gain_weight': 'Primary focus on increasing overall body weight, often for underweight individuals',
+    'build_muscle': 'Focus on increasing muscle mass and strength through progressive overload',
+    'recomp': 'Simultaneously lose fat and gain muscle - challenging but rewarding approach'
   };
   
-  return tooltips[goal] || 'Your primary fitness goal';
+  return tooltips[goal] || 'Your primary fitness goal drives your training and nutrition approach';
+};
+
+// Activity level tooltips
+const getActivityTooltip = (activity: string) => {
+  const tooltips: { [key: string]: string } = {
+    'sedentary': 'Little to no exercise, desk job, minimal daily movement',
+    'lightly_active': 'Light exercise 1-3 days per week, some walking or light activities',
+    'moderately_active': 'Moderate exercise 3-5 days per week, regular gym sessions',
+    'very_active': 'Hard exercise 6-7 days per week, intense training schedule',
+    'extremely_active': 'Very hard exercise, physical job, or 2x/day training sessions'
+  };
+  
+  return tooltips[activity] || 'Your daily activity level affects calorie needs and recovery requirements';
 };
 
 const BasicInformation = ({
@@ -170,7 +183,7 @@ const BasicInformation = ({
             </div>
           )}
 
-          {/* Activity Level Display */}
+          {/* Activity Level Display with proper icon */}
           {profile.activity && (
             <div>
               <label className="block text-sm font-medium text-white mb-2">
@@ -178,7 +191,7 @@ const BasicInformation = ({
               </label>
               <div className="flex items-center space-x-2">
                 <Badge className="bg-green-500/20 text-green-400 border-green-500/30 flex items-center text-sm px-3 py-2">
-                  <Activity className="w-4 h-4 mr-2" />
+                  <Zap className="w-4 h-4 mr-2" />
                   {formatActivityLevel(profile.activity)}
                 </Badge>
                 <Tooltip>
@@ -186,7 +199,7 @@ const BasicInformation = ({
                     <Info className="w-4 h-4 text-gray-400 hover:text-gray-300" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs">Your daily activity level affects calorie calculations</p>
+                    <p className="max-w-xs">{getActivityTooltip(profile.activity)}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>

@@ -64,10 +64,9 @@ const PlaceholderComponent = ({ title, onBack }: { title?: string; onBack?: () =
 );
 
 // Enhanced safe component loader with better error handling and logging
-const SafeComponent = ({ moduleName, onBack, onFoodLogged }: { 
+const SafeComponent = ({ moduleName, onBack }: { 
   moduleName: string; 
   onBack?: () => void;
-  onFoodLogged?: (data: any) => void;
 }) => {
   console.log(`Loading module: ${moduleName}`);
   
@@ -230,7 +229,7 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
         return (
           <ModuleErrorBoundary moduleName="Smart Food Log" onBack={onBack}>
             <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}>
-              <SmartFoodLog onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} />
+              <SmartFoodLog onBack={onBack || (() => {})} />
             </React.Suspense>
           </ModuleErrorBoundary>
         );

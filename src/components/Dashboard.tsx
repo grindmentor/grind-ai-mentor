@@ -163,20 +163,20 @@ const Dashboard = () => {
               <PersonalizedSummary />
             </div>
 
-            {/* Progress Hub - Purple Button */}
+            {/* Progress Hub - Darker Purple Button */}
             {progressHubModule && (
               <div className="mb-8">
                 <Button
                   onClick={() => handleModuleClick(progressHubModule)}
-                  className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"
+                  className="w-full h-20 bg-gradient-to-r from-purple-900/40 to-purple-800/60 backdrop-blur-sm border border-purple-700/40 hover:from-purple-900/60 hover:to-purple-800/80 transition-all duration-300 text-white rounded-xl group"
                 >
                   <div className="flex items-center justify-between w-full px-6">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-800 to-purple-900 flex items-center justify-center">
                         <TrendingUp className="w-6 h-6 text-white" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-200 transition-colors">
                           Progress Hub
                         </h3>
                         <p className="text-sm text-gray-300">
@@ -185,8 +185,8 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Sparkles className="w-5 h-5 text-purple-400" />
-                      <span className="text-sm text-purple-300">View Progress</span>
+                      <Sparkles className="w-5 h-5 text-purple-300" />
+                      <span className="text-sm text-purple-200">View Progress</span>
                     </div>
                   </div>
                 </Button>

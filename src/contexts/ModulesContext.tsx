@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 
@@ -310,7 +309,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="physique-ai" {...props} />,
       gradient: 'from-purple-500 to-indigo-500',
       usageKey: 'progress_analyses',
-      isPremium: false,
+      isPremium: true,
       isNew: false
     },
     {
@@ -319,7 +318,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Track your fitness progress with detailed measurements and analytics',
       icon: TrendingUp,
       component: (props: any) => <SafeComponent moduleName="progress-hub" {...props} />,
-      gradient: 'from-blue-500 to-blue-700',
+      gradient: 'from-purple-800 to-purple-900',
       usageKey: 'progress_tracking',
       isPremium: false,
       isNew: false

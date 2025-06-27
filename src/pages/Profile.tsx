@@ -1,22 +1,41 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, TrendingUp, User, Activity, Target, Calendar, Award, Flame, Trophy, Zap } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, TrendingUp, User, Activity, Target, Calendar, Award, Flame, Trophy, Zap, Save } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/ui/page-transition';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
+  const [preferences, setPreferences] = useState({
+    weight_unit: 'lbs',
+    height_unit: 'ft-in'
+  });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editableProfile, setEditableProfile] = useState({
+    display_name: '',
+    weight: '',
+    height: '',
+    birthday: '',
+    experience: '',
+    activity: '',
+    goal: '',
+    body_fat_percentage: ''
+  });
 
   useEffect(() => {
     if (user) {
       loadProfile();
+      loadPreferences();
     }
   }, [user]);
 
@@ -34,10 +53,83 @@ const Profile = () => {
       }
 
       setProfile(data);
+      if (data) {
+        setEditableProfile({
+          display_name: data.display_name || '',
+          weight: data.weight?.toString() || '',
+          height: data.height?.toString() || '',
+          birthday: data.birthday || '',
+          experience: data.experience || '',
+          activity: data.activity || '',
+          goal: data.goal || '',
+          body_fat_percentage: data.body_fat_percentage?.toString() || ''
+        });
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPreferences = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('weight_unit, height_unit')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading preferences:', error);
+        return;
+      }
+
+      if (data) {
+        setPreferences({
+          weight_unit: data.weight_unit || 'lbs',
+          height_unit: data.height_unit || 'ft-in'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+    }
+  };
+
+  const saveProfile = async () => {
+    if (!user || saving) return;
+
+    setSaving(true);
+    try {
+      const profileData = {
+        id: user.id,
+        email: user.email,
+        display_name: editableProfile.display_name || null,
+        weight: editableProfile.weight ? parseInt(editableProfile.weight) : null,
+        height: editableProfile.height ? parseInt(editableProfile.height) : null,
+        birthday: editableProfile.birthday || null,
+        experience: editableProfile.experience || null,
+        activity: editableProfile.activity || null,
+        goal: editableProfile.goal || null,
+        body_fat_percentage: editableProfile.body_fat_percentage ? parseFloat(editableProfile.body_fat_percentage) : null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(profileData);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, ...profileData });
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -51,6 +143,24 @@ const Profile = () => {
       age--;
     }
     return age;
+  };
+
+  const getWeightDisplay = (weight) => {
+    if (!weight) return 'Not set';
+    if (preferences.weight_unit === 'kg') {
+      return `${(weight * 0.453592).toFixed(1)} kg`;
+    }
+    return `${weight} lbs`;
+  };
+
+  const getHeightDisplay = (height) => {
+    if (!height) return 'Not set';
+    if (preferences.height_unit === 'cm') {
+      return `${(height * 2.54).toFixed(0)} cm`;
+    }
+    const feet = Math.floor(height / 12);
+    const inches = height % 12;
+    return `${feet}'${inches}"`;
   };
 
   const getGoalDisplay = (goal) => {
@@ -114,15 +224,14 @@ const Profile = () => {
         <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link to="/app">
-              <Button 
-                variant="ghost" 
-                className="text-white hover:text-orange-400 hover:bg-gray-800/50 transition-colors w-fit"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Dashboard
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/app')}
+              className="text-white hover:text-orange-400 hover:bg-gray-800/50 transition-colors w-fit"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Dashboard
+            </Button>
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-xl shadow-orange-500/25">
                 <User className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
@@ -150,7 +259,7 @@ const Profile = () => {
             ))}
           </div>
 
-          {/* Profile Information */}
+          {/* Editable Profile Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
               <CardHeader>
@@ -162,43 +271,75 @@ const Profile = () => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">Email</p>
-                    <p className="text-white">{user?.email}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Display Name</label>
+                    <Input
+                      value={editableProfile.display_name}
+                      onChange={(e) => setEditableProfile(prev => ({ ...prev, display_name: e.target.value }))}
+                      placeholder="Enter display name"
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Display Name</p>
-                    <p className="text-white">{profile?.display_name || 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Email</label>
+                    <Input
+                      value={user?.email}
+                      disabled
+                      className="bg-gray-800 border-gray-700 text-gray-400"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">Age</p>
-                    <p className="text-white">
-                      {profile?.birthday ? calculateAge(profile.birthday) : 'Not set'}
-                    </p>
+                    <label className="block text-sm font-medium text-white mb-2">Weight ({preferences.weight_unit})</label>
+                    <Input
+                      type="number"
+                      value={editableProfile.weight}
+                      onChange={(e) => setEditableProfile(prev => ({ ...prev, weight: e.target.value }))}
+                      placeholder={`Enter weight in ${preferences.weight_unit}`}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Weight</p>
-                    <p className="text-white">{profile?.weight ? `${profile.weight} lbs` : 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Height ({preferences.height_unit === 'ft-in' ? 'inches' : 'cm'})</label>
+                    <Input
+                      type="number"
+                      value={editableProfile.height}
+                      onChange={(e) => setEditableProfile(prev => ({ ...prev, height: e.target.value }))}
+                      placeholder={`Height in ${preferences.height_unit === 'ft-in' ? 'inches' : 'cm'}`}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">Height</p>
-                    <p className="text-white">{profile?.height ? `${profile.height}"` : 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Birthday</label>
+                    <Input
+                      type="date"
+                      value={editableProfile.birthday}
+                      onChange={(e) => setEditableProfile(prev => ({ ...prev, birthday: e.target.value }))}
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Body Fat</p>
-                    <p className="text-white">{profile?.body_fat_percentage ? `${profile.body_fat_percentage}%` : 'Not set'}</p>
+                    <label className="block text-sm font-medium text-white mb-2">Body Fat %</label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={editableProfile.body_fat_percentage}
+                      onChange={(e) => setEditableProfile(prev => ({ ...prev, body_fat_percentage: e.target.value }))}
+                      placeholder="Body fat %"
+                      className="bg-gray-800 border-gray-700 text-white"
+                    />
                   </div>
                 </div>
-                <div className="pt-2">
-                  <Link to="/settings">
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                      Edit Profile
-                    </Button>
-                  </Link>
-                </div>
+                <Button 
+                  onClick={saveProfile}
+                  disabled={saving}
+                  className="bg-orange-500 hover:bg-orange-600 text-white w-full"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
               </CardContent>
             </Card>
 
@@ -211,31 +352,82 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Primary Goal</p>
-                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 mt-1">
-                    {getGoalDisplay(profile?.goal)}
-                  </Badge>
+                  <label className="block text-sm font-medium text-white mb-2">Primary Goal</label>
+                  <Select value={editableProfile.goal} onValueChange={(value) => setEditableProfile(prev => ({ ...prev, goal: value }))}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select your primary goal" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="weight_loss">Weight Loss</SelectItem>
+                      <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
+                      <SelectItem value="strength">Strength</SelectItem>
+                      <SelectItem value="endurance">Endurance</SelectItem>
+                      <SelectItem value="general_fitness">General Fitness</SelectItem>
+                      <SelectItem value="body_recomposition">Body Recomposition</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Experience Level</p>
-                  <p className="text-white">{getExperienceDisplay(profile?.experience)}</p>
+                  <label className="block text-sm font-medium text-white mb-2">Experience Level</label>
+                  <Select value={editableProfile.experience} onValueChange={(value) => setEditableProfile(prev => ({ ...prev, experience: value }))}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="beginner">Beginner (0-1 years)</SelectItem>
+                      <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
+                      <SelectItem value="advanced">Advanced (3+ years)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Activity Level</p>
-                  <p className="text-white">{getActivityDisplay(profile?.activity)}</p>
-                </div>
-                <div className="pt-2">
-                  <Link to="/settings">
-                    <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800/50">
-                      Update Fitness Profile
-                    </Button>
-                  </Link>
+                  <label className="block text-sm font-medium text-white mb-2">Activity Level</label>
+                  <Select value={editableProfile.activity} onValueChange={(value) => setEditableProfile(prev => ({ ...prev, activity: value }))}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select activity level" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="sedentary">Sedentary</SelectItem>
+                      <SelectItem value="lightly_active">Lightly Active</SelectItem>
+                      <SelectItem value="moderately_active">Moderately Active</SelectItem>
+                      <SelectItem value="very_active">Very Active</SelectItem>
+                      <SelectItem value="extremely_active">Extremely Active</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Achievements */}
+          {/* Current Values Display */}
+          <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white text-lg sm:text-xl">Current Values</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-gray-400 text-sm">Age</p>
+                  <p className="text-white">{profile?.birthday ? calculateAge(profile.birthday) : 'Not set'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Weight</p>
+                  <p className="text-white">{getWeightDisplay(profile?.weight)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Height</p>
+                  <p className="text-white">{getHeightDisplay(profile?.height)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Goal</p>
+                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 mt-1">
+                    {getGoalDisplay(profile?.goal)}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white text-lg sm:text-xl flex items-center">
@@ -285,7 +477,6 @@ const Profile = () => {
             </CardContent>
           </Card>
 
-          {/* Progress Chart Placeholder */}
           <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white text-lg sm:text-xl flex items-center">
@@ -302,11 +493,12 @@ const Profile = () => {
               </div>
               <h3 className="text-white font-semibold text-lg mb-2">Start Tracking Progress</h3>
               <p className="text-gray-400 mb-6">Begin logging your workouts and measurements to see your progress here</p>
-              <Link to="/app">
-                <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
-                  Start Logging Data
-                </Button>
-              </Link>
+              <Button 
+                onClick={() => navigate('/app')}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+              >
+                Start Logging Data
+              </Button>
             </CardContent>
           </Card>
         </div>

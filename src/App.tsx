@@ -23,7 +23,6 @@ import { UserDataProvider } from "@/contexts/UserDataContext";
 import ModulesProvider from "@/contexts/ModulesContext";
 import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import CrashBoundary from "@/components/CrashBoundary";
 
 const queryClient = new QueryClient();
 
@@ -31,87 +30,77 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('App component mounting');
     // Simulate app initialization
     const timer = setTimeout(() => {
-      console.log('App initialization complete');
       setIsLoading(false);
     }, 2000);
 
-    return () => {
-      console.log('App component unmounting');
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   if (isLoading) {
-    console.log('Showing app preloader');
     return <AppPreloader onComplete={() => setIsLoading(false)} />;
   }
 
-  console.log('Rendering main app');
-
   return (
-    <CrashBoundary componentName="Main Application">
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <PreferencesProvider>
-            <UserDataProvider>
-              <ModulesProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/signin" element={<SignIn />} />
-                      <Route path="/signup" element={<SignUp />} />
-                      <Route
-                        path="/app"
-                        element={
-                          <ProtectedRoute>
-                            <AppPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/modules"
-                        element={
-                          <ProtectedRoute>
-                            <ModuleLibrary />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/settings"
-                        element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/profile"
-                        element={
-                          <ProtectedRoute>
-                            <Profile />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="/pricing" element={<Pricing />} />
-                      <Route path="/support" element={<Support />} />
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/about" element={<About />} />
-                    </Routes>
-                  </BrowserRouter>
-                </TooltipProvider>
-              </ModulesProvider>
-            </UserDataProvider>
-          </PreferencesProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </CrashBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <PreferencesProvider>
+          <UserDataProvider>
+            <ModulesProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/signin" element={<SignIn />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route
+                      path="/app"
+                      element={
+                        <ProtectedRoute>
+                          <AppPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/modules"
+                      element={
+                        <ProtectedRoute>
+                          <ModuleLibrary />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/support" element={<Support />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/about" element={<About />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </ModulesProvider>
+          </UserDataProvider>
+        </PreferencesProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -81,53 +81,55 @@ const NotificationSystem = () => {
   if (!user) return null;
 
   return (
-    <div className="fixed top-0 right-0 z-50 pt-safe pr-safe">
-      {/* Fixed positioning with safe area padding */}
-      <div className="relative p-3 sm:p-4">
+    <div className="fixed top-4 right-4 z-50">
+      {/* Improved notification bell - bigger and more visible */}
+      <div className="relative">
         <SmoothButton
           onClick={() => setShowNotifications(!showNotifications)}
-          className="relative bg-black/80 border border-orange-500/40 hover:bg-black/90 hover:border-orange-400/60 w-12 h-12 p-0 rounded-full flex items-center justify-center touch-manipulation"
+          className="relative bg-black/70 backdrop-blur-sm border border-orange-500/30 hover:bg-black/80 hover:border-orange-400/50 shadow-xl transition-all duration-300 w-12 h-12 p-0 rounded-full"
           size="sm"
         >
           <Bell className="w-5 h-5 text-orange-400" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs min-w-[18px] h-5 flex items-center justify-center p-0 font-semibold">
+            <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs min-w-[18px] h-5 flex items-center justify-center p-0 text-[11px] font-semibold animate-pulse">
               {unreadCount}
             </Badge>
           )}
         </SmoothButton>
 
-        {/* Simplified notifications panel */}
+        {/* Enhanced notifications panel with better width and mobile responsiveness */}
         {showNotifications && (
-          <div className="absolute top-16 right-0 w-80 max-w-[90vw] max-h-96 overflow-y-auto bg-black/95 border border-orange-500/30 rounded-lg shadow-xl">
+          <div className="absolute top-14 right-0 w-80 sm:w-96 max-h-96 overflow-y-auto bg-black/95 backdrop-blur-md border border-orange-500/20 rounded-lg shadow-2xl animate-fade-in">
             <div className="p-4 border-b border-orange-500/20">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-medium flex items-center">
-                  <Bell className="w-4 h-4 mr-2 text-orange-400" />
+                <h3 className="text-white font-medium text-base flex items-center">
+                  <Bell className="w-5 h-5 mr-2 text-orange-400" />
                   Notifications
                 </h3>
-                <button
+                <SmoothButton
                   onClick={() => setShowNotifications(false)}
-                  className="text-gray-400 hover:text-white p-1 rounded-full touch-manipulation"
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-400 hover:text-white hover:bg-orange-500/10 w-8 h-8 p-0 rounded-full"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </SmoothButton>
               </div>
             </div>
 
-            <div className="max-h-64 overflow-y-auto">
+            <div className="max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="p-8 text-center text-gray-400">
                   <Bell className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                  <p className="font-medium mb-1">No notifications</p>
+                  <p className="text-base font-medium mb-1">No notifications</p>
                   <p className="text-sm opacity-75">You're all caught up!</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 border-b border-orange-500/10 hover:bg-orange-500/10 cursor-pointer touch-manipulation ${
-                      !notification.read ? 'bg-orange-500/20 border-l-4 border-l-orange-500' : ''
+                    className={`p-4 border-b border-orange-500/10 hover:bg-orange-500/5 transition-colors cursor-pointer ${
+                      !notification.read ? 'bg-orange-500/10 border-l-4 border-l-orange-500' : ''
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
@@ -137,7 +139,7 @@ const NotificationSystem = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between mb-1">
-                          <h4 className={`text-sm font-medium ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
+                          <h4 className={`text-sm font-medium leading-tight ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
                             {notification.title}
                           </h4>
                           <button
@@ -145,12 +147,12 @@ const NotificationSystem = () => {
                               e.stopPropagation();
                               dismissNotification(notification.id);
                             }}
-                            className="text-gray-500 hover:text-gray-300 p-1 rounded-full hover:bg-gray-700/50 ml-1 touch-manipulation"
+                            className="text-gray-500 hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-700/50"
                           >
                             <X className="w-3 h-3" />
                           </button>
                         </div>
-                        <p className="text-xs text-gray-400 mb-2">
+                        <p className="text-xs text-gray-400 mb-2 leading-relaxed">
                           {notification.message}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -167,7 +169,7 @@ const NotificationSystem = () => {
               <div className="p-3 border-t border-orange-500/10 bg-black/50">
                 <button
                   onClick={() => setNotifications([])}
-                  className="w-full text-xs text-gray-400 hover:text-white py-2 rounded-md hover:bg-orange-500/10 touch-manipulation"
+                  className="w-full text-xs text-gray-400 hover:text-white transition-colors py-2 rounded-md hover:bg-orange-500/10"
                 >
                   Clear all notifications
                 </button>

@@ -1,16 +1,19 @@
 
-import React, { memo } from 'react';
-import { Bell, Settings, User, Menu } from 'lucide-react';
+import React, { memo, useState } from 'react';
+import { Bell, Settings, User, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LowDataToggle } from '@/components/ui/low-data-toggle';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import NotificationCenter from '@/components/NotificationCenter';
 
 const DashboardHeader = memo(() => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const { lowDataMode } = usePerformanceContext();
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-800/50 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
@@ -22,7 +25,7 @@ const DashboardHeader = memo(() => {
               <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-xs sm:text-sm">M</span>
               </div>
-              <span className="text-lg sm:text-xl font-bold text-white whitespace-nowrap tracking-wide font-serif">
+              <span className="text-lg sm:text-xl font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text whitespace-nowrap tracking-wide font-mono">
                 Myotopia
               </span>
             </div>
@@ -37,12 +40,13 @@ const DashboardHeader = memo(() => {
               </div>
             )}
 
-            {/* Notifications - Bell icon only */}
+            {/* Notifications - Bell icon only with functional click */}
             <Button
               variant="ghost"
               size="sm"
               className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
               aria-label="Notifications"
+              onClick={() => setIsNotificationOpen(true)}
             >
               <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-orange-500 rounded-full"></span>
@@ -84,6 +88,39 @@ const DashboardHeader = memo(() => {
           </div>
         </div>
       </div>
+
+      {/* Notification Center Sheet */}
+      <Sheet open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md bg-black/95 backdrop-blur-md border-l border-gray-800/50">
+          <SheetHeader>
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-white flex items-center">
+                <Bell className="w-5 h-5 mr-2 text-orange-400" />
+                Notifications
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white"
+                onClick={() => setIsNotificationOpen(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </SheetHeader>
+          <div className="mt-6">
+            <NotificationCenter />
+            <div className="mt-6 pt-4 border-t border-gray-800/50">
+              <Button
+                onClick={() => setIsNotificationOpen(false)}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+              >
+                Back to Dashboard
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </header>
   );
 });

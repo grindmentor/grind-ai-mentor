@@ -9,6 +9,38 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
+// Preset goals for first-time users
+const PRESET_GOALS = [
+  {
+    title: "Lose 10 pounds",
+    description: "Achieve sustainable weight loss",
+    target_value: 10,
+    unit: "lbs",
+    category: "weight_loss"
+  },
+  {
+    title: "Gain 5 pounds of muscle",
+    description: "Build lean muscle mass",
+    target_value: 5,
+    unit: "lbs",
+    category: "muscle_gain"
+  },
+  {
+    title: "Exercise 4 times per week",
+    description: "Maintain consistent workout routine",
+    target_value: 4,
+    unit: "workouts",
+    category: "consistency"
+  },
+  {
+    title: "Reach 150g protein daily",
+    description: "Meet daily protein intake goals",
+    target_value: 150,
+    unit: "grams",
+    category: "nutrition"
+  }
+];
+
 const CompactGoalsAchievements = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -16,6 +48,7 @@ const CompactGoalsAchievements = () => {
   const [goals, setGoals] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPresets, setShowPresets] = useState(false);
 
   const [quickStats, setQuickStats] = useState({
     activeGoals: 0,
@@ -82,21 +115,49 @@ const CompactGoalsAchievements = () => {
         }
       }
 
-      // Mock achievements for now - in a real app these would be calculated
-      const mockAchievements = [];
-
       setQuickStats({
         activeGoals: goalsData?.length || 0,
         completedToday: completedTodayData?.length || 0,
         weeklyStreak: streak,
-        totalPoints: 0 // This would be calculated from actual achievements
+        totalPoints: 0
       });
 
-      setAchievements(mockAchievements);
+      setAchievements([]);
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createGoalFromPreset = async (preset: typeof PRESET_GOALS[0]) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_goals')
+        .insert({
+          user_id: user.id,
+          title: preset.title,
+          description: preset.description,
+          target_value: preset.target_value,
+          current_value: 0,
+          unit: preset.unit,
+          category: preset.category,
+          target_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating goal:', error);
+      } else {
+        setGoals(prev => [data, ...prev]);
+        setQuickStats(prev => ({ ...prev, activeGoals: prev.activeGoals + 1 }));
+        setShowPresets(false);
+      }
+    } catch (error) {
+      console.error('Error creating goal:', error);
     }
   };
 
@@ -164,12 +225,43 @@ const CompactGoalsAchievements = () => {
                     size="sm"
                     variant="ghost"
                     className="text-orange-400 hover:bg-orange-500/10 h-6 px-2"
-                    onClick={() => navigate('/modules')} // Navigate to create goals
+                    onClick={() => setShowPresets(!showPresets)}
                   >
                     <Plus className="w-3 h-3 mr-1" />
                     Add Goal
                   </Button>
                 </div>
+                
+                {/* Preset Goals Selection */}
+                {showPresets && (
+                  <div className="mb-4 p-3 bg-gray-900/60 rounded-lg border border-gray-700/50">
+                    <h5 className="text-white text-xs font-medium mb-2">Choose a preset goal:</h5>
+                    <div className="grid grid-cols-1 gap-2">
+                      {PRESET_GOALS.map((preset, index) => (
+                        <Button
+                          key={index}
+                          size="sm"
+                          variant="ghost"
+                          className="text-left text-xs p-2 h-auto bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white"
+                          onClick={() => createGoalFromPreset(preset)}
+                        >
+                          <div>
+                            <div className="font-medium">{preset.title}</div>
+                            <div className="text-xs text-gray-400">{preset.description}</div>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-full mt-2 text-xs text-gray-400 hover:text-white"
+                      onClick={() => setShowPresets(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
                 
                 {goals.length === 0 ? (
                   <div className="p-3 bg-gray-900/40 rounded-lg border border-gray-700/50 text-center">
@@ -179,7 +271,7 @@ const CompactGoalsAchievements = () => {
                       size="sm"
                       variant="ghost"
                       className="text-orange-400 hover:bg-orange-500/10 text-xs"
-                      onClick={() => navigate('/modules')}
+                      onClick={() => setShowPresets(true)}
                     >
                       Create Your First Goal
                     </Button>

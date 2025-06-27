@@ -25,6 +25,42 @@ interface ModuleGridProps {
   viewMode?: 'grid' | 'list';
 }
 
+// Function to convert gradient classes to background colors with opacity
+const getModuleBackgroundColor = (gradient: string) => {
+  const gradientMap: { [key: string]: string } = {
+    'from-blue-900/60 to-indigo-900/80': 'bg-blue-900/50',
+    'from-green-900/60 to-emerald-900/80': 'bg-green-900/50',
+    'from-orange-900/60 to-red-900/80': 'bg-orange-900/50',
+    'from-purple-900/60 to-violet-900/80': 'bg-purple-900/50',
+    'from-red-900/60 to-pink-900/80': 'bg-red-900/50',
+    'from-teal-900/60 to-cyan-900/80': 'bg-teal-900/50',
+    'from-yellow-900/60 to-orange-900/80': 'bg-yellow-900/50',
+    'from-pink-900/60 to-rose-900/80': 'bg-pink-900/50',
+    'from-indigo-900/60 to-blue-900/80': 'bg-indigo-900/50',
+    'from-gray-900/60 to-slate-900/80': 'bg-gray-900/50',
+  };
+  
+  return gradientMap[gradient] || 'bg-gray-900/50';
+};
+
+// Function to get icon color based on module theme
+const getIconColor = (gradient: string) => {
+  const colorMap: { [key: string]: string } = {
+    'from-blue-900/60 to-indigo-900/80': 'text-blue-400',
+    'from-green-900/60 to-emerald-900/80': 'text-green-400',
+    'from-orange-900/60 to-red-900/80': 'text-orange-400',
+    'from-purple-900/60 to-violet-900/80': 'text-purple-400',
+    'from-red-900/60 to-pink-900/80': 'text-red-400',
+    'from-teal-900/60 to-cyan-900/80': 'text-teal-400',
+    'from-yellow-900/60 to-orange-900/80': 'text-yellow-400',
+    'from-pink-900/60 to-rose-900/80': 'text-pink-400',
+    'from-indigo-900/60 to-blue-900/80': 'text-indigo-400',
+    'from-gray-900/60 to-slate-900/80': 'text-gray-400',
+  };
+  
+  return colorMap[gradient] || 'text-gray-400';
+};
+
 export const ModuleGrid: React.FC<ModuleGridProps> = ({
   modules,
   favorites,
@@ -40,17 +76,19 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         {modules.map((module) => {
           const IconComponent = module.icon;
           const isFavorited = favorites.includes(module.id);
+          const bgColor = getModuleBackgroundColor(module.gradient);
+          const iconColor = getIconColor(module.gradient);
           
           return (
             <Card 
               key={module.id}
-              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${module.gradient} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`}
+              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${bgColor} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 border-gray-700/50`}
               onClick={() => onModuleClick(module)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                    <IconComponent className="w-6 h-6 text-white" />
+                  <div className={`w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0`}>
+                    <IconComponent className={`w-6 h-6 ${iconColor}`} />
                   </div>
                   
                   <div className="flex-1 min-w-0">
@@ -109,11 +147,13 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
       {modules.map((module) => {
         const IconComponent = module.icon;
         const isFavorited = favorites.includes(module.id);
+        const bgColor = getModuleBackgroundColor(module.gradient);
+        const iconColor = getIconColor(module.gradient);
         
         return (
           <Card 
             key={module.id}
-            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ${module.gradient} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 relative overflow-hidden`}
+            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ${bgColor} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 relative overflow-hidden border-gray-700/50`}
             onClick={() => onModuleClick(module)}
           >
             {/* Animated background gradient */}
@@ -122,7 +162,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
             <CardHeader className="relative z-10 pb-2">
               <div className="flex items-start justify-between mb-3">
                 <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                  <IconComponent className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                  <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${iconColor}`} />
                 </div>
                 <Button
                   onClick={(e) => {
@@ -143,7 +183,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
               
               <div className="space-y-2 w-full">
                 <div className="flex items-center justify-between w-full">
-                  <CardTitle className="text-white text-lg sm:text-xl font-bold group-hover:text-orange-100 transition-colors flex-1 truncate pr-2">
+                  <CardTitle className="text-white text-lg sm:text-xl font-bold group-hover:text-orange-100 transition-colors w-full truncate pr-2">
                     {module.title}
                   </CardTitle>
                   <div className="flex flex-col space-y-1 flex-shrink-0">

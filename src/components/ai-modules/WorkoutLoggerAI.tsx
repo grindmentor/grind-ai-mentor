@@ -40,6 +40,7 @@ interface WorkoutSet {
   id: string;
   reps: number;
   weight: number;
+  rir?: number; // Add RIR (reps in reserve)
 }
 
 interface WorkoutExercise {
@@ -47,7 +48,7 @@ interface WorkoutExercise {
   exercise: Exercise;
   sets: WorkoutSet[];
   notes?: string;
-  previousWeight?: number; // For recommendation
+  previousWeight?: number;
 }
 
 interface WorkoutSession {
@@ -102,7 +103,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     difficulty: 'Beginner'
   });
 
-  // Search exercises using the new optimized function
+  // Improved search function with better error handling and logging
   const searchExercises = async (query: string) => {
     if (!query.trim()) {
       setExercises([]);
@@ -111,21 +112,77 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
 
     setLoading(true);
     try {
-      console.log('Searching exercises with query:', query);
+      console.log('Starting exercise search with query:', query);
+      console.log('User ID:', user?.id);
       
-      // Use the new optimized search function
+      // Test database connection first
+      const { data: testData, error: testError } = await supabase
+        .from('exercises')
+        .select('count')
+        .limit(1);
+      
+      if (testError) {
+        console.error('Database connection test failed:', testError);
+        throw new Error('Database connection failed');
+      }
+      
+      console.log('Database connection successful');
+      
+      // Use the optimized search function with better error handling
       const { data, error } = await supabase.rpc('search_exercises_optimized', {
-        search_query: query,
+        search_query: query.trim(),
         limit_count: 20,
         search_user_id: user?.id || null
       });
 
       if (error) {
-        console.error('Search error:', error);
-        throw error;
+        console.error('Search RPC error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        // Fallback to basic search if RPC fails
+        console.log('Attempting fallback search...');
+        const fallbackResult = await supabase
+          .from('exercises')
+          .select('*')
+          .or(`name.ilike.%${query}%,equipment.ilike.%${query}%`)
+          .eq('is_active', true)
+          .limit(20);
+          
+        if (fallbackResult.error) {
+          console.error('Fallback search also failed:', fallbackResult.error);
+          throw fallbackResult.error;
+        }
+        
+        console.log('Fallback search successful:', fallbackResult.data?.length);
+        const transformedData = (fallbackResult.data || []).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          primary_muscles: item.primary_muscles || [],
+          secondary_muscles: item.secondary_muscles || [],
+          equipment: item.equipment || 'Unknown',
+          difficulty_level: item.difficulty_level || 'Beginner',
+          category: item.category || 'Strength',
+          force_type: item.force_type || 'Push',
+          mechanics: item.mechanics || 'Compound',
+          movement_type: item.movement_type,
+          is_bodyweight: item.is_bodyweight,
+          is_weighted: item.is_weighted,
+          technique_notes: item.technique_notes,
+          form_cues: item.form_cues,
+          is_custom: false
+        }));
+        
+        setExercises(transformedData);
+        return;
       }
 
-      console.log('Search results:', data);
+      console.log('RPC search successful:', data?.length || 0, 'results');
       
       // Transform the data to match our Exercise interface
       const transformedExercises: Exercise[] = (data || []).map((item: any) => ({
@@ -144,15 +201,16 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         is_weighted: item.is_weighted,
         technique_notes: item.technique_notes,
         form_cues: item.form_cues,
-        is_custom: item.is_custom
+        is_custom: item.is_custom || false
       }));
 
       setExercises(transformedExercises);
+      console.log('Exercise search completed successfully');
     } catch (error) {
-      console.error('Error searching exercises:', error);
+      console.error('Complete search failure:', error);
       toast({
         title: "Search failed",
-        description: "Could not search exercises. Please try again.",
+        description: `Could not search exercises: ${error.message}. Please check your connection and try again.`,
         variant: "destructive"
       });
       setExercises([]);
@@ -217,7 +275,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       sets: [{
         id: Date.now().toString(),
         reps: 8,
-        weight: 0
+        weight: 0,
+        rir: 2 // Default RIR value
       }],
       notes: '',
       previousWeight: previousWeight || undefined
@@ -326,7 +385,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               sets: [...ex.sets, {
                 id: Date.now().toString(),
                 reps: ex.sets[ex.sets.length - 1]?.reps || 8,
-                weight: ex.sets[ex.sets.length - 1]?.weight || 0
+                weight: ex.sets[ex.sets.length - 1]?.weight || 0,
+                rir: ex.sets[ex.sets.length - 1]?.rir || 2
               }]
             }
           : ex
@@ -708,7 +768,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                               <div className="w-12 text-center text-sm font-medium text-violet-400">
                                 Set {setIndex + 1}
                               </div>
-                              <div className="flex-1 grid grid-cols-2 gap-2">
+                              <div className="flex-1 grid grid-cols-3 gap-2">
                                 <div>
                                   <label className="block text-xs text-gray-400 mb-1">Weight (kg)</label>
                                   <Input
@@ -717,9 +777,6 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                                     onChange={(e) => updateSet(workoutExercise.id, set.id, 'weight', parseFloat(e.target.value) || 0)}
                                     className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
                                     placeholder={workoutExercise.previousWeight ? workoutExercise.previousWeight.toString() : "0"}
-                                    style={{ 
-                                      color: !set.weight && workoutExercise.previousWeight ? '#9ca3af' : 'white'
-                                    }}
                                   />
                                 </div>
                                 <div>
@@ -730,6 +787,29 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                                     onChange={(e) => updateSet(workoutExercise.id, set.id, 'reps', parseInt(e.target.value) || 0)}
                                     className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
                                     placeholder="8"
+                                  />
+                                </div>
+                                <div>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <label className="block text-xs text-gray-400 mb-1 cursor-help">
+                                          RIR <Info className="w-3 h-3 inline ml-1" />
+                                        </label>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Reps In Reserve - How many reps you could still do</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  <Input
+                                    type="number"
+                                    value={set.rir || ''}
+                                    onChange={(e) => updateSet(workoutExercise.id, set.id, 'rir', parseInt(e.target.value) || 0)}
+                                    className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
+                                    placeholder="2"
+                                    min="0"
+                                    max="10"
                                   />
                                 </div>
                               </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -14,6 +15,7 @@ import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import GoalsAchievementsHub from '@/components/GoalsAchievementsHub';
 import { useFavorites } from '@/hooks/useFavorites';
+import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -23,12 +25,21 @@ const Dashboard = () => {
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
 
   const handleModuleClick = (module) => {
-    console.log('Module clicked:', module.id);
-    setSelectedModule(module);
+    console.log('Module clicked:', module.id, 'at', new Date().toISOString());
+    try {
+      setSelectedModule(module);
+    } catch (error) {
+      console.error('Error setting selected module:', error);
+    }
   };
 
   const handleBackToDashboard = () => {
-    setSelectedModule(null);
+    console.log('Returning to dashboard at', new Date().toISOString());
+    try {
+      setSelectedModule(null);
+    } catch (error) {
+      console.error('Error returning to dashboard:', error);
+    }
   };
 
   const handleFoodLogged = (data) => {
@@ -37,28 +48,40 @@ const Dashboard = () => {
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
+    console.log('Modules not loaded yet, showing loading screen');
     return <LoadingScreen message="Loading modules..." />;
   }
 
   if (selectedModule) {
-    const ModuleComponent = selectedModule.component;
-    return (
-      <ErrorBoundary>
-        <PageTransition>
-          <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-            <ModuleComponent 
-              onBack={handleBackToDashboard}
-              onFoodLogged={handleFoodLogged}
-            />
-          </div>
-        </PageTransition>
-      </ErrorBoundary>
-    );
+    console.log('Rendering selected module:', selectedModule.id);
+    try {
+      const ModuleComponent = selectedModule.component;
+      return (
+        <ErrorBoundary>
+          <PageTransition>
+            <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
+              <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
+                <ModuleComponent 
+                  onBack={handleBackToDashboard}
+                  onFoodLogged={handleFoodLogged}
+                />
+              </ModuleErrorBoundary>
+            </div>
+          </PageTransition>
+        </ErrorBoundary>
+      );
+    } catch (error) {
+      console.error('Error rendering selected module:', error);
+      // Fall back to dashboard
+      setSelectedModule(null);
+    }
   }
 
   // Filter out Progress Hub from regular modules
   const regularModules = modules.filter(m => m.id !== 'progress-hub');
   const progressHubModule = modules.find(m => m.id === 'progress-hub');
+
+  console.log('Rendering dashboard with', modules.length, 'total modules');
 
   return (
     <ErrorBoundary>

@@ -7,7 +7,7 @@ import { ArrowLeft, Search, Dumbbell, Calendar, Heart, MessageSquare, Send, X, F
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 
 interface WorkoutLibraryProps {
   onBack: () => void;
@@ -69,7 +69,7 @@ interface CardioSession {
 }
 
 const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
-  const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'splits' | 'days' | 'exercises' | 'cardio'>('splits');
   const [searchQuery, setSearchQuery] = useState('');
   const [muscleFilter, setMuscleFilter] = useState<string[]>([]);
@@ -82,8 +82,102 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
   const [selectedSplit, setSelectedSplit] = useState<string | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  // Sample exercises data (fallback)
+  // Static data - immediately available
+  const workoutSplits: WorkoutSplit[] = [
+    {
+      id: 'push-pull-legs',
+      name: 'Push/Pull/Legs',
+      description: 'Classic 3-day split focusing on movement patterns for optimal recovery and muscle growth',
+      days: 3,
+      difficulty: 'Intermediate',
+      focus: ['Chest', 'Shoulders', 'Triceps', 'Back', 'Biceps', 'Legs'],
+      estimatedDuration: '45-60 min'
+    },
+    {
+      id: 'upper-lower',
+      name: 'Upper/Lower Split',
+      description: '4-day split alternating between upper and lower body training sessions',
+      days: 4,
+      difficulty: 'Beginner',
+      focus: ['Upper Body', 'Lower Body', 'Strength'],
+      estimatedDuration: '50-70 min'
+    },
+    {
+      id: 'full-body',
+      name: 'Full Body Routine',
+      description: '3-day full body workout hitting all major muscle groups each session',
+      days: 3,
+      difficulty: 'Beginner',
+      focus: ['Full Body', 'Compound Movements', 'Efficiency'],
+      estimatedDuration: '60-75 min'
+    },
+    {
+      id: 'bro-split',
+      name: 'Bro Split',
+      description: '5-day split focusing on one muscle group per day for maximum volume',
+      days: 5,
+      difficulty: 'Advanced',
+      focus: ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'],
+      estimatedDuration: '45-60 min'
+    }
+  ];
+
+  const workoutDays: WorkoutDay[] = [
+    {
+      id: 'ppl-push',
+      splitId: 'push-pull-legs',
+      dayNumber: 1,
+      name: 'Push Day (Chest, Shoulders, Triceps)',
+      focus: ['Chest', 'Shoulders', 'Triceps'],
+      difficulty: 'Intermediate',
+      exercises: [
+        { exerciseId: '1', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rest: '3 min', weight: 'Heavy' },
+        { exerciseId: '2', name: 'Overhead Press', sets: 3, reps: '8-10', rest: '2-3 min', weight: 'Moderate' },
+        { exerciseId: '3', name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' },
+        { exerciseId: '4', name: 'Lateral Raises', sets: 3, reps: '12-15', rest: '90 sec', weight: 'Light' },
+        { exerciseId: '5', name: 'Close-Grip Bench Press', sets: 3, reps: '8-10', rest: '2 min', weight: 'Moderate' },
+        { exerciseId: '6', name: 'Tricep Dips', sets: 3, reps: '10-12', rest: '90 sec', weight: 'Bodyweight' }
+      ],
+      duration: 60
+    },
+    {
+      id: 'ppl-pull',
+      splitId: 'push-pull-legs',
+      dayNumber: 2,
+      name: 'Pull Day (Back, Biceps)',
+      focus: ['Back', 'Biceps'],
+      difficulty: 'Intermediate',
+      exercises: [
+        { exerciseId: '7', name: 'Pull-ups', sets: 4, reps: '6-10', rest: '3 min', weight: 'Bodyweight' },
+        { exerciseId: '8', name: 'Barbell Rows', sets: 4, reps: '8-10', rest: '2-3 min', weight: 'Heavy' },
+        { exerciseId: '9', name: 'Lat Pulldowns', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' },
+        { exerciseId: '10', name: 'Face Pulls', sets: 3, reps: '12-15', rest: '90 sec', weight: 'Light' },
+        { exerciseId: '11', name: 'Barbell Curls', sets: 3, reps: '8-10', rest: '2 min', weight: 'Moderate' },
+        { exerciseId: '12', name: 'Hammer Curls', sets: 3, reps: '10-12', rest: '90 sec', weight: 'Moderate' }
+      ],
+      duration: 60
+    },
+    {
+      id: 'ppl-legs',
+      splitId: 'push-pull-legs',
+      dayNumber: 3,
+      name: 'Leg Day (Quads, Hamstrings, Glutes, Calves)',
+      focus: ['Quadriceps', 'Hamstrings', 'Glutes', 'Calves'],
+      difficulty: 'Intermediate',
+      exercises: [
+        { exerciseId: '13', name: 'Back Squat', sets: 4, reps: '6-8', rest: '3 min', weight: 'Heavy' },
+        { exerciseId: '14', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rest: '2-3 min', weight: 'Heavy' },
+        { exerciseId: '15', name: 'Bulgarian Split Squats', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' },
+        { exerciseId: '16', name: 'Leg Curls', sets: 3, reps: '12-15', rest: '90 sec', weight: 'Moderate' },
+        { exerciseId: '17', name: 'Calf Raises', sets: 4, reps: '15-20', rest: '90 sec', weight: 'Heavy' },
+        { exerciseId: '18', name: 'Walking Lunges', sets: 3, reps: '12-15', rest: '90 sec', weight: 'Bodyweight' }
+      ],
+      duration: 70
+    }
+  ];
+
   const sampleExercises: Exercise[] = [
     {
       id: '1',
@@ -120,59 +214,45 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       category: 'Strength',
       difficulty_level: 'Intermediate',
       mechanics: 'Compound'
-    }
-  ];
-
-  // Predefined workout splits
-  const workoutSplits: WorkoutSplit[] = [
-    {
-      id: 'push-pull-legs',
-      name: 'Push/Pull/Legs',
-      description: 'Classic 3-day split focusing on movement patterns for optimal recovery and muscle growth',
-      days: 3,
-      difficulty: 'Intermediate',
-      focus: ['Chest', 'Shoulders', 'Triceps', 'Back', 'Biceps', 'Legs'],
-      estimatedDuration: '45-60 min'
     },
     {
-      id: 'upper-lower',
-      name: 'Upper/Lower Split',
-      description: '4-day split alternating between upper and lower body training sessions',
-      days: 4,
-      difficulty: 'Beginner',
-      focus: ['Upper Body', 'Lower Body', 'Strength'],
-      estimatedDuration: '50-70 min'
+      id: '4',
+      name: 'Deadlift',
+      description: 'The ultimate posterior chain exercise',
+      instructions: 'Feet hip-width, grip bar, lift by driving hips forward and standing tall',
+      primary_muscles: ['Hamstrings', 'Glutes'],
+      secondary_muscles: ['Lower Back', 'Traps', 'Lats'],
+      equipment: 'Barbell',
+      category: 'Strength',
+      difficulty_level: 'Advanced',
+      mechanics: 'Compound'
     },
     {
-      id: 'full-body',
-      name: 'Full Body Routine',
-      description: '3-day full body workout hitting all major muscle groups each session',
-      days: 3,
-      difficulty: 'Beginner',
-      focus: ['Full Body', 'Compound Movements', 'Efficiency'],
-      estimatedDuration: '60-75 min'
-    }
-  ];
-
-  // Sample workout days
-  const workoutDays: WorkoutDay[] = [
+      id: '5',
+      name: 'Overhead Press',
+      description: 'Build powerful shoulders and core stability',
+      instructions: 'Press bar from shoulders overhead, keep core tight, lower with control',
+      primary_muscles: ['Shoulders'],
+      secondary_muscles: ['Triceps', 'Core'],
+      equipment: 'Barbell',
+      category: 'Strength',
+      difficulty_level: 'Intermediate',
+      mechanics: 'Compound'
+    },
     {
-      id: 'ppl-push',
-      splitId: 'push-pull-legs',
-      dayNumber: 1,
-      name: 'Push Day (Chest, Shoulders, Triceps)',
-      focus: ['Chest', 'Shoulders', 'Triceps'],
-      difficulty: 'Intermediate',
-      exercises: [
-        { exerciseId: '1', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rest: '3 min', weight: 'Heavy' },
-        { exerciseId: '2', name: 'Overhead Press', sets: 3, reps: '8-10', rest: '2-3 min', weight: 'Moderate' },
-        { exerciseId: '3', name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' }
-      ],
-      duration: 60
+      id: '6',
+      name: 'Dumbbell Rows',
+      description: 'Unilateral back development and strength',
+      instructions: 'One knee on bench, row dumbbell to hip, squeeze shoulder blade',
+      primary_muscles: ['Lats', 'Rhomboids'],
+      secondary_muscles: ['Biceps', 'Rear Delts'],
+      equipment: 'Dumbbell',
+      category: 'Strength',
+      difficulty_level: 'Beginner',
+      mechanics: 'Compound'
     }
   ];
 
-  // Cardio sessions
   const cardioSessions: CardioSession[] = [
     {
       id: 'hiit-fat-burn',
@@ -203,73 +283,154 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
         'Consistent, comfortable pace you can maintain',
         'Focus on breathing rhythm and form'
       ]
+    },
+    {
+      id: 'circuit-blast',
+      name: 'Metabolic Circuit',
+      type: 'Circuit',
+      duration: 30,
+      intensity: 'High',
+      description: 'High-intensity circuit combining strength and cardio for maximum calorie burn',
+      equipment: 'Bodyweight + Light Weights',
+      instructions: [
+        '45 seconds work, 15 seconds rest',
+        'Complete 4 exercises per round',
+        '3 total rounds with 2 min rest between',
+        'Focus on form over speed'
+      ]
+    },
+    {
+      id: 'tabata-power',
+      name: 'Tabata Protocol',
+      type: 'Tabata',
+      duration: 15,
+      intensity: 'High',
+      description: 'Ultra-high intensity 4-minute protocol for explosive power and conditioning',
+      equipment: 'Bodyweight or bike',
+      instructions: [
+        '20 seconds maximum effort',
+        '10 seconds complete rest',
+        'Repeat for 8 total rounds (4 minutes)',
+        'Cool down with light movement'
+      ]
     }
   ];
 
+  // Initialize component - runs once
   useEffect(() => {
-    if (activeTab === 'exercises') {
-      setLoading(true);
-      // Use sample exercises as fallback
-      setTimeout(() => {
-        setExercises(sampleExercises);
-        setLoading(false);
-      }, 500);
+    console.log('WorkoutLibrary component initializing...');
+    try {
+      setExercises(sampleExercises);
+      setInitialized(true);
+      console.log('WorkoutLibrary component initialized successfully');
+    } catch (error) {
+      console.error('Error initializing WorkoutLibrary:', error);
+      toast({
+        title: 'Initialization Error',
+        description: 'Failed to load workout library. Please refresh the page.',
+        variant: 'destructive'
+      });
     }
-  }, [activeTab]);
+  }, []);
 
+  // Filter functions with safety checks
   const filteredSplits = workoutSplits.filter(split => {
-    const matchesSearch = split.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          split.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDifficulty = !difficultyFilter || split.difficulty === difficultyFilter;
-    return matchesSearch && matchesDifficulty;
+    try {
+      const matchesSearch = split.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            split.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesDifficulty = !difficultyFilter || split.difficulty === difficultyFilter;
+      return matchesSearch && matchesDifficulty;
+    } catch (error) {
+      console.error('Error filtering splits:', error);
+      return true;
+    }
   });
 
   const filteredDays = workoutDays.filter(day => {
-    const matchesSearch = day.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          day.focus.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesSplit = !selectedSplit || day.splitId === selectedSplit;
-    const matchesDifficulty = !difficultyFilter || day.difficulty === difficultyFilter;
-    return matchesSearch && matchesSplit && matchesDifficulty;
+    try {
+      const matchesSearch = day.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            day.focus.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesSplit = !selectedSplit || day.splitId === selectedSplit;
+      const matchesDifficulty = !difficultyFilter || day.difficulty === difficultyFilter;
+      return matchesSearch && matchesSplit && matchesDifficulty;
+    } catch (error) {
+      console.error('Error filtering days:', error);
+      return true;
+    }
   });
 
   const filteredExercises = exercises.filter(exercise => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (exercise.description && exercise.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesMuscle = muscleFilter.length === 0 || 
-                          muscleFilter.some(muscle => 
-                            exercise.primary_muscles.some(pm => pm.toLowerCase().includes(muscle.toLowerCase())) ||
-                            exercise.secondary_muscles.some(sm => sm.toLowerCase().includes(muscle.toLowerCase()))
-                          );
-    const matchesEquipment = !equipmentFilter || exercise.equipment.toLowerCase().includes(equipmentFilter.toLowerCase());
-    const matchesDifficulty = !difficultyFilter || exercise.difficulty_level === difficultyFilter;
-    return matchesSearch && matchesMuscle && matchesEquipment && matchesDifficulty;
+    try {
+      const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (exercise.description && exercise.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesMuscle = muscleFilter.length === 0 || 
+                            muscleFilter.some(muscle => 
+                              exercise.primary_muscles.some(pm => pm.toLowerCase().includes(muscle.toLowerCase())) ||
+                              exercise.secondary_muscles.some(sm => sm.toLowerCase().includes(muscle.toLowerCase()))
+                            );
+      const matchesEquipment = !equipmentFilter || exercise.equipment.toLowerCase().includes(equipmentFilter.toLowerCase());
+      const matchesDifficulty = !difficultyFilter || exercise.difficulty_level === difficultyFilter;
+      return matchesSearch && matchesMuscle && matchesEquipment && matchesDifficulty;
+    } catch (error) {
+      console.error('Error filtering exercises:', error);
+      return true;
+    }
   });
 
   const filteredCardio = cardioSessions.filter(session => {
-    const matchesSearch = session.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          session.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = !equipmentFilter || session.type === equipmentFilter;
-    const matchesIntensity = !difficultyFilter || session.intensity === difficultyFilter;
-    return matchesSearch && matchesType && matchesIntensity;
+    try {
+      const matchesSearch = session.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            session.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = !equipmentFilter || session.type === equipmentFilter;
+      const matchesIntensity = !difficultyFilter || session.intensity === difficultyFilter;
+      return matchesSearch && matchesType && matchesIntensity;
+    } catch (error) {
+      console.error('Error filtering cardio:', error);
+      return true;
+    }
   });
 
   const handleSendMessage = () => {
-    if (chatMessage.trim() !== '') {
-      setChatHistory([...chatHistory, { type: 'user', message: chatMessage }]);
+    if (!chatMessage.trim()) return;
+    
+    try {
+      setChatHistory(prev => [...prev, { type: 'user', message: chatMessage }]);
       
       setTimeout(() => {
         const workoutResponses = [
           "Based on scientific research, progressive overload is the key principle for muscle growth. Gradually increase weight, reps, or sets each week.",
           "Compound movements like squats, deadlifts, and bench press should form the foundation of your training for maximum efficiency.",
           "Recovery is crucial - aim for 7-9 hours of sleep and allow 48-72 hours between training the same muscle groups.",
-          "Proper form always takes priority over heavy weight. Master the movement pattern first, then add load."
+          "Proper form always takes priority over heavy weight. Master the movement pattern first, then add load.",
+          "Research shows that training each muscle group 2-3 times per week is optimal for muscle protein synthesis.",
+          "The mind-muscle connection is real - focus on feeling the target muscle working during each rep."
         ];
         const randomResponse = workoutResponses[Math.floor(Math.random() * workoutResponses.length)];
         setChatHistory(prev => [...prev, { type: 'ai', message: randomResponse }]);
       }, 1000);
       setChatMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Chat Error',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive'
+      });
     }
   };
+
+  // Show loading state until initialized
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2">Loading Workout Library</h2>
+          <p className="text-orange-300/70">Preparing your fitness arsenal...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white relative">
@@ -494,6 +655,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
           <TabsContent value="exercises" className="mt-6">
             {loading ? (
               <div className="text-center py-16">
+                <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
                 <div className="text-orange-400">Loading exercises...</div>
               </div>
             ) : filteredExercises.length === 0 ? (

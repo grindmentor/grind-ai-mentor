@@ -1,5 +1,7 @@
+
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
+import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
 
 type ModuleId =
   | 'dashboard'
@@ -43,138 +45,311 @@ export const useModules = () => {
   return context;
 };
 
-// Simple placeholder component for modules
+// Enhanced placeholder component with better loading states
 const PlaceholderComponent = ({ title, onBack }: { title?: string; onBack?: () => void }) => (
-  <div className="p-6 text-center text-white">
-    <h2 className="text-2xl font-bold mb-4">{title || 'Module'}</h2>
-    <p className="text-gray-400">This module is loading...</p>
-    {onBack && (
-      <button onClick={onBack} className="mt-4 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">
-        Back
-      </button>
-    )}
+  <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center p-6">
+    <div className="text-center max-w-md">
+      <div className="w-16 h-16 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-6"></div>
+      <h2 className="text-2xl font-bold mb-4">{title || 'Module'}</h2>
+      <p className="text-gray-400 mb-6">This module is loading...</p>
+      {onBack && (
+        <button 
+          onClick={onBack} 
+          className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+        >
+          Back to Dashboard
+        </button>
+      )}
+    </div>
   </div>
 );
 
-// Safe component loader that won't crash the app
+// Enhanced safe component loader with better error handling and logging
 const SafeComponent = ({ moduleName, onBack, onFoodLogged }: { 
   moduleName: string; 
   onBack?: () => void;
   onFoodLogged?: (data: any) => void;
 }) => {
+  console.log(`Loading module: ${moduleName}`);
+  
   try {
-    // Dynamically import components with error handling
+    // Dynamically import components with enhanced error handling
     switch (moduleName) {
       case 'smart-training':
         const SmartTraining = React.lazy(() => 
-          import('@/components/ai-modules/SmartTraining').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Smart Training" {...props} /> })
-          )
+          import('@/components/ai-modules/SmartTraining')
+            .then(module => {
+              console.log(`Successfully loaded SmartTraining module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load SmartTraining module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Smart Training" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Smart Training" onBack={onBack} />}><SmartTraining onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Smart Training" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Smart Training" onBack={onBack} />}>
+              <SmartTraining onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'coach-gpt':
         const CoachGPT = React.lazy(() => 
-          import('@/components/ai-modules/CoachGPT').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Coach GPT" {...props} /> })
-          )
+          import('@/components/ai-modules/CoachGPT')
+            .then(module => {
+              console.log(`Successfully loaded CoachGPT module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load CoachGPT module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Coach GPT" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Coach GPT" onBack={onBack} />}><CoachGPT onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Coach GPT" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Coach GPT" onBack={onBack} />}>
+              <CoachGPT onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'tdee-calculator':
         const TDEECalculator = React.lazy(() => 
-          import('@/components/ai-modules/TDEECalculator').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="TDEE Calculator" {...props} /> })
-          )
+          import('@/components/ai-modules/TDEECalculator')
+            .then(module => {
+              console.log(`Successfully loaded TDEECalculator module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load TDEECalculator module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="TDEE Calculator" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="TDEE Calculator" onBack={onBack} />}><TDEECalculator onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="TDEE Calculator" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="TDEE Calculator" onBack={onBack} />}>
+              <TDEECalculator onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'meal-plan-generator':
         const MealPlanAI = React.lazy(() => 
-          import('@/components/ai-modules/MealPlanAI').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Meal Plan Generator" {...props} /> })
-          )
+          import('@/components/ai-modules/MealPlanAI')
+            .then(module => {
+              console.log(`Successfully loaded MealPlanAI module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load MealPlanAI module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Meal Plan Generator" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Meal Plan Generator" onBack={onBack} />}><MealPlanAI onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Meal Plan Generator" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Meal Plan Generator" onBack={onBack} />}>
+              <MealPlanAI onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'recovery-coach':
         const RecoveryCoach = React.lazy(() => 
-          import('@/components/ai-modules/RecoveryCoach').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Recovery Coach" {...props} /> })
-          )
+          import('@/components/ai-modules/RecoveryCoach')
+            .then(module => {
+              console.log(`Successfully loaded RecoveryCoach module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load RecoveryCoach module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Recovery Coach" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Recovery Coach" onBack={onBack} />}><RecoveryCoach onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Recovery Coach" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Recovery Coach" onBack={onBack} />}>
+              <RecoveryCoach onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'workout-logger':
         const WorkoutLoggerAI = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutLoggerAI').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Workout Logger" {...props} /> })
-          )
+          import('@/components/ai-modules/WorkoutLoggerAI')
+            .then(module => {
+              console.log(`Successfully loaded WorkoutLoggerAI module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load WorkoutLoggerAI module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Workout Logger" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Workout Logger" onBack={onBack} />}><WorkoutLoggerAI onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Workout Logger" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Workout Logger" onBack={onBack} />}>
+              <WorkoutLoggerAI onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'smart-food-log':
         const SmartFoodLog = React.lazy(() => 
-          import('@/components/ai-modules/SmartFoodLog').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Smart Food Log" {...props} /> })
-          )
+          import('@/components/ai-modules/SmartFoodLog')
+            .then(module => {
+              console.log(`Successfully loaded SmartFoodLog module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load SmartFoodLog module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Smart Food Log" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}><SmartFoodLog onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Smart Food Log" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}>
+              <SmartFoodLog onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'workout-library':
         const WorkoutLibrary = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutLibrary').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Workout Library" {...props} /> })
-          )
+          import('@/components/ai-modules/WorkoutLibrary')
+            .then(module => {
+              console.log(`Successfully loaded WorkoutLibrary module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load WorkoutLibrary module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Workout Library" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Workout Library" onBack={onBack} />}><WorkoutLibrary onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Workout Library" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Workout Library" onBack={onBack} />}>
+              <WorkoutLibrary onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'progress-hub':
         const ProgressHub = React.lazy(() => 
-          import('@/components/ai-modules/ProgressHub').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Progress Hub" {...props} /> })
-          )
+          import('@/components/ai-modules/ProgressHub')
+            .then(module => {
+              console.log(`Successfully loaded ProgressHub module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load ProgressHub module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Progress Hub" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Progress Hub" onBack={onBack} />}><ProgressHub onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Progress Hub" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Progress Hub" onBack={onBack} />}>
+              <ProgressHub onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'workout-timer':
         const WorkoutTimer = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutTimer').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Workout Timer" {...props} /> })
-          )
+          import('@/components/ai-modules/WorkoutTimer')
+            .then(module => {
+              console.log(`Successfully loaded WorkoutTimer module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load WorkoutTimer module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Workout Timer" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Workout Timer" onBack={onBack} />}><WorkoutTimer onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Workout Timer" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Workout Timer" onBack={onBack} />}>
+              <WorkoutTimer onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'cut-calc-pro':
         const CutCalcPro = React.lazy(() => 
-          import('@/components/ai-modules/CutCalcPro').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="CutCalc Pro" {...props} /> })
-          )
+          import('@/components/ai-modules/CutCalcPro')
+            .then(module => {
+              console.log(`Successfully loaded CutCalcPro module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load CutCalcPro module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="CutCalc Pro" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="CutCalc Pro" onBack={onBack} />}><CutCalcPro onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="CutCalc Pro" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="CutCalc Pro" onBack={onBack} />}>
+              <CutCalcPro onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'habit-tracker':
         const HabitTracker = React.lazy(() => 
-          import('@/components/ai-modules/HabitTracker').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Habit Tracker" {...props} /> })
-          )
+          import('@/components/ai-modules/HabitTracker')
+            .then(module => {
+              console.log(`Successfully loaded HabitTracker module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load HabitTracker module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Habit Tracker" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Habit Tracker" onBack={onBack} />}><HabitTracker onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Habit Tracker" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Habit Tracker" onBack={onBack} />}>
+              <HabitTracker onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       case 'physique-ai':
         const PhysiqueAI = React.lazy(() => 
-          import('@/components/ai-modules/ProgressAI').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Physique AI" {...props} /> })
-          )
+          import('@/components/ai-modules/ProgressAI')
+            .then(module => {
+              console.log(`Successfully loaded PhysiqueAI module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load PhysiqueAI module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Physique AI" {...props} /> };
+            })
         );
-        return <React.Suspense fallback={<PlaceholderComponent title="Physique AI" onBack={onBack} />}><PhysiqueAI onBack={onBack || (() => {})} /></React.Suspense>;
+        return (
+          <ModuleErrorBoundary moduleName="Physique AI" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Physique AI" onBack={onBack} />}>
+              <PhysiqueAI onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
       
       default:
-        return <PlaceholderComponent title={moduleName} onBack={onBack} />;
+        console.warn(`Unknown module: ${moduleName}`);
+        return (
+          <ModuleErrorBoundary moduleName={moduleName} onBack={onBack}>
+            <PlaceholderComponent title={moduleName} onBack={onBack} />
+          </ModuleErrorBoundary>
+        );
     }
   } catch (error) {
-    console.error(`Error loading module ${moduleName}:`, error);
-    return <PlaceholderComponent title={moduleName} onBack={onBack} />;
+    console.error(`Critical error loading module ${moduleName}:`, error);
+    return (
+      <ModuleErrorBoundary moduleName={moduleName} onBack={onBack}>
+        <PlaceholderComponent title={moduleName} onBack={onBack} />
+      </ModuleErrorBoundary>
+    );
   }
 };
 

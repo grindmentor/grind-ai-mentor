@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
-import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 
 type ModuleId =
   | 'dashboard'
@@ -15,7 +15,8 @@ type ModuleId =
   | 'progress-hub'
   | 'workout-timer'
   | 'cut-calc-pro'
-  | 'habit-tracker';
+  | 'habit-tracker'
+  | 'physique-ai';
 
 export interface Module {
   id: ModuleId;
@@ -161,6 +162,14 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
         );
         return <React.Suspense fallback={<PlaceholderComponent title="Habit Tracker" onBack={onBack} />}><HabitTracker onBack={onBack || (() => {})} /></React.Suspense>;
       
+      case 'physique-ai':
+        const PhysiqueAI = React.lazy(() => 
+          import('@/components/ai-modules/ProgressAI').catch(() => 
+            ({ default: (props: any) => <PlaceholderComponent title="Physique AI" {...props} /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Physique AI" onBack={onBack} />}><PhysiqueAI onBack={onBack || (() => {})} /></React.Suspense>;
+      
       default:
         return <PlaceholderComponent title={moduleName} onBack={onBack} />;
     }
@@ -290,6 +299,17 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="habit-tracker" {...props} />,
       gradient: 'from-yellow-500 to-yellow-700',
       usageKey: 'habit_tracker',
+      isPremium: false,
+      isNew: false
+    },
+    {
+      id: 'physique-ai',
+      title: 'Physique AI',
+      description: 'AI-powered physique analysis and progress tracking with visual insights',
+      icon: Eye,
+      component: (props: any) => <SafeComponent moduleName="physique-ai" {...props} />,
+      gradient: 'from-purple-500 to-indigo-500',
+      usageKey: 'progress_analyses',
       isPremium: false,
       isNew: false
     },

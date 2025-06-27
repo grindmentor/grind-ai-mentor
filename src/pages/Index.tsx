@@ -10,10 +10,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import Logo from "@/components/ui/logo";
-import NotificationCenter from "@/components/NotificationCenter";
-import ScientificStudies from "@/components/homepage/ScientificStudies";
-import PersonalizedSummary from "@/components/homepage/PersonalizedSummary";
-import PremiumSubscriptionAd from "@/components/homepage/PremiumSubscriptionAd";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -118,8 +114,6 @@ const Index = () => {
                   <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
                 
-                <NotificationCenter />
-                
                 <Button 
                   onClick={() => navigate('/about')}
                   variant="outline"
@@ -132,21 +126,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-
-        {user && (
-          <>
-            {/* User-specific sections */}
-            <div className="py-12 sm:py-16 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-                <ScientificStudies />
-                <PersonalizedSummary />
-              </div>
-              <div className="max-w-2xl mx-auto">
-                <PremiumSubscriptionAd />
-              </div>
-            </div>
-          </>
-        )}
 
         {/* Features Section */}
         <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
@@ -235,7 +214,7 @@ const Index = () => {
           </AnimatedCard>
         </div>
 
-        {/* Footer Links */}
+        {/* Footer Links - Visible on Desktop, Mobile-Friendly Placement */}
         <footer className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 md:py-12 lg:px-8">
             <div className="flex flex-col md:flex-row justify-center items-center space-y-3 md:space-y-0 md:space-x-8">
@@ -266,7 +245,7 @@ const Index = () => {
             </div>
             <div className="mt-4 sm:mt-6 md:mt-8 text-center">
               <p className="text-xs text-gray-500">
-                © 2024 Myotopia. All rights reserved.
+                © 2025 Myotopia. All rights reserved.
               </p>
             </div>
           </div>

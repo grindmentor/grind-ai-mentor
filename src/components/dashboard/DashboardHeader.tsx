@@ -38,28 +38,24 @@ export const DashboardHeader: React.FC = () => {
               <Library className="w-4 h-4 mr-2" />
               {isMobile ? 'Modules' : 'Module Library'}
             </Button>
-            {!isMobile && (
-              <>
-                <Button
-                  onClick={() => navigate('/settings')}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-gray-800/50"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Profile
-                </Button>
-                <Button
-                  onClick={() => navigate('/settings')}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-gray-800/50"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-              </>
-            )}
+            <Button
+              onClick={() => navigate('/profile')}
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-gray-800/50"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </Button>
+            <Button
+              onClick={() => navigate('/settings')}
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-gray-800/50"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
             <Button
               onClick={() => navigate('/pricing')}
               variant="ghost"

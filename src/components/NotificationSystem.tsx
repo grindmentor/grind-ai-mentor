@@ -24,55 +24,18 @@ const NotificationSystem = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Initialize with some default notifications with easter eggs
-    const defaultNotifications: Notification[] = [
-      {
-        id: '1',
-        title: 'Stay Hydrated! 💧',
-        message: 'Remember: proper hydration improves performance by up to 15% according to sports science research',
-        type: 'hydration',
-        timestamp: new Date(),
-        read: false,
-        icon: <Droplets className="w-4 h-4" />
-      },
-      {
-        id: '2',
-        title: 'Training Time 🔥',
-        message: 'Your scheduled workout starts in 30 minutes. Progressive overload awaits!',
-        type: 'training',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        read: false,
-        icon: <Dumbbell className="w-4 h-4" />
-      },
-      {
-        id: '3',
-        title: 'Science Easter Egg 🧬',
-        message: 'Did you know? Muscle protein synthesis peaks 1-3 hours post-workout and remains elevated for up to 48 hours!',
-        type: 'module',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        read: false,
-        icon: <Sparkles className="w-4 h-4" />
-      }
-    ];
+    // Only show real notifications - no placeholder data for new users
+    setNotifications([]);
 
-    setNotifications(defaultNotifications);
-
-    // Set up hydration reminders every 2 hours with easter eggs
+    // Set up hydration reminders every 4 hours (reduced frequency)
     const hydrationInterval = setInterval(() => {
-      const easterEggs = [
-        'Fun fact: Your muscles are 75% water! Stay hydrated for optimal performance.',
-        'Research shows: Even 2% dehydration can reduce performance by 10-15%.',
-        'Pro tip: Pre-hydrating 2-3 hours before training is more effective than drinking during.',
-        'Science nugget: Proper hydration helps maintain blood volume for better nutrient delivery.'
-      ];
-      
       addNotification({
-        title: 'Hydration Reminder 💧',
-        message: easterEggs[Math.floor(Math.random() * easterEggs.length)],
+        title: 'Stay Hydrated',
+        message: 'Remember to drink water for optimal performance.',
         type: 'hydration',
         icon: <Droplets className="w-4 h-4" />
       });
-    }, 2 * 60 * 60 * 1000);
+    }, 4 * 60 * 60 * 1000);
 
     return () => {
       clearInterval(hydrationInterval);
@@ -87,7 +50,7 @@ const NotificationSystem = () => {
       read: false
     };
     
-    setNotifications(prev => [newNotification, ...prev.slice(0, 9)]); // Keep max 10 notifications
+    setNotifications(prev => [newNotification, ...prev.slice(0, 4)]); // Keep max 5 notifications
   };
 
   const markAsRead = (id: string) => {
@@ -119,27 +82,27 @@ const NotificationSystem = () => {
 
   return (
     <div className="fixed top-4 right-4 z-50">
-      {/* Enhanced Notification Bell with better visibility */}
+      {/* Redesigned minimalistic notification bell */}
       <div className="relative">
         <SmoothButton
           onClick={() => setShowNotifications(!showNotifications)}
-          className="relative bg-gray-900/90 backdrop-blur-sm border-2 border-orange-500/50 hover:bg-gray-800/90 hover:border-orange-400/70 shadow-xl shadow-orange-500/20 transition-all duration-300"
+          className="relative bg-black/60 backdrop-blur-sm border border-white/10 hover:bg-black/70 hover:border-white/20 shadow-lg transition-all duration-300 w-10 h-10 p-0"
           size="sm"
         >
-          <Bell className="w-5 h-5 text-orange-400" />
+          <Bell className="w-4 h-4 text-white" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs min-w-[20px] h-5 flex items-center justify-center p-0 animate-pulse">
+            <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs min-w-[16px] h-4 flex items-center justify-center p-0 text-[10px]">
               {unreadCount}
             </Badge>
           )}
         </SmoothButton>
 
-        {/* Enhanced Notifications Panel */}
+        {/* Clean notifications panel */}
         {showNotifications && (
-          <div className="absolute top-12 right-0 w-80 max-h-96 overflow-y-auto bg-gray-900/95 backdrop-blur-md border border-orange-500/30 rounded-xl shadow-2xl shadow-orange-500/20 animate-fade-in">
-            <div className="p-4 border-b border-orange-500/20 bg-gradient-to-r from-orange-500/10 to-red-500/10">
+          <div className="absolute top-12 right-0 w-80 max-h-96 overflow-y-auto bg-black/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl animate-fade-in">
+            <div className="p-3 border-b border-white/10">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-semibold flex items-center">
+                <h3 className="text-white font-medium text-sm flex items-center">
                   <Bell className="w-4 h-4 mr-2 text-orange-400" />
                   Notifications
                 </h3>
@@ -147,9 +110,9 @@ const NotificationSystem = () => {
                   onClick={() => setShowNotifications(false)}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-white hover:bg-gray-800/50"
+                  className="text-gray-400 hover:text-white hover:bg-white/10 w-6 h-6 p-0"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3" />
                 </SmoothButton>
               </div>
             </div>
@@ -158,19 +121,19 @@ const NotificationSystem = () => {
               {notifications.length === 0 ? (
                 <div className="p-6 text-center text-gray-400">
                   <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No notifications yet</p>
+                  <p className="text-sm">No notifications</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 border-b border-gray-700/30 hover:bg-gray-800/30 transition-colors cursor-pointer ${
-                      !notification.read ? 'bg-orange-500/5 border-l-4 border-l-orange-500/50' : ''
+                    className={`p-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${
+                      !notification.read ? 'bg-orange-500/5 border-l-2 border-l-orange-500' : ''
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
                     <div className="flex items-start space-x-3">
-                      <div className={`p-2 rounded-lg ${getNotificationColor(notification.type)}`}>
+                      <div className={`p-1.5 rounded-lg ${getNotificationColor(notification.type)}`}>
                         {notification.icon}
                       </div>
                       <div className="flex-1 min-w-0">

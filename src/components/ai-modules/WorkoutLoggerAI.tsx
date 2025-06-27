@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -356,13 +355,13 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="flex-1">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search exercises..."
-                      className="bg-gray-800 border-gray-700 text-white"
-                      icon={<Search className="w-4 h-4" />}
+                      className="bg-gray-800 border-gray-700 text-white pl-10"
                     />
                   </div>
                   <Dialog open={showAddExercise} onOpenChange={setShowAddExercise}>

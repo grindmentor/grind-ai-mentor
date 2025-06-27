@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Star, ArrowLeft, Zap } from 'lucide-react';
+import { Crown, Star, ArrowLeft, Zap, Heart, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModules } from '@/contexts/ModulesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,11 +21,12 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { hasFeatureAccess } = useFeatureAccess();
+  const featureAccess = useFeatureAccess('image_uploads');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
   const [showModule, setShowModule] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
 
   React.useEffect(() => {
     if (user) {
@@ -97,7 +98,7 @@ const Dashboard = () => {
     // Check if module requires premium access for image uploads
     const imageModules = ['food-photo-logger'];
 
-    if (imageModules.includes(moduleId) && !hasFeatureAccess('image_uploads')) {
+    if (imageModules.includes(moduleId) && !featureAccess.canAccess) {
       setShowUpgrade(true);
       return;
     }
@@ -137,6 +138,9 @@ const Dashboard = () => {
     };
     return colorMap[gradient] || 'bg-gray-500/20 border-gray-500/30';
   };
+
+  const favoriteModules = modules.filter(module => favorites.includes(module.id));
+  const availableModules = modules.filter(module => !favorites.includes(module.id));
 
   if (showModule && selectedModule) {
     const module = modules.find(m => m.id === selectedModule);
@@ -179,75 +183,175 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Modules Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-              {modules.map((module) => {
-                const isFavorited = favorites.includes(module.id);
-                const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
-
-                return (
-                  <Card
-                    key={module.id}
-                    className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0`}
-                    onClick={() => handleModuleSelect(module.id)}
+            {/* Favorites Section */}
+            {favoriteModules.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center">
+                    <Heart className="w-5 h-5 mr-2 text-red-400 fill-current" />
+                    Your Favorites
+                  </h2>
+                  <SmoothButton
+                    onClick={() => setShowFavoritesModal(true)}
+                    variant="outline"
+                    size="sm"
+                    className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
                   >
-                    <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6">
-                      <div className="flex items-start justify-between mb-2 sm:mb-3">
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient}`}>
-                          <module.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
-                        </div>
-                        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                          <button
-                            onClick={(e) => toggleFavorite(module.id, e)}
-                            className={`p-1 sm:p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
-                              isFavorited
-                                ? 'text-yellow-400 hover:text-yellow-300'
-                                : 'text-gray-500 hover:text-yellow-400'
-                            }`}
-                          >
-                            <Star
-                              className={`w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ${
-                                isFavorited ? 'fill-current' : ''
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Favorites
+                  </SmoothButton>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                  {favoriteModules.map((module) => {
+                    const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
+                    return (
+                      <Card
+                        key={`fav-${module.id}`}
+                        className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0`}
+                        onClick={() => handleModuleSelect(module.id)}
+                      >
+                        <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6">
+                          <div className="flex items-start justify-between mb-2 sm:mb-3">
+                            <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient}`}>
+                              <module.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                            </div>
+                            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                              <button
+                                onClick={(e) => toggleFavorite(module.id, e)}
+                                className="p-1 sm:p-1.5 rounded-full transition-all duration-200 hover:scale-110 text-yellow-400 hover:text-yellow-300"
+                              >
+                                <Star className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 fill-current" />
+                              </button>
+                              {module.isPremium && (
+                                <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                                  <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                                  {isMobile ? 'PRO' : 'PRO'}
+                                </Badge>
+                              )}
+                              {module.isNew && (
+                                <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                                  NEW
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-1 sm:space-y-2">
+                            <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight">
+                              {module.title}
+                            </CardTitle>
+                            <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed">
+                              {module.description}
+                            </CardDescription>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                              {module.usageKey.replace(/_/g, ' ')}
+                            </div>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-400 flex items-center justify-center">
+                                <ArrowLeft className="w-2 h-2 sm:w-3 sm:h-3 rotate-180 text-gray-400" />
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* All Modules Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-bold text-white">
+                  {favoriteModules.length > 0 ? 'All Modules' : 'Available Modules'}
+                </h2>
+                {favoriteModules.length === 0 && (
+                  <SmoothButton
+                    onClick={() => setShowFavoritesModal(true)}
+                    variant="outline"
+                    size="sm"
+                    className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Favorites
+                  </SmoothButton>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                {(favoriteModules.length > 0 ? availableModules : modules).map((module) => {
+                  const isFavorited = favorites.includes(module.id);
+                  const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
+
+                  return (
+                    <Card
+                      key={module.id}
+                      className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0`}
+                      onClick={() => handleModuleSelect(module.id)}
+                    >
+                      <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6">
+                        <div className="flex items-start justify-between mb-2 sm:mb-3">
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient}`}>
+                            <module.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
+                          </div>
+                          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                            <button
+                              onClick={(e) => toggleFavorite(module.id, e)}
+                              className={`p-1 sm:p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
+                                isFavorited
+                                  ? 'text-yellow-400 hover:text-yellow-300'
+                                  : 'text-gray-500 hover:text-yellow-400'
                               }`}
-                            />
-                          </button>
-                          {module.isPremium && (
-                            <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
-                              <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                              {isMobile ? 'PRO' : 'PRO'}
-                            </Badge>
-                          )}
-                          {module.isNew && (
-                            <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
-                              NEW
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-1 sm:space-y-2">
-                        <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight">
-                          {module.title}
-                        </CardTitle>
-                        <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed">
-                          {module.description}
-                        </CardDescription>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                          {module.usageKey.replace(/_/g, ' ')}
-                        </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-400 flex items-center justify-center">
-                            <ArrowLeft className="w-2 h-2 sm:w-3 sm:h-3 rotate-180 text-gray-400" />
+                            >
+                              <Star
+                                className={`w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ${
+                                  isFavorited ? 'fill-current' : ''
+                                }`}
+                              />
+                            </button>
+                            {module.isPremium && (
+                              <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                                <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                                {isMobile ? 'PRO' : 'PRO'}
+                              </Badge>
+                            )}
+                            {module.isNew && (
+                              <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                                NEW
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                        <div className="space-y-1 sm:space-y-2">
+                          <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight">
+                            {module.title}
+                          </CardTitle>
+                          <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed">
+                            {module.description}
+                          </CardDescription>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                            {module.usageKey.replace(/_/g, ' ')}
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-400 flex items-center justify-center">
+                              <ArrowLeft className="w-2 h-2 sm:w-3 sm:h-3 rotate-180 text-gray-400" />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Info Section */}
@@ -265,6 +369,42 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Favorites Modal */}
+        <Dialog open={showFavoritesModal} onOpenChange={setShowFavoritesModal}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-900 border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="text-white text-xl">Add to Favorites</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+              {availableModules.map((module) => (
+                <Card
+                  key={`modal-${module.id}`}
+                  className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all cursor-pointer"
+                  onClick={(e) => {
+                    toggleFavorite(module.id, e);
+                    setShowFavoritesModal(false);
+                  }}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-r ${module.gradient}`}>
+                        <module.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-white text-sm">{module.title}</CardTitle>
+                        <CardDescription className="text-xs text-gray-400 line-clamp-1">
+                          {module.description}
+                        </CardDescription>
+                      </div>
+                      <Star className="w-4 h-4 text-gray-500" />
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Upgrade Dialog */}
         <Dialog open={showUpgrade} onOpenChange={setShowUpgrade}>

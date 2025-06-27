@@ -50,9 +50,10 @@ const Dashboard = () => {
   }, []);
 
   const debouncedModuleClick = useMemo(() => 
-    createDebouncedFunction(handleModuleClick, 150)
+    createDebouncedFunction(handleModuleClick, 150) as (module: Module) => void
   , [createDebouncedFunction, handleModuleClick]);
 
+  // Memoized computed values with error handling
   const handleBackToDashboard = useCallback(() => {
     console.log('Returning to dashboard at', new Date().toISOString());
     try {

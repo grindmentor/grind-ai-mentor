@@ -16,7 +16,6 @@ const BlueprintAI = lazy(() => import('@/components/ai-modules/BlueprintAI'));
 const PhysiqueAI = lazy(() => import('@/components/ai-modules/PhysiqueAI'));
 const ProgressHub = lazy(() => import('@/components/progress/ProgressHub'));
 const BodyweightTrainer = lazy(() => import('@/components/ai-modules/BodyweightTrainer'));
-const StretchingGuide = lazy(() => import('@/components/ai-modules/StretchingGuide'));
 const NutritionTracker = lazy(() => import('@/components/ai-modules/NutritionTracker'));
 const HabitTracker = lazy(() => import('@/components/ai-modules/HabitTracker'));
 
@@ -60,7 +59,7 @@ import {
   User, 
   TrendingUp, 
   Activity, 
-  Stretch,
+  Move,
   Apple,
   CheckSquare
 } from 'lucide-react';
@@ -172,15 +171,6 @@ export const ModulesProvider: React.FC<{ children: React.ReactNode }> = ({ child
       gradient: 'from-teal-900/40 to-cyan-900/60'
     },
     {
-      id: 'stretching-guide',
-      title: 'Stretching Guide',
-      description: 'Comprehensive mobility and flexibility routines for better recovery',
-      icon: Stretch,
-      component: StretchingGuide,
-      category: 'AI Training',
-      gradient: 'from-pink-900/40 to-rose-900/60'
-    },
-    {
       id: 'smart-food-log',
       title: 'Smart Food Log',
       description: 'AI-powered food logging with photo recognition and macro tracking',
@@ -188,6 +178,15 @@ export const ModulesProvider: React.FC<{ children: React.ReactNode }> = ({ child
       component: SmartFoodLog,
       category: 'Nutrition',
       gradient: 'from-lime-900/40 to-green-900/60'
+    },
+    {
+      id: 'nutrition-tracker',
+      title: 'Nutrition Tracker',
+      description: 'Advanced nutrition tracking with detailed macro and micronutrient analysis',
+      icon: Apple,
+      component: NutritionTracker,
+      category: 'Nutrition',
+      gradient: 'from-green-900/40 to-emerald-900/60'
     },
     {
       id: 'habit-tracker',
@@ -220,3 +219,5 @@ export const ModulesProvider: React.FC<{ children: React.ReactNode }> = ({ child
     </ModulesContext.Provider>
   );
 };
+
+export default ModulesProvider;

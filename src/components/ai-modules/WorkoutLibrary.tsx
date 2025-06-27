@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Search, Dumbbell, Filter, Info } from 'lucide-react';
 import { useExerciseDatabase } from '@/hooks/useExerciseDatabase';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface WorkoutLibraryProps {
   onBack: () => void;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -5,11 +6,12 @@ import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { Star, TrendingUp, Sparkles, Bell } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Bell, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
+import { useSubscription } from '@/hooks/useSubscription';
 import NotificationCenter from '@/components/NotificationCenter';
 
 // Lazy load heavy components
@@ -27,6 +29,7 @@ const Dashboard = () => {
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
+  const { currentTier, currentTierData } = useSubscription();
 
   // Optimized module click handler with debouncing
   const handleModuleClick = useMemo(() => {
@@ -57,6 +60,14 @@ const Dashboard = () => {
 
   const handleNotificationsClick = () => {
     setShowNotifications(true);
+  };
+
+  const handleProfileClick = () => {
+    window.location.href = '/profile';
+  };
+
+  const handleSettingsClick = () => {
+    window.location.href = '/settings';
   };
 
   const handleFoodLogged = useMemo(() => {
@@ -125,7 +136,7 @@ const Dashboard = () => {
     <ErrorBoundary>
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-          {/* Enhanced header with notifications */}
+          {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between">
@@ -133,15 +144,52 @@ const Dashboard = () => {
                   <h1 className="text-xl sm:text-2xl font-bold text-white">
                     Myotopia
                   </h1>
+                  {/* Subscription tier indicator */}
+                  <div className="hidden sm:block">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      currentTier === 'premium' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
+                      currentTier === 'basic' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
+                      'bg-gray-600 text-gray-300'
+                    }`}>
+                      {currentTier.toUpperCase()}
+                    </span>
+                  </div>
                 </div>
-                <Button
-                  onClick={handleNotificationsClick}
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
-                >
-                  <Bell className="w-5 h-5" />
-                </Button>
+                
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  {/* Notifications */}
+                  <Button
+                    onClick={handleNotificationsClick}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                    title="Notifications"
+                  >
+                    <Bell className="w-5 h-5" />
+                  </Button>
+
+                  {/* Profile */}
+                  <Button
+                    onClick={handleProfileClick}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                    title="Profile"
+                  >
+                    <User className="w-5 h-5" />
+                  </Button>
+
+                  {/* Settings */}
+                  <Button
+                    onClick={handleSettingsClick}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                    title="Settings"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

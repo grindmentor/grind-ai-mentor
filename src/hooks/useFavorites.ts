@@ -9,7 +9,6 @@ export const useFavorites = () => {
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasShownSyncWarning, setHasShownSyncWarning] = useState(false);
 
   // Load favorites from Supabase
   const loadFavorites = async () => {
@@ -64,15 +63,11 @@ export const useFavorites = () => {
 
       if (error) {
         console.error('Error saving favorites:', error);
-        // Only show warning once per session
-        if (!hasShownSyncWarning) {
-          toast({
-            title: 'Sync Warning',
-            description: 'Favorites saved locally but may not sync across devices',
-            variant: 'destructive'
-          });
-          setHasShownSyncWarning(true);
-        }
+        toast({
+          title: 'Sync Warning',
+          description: 'Favorites saved locally but may not sync across devices',
+          variant: 'destructive'
+        });
       }
 
       // Always save to localStorage as backup

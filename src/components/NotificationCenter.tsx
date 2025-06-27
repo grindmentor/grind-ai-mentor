@@ -6,8 +6,6 @@ import { ArrowLeft, Bell, Settings, X, Target, Dumbbell, Trophy } from 'lucide-r
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { MobileOptimized, TouchButton } from '@/components/ui/mobile-optimized';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Notification {
   id: string;
@@ -22,7 +20,6 @@ interface Notification {
 const NotificationCenter: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [enableMotivational, setEnableMotivational] = useState(true);
@@ -101,34 +98,35 @@ const NotificationCenter: React.FC = () => {
   };
 
   return (
-    <MobileOptimized className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-      {/* Mobile-optimized Header with proper spacing */}
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+      {/* Header */}
       <div className="sticky top-0 z-30 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 pt-safe">
-            <TouchButton
+          <div className="flex items-center justify-between h-16">
+            <Button
+              variant="ghost"
               onClick={() => navigate('/app')}
-              className="text-white hover:bg-orange-500/20 hover:text-orange-400 transition-colors font-medium flex items-center space-x-2 px-3 py-2 rounded-lg"
+              className="text-white hover:bg-orange-500/20 hover:text-orange-400 transition-colors font-medium flex items-center space-x-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Dashboard</span>
-            </TouchButton>
+            </Button>
             
-            <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
-              Notifications
-            </h1>
+            <h1 className="text-lg font-semibold">Notifications</h1>
             
-            <TouchButton
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowSettings(!showSettings)}
-              className="text-white hover:bg-gray-800/50 p-2 rounded-lg transition-colors"
+              className="text-white hover:bg-gray-800/50"
             >
               <Settings className="w-4 h-4" />
-            </TouchButton>
+            </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 pb-safe">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
         {/* Settings Panel */}
         {showSettings && (
           <Card className="bg-gray-900/60 border-gray-700/50 backdrop-blur-sm">
@@ -140,19 +138,21 @@ const NotificationCenter: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0 mr-4">
+                <div>
                   <h3 className="text-white font-medium">Motivational Messages</h3>
                   <p className="text-gray-400 text-sm">Get encouraging workout reminders</p>
                 </div>
-                <TouchButton
+                <Button
+                  variant={enableMotivational ? "default" : "outline"}
+                  size="sm"
                   onClick={toggleMotivationalNotifications}
-                  className={`px-4 py-2 rounded-lg transition-colors ${enableMotivational 
-                    ? "bg-orange-500 hover:bg-orange-600 text-white" 
-                    : "border border-gray-600 text-gray-400 hover:bg-gray-800"
-                  }`}
+                  className={enableMotivational 
+                    ? "bg-orange-500 hover:bg-orange-600" 
+                    : "border-gray-600 text-gray-400 hover:bg-gray-800"
+                  }
                 >
                   {enableMotivational ? 'Enabled' : 'Enable'}
-                </TouchButton>
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -165,19 +165,19 @@ const NotificationCenter: React.FC = () => {
               <Bell className="w-10 h-10 text-gray-500" />
             </div>
             <h3 className="text-2xl font-semibold text-white mb-2">All caught up!</h3>
-            <p className="text-gray-400 text-lg mb-4 px-4">
+            <p className="text-gray-400 text-lg mb-4">
               {enableMotivational 
                 ? "No new notifications right now."
                 : "Enable motivational messages to get workout reminders."
               }
             </p>
             {!enableMotivational && (
-              <TouchButton
+              <Button
                 onClick={toggleMotivationalNotifications}
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 px-6 py-3 rounded-xl font-medium"
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
               >
                 Enable Motivational Messages
-              </TouchButton>
+              </Button>
             )}
           </div>
         ) : (
@@ -193,10 +193,10 @@ const NotificationCenter: React.FC = () => {
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3 flex-1 min-w-0">
+                    <div className="flex items-start space-x-3 flex-1">
                       {getNotificationIcon(notification.type)}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1 flex-wrap">
+                        <div className="flex items-center space-x-2 mb-1">
                           <h3 className="text-white font-medium">{notification.title}</h3>
                           {!notification.read && (
                             <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 text-xs">
@@ -204,7 +204,7 @@ const NotificationCenter: React.FC = () => {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-gray-300 text-sm mb-2 leading-relaxed">{notification.message}</p>
+                        <p className="text-gray-300 text-sm mb-2">{notification.message}</p>
                         <p className="text-gray-500 text-xs">
                           {notification.timestamp.toLocaleTimeString([], { 
                             hour: '2-digit', 
@@ -214,32 +214,37 @@ const NotificationCenter: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 ml-4 flex-shrink-0">
+                    <div className="flex items-center space-x-2 ml-4">
                       {!notification.read && (
-                        <TouchButton
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => markAsRead(notification.id)}
-                          className="text-orange-400 hover:bg-orange-500/20 text-xs px-2 py-1 rounded-lg"
+                          className="text-orange-400 hover:bg-orange-500/20 text-xs"
                         >
                           Mark Read
-                        </TouchButton>
+                        </Button>
                       )}
-                      <TouchButton
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => deleteNotification(notification.id)}
-                        className="text-gray-400 hover:bg-red-500/20 hover:text-red-400 p-1 rounded-lg"
+                        className="text-gray-400 hover:bg-red-500/20 hover:text-red-400 p-1"
                       >
                         <X className="w-4 h-4" />
-                      </TouchButton>
+                      </Button>
                     </div>
                   </div>
                   
                   {notification.actionable && (
-                    <div className="mt-3 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      <TouchButton
+                    <div className="mt-3 flex space-x-2">
+                      <Button
+                        size="sm"
                         onClick={() => navigate('/app')}
-                        className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-xs px-4 py-2 rounded-lg font-medium w-full sm:w-auto"
+                        className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-xs"
                       >
                         Start Workout
-                      </TouchButton>
+                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -248,7 +253,7 @@ const NotificationCenter: React.FC = () => {
           </div>
         )}
       </div>
-    </MobileOptimized>
+    </div>
   );
 };
 

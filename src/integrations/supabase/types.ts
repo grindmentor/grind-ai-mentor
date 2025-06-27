@@ -737,54 +737,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_goals: {
-        Row: {
-          category: string
-          created_at: string
-          current_value: number | null
-          deadline: string | null
-          description: string | null
-          id: string
-          is_completed: boolean | null
-          priority: string | null
-          target_value: number | null
-          title: string
-          unit: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          current_value?: number | null
-          deadline?: string | null
-          description?: string | null
-          id?: string
-          is_completed?: boolean | null
-          priority?: string | null
-          target_value?: number | null
-          title: string
-          unit?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          current_value?: number | null
-          deadline?: string | null
-          description?: string | null
-          id?: string
-          is_completed?: boolean | null
-          priority?: string | null
-          target_value?: number | null
-          title?: string
-          unit?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_preferences: {
         Row: {
           created_at: string

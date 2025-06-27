@@ -1,10 +1,9 @@
-
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
-// Enhanced PWA registration with comprehensive offline support
+// Enhanced PWA registration with iOS optimizations
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
@@ -36,36 +35,13 @@ if ('serviceWorker' in navigator) {
         window.location.reload();
       });
       
-      // Listen for service worker messages
-      navigator.serviceWorker.addEventListener('message', (swEvent) => {
-        console.log('Message from service worker:', swEvent.data);
-        
-        if (swEvent.data.type === 'OFFLINE_REQUEST_SYNCED') {
-          // Show success notification when offline requests are synced
-          const syncEvent = new CustomEvent('offlineRequestSynced', {
-            detail: { url: swEvent.data.url, method: swEvent.data.method }
-          });
-          window.dispatchEvent(syncEvent);
-        }
-        
-        if (swEvent.data.type === 'BACKGROUND_SYNC_COMPLETE') {
-          console.log('Background sync completed at:', new Date(swEvent.data.timestamp));
-        }
-      });
-      
-      // Request persistent storage for better offline experience
-      if ('storage' in navigator && 'persist' in navigator.storage) {
-        const persistent = await navigator.storage.persist();
-        console.log('Persistent storage:', persistent);
-      }
-      
     } catch (error) {
       console.log('SW registration failed:', error);
     }
   });
 }
 
-// Enhanced install prompt with better UX
+// Enhanced iOS PWA install prompt
 let deferredPrompt: any;
 let installButton: HTMLButtonElement | null = null;
 
@@ -76,11 +52,11 @@ const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigat
 function createIOSInstallPrompt() {
   if (isIOS && !isInStandaloneMode) {
     const iosPrompt = document.createElement('div');
-    iosPrompt.className = 'fixed bottom-6 left-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between animate-slideUp';
+    iosPrompt.className = 'fixed bottom-6 left-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between';
     iosPrompt.innerHTML = `
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-          🏋️‍♂️
+          📱
         </div>
         <div>
           <div class="font-semibold text-sm">Install Myotopia</div>
@@ -118,8 +94,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
   
   // Create modern install button for non-iOS devices
   installButton = document.createElement('button');
-  installButton.className = 'fixed bottom-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 transform hover:scale-105 animate-slideUp';
-  installButton.innerHTML = '🏋️‍♂️ Install Myotopia';
+  installButton.className = 'fixed bottom-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 transform hover:scale-105';
+  installButton.innerHTML = '📱 Install Myotopia';
   
   installButton.onclick = async () => {
     if (deferredPrompt) {
@@ -134,6 +110,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
   };
   
+  // Show on devices that support standard install prompt
   document.body.appendChild(installButton);
   
   // Auto-hide after 15 seconds
@@ -190,7 +167,7 @@ if (isIOS) {
   });
 }
 
-// Performance optimizations for mobile
+// Performance optimizations for iOS
 if (isIOS) {
   // Preload critical resources
   const criticalResources = [
@@ -207,89 +184,23 @@ if (isIOS) {
   });
 }
 
-// Enhanced network status monitoring for better offline UX
+// Network status monitoring for offline functionality
 function updateOnlineStatus() {
   const isOnline = navigator.onLine;
-  const networkStatusEvent = new CustomEvent('networkstatus', { 
+  const event = new CustomEvent('networkstatus', { 
     detail: { online: isOnline } 
   });
-  window.dispatchEvent(networkStatusEvent);
+  window.dispatchEvent(event);
   
-  // Show user-friendly offline/online notifications
   if (!isOnline) {
     console.log('App is offline - using cached content');
-    showOfflineNotification();
   } else {
     console.log('App is online - syncing data');
-    hideOfflineNotification();
-  }
-}
-
-function showOfflineNotification() {
-  const existingNotification = document.getElementById('offline-notification');
-  if (existingNotification) return;
-  
-  const notification = document.createElement('div');
-  notification.id = 'offline-notification';
-  notification.className = 'fixed top-4 left-4 right-4 z-50 bg-yellow-600 text-white p-3 rounded-lg shadow-lg flex items-center gap-2 animate-slideDown';
-  notification.innerHTML = `
-    <span>⚡</span>
-    <span class="flex-1 text-sm font-medium">You're offline. Changes will sync when you're back online.</span>
-  `;
-  document.body.appendChild(notification);
-}
-
-function hideOfflineNotification() {
-  const notification = document.getElementById('offline-notification');
-  if (notification) {
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateY(-100%)';
-    setTimeout(() => notification.remove(), 300);
   }
 }
 
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
-
-// Push notification setup
-async function setupPushNotifications() {
-  if ('Notification' in window && 'serviceWorker' in navigator) {
-    // Request notification permission
-    const permission = await Notification.requestPermission();
-    
-    if (permission === 'granted') {
-      console.log('Notification permission granted');
-      
-      // Get service worker registration
-      const registration = await navigator.serviceWorker.ready;
-      
-      // Subscribe to push notifications
-      try {
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: null // You would add your VAPID key here
-        });
-        
-        console.log('Push subscription:', subscription);
-        
-        // Send subscription to your backend
-        // await fetch('/api/push-subscribe', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(subscription)
-        // });
-        
-      } catch (error) {
-        console.log('Push subscription failed:', error);
-      }
-    }
-  }
-}
-
-// Set up push notifications after app loads
-window.addEventListener('load', () => {
-  setTimeout(setupPushNotifications, 2000);
-});
 
 // Initial network status check
 updateOnlineStatus();

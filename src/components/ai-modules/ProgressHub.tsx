@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SmoothButton } from '@/components/ui/smooth-button';
@@ -139,7 +138,26 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-purple-800/30 text-white overflow-x-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-purple-800/20 text-white overflow-x-hidden">
+        <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <SmoothButton
+                variant="ghost"
+                onClick={onBack}
+                className="text-white hover:bg-purple-500/20 backdrop-blur-sm hover:text-purple-400 transition-colors font-medium flex items-center space-x-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Dashboard</span>
+              </SmoothButton>
+              <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
+                Progress Hub
+              </h1>
+              <div className="w-20"></div>
+            </div>
+          </div>
+        </div>
+        
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="max-w-6xl mx-auto">
             <div className="animate-pulse space-y-4">
@@ -154,30 +172,28 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/20 to-purple-800/30 text-white overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-purple-800/20 text-white overflow-x-hidden">
+      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <SmoothButton
+              variant="ghost"
+              onClick={onBack}
+              className="text-white hover:bg-purple-500/20 backdrop-blur-sm hover:text-purple-400 transition-colors font-medium flex items-center space-x-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Dashboard</span>
+            </SmoothButton>
+            <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
+              Progress Hub
+            </h1>
+            <div className="w-20"></div>
+          </div>
+        </div>
+      </div>
+      
       <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
         <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-          {/* Mobile-optimized Header */}
-          <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
-            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
-              <SmoothButton
-                variant="ghost"
-                onClick={onBack}
-                className="text-white hover:bg-purple-800/50 flex-shrink-0 touch-manipulation h-9 w-9 sm:h-auto sm:w-auto p-2 sm:px-4 sm:py-2"
-                size={isMobile ? 'sm' : 'default'}
-              >
-                <ArrowLeft className="w-4 h-4 sm:mr-2" />
-                {!isMobile && <span>Back</span>}
-              </SmoothButton>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-purple-300 via-purple-200 to-purple-300 bg-clip-text text-transparent truncate">
-                  Progress Hub
-                </h1>
-                <p className="text-purple-200/80 text-xs sm:text-sm lg:text-base truncate">Track your fitness journey with AI-powered insights</p>
-              </div>
-            </div>
-          </div>
-
           {/* Mobile-optimized Stats Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">

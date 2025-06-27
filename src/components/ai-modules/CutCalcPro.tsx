@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,33 +70,27 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-red-900/20 to-red-700 text-white p-6 animate-fade-in">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gradient-to-br from-black via-red-900/10 to-red-800/20 text-white animate-fade-in">
+      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
             <Button 
               variant="ghost" 
               onClick={onBack} 
-              className="text-slate-400 hover:text-white hover:bg-slate-800/50"
+              className="text-white hover:bg-red-500/20 backdrop-blur-sm hover:text-red-400 transition-colors font-medium flex items-center space-x-2"
             >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Dashboard
+              <ArrowLeft className="w-4 h-4" />
+              <span>Dashboard</span>
             </Button>
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-red-500/20 to-red-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/25 border border-red-400/20">
-                <Calculator className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">
-                  CutCalc Pro
-                </h1>
-                <p className="text-slate-400 text-lg">Advanced cutting calculator with timeline</p>
-              </div>
-            </div>
+            <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
+              CutCalc Pro
+            </h1>
+            <div className="w-20"></div>
           </div>
         </div>
+      </div>
 
+      <div className="max-w-4xl mx-auto space-y-8 p-6">
         {/* Status Badge */}
         <div className="flex justify-center">
           <Badge className="bg-red-500/20 text-red-400 border-red-500/30 px-4 py-2 text-sm">

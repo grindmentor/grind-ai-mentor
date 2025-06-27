@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+import { useFavorites } from '@/hooks/useFavorites';
 
 type ViewMode = 'grid' | 'list';
 
@@ -18,10 +18,10 @@ const ModuleLibrary = () => {
   const navigate = useNavigate();
   const { modules } = useModules();
   const isMobile = useIsMobile();
+  const { favorites, toggleFavorite } = useFavorites();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState(null);
-  const [favorites, setFavorites] = useState([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -30,18 +30,12 @@ const ModuleLibrary = () => {
   // Load preferences from localStorage
   useEffect(() => {
     try {
-      const savedFavorites = localStorage.getItem('module-favorites');
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
-
-      const savedViewMode = localStorage.getItem('module-view-mode') as ViewMode;
+      const savedViewMode = localStorage.getItem('module-view-mode');
       if (savedViewMode && (savedViewMode === 'grid' || savedViewMode === 'list')) {
-        setViewMode(savedViewMode);
+        setViewMode(savedViewMode as ViewMode);
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
-      setFavorites([]);
+      console.error('Error loading view mode:', error);
       setViewMode('grid');
     } finally {
       // Simulate loading delay for smooth transition
@@ -86,19 +80,6 @@ const ModuleLibrary = () => {
         return 0;
     }
   });
-
-  const toggleFavorite = (moduleId) => {
-    try {
-      const newFavorites = favorites.includes(moduleId) 
-        ? favorites.filter(id => id !== moduleId)
-        : [...favorites, moduleId];
-      
-      setFavorites(newFavorites);
-      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
-    } catch (error) {
-      console.error('Error saving favorites:', error);
-    }
-  };
 
   const handleModuleClick = (module) => {
     setSelectedModule(module);

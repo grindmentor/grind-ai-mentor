@@ -13,40 +13,14 @@ import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import GoalsAchievementsHub from '@/components/GoalsAchievementsHub';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
-  const [favorites, setFavorites] = useState([]);
-
-  // Load favorites from localStorage safely
-  useEffect(() => {
-    try {
-      const savedFavorites = localStorage.getItem('module-favorites');
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-      setFavorites([]);
-    }
-  }, []);
-
-  // Save favorites to localStorage
-  const toggleFavorite = (moduleId) => {
-    try {
-      const newFavorites = favorites.includes(moduleId) 
-        ? favorites.filter(id => id !== moduleId)
-        : [...favorites, moduleId];
-      
-      setFavorites(newFavorites);
-      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
-    } catch (error) {
-      console.error('Error saving favorites:', error);
-    }
-  };
+  const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
 
   const handleModuleClick = (module) => {
     console.log('Module clicked:', module.id);
@@ -111,7 +85,7 @@ const Dashboard = () => {
               </div>
 
               {/* Favorites Section with mobile-optimized layout */}
-              {favorites.length > 0 ? (
+              {!favoritesLoading && favorites.length > 0 ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
                     <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
@@ -124,7 +98,7 @@ const Dashboard = () => {
                     onToggleFavorite={toggleFavorite}
                   />
                 </div>
-              ) : (
+              ) : !favoritesLoading ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
                   <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
                     <Star className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500 mx-auto mb-4" />
@@ -140,7 +114,7 @@ const Dashboard = () => {
                     </Button>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Progress Hub - Mobile-optimized - Moved up after favorites */}
               {progressHubModule && (

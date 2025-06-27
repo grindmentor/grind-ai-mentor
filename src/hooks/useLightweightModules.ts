@@ -1,6 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePerformanceOptimizer } from './usePerformanceOptimizer';
-import { Module } from '@/contexts/ModulesContext';
+
+interface LightModule {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  gradient: string;
+  isPremium?: boolean;
+  isNew?: boolean;
+  loadComponent: () => Promise<{ default: React.ComponentType<any> }>;
+}
 
 // Minimal module cache
 const componentCache = new Map<string, React.ComponentType<any>>();
@@ -11,7 +21,7 @@ export const useLightweightModules = () => {
   const [loadedModules, setLoadedModules] = useState<Map<string, React.ComponentType<any>>>(new Map());
 
   // Lazy load module component only when needed
-  const loadModule = useCallback(async (moduleId: string, moduleComponent: React.ComponentType<any>) => {
+  const loadModule = useCallback(async (moduleId: string, loader: () => Promise<{ default: React.ComponentType<any> }>) => {
     if (componentCache.has(moduleId)) {
       return componentCache.get(moduleId)!;
     }
@@ -26,11 +36,13 @@ export const useLightweightModules = () => {
 
     try {
       loadingStates.add(moduleId);
+      const module = await loader();
+      const Component = module.default;
       
-      componentCache.set(moduleId, moduleComponent);
-      setLoadedModules(prev => new Map(prev).set(moduleId, moduleComponent));
+      componentCache.set(moduleId, Component);
+      setLoadedModules(prev => new Map(prev).set(moduleId, Component));
       
-      return moduleComponent;
+      return Component;
     } catch (error) {
       console.error(`Failed to load module ${moduleId}:`, error);
       throw error;
@@ -40,7 +52,7 @@ export const useLightweightModules = () => {
   }, []);
 
   // Preload critical modules based on device capability
-  const preloadCriticalModules = useCallback(async (modules: Module[]) => {
+  const preloadCriticalModules = useCallback(async (modules: LightModule[]) => {
     if (metrics.isLowPowerMode) return; // Skip preloading on low-power devices
     
     const criticalModules = modules.slice(0, 3); // Only preload first 3
@@ -50,7 +62,7 @@ export const useLightweightModules = () => {
       (window as any).requestIdleCallback(() => {
         criticalModules.forEach(module => {
           if (!componentCache.has(module.id)) {
-            loadModule(module.id, module.component).catch(() => {
+            loadModule(module.id, module.loadComponent).catch(() => {
               // Fail silently for preloading
             });
           }

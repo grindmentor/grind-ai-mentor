@@ -9,7 +9,7 @@ import { ExerciseShareProvider } from "@/contexts/ExerciseShareContext";
 import Index from "@/pages/Index";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
-import App as AppPage from "@/pages/App";
+import AppPage from "@/pages/App";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";

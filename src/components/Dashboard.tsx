@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Star, ArrowLeft, Zap, Heart, Plus } from 'lucide-react';
+import { Crown, Star, ArrowLeft, Zap, Heart, Plus, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModules } from '@/contexts/ModulesContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,7 +115,6 @@ const Dashboard = () => {
   };
 
   const handleUpgrade = (plan: 'basic' | 'premium') => {
-    // Handle upgrade logic
     console.log(`Upgrading to ${plan}`);
     setShowUpgrade(false);
   };
@@ -159,28 +159,31 @@ const Dashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white animate-fade-in">
         <div className="p-3 sm:p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-6 sm:mb-8">
-              <SmoothButton
-                variant="ghost"
-                onClick={() => navigate('/app')}
-                className="text-white hover:bg-gray-800/50 backdrop-blur-sm w-fit text-sm sm:text-base"
-                size={isMobile ? 'sm' : 'default'}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {isMobile ? 'Back' : 'Back to Dashboard'}
-              </SmoothButton>
+            {/* Header with Notifications */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 sm:space-x-4 mb-6 sm:mb-8">
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500/20 to-orange-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-orange-400/20">
                   <Zap className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-                    Module Library
+                    Myotopia Dashboard
                   </h1>
-                  <p className="text-xs sm:text-sm md:text-base text-gray-400">Discover all available fitness modules</p>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-400">Your fitness journey starts here</p>
                 </div>
               </div>
+              
+              {/* Notifications Button */}
+              <SmoothButton
+                variant="ghost"
+                onClick={() => navigate('/notifications')}
+                className="text-white hover:bg-gray-800/50 backdrop-blur-sm border border-orange-500/30 relative"
+                size={isMobile ? 'sm' : 'default'}
+              >
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+                {!isMobile && <span className="ml-2">Notifications</span>}
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              </SmoothButton>
             </div>
 
             {/* Favorites Section */}
@@ -208,15 +211,15 @@ const Dashboard = () => {
                     return (
                       <Card
                         key={`fav-${module.id}`}
-                        className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0`}
+                        className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0 overflow-hidden`}
                         onClick={() => handleModuleSelect(module.id)}
                       >
                         <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6">
                           <div className="flex items-start justify-between mb-2 sm:mb-3">
-                            <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient}`}>
+                            <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient} flex-shrink-0`}>
                               <module.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                             </div>
-                            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
                               <button
                                 onClick={(e) => toggleFavorite(module.id, e)}
                                 className="p-1 sm:p-1.5 rounded-full transition-all duration-200 hover:scale-110 text-yellow-400 hover:text-yellow-300"
@@ -224,30 +227,30 @@ const Dashboard = () => {
                                 <Star className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 fill-current" />
                               </button>
                               {module.isPremium && (
-                                <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                                <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
                                   <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                                   {isMobile ? 'PRO' : 'PRO'}
                                 </Badge>
                               )}
                               {module.isNew && (
-                                <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                                <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
                                   NEW
                                 </Badge>
                               )}
                             </div>
                           </div>
                           <div className="space-y-1 sm:space-y-2">
-                            <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight">
+                            <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight break-words">
                               {module.title}
                             </CardTitle>
-                            <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed">
+                            <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed break-words">
                               {module.description}
                             </CardDescription>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
                           <div className="flex items-center justify-between">
-                            <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                            <div className="text-xs text-gray-500 uppercase tracking-wider font-medium break-words">
                               {module.usageKey.replace(/_/g, ' ')}
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -291,15 +294,15 @@ const Dashboard = () => {
                   return (
                     <Card
                       key={module.id}
-                      className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0`}
+                      className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0 overflow-hidden`}
                       onClick={() => handleModuleSelect(module.id)}
                     >
                       <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6">
                         <div className="flex items-start justify-between mb-2 sm:mb-3">
-                          <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient}`}>
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient} flex-shrink-0`}>
                             <module.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
                           </div>
-                          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
                             <button
                               onClick={(e) => toggleFavorite(module.id, e)}
                               className={`p-1 sm:p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
@@ -315,30 +318,30 @@ const Dashboard = () => {
                               />
                             </button>
                             {module.isPremium && (
-                              <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                              <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
                                 <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                                 {isMobile ? 'PRO' : 'PRO'}
                               </Badge>
                             )}
                             {module.isNew && (
-                              <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                              <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
                                 NEW
                               </Badge>
                             )}
                           </div>
                         </div>
                         <div className="space-y-1 sm:space-y-2">
-                          <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight">
+                          <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight break-words">
                             {module.title}
                           </CardTitle>
-                          <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed">
+                          <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed break-words">
                             {module.description}
                           </CardDescription>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
                         <div className="flex items-center justify-between">
-                          <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                          <div className="text-xs text-gray-500 uppercase tracking-wider font-medium break-words">
                             {module.usageKey.replace(/_/g, ' ')}
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -376,28 +379,28 @@ const Dashboard = () => {
             <DialogHeader>
               <DialogTitle className="text-white text-xl">Add to Favorites</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2">
               {availableModules.map((module) => (
                 <Card
                   key={`modal-${module.id}`}
-                  className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all cursor-pointer"
+                  className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all cursor-pointer overflow-hidden"
                   onClick={(e) => {
                     toggleFavorite(module.id, e);
                     setShowFavoritesModal(false);
                   }}
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 p-4">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-r ${module.gradient}`}>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-r ${module.gradient} flex-shrink-0`}>
                         <module.icon className="w-5 h-5 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-white text-sm">{module.title}</CardTitle>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-white text-sm break-words">{module.title}</CardTitle>
                         <CardDescription className="text-xs text-gray-400 line-clamp-1">
                           {module.description}
                         </CardDescription>
                       </div>
-                      <Star className="w-4 h-4 text-gray-500" />
+                      <Star className="w-4 h-4 text-gray-500 flex-shrink-0" />
                     </div>
                   </CardHeader>
                 </Card>

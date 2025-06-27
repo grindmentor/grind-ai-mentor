@@ -44,9 +44,9 @@ const AuthenticatedApp = () => {
   if (loading) {
     return (
       <PageTransition>
-        <div className="flex flex-col items-center justify-center h-screen bg-black text-white">
-          <Skeleton className="w-[300px] h-[50px] mb-4" />
-          <Skeleton className="w-[200px] h-[30px]" />
+        <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+          <Skeleton className="w-[300px] h-[50px] mb-4 bg-gray-800" />
+          <Skeleton className="w-[200px] h-[30px] bg-gray-700" />
         </div>
       </PageTransition>
     );
@@ -84,75 +84,77 @@ const App = () => {
   }, [isAudioEnabled]);
 
   return (
-    <Router>
-      <AuthProvider>
-        <ModulesProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/app" element={<AuthenticatedApp />} />
-            <Route 
-              path="/profile" 
-              element={
-                <PreferencesProvider>
-                  <UserDataProvider>
-                    <Profile />
-                  </UserDataProvider>
-                </PreferencesProvider>
-              } 
-            />
-            <Route 
-              path="/modules" 
-              element={
-                <PreferencesProvider>
-                  <UserDataProvider>
-                    <ModuleLibrary />
-                  </UserDataProvider>
-                </PreferencesProvider>
-              } 
-            />
-            <Route 
-              path="/pricing" 
-              element={
-                <PreferencesProvider>
-                  <UserDataProvider>
-                    <Pricing />
-                  </UserDataProvider>
-                </PreferencesProvider>
-              } 
-            />
-            <Route 
-              path="/account" 
-              element={
-                <PreferencesProvider>
-                  <UserDataProvider>
-                    <Account />
-                  </UserDataProvider>
-                </PreferencesProvider>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <PreferencesProvider>
-                  <UserDataProvider>
-                    <Settings />
-                  </UserDataProvider>
-                </PreferencesProvider>
-              } 
-            />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ModulesProvider>
-      </AuthProvider>
-    </Router>
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20">
+      <Router>
+        <AuthProvider>
+          <ModulesProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/app" element={<AuthenticatedApp />} />
+              <Route 
+                path="/profile" 
+                element={
+                  <PreferencesProvider>
+                    <UserDataProvider>
+                      <Profile />
+                    </UserDataProvider>
+                  </PreferencesProvider>
+                } 
+              />
+              <Route 
+                path="/modules" 
+                element={
+                  <PreferencesProvider>
+                    <UserDataProvider>
+                      <ModuleLibrary />
+                    </UserDataProvider>
+                  </PreferencesProvider>
+                } 
+              />
+              <Route 
+                path="/pricing" 
+                element={
+                  <PreferencesProvider>
+                    <UserDataProvider>
+                      <Pricing />
+                    </UserDataProvider>
+                  </PreferencesProvider>
+                } 
+              />
+              <Route 
+                path="/account" 
+                element={
+                  <PreferencesProvider>
+                    <UserDataProvider>
+                      <Account />
+                    </UserDataProvider>
+                  </PreferencesProvider>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <PreferencesProvider>
+                    <UserDataProvider>
+                      <Settings />
+                    </UserDataProvider>
+                  </PreferencesProvider>
+                } 
+              />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ModulesProvider>
+        </AuthProvider>
+      </Router>
+    </div>
   );
 };
 

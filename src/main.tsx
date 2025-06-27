@@ -1,4 +1,3 @@
-
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
@@ -60,7 +59,7 @@ function createIOSInstallPrompt() {
           📱
         </div>
         <div>
-          <div class="font-semibold text-sm">Install GrindMentor</div>
+          <div class="font-semibold text-sm">Install Myotopia</div>
           <div class="text-xs opacity-90">Tap Share → Add to Home Screen</div>
         </div>
       </div>
@@ -96,7 +95,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   // Create modern install button for non-iOS devices
   installButton = document.createElement('button');
   installButton.className = 'fixed bottom-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 transform hover:scale-105';
-  installButton.innerHTML = '📱 Install App';
+  installButton.innerHTML = '📱 Install Myotopia';
   
   installButton.onclick = async () => {
     if (deferredPrompt) {
@@ -131,7 +130,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 // Handle successful app installation
 window.addEventListener('appinstalled', () => {
-  console.log('GrindMentor PWA installed successfully');
+  console.log('Myotopia PWA installed successfully');
   deferredPrompt = null;
   if (installButton) {
     installButton.remove();

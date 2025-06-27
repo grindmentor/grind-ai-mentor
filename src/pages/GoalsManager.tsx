@@ -303,7 +303,7 @@ const GoalsManager = () => {
                           <div>
                             <h3 className="text-white font-medium text-sm">{preset.title}</h3>
                             <p className="text-gray-400 text-xs">{preset.description}</p>
-                            <Badge className={getCategoryColor(preset.category)} size="sm">
+                            <Badge className={getCategoryColor(preset.category)}>
                               {preset.category}
                             </Badge>
                           </div>
@@ -352,7 +352,7 @@ const GoalsManager = () => {
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-1">
                                 <h3 className="font-semibold text-sm text-white">{goal.title}</h3>
-                                <Badge className={getCategoryColor(goal.category)} size="sm">
+                                <Badge className={getCategoryColor(goal.category)}>
                                   {goal.category}
                                 </Badge>
                               </div>
@@ -429,7 +429,7 @@ const GoalsManager = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
                             <h3 className="text-white font-semibold text-sm">{achievement.title}</h3>
-                            <Badge className={getCategoryColor(achievement.category)} size="sm">
+                            <Badge className={getCategoryColor(achievement.category)}>
                               {achievement.category}
                             </Badge>
                           </div>
@@ -453,7 +453,7 @@ const GoalsManager = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
                             <h3 className="text-white font-semibold text-sm">{achievement.title}</h3>
-                            <Badge className={getCategoryColor(achievement.category)} size="sm">
+                            <Badge className={getCategoryColor(achievement.category)}>
                               {achievement.category}
                             </Badge>
                             <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 text-xs">

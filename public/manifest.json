@@ -1,5 +1,6 @@
 
 {
+  "id": "myotopia-fitness-app",
   "name": "Myotopia - Science-Based AI Fitness Coach",
   "short_name": "Myotopia",
   "description": "Transform your physique with personalized, science-based AI fitness coaching",
@@ -10,7 +11,12 @@
   "theme_color": "#F97316",
   "scope": "/",
   "lang": "en",
+  "dir": "ltr",
   "prefer_related_applications": false,
+  "iarc_rating_id": "e84b072d-71de-5b85-866e-6d32c4a4b5cd",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
@@ -109,5 +115,37 @@
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "edge_side_panel": {
     "preferred_width": 400
-  }
+  },
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.myotopia.fitness",
+      "id": "com.myotopia.fitness"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/myotopia-fitness/id123456789",
+      "id": "123456789"
+    }
+  ],
+  "scope_extensions": [
+    {
+      "origin": "https://api.myotopia.app"
+    },
+    {
+      "origin": "https://cdn.myotopia.app"
+    }
+  ],
+  "permissions": [
+    "background-sync",
+    "periodic-background-sync",
+    "push",
+    "notifications"
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+myotopia",
+      "url": "/?action=%s"
+    }
+  ]
 }

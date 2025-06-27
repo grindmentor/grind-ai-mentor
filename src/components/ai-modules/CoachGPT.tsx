@@ -3,14 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Bot, User, Zap, Target, Utensils } from 'lucide-react';
+import { MessageSquare, Send, Bot, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
-import { getOptimizedAIResponse } from '@/services/optimizedAiService';
 
 interface Message {
   id: string;
@@ -29,13 +27,15 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && !hasLoaded) {
       loadConversationHistory();
+      setHasLoaded(true);
     }
-  }, [user]);
+  }, [user, hasLoaded]);
 
   useEffect(() => {
     scrollToBottom();
@@ -54,7 +54,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
-        .limit(50);
+        .limit(20);
 
       if (error) {
         console.error('Error loading conversation:', error);
@@ -71,6 +71,39 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       setMessages(conversationMessages);
     } catch (error) {
       console.error('Error loading conversation:', error);
+    }
+  };
+
+  const getAIResponse = async (userMessage: string): Promise<string> => {
+    try {
+      // Use the fitness-ai edge function instead of direct OpenAI calls
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
+          - Exercise form and technique
+          - Training principles and methods  
+          - Motivation and mindset
+          - General fitness questions
+          - Recovery and injury prevention
+          
+          Do NOT create meal plans or detailed training programs - redirect users to the appropriate modules for those requests.
+          
+          Be encouraging, professional, and cite scientific principles when relevant.
+          
+          User question: ${userMessage}`,
+          maxTokens: 300
+        }
+      });
+
+      if (error) {
+        console.error('AI Response Error:', error);
+        return "I'm having trouble processing your request right now. Please try again later.";
+      }
+
+      return data?.response || "I'm having trouble processing your request right now. Please try again later.";
+    } catch (error) {
+      console.error('AI Response Error:', error);
+      return "I'm having trouble processing your request right now. Please try again later.";
     }
   };
 
@@ -113,6 +146,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
           content: "I see you're interested in meal planning! For personalized meal plans, I recommend using our dedicated **Meal Plan AI** module. It's specifically designed to create detailed meal plans based on your goals, dietary preferences, and restrictions.\n\nYou can find it in your dashboard. I'm here to help with general fitness coaching, motivation, and answering questions about training techniques! 💪",
           timestamp: new Date()
         };
+        
         setMessages(prev => [...prev, redirectMessage]);
         
         await supabase
@@ -135,6 +169,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
           content: "For comprehensive training programs, check out our **Smart Training** module! It creates personalized workout programs based on your experience level, goals, and available equipment.\n\nI'm here to help with form tips, exercise selection advice, and general fitness coaching. What specific training question can I help you with today? 🏋️‍♂️",
           timestamp: new Date()
         };
+        
         setMessages(prev => [...prev, redirectMessage]);
         
         await supabase
@@ -151,26 +186,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       }
 
       // Get AI response for general coaching
-      const systemPrompt = `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
-      - Exercise form and technique
-      - Training principles and methods  
-      - Motivation and mindset
-      - General fitness questions
-      - Recovery and injury prevention
-      
-      Do NOT create meal plans or detailed training programs - redirect users to the appropriate modules for those requests.
-      
-      Be encouraging, professional, and cite scientific principles when relevant.`;
-
-      const response = await getOptimizedAIResponse(
-        `${systemPrompt}\n\nUser question: ${userMessage.content}`,
-        { 
-          useCache: true, 
-          priority: 'normal',
-          maxTokens: 300,
-          temperature: 0.7
-        }
-      );
+      const response = await getAIResponse(userMessage.content);
 
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -201,6 +217,10 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuickPrompt = (prompt: string) => {
+    setInput(prompt);
   };
 
   return (
@@ -238,14 +258,14 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
                       <Button
-                        onClick={() => setInput("What's the best way to improve my squat form?")}
+                        onClick={() => handleQuickPrompt("What's the best way to improve my squat form?")}
                         variant="outline"
                         className="text-green-300 border-green-500/30 hover:bg-green-500/10"
                       >
                         Ask about form
                       </Button>
                       <Button
-                        onClick={() => setInput("How do I stay motivated to work out?")}
+                        onClick={() => handleQuickPrompt("How do I stay motivated to work out?")}
                         variant="outline"
                         className="text-green-300 border-green-500/30 hover:bg-green-500/10"
                       >
@@ -301,13 +321,13 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me about fitness, training, or motivation..."
-                  className="flex-1 bg-green-900/30 border-green-500/50 text-white"
+                  className="flex-1 bg-green-900/30 border-green-500/50 text-white placeholder:text-green-300/50"
                   disabled={isLoading}
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

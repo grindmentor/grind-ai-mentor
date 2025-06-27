@@ -7,34 +7,34 @@ import { BookOpen, TrendingUp, Calendar } from 'lucide-react';
 const ScientificStudies = () => {
   const studies = [
     {
-      title: "High-Intensity Interval Training and Metabolic Adaptation",
-      description: "Recent findings on HIIT's superior effects on metabolic flexibility and fat oxidation rates.",
-      journal: "Journal of Applied Physiology",
-      date: "June 2025",
-      category: "Cardio Training",
-      findings: "HIIT sessions of 15-20 minutes show 40% greater fat oxidation improvements versus steady-state cardio."
+      title: "Progressive Overload and Muscle Hypertrophy",
+      description: "New research shows optimal rep ranges for muscle growth vary by training experience level.",
+      journal: "Journal of Strength & Conditioning Research",
+      date: "2024",
+      category: "Strength Training",
+      findings: "Beginners see optimal growth at 8-12 reps, while advanced lifters benefit from varied rep ranges."
     },
     {
-      title: "Optimal Protein Distribution for Muscle Protein Synthesis",
-      description: "New research on protein timing and leucine thresholds for maximizing muscle growth.",
+      title: "Protein Timing and Muscle Protein Synthesis",
+      description: "Latest findings on post-workout protein consumption and its impact on recovery.",
       journal: "International Journal of Sport Nutrition",
-      date: "May 2025",
+      date: "2024",
       category: "Nutrition",
-      findings: "Distributing 25-30g protein every 3-4 hours optimizes muscle protein synthesis throughout the day."
+      findings: "Protein consumption within 2 hours post-workout maximizes muscle protein synthesis rates."
     },
     {
-      title: "Sleep Architecture and Strength Performance Recovery",
-      description: "Comprehensive analysis of deep sleep phases and their impact on neuromuscular recovery.",
-      journal: "Sports Medicine & Science",
-      date: "June 2025",
+      title: "Sleep Quality and Athletic Performance",
+      description: "Comprehensive analysis of sleep duration's effect on strength and endurance performance.",
+      journal: "Sports Medicine Review",
+      date: "2023",
       category: "Recovery",
-      findings: "90+ minutes of deep sleep correlates with 23% faster strength recovery between training sessions."
+      findings: "7-9 hours of quality sleep improves performance by 15-20% compared to <6 hours."
     }
   ];
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'Cardio Training': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'Strength Training': return 'bg-red-500/20 text-red-400 border-red-500/30';
       case 'Nutrition': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'Recovery': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';

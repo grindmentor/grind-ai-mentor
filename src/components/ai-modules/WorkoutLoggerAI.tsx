@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Search, Play, Save, Minus, Sparkles, Zap, Timer, Trophy, Target } from "lucide-react";
+import { ArrowLeft, Plus, Search, Play, Save, Minus, Sparkles, Zap, Timer, Trophy, Target, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -55,7 +55,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [workoutDuration, setWorkoutDuration] = useState(0);
-  const { exercises: searchResults, loading: searchLoading, searchExercises } = useAIExerciseSearch();
+  const { exercises: searchResults, suggestions, loading: searchLoading, searchExercises, getSuggestions } = useAIExerciseSearch();
 
   // Timer for workout duration
   useEffect(() => {
@@ -70,16 +70,17 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     return () => clearInterval(interval);
   }, [isWorkoutActive, workout.start_time]);
 
-  // Debounced search
+  // Enhanced search with suggestions
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim()) {
         searchExercises(searchQuery);
       }
-    }, 500);
+      getSuggestions(searchQuery);
+    }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchExercises]);
+  }, [searchQuery, searchExercises, getSuggestions]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -93,7 +94,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       exercise,
       sets: [{
         id: Date.now().toString(),
-        reps: 0,
+        reps: 8,
         weight: 0,
         rir: 2
       }],
@@ -108,7 +109,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     setSearchQuery('');
     toast({
       title: "Exercise added! 💪",
-      description: `${exercise.name} has been added to your workout.`,
+      description: `${exercise.name} has been added to your workout. Focus on progressive overload!`,
     });
   };
 
@@ -121,7 +122,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               ...ex,
               sets: [...ex.sets, {
                 id: Date.now().toString(),
-                reps: ex.sets[ex.sets.length - 1]?.reps || 0,
+                reps: ex.sets[ex.sets.length - 1]?.reps || 8,
                 weight: ex.sets[ex.sets.length - 1]?.weight || 0,
                 rir: ex.sets[ex.sets.length - 1]?.rir || 2
               }]
@@ -176,7 +177,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }));
     toast({
       title: "Workout started! 🔥",
-      description: "Time to crush those goals!",
+      description: "Time to build strength through progressive overload!",
     });
   };
 
@@ -214,7 +215,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
 
       toast({
         title: "Workout completed! 🎉",
-        description: `Great job! You completed ${totalSets} sets in ${Math.round(workoutDuration / 60)} minutes.`,
+        description: `Great job! You completed ${totalSets} sets in ${Math.round(workoutDuration / 60)} minutes. Keep building on this progress!`,
       });
 
       // Reset workout
@@ -273,13 +274,13 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                 </Button>
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-indigo-500/20 to-violet-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-indigo-400/20">
-                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" />
+                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" />
                   </div>
                   <div>
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">
                       AI Workout Logger
                     </h1>
-                    <p className="text-xs sm:text-sm text-gray-400">Smart training with AI-powered insights</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Track progressive overload with AI-powered exercise selection</p>
                   </div>
                 </div>
               </div>
@@ -321,7 +322,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               </CardContent>
             </Card>
 
-            {/* AI Exercise Search */}
+            {/* Enhanced AI Exercise Search */}
             <Card className="bg-gradient-to-r from-violet-900/40 to-purple-900/40 backdrop-blur-sm border-violet-500/30">
               <CardHeader>
                 <CardTitle className="text-white flex items-center text-lg sm:text-xl">
@@ -329,7 +330,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   AI Exercise Search
                 </CardTitle>
                 <CardDescription className="text-violet-300">
-                  Describe what you want to train and AI will suggest exercises
+                  Find strength exercises and track progressive overload with detailed form guidance
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -339,7 +340,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                     ref={searchInputRef}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="e.g., 'chest workout', 'cardio for fat loss', 'leg day'..."
+                    placeholder="e.g., 'bench press variations', 'leg strength exercises', 'back building'..."
                     className="bg-gray-800/50 border-violet-500/30 text-white pl-12 focus:border-violet-400"
                   />
                   {searchLoading && (
@@ -348,6 +349,26 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                     </div>
                   )}
                 </div>
+
+                {/* Dynamic Search Suggestions */}
+                {suggestions.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-400 mb-3">Quick Suggestions:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.map((suggestion) => (
+                        <Button
+                          key={suggestion}
+                          onClick={() => setSearchQuery(suggestion)}
+                          variant="outline"
+                          size="sm"
+                          className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20"
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* AI Search Results */}
                 {searchResults.length > 0 && (
@@ -389,7 +410,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                 {searchQuery && !searchLoading && searchResults.length === 0 && (
                   <div className="text-center py-8 text-gray-400">
                     <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>No exercises found. Try a different search term!</p>
+                    <p>No strength exercises found. Try searching for gym equipment or muscle groups!</p>
                   </div>
                 )}
               </CardContent>
@@ -424,6 +445,17 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    {/* Progressive Overload Hint */}
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <TrendingUp className="w-4 h-4 text-blue-400" />
+                        <h4 className="text-blue-400 font-medium text-sm">Progressive Overload Tip</h4>
+                      </div>
+                      <p className="text-blue-300 text-xs">
+                        Aim to increase weight, reps, or decrease RIR each week. Track your previous best to ensure consistent progress!
+                      </p>
+                    </div>
+
                     {/* Sets */}
                     <div className="space-y-2">
                       {workoutExercise.sets.map((set, setIndex) => (
@@ -449,7 +481,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                                 value={set.reps}
                                 onChange={(e) => updateSet(workoutExercise.id, set.id, 'reps', parseInt(e.target.value) || 0)}
                                 className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
-                                placeholder="0"
+                                placeholder="8"
                               />
                             </div>
                             <div>
@@ -510,13 +542,13 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
             {workout.exercises.length === 0 && (
               <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
                 <CardContent className="p-8 text-center">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-violet-400 opacity-50" />
-                  <h3 className="text-xl font-semibold text-white mb-2">Ready to start training?</h3>
+                  <TrendingUp className="w-12 h-12 mx-auto mb-4 text-violet-400 opacity-50" />
+                  <h3 className="text-xl font-semibold text-white mb-2">Ready to build strength?</h3>
                   <p className="text-gray-400 mb-4">
-                    Use the AI search above to find exercises, or describe what you want to train!
+                    Use the AI search above to find strength exercises and start tracking your progressive overload journey!
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {['chest workout', 'leg day', 'cardio hiit', 'full body'].map((suggestion) => (
+                    {['bench press', 'squat variations', 'deadlift form', 'back exercises'].map((suggestion) => (
                       <Button
                         key={suggestion}
                         onClick={() => setSearchQuery(suggestion)}

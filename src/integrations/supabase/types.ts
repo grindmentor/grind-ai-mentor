@@ -132,6 +132,72 @@ export type Database = {
         }
         Relationships: []
       }
+      exercises: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          difficulty_level: string | null
+          equipment: string
+          external_id: string | null
+          force_type: string | null
+          form_cues: string | null
+          gif_url: string | null
+          id: string
+          image_url: string | null
+          instructions: string | null
+          is_active: boolean
+          mechanics: string | null
+          muscle_bias: string | null
+          name: string
+          primary_muscles: string[]
+          secondary_muscles: string[]
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          equipment: string
+          external_id?: string | null
+          force_type?: string | null
+          form_cues?: string | null
+          gif_url?: string | null
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          is_active?: boolean
+          mechanics?: string | null
+          muscle_bias?: string | null
+          name: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          equipment?: string
+          external_id?: string | null
+          force_type?: string | null
+          form_cues?: string | null
+          gif_url?: string | null
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          is_active?: boolean
+          mechanics?: string | null
+          muscle_bias?: string | null
+          name?: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       food_log_entries: {
         Row: {
           calories: number | null
@@ -826,6 +892,35 @@ export type Database = {
           cut_calc_uses: number
           workout_timer_sessions: number
           food_photo_analyses: number
+        }[]
+      }
+      search_exercises: {
+        Args: {
+          search_query: string
+          muscle_filter?: string[]
+          equipment_filter?: string
+          limit_count?: number
+        }
+        Returns: {
+          category: string
+          created_at: string
+          description: string | null
+          difficulty_level: string | null
+          equipment: string
+          external_id: string | null
+          force_type: string | null
+          form_cues: string | null
+          gif_url: string | null
+          id: string
+          image_url: string | null
+          instructions: string | null
+          is_active: boolean
+          mechanics: string | null
+          muscle_bias: string | null
+          name: string
+          primary_muscles: string[]
+          secondary_muscles: string[]
+          updated_at: string
         }[]
       }
     }

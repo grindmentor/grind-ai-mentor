@@ -1,13 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Search, Sparkles, Zap, Target, Trophy, Clock, Dumbbell, Filter, Star, Grid, List } from "lucide-react";
+import { ArrowLeft, Search, Sparkles, Zap, Target, Trophy, Clock, Dumbbell, Filter, Star, Grid, List, Info, Play } from "lucide-react";
 import { PageTransition } from "@/components/ui/page-transition";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAIExerciseSearch, curatedWorkoutTemplates, WorkoutTemplate } from "@/hooks/useAIExerciseSearch";
+import { useExerciseDatabase, Exercise } from "@/hooks/useExerciseDatabase";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface WorkoutLibraryProps {
   onBack: () => void;
@@ -16,23 +18,60 @@ interface WorkoutLibraryProps {
 const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'search' | 'curated'>('curated');
-  const [selectedTemplate, setSelectedTemplate] = useState<WorkoutTemplate | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const { exercises, suggestions, loading, searchExercises, getSuggestions } = useAIExerciseSearch();
+  const [filters, setFilters] = useState({
+    difficulty: '',
+    equipment: '',
+    muscleGroup: '',
+    mechanics: ''
+  });
+  
+  const { exercises, loading, suggestions, searchExercises, getExerciseSuggestions, getRandomExercises, getExercisesByMuscle } = useExerciseDatabase();
+
+  // Load random exercises on mount
+  useEffect(() => {
+    getRandomExercises(12);
+  }, []);
+
+  // Handle search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim() || Object.values(filters).some(f => f)) {
+        const searchFilters = {
+          muscle_groups: filters.muscleGroup ? [filters.muscleGroup] : undefined,
+          equipment: filters.equipment || undefined,
+          difficulty: filters.difficulty || undefined,
+          mechanics: filters.mechanics || undefined
+        };
+        searchExercises(searchQuery, searchFilters);
+        if (searchQuery.trim()) {
+          getExerciseSuggestions(searchQuery);
+        }
+      } else {
+        getRandomExercises(12);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, filters]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setActiveTab('search');
-    if (query.trim()) {
-      searchExercises(query);
-    }
-    getSuggestions(query);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setSearchQuery(suggestion);
-    searchExercises(suggestion);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      difficulty: '',
+      equipment: '',
+      muscleGroup: '',
+      mechanics: ''
+    });
+    setSearchQuery('');
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -44,116 +83,12 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Cardio': return <Zap className="w-5 h-5" />;
-      case 'Strength': return <Dumbbell className="w-5 h-5" />;
-      case 'Full Workout': return <Trophy className="w-5 h-5" />;
-      default: return <Sparkles className="w-5 h-5" />;
+  const getMechanicsColor = (mechanics: string) => {
+    switch (mechanics) {
+      case 'Compound': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'Isolation': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
-  };
-
-  const getTemplateIcon = (type: string) => {
-    switch (type) {
-      case 'Split': return <Target className="w-5 h-5" />;
-      case 'Cardio': return <Zap className="w-5 h-5" />;
-      case 'Day': return <Dumbbell className="w-5 h-5" />;
-      default: return <Sparkles className="w-5 h-5" />;
-    }
-  };
-
-  const getTemplateGradient = (type: string) => {
-    switch (type) {
-      case 'Split': return 'from-blue-500/20 to-indigo-500/20 border-blue-500/30';
-      case 'Cardio': return 'from-red-500/20 to-orange-500/20 border-red-500/30';
-      case 'Day': return 'from-purple-500/20 to-pink-500/20 border-purple-500/30';
-      default: return 'from-gray-500/20 to-gray-600/20 border-gray-500/30';
-    }
-  };
-
-  const getCategoryGradient = (category: string) => {
-    switch (category) {
-      case 'Cardio': return 'from-red-500/20 to-orange-500/20 border-red-500/30';
-      case 'Strength': return 'from-blue-500/20 to-indigo-500/20 border-blue-500/30';
-      case 'Full Workout': return 'from-purple-500/20 to-pink-500/20 border-purple-500/30';
-      default: return 'from-gray-500/20 to-gray-600/20 border-gray-500/30';
-    }
-  };
-
-  const filterTemplatesByType = (type: string) => {
-    return curatedWorkoutTemplates.filter(template => template.type === type);
-  };
-
-  const renderTemplateGrid = (templates: WorkoutTemplate[]) => {
-    const gridClass = viewMode === 'grid' 
-      ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-      : 'flex flex-col gap-3';
-    
-    return (
-      <div className={gridClass}>
-        {templates.map((template) => (
-          <Card
-            key={template.id}
-            className={`bg-gradient-to-br ${getTemplateGradient(template.type)} backdrop-blur-sm hover:scale-[1.02] transition-all duration-300 cursor-pointer group ${viewMode === 'list' ? 'flex-row' : ''}`}
-            onClick={() => setSelectedTemplate(template)}
-          >
-            {viewMode === 'list' ? (
-              <div className="flex items-center p-4 space-x-4">
-                <div className={`p-2 rounded-lg bg-gradient-to-r ${getTemplateGradient(template.type)} flex-shrink-0`}>
-                  {getTemplateIcon(template.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="text-white group-hover:text-gray-100 text-lg font-semibold">{template.name}</h3>
-                    <Badge className={getDifficultyColor(template.difficulty)}>{template.difficulty}</Badge>
-                  </div>
-                  <p className="text-gray-300 text-sm mb-2">{template.description}</p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{template.duration}</span>
-                    </div>
-                    <span>{template.exercises.length} exercises</span>
-                    <span>{template.focus_areas.join(' • ')}</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className={`p-2 rounded-lg bg-gradient-to-r ${getTemplateGradient(template.type)}`}>
-                      {getTemplateIcon(template.type)}
-                    </div>
-                    <Badge className={getDifficultyColor(template.difficulty)}>
-                      {template.difficulty}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-white group-hover:text-gray-100 text-lg">
-                    {template.name}
-                  </CardTitle>
-                  <CardDescription className="text-gray-400 group-hover:text-gray-300">
-                    {template.focus_areas.join(' • ')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-gray-300 text-sm leading-relaxed">
-                    {template.description}
-                  </p>
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-1 text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      <span>{template.duration}</span>
-                    </div>
-                    <span className="text-gray-400">{template.exercises.length} exercises</span>
-                  </div>
-                </CardContent>
-              </>
-            )}
-          </Card>
-        ))}
-      </div>
-    );
   };
 
   const renderExerciseGrid = () => {
@@ -163,49 +98,56 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
     
     return (
       <div className={gridClass}>
-        {exercises.map((exercise, index) => (
+        {exercises.map((exercise) => (
           <Card
-            key={index}
-            className={`bg-gradient-to-br ${getCategoryGradient(exercise.category)} backdrop-blur-sm hover:scale-[1.02] transition-all duration-300 cursor-pointer group ${viewMode === 'list' ? 'flex-row' : ''}`}
+            key={exercise.id}
+            className={`bg-gradient-to-br from-slate-900/60 to-gray-800/60 backdrop-blur-sm border-slate-600/50 hover:scale-[1.02] transition-all duration-300 cursor-pointer group ${viewMode === 'list' ? 'flex-row' : ''}`}
           >
             {viewMode === 'list' ? (
               <div className="flex items-start p-4 space-x-4">
-                <div className={`p-2 rounded-lg bg-gradient-to-r ${getCategoryGradient(exercise.category)} flex-shrink-0`}>
-                  {getCategoryIcon(exercise.category)}
+                <div className="p-2 rounded-lg bg-gradient-to-r from-slate-600/50 to-gray-700/50 flex-shrink-0">
+                  <Dumbbell className="w-5 h-5 text-slate-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="text-white group-hover:text-gray-100 text-lg font-semibold">{exercise.name}</h3>
-                    <Badge className={getDifficultyColor(exercise.difficulty)}>{exercise.difficulty}</Badge>
-                    <Badge variant="outline" className="border-gray-500 text-gray-300 text-xs">{exercise.category}</Badge>
+                    <h3 className="text-white group-hover:text-gray-100 text-lg font-semibold truncate">{exercise.name}</h3>
+                    <Badge className={getDifficultyColor(exercise.difficulty_level)}>{exercise.difficulty_level}</Badge>
+                    <Badge className={getMechanicsColor(exercise.mechanics)}>{exercise.mechanics}</Badge>
                   </div>
-                  <p className="text-gray-300 text-sm mb-2">{exercise.description}</p>
+                  <p className="text-gray-300 text-sm mb-2 line-clamp-2">{exercise.description}</p>
                   <div className="flex items-center space-x-4 text-xs text-gray-400">
-                    <span>🎯 {exercise.muscle_groups.join(' • ')}</span>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{exercise.estimated_duration}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Target className="w-3 h-3" />
-                      <span>{exercise.equipment}</span>
-                    </div>
+                    <span>🎯 {exercise.primary_muscles.join(' • ')}</span>
+                    <span>🏋️ {exercise.equipment}</span>
+                    <span>{exercise.force_type}</span>
                   </div>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedExercise(exercise);
+                    }}
+                    className="text-slate-400 hover:text-slate-300 hover:bg-slate-500/20"
+                  >
+                    <Info className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             ) : (
               <>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between mb-2">
-                    <div className={`p-2 rounded-lg bg-gradient-to-r ${getCategoryGradient(exercise.category)}`}>
-                      {getCategoryIcon(exercise.category)}
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-slate-600/50 to-gray-700/50">
+                      <Dumbbell className="w-5 h-5 text-slate-400" />
                     </div>
                     <div className="flex flex-col items-end space-y-1">
-                      <Badge className={getDifficultyColor(exercise.difficulty)}>
-                        {exercise.difficulty}
+                      <Badge className={getDifficultyColor(exercise.difficulty_level)}>
+                        {exercise.difficulty_level}
                       </Badge>
-                      <Badge variant="outline" className="border-gray-500 text-gray-300 text-xs">
-                        {exercise.category}
+                      <Badge className={getMechanicsColor(exercise.mechanics)}>
+                        {exercise.mechanics}
                       </Badge>
                     </div>
                   </div>
@@ -213,35 +155,42 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                     {exercise.name}
                   </CardTitle>
                   <CardDescription className="text-gray-400 group-hover:text-gray-300">
-                    🎯 {exercise.muscle_groups.join(' • ')}
+                    🎯 {exercise.primary_muscles.join(' • ')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-gray-300 text-sm leading-relaxed">
+                  <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
                     {exercise.description}
                   </p>
-                  {exercise.form_tips && (
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                      <h4 className="text-blue-400 font-medium text-sm mb-1">Form Tips:</h4>
-                      <p className="text-blue-300 text-xs">{exercise.form_tips}</p>
+                  
+                  {exercise.secondary_muscles.length > 0 && (
+                    <div className="bg-slate-500/10 border border-slate-500/20 rounded-lg p-3">
+                      <h4 className="text-slate-400 font-medium text-sm mb-1">Secondary Muscles:</h4>
+                      <p className="text-slate-300 text-xs">{exercise.secondary_muscles.join(', ')}</p>
                     </div>
                   )}
-                  {exercise.muscle_focus && (
-                    <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
-                      <h4 className="text-purple-400 font-medium text-sm mb-1">Muscle Focus:</h4>
-                      <p className="text-purple-300 text-xs">{exercise.muscle_focus}</p>
-                    </div>
-                  )}
+                  
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1 text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      <span>{exercise.estimated_duration}</span>
+                      <span>🏋️ {exercise.equipment}</span>
                     </div>
                     <div className="flex items-center space-x-1 text-gray-400">
-                      <Target className="w-3 h-3" />
-                      <span>{exercise.equipment}</span>
+                      <span>{exercise.force_type}</span>
                     </div>
                   </div>
+                  
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedExercise(exercise);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-slate-500/30 text-slate-400 hover:bg-slate-500/20 hover:border-slate-400"
+                  >
+                    <Info className="w-4 h-4 mr-2" />
+                    View Details
+                  </Button>
                 </CardContent>
               </>
             )}
@@ -274,9 +223,9 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                   </div>
                   <div>
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-400 to-gray-500 bg-clip-text text-transparent">
-                      AI Workout Library
+                      Exercise Library
                     </h1>
-                    <p className="text-xs sm:text-sm text-gray-400">Discover exercises and curated workouts with AI insights</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Comprehensive database of gym-based strength exercises</p>
                   </div>
                 </div>
               </div>
@@ -308,15 +257,15 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
               </div>
             </div>
 
-            {/* AI Search with Dynamic Suggestions */}
+            {/* Search and Filters */}
             <Card className="bg-gradient-to-r from-slate-900/40 to-gray-900/40 backdrop-blur-sm border-slate-500/30">
               <CardHeader>
                 <CardTitle className="text-white flex items-center text-lg sm:text-xl">
-                  <Sparkles className="w-5 h-5 mr-2 text-slate-400" />
-                  AI Exercise Discovery
+                  <Search className="w-5 h-5 mr-2 text-slate-400" />
+                  Exercise Search & Filters
                 </CardTitle>
                 <CardDescription className="text-slate-300">
-                  Search for gym exercises with AI-powered insights and form guidance
+                  Search our comprehensive database of gym-based strength exercises
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -325,7 +274,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                   <Input
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
-                    placeholder="e.g., 'bench press form', 'quad exercises', 'compound movements'..."
+                    placeholder="Search exercises, muscle groups, or equipment..."
                     className="bg-gray-800/50 border-slate-500/30 text-white pl-12 focus:border-slate-400 text-base"
                   />
                   {loading && (
@@ -354,99 +303,228 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                     </div>
                   </div>
                 )}
+
+                {/* Filters */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Select value={filters.difficulty} onValueChange={(value) => setFilters(prev => ({ ...prev, difficulty: value }))}>
+                    <SelectTrigger className="bg-gray-800/50 border-slate-500/30 text-white">
+                      <SelectValue placeholder="Difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Levels</SelectItem>
+                      <SelectItem value="Beginner">Beginner</SelectItem>
+                      <SelectItem value="Intermediate">Intermediate</SelectItem>
+                      <SelectItem value="Advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filters.muscleGroup} onValueChange={(value) => setFilters(prev => ({ ...prev, muscleGroup: value }))}>
+                    <SelectTrigger className="bg-gray-800/50 border-slate-500/30 text-white">
+                      <SelectValue placeholder="Muscle Group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Muscles</SelectItem>
+                      <SelectItem value="Chest">Chest</SelectItem>
+                      <SelectItem value="Lats">Back</SelectItem>
+                      <SelectItem value="Shoulders">Shoulders</SelectItem>
+                      <SelectItem value="Quadriceps">Legs</SelectItem>
+                      <SelectItem value="Biceps">Arms</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filters.equipment} onValueChange={(value) => setFilters(prev => ({ ...prev, equipment: value }))}>
+                    <SelectTrigger className="bg-gray-800/50 border-slate-500/30 text-white">
+                      <SelectValue placeholder="Equipment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Equipment</SelectItem>
+                      <SelectItem value="Barbell">Barbell</SelectItem>
+                      <SelectItem value="Dumbbells">Dumbbells</SelectItem>
+                      <SelectItem value="Cable Machine">Cable Machine</SelectItem>
+                      <SelectItem value="Pull-up Bar">Pull-up Bar</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filters.mechanics} onValueChange={(value) => setFilters(prev => ({ ...prev, mechanics: value }))}>
+                    <SelectTrigger className="bg-gray-800/50 border-slate-500/30 text-white">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="Compound">Compound</SelectItem>
+                      <SelectItem value="Isolation">Isolation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {Object.values(filters).some(f => f) && (
+                  <Button
+                    onClick={clearFilters}
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-500/30 text-slate-400 hover:bg-slate-500/20"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    Clear Filters
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
-            {/* Tab Navigation */}
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => setActiveTab('curated')}
-                variant={activeTab === 'curated' ? 'default' : 'outline'}
-                className={activeTab === 'curated' ? 
-                  'bg-slate-600/50 text-white' : 
-                  'border-slate-500/30 text-slate-400 hover:bg-slate-500/20'
-                }
-              >
-                <Star className="w-4 h-4 mr-2" />
-                Curated Library
-              </Button>
-              <Button
-                onClick={() => setActiveTab('search')}
-                variant={activeTab === 'search' ? 'default' : 'outline'}
-                className={activeTab === 'search' ? 
-                  'bg-slate-600/50 text-white' : 
-                  'border-slate-500/30 text-slate-400 hover:bg-slate-500/20'
-                }
-                disabled={!searchQuery}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Search Results ({exercises.length})
-              </Button>
-            </div>
-
-            {/* Curated Library */}
-            {activeTab === 'curated' && (
-              <div className="space-y-8">
-                {/* Workout Splits */}
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                    <Target className="w-5 h-5 mr-2 text-blue-400" />
-                    Workout Splits
+            {/* Exercise Results */}
+            {exercises.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-white">
+                    {searchQuery || Object.values(filters).some(f => f) ? 'Search Results' : 'Featured Exercises'} ({exercises.length})
                   </h2>
-                  {renderTemplateGrid(filterTemplatesByType('Split'))}
                 </div>
-
-                {/* Cardio Exercises */}
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                    <Zap className="w-5 h-5 mr-2 text-red-400" />
-                    Strength-Based Cardio
-                  </h2>
-                  {renderTemplateGrid(filterTemplatesByType('Cardio'))}
-                </div>
-
-                {/* Workout Days */}
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                    <Dumbbell className="w-5 h-5 mr-2 text-purple-400" />
-                    Specialized Workout Days
-                  </h2>
-                  {renderTemplateGrid(filterTemplatesByType('Day'))}
-                </div>
+                {renderExerciseGrid()}
               </div>
             )}
 
-            {/* Search Results */}
-            {activeTab === 'search' && (
-              <>
-                {exercises.length > 0 && renderExerciseGrid()}
+            {/* Exercise Detail Modal */}
+            {selectedExercise && (
+              <Card className="bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm border-gray-600/50 fixed inset-4 z-50 overflow-y-auto">
+                <CardHeader className="sticky top-0 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white text-xl mb-2">{selectedExercise.name}</CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={getDifficultyColor(selectedExercise.difficulty_level)}>
+                          {selectedExercise.difficulty_level}
+                        </Badge>
+                        <Badge className={getMechanicsColor(selectedExercise.mechanics)}>
+                          {selectedExercise.mechanics}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedExercise(null)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-white font-medium mb-2">Primary Muscles</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedExercise.primary_muscles.map((muscle) => (
+                            <Badge key={muscle} variant="outline" className="border-blue-500/30 text-blue-400">
+                              {muscle}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {selectedExercise.secondary_muscles.length > 0 && (
+                        <div>
+                          <h4 className="text-white font-medium mb-2">Secondary Muscles</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedExercise.secondary_muscles.map((muscle) => (
+                              <Badge key={muscle} variant="outline" className="border-purple-500/30 text-purple-400">
+                                {muscle}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-white font-medium mb-2">Equipment & Details</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Equipment:</span>
+                            <span className="text-white">{selectedExercise.equipment}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Force Type:</span>
+                            <span className="text-white">{selectedExercise.force_type}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Category:</span>
+                            <span className="text-white">{selectedExercise.category}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {selectedExercise.description && (
+                    <div>
+                      <h4 className="text-white font-medium mb-3">Description</h4>
+                      <p className="text-gray-300 leading-relaxed">{selectedExercise.description}</p>
+                    </div>
+                  )}
+                  
+                  {selectedExercise.instructions && (
+                    <div>
+                      <h4 className="text-white font-medium mb-3">Instructions</h4>
+                      <p className="text-gray-300 leading-relaxed">{selectedExercise.instructions}</p>
+                    </div>
+                  )}
+                  
+                  {selectedExercise.form_cues && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                      <h4 className="text-blue-400 font-medium mb-2 flex items-center">
+                        <Target className="w-4 h-4 mr-2" />
+                        Form Cues
+                      </h4>
+                      <p className="text-blue-300 text-sm leading-relaxed">{selectedExercise.form_cues}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex space-x-3 pt-4 border-t border-gray-700/50">
+                    <Button
+                      onClick={() => setSelectedExercise(null)}
+                      className="bg-gradient-to-r from-slate-500 to-gray-600 hover:from-slate-600 hover:to-gray-700 flex-1"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-                {/* Search States */}
-                {!loading && searchQuery && exercises.length === 0 && (
-                  <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                    <CardContent className="p-8 text-center">
-                      <Sparkles className="w-12 h-12 mx-auto mb-4 text-slate-400 opacity-50" />
-                      <h3 className="text-xl font-semibold text-white mb-2">No gym exercises found</h3>
-                      <p className="text-gray-400 mb-4">
-                        Try searching for strength training exercises, muscle groups, or equipment.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
+            {/* Search States */}
+            {!loading && (searchQuery || Object.values(filters).some(f => f)) && exercises.length === 0 && (
+              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                <CardContent className="p-8 text-center">
+                  <Search className="w-12 h-12 mx-auto mb-4 text-slate-400 opacity-50" />
+                  <h3 className="text-xl font-semibold text-white mb-2">No exercises found</h3>
+                  <p className="text-gray-400 mb-4">
+                    Try adjusting your search terms or filters to find exercises.
+                  </p>
+                  <Button
+                    onClick={clearFilters}
+                    variant="outline"
+                    className="border-slate-500/30 text-slate-400 hover:bg-slate-500/20"
+                  >
+                    Clear Filters
+                  </Button>
+                </CardContent>
+              </Card>
             )}
 
             {/* Welcome State */}
-            {activeTab === 'curated' && (
+            {!searchQuery && !Object.values(filters).some(f => f) && exercises.length > 0 && (
               <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 mt-8">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 bg-gradient-to-r from-slate-500/20 to-gray-600/40 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="w-8 h-8 text-slate-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Welcome to AI Workout Library</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">Comprehensive Exercise Database</h3>
                   <p className="text-gray-400 max-w-2xl mx-auto">
-                    Explore our curated collection of scientifically-backed workout programs and use AI search 
-                    to discover exercises with detailed form guidance and muscle targeting information.
+                    Explore our curated collection of gym-based strength training exercises. Each exercise includes detailed 
+                    instructions, form cues, muscle targeting information, and difficulty ratings to help you train effectively.
                   </p>
                 </CardContent>
               </Card>

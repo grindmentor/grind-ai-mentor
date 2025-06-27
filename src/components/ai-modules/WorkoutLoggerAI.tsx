@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Search, Play, Save, Minus, Sparkles, Zap, Timer, Trophy, Target, TrendingUp, Dumbbell } from "lucide-react";
+import { ArrowLeft, Plus, Search, Play, Save, Minus, Sparkles, Zap, Timer, Trophy, Target, TrendingUp, Dumbbell, Clock, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PageTransition } from "@/components/ui/page-transition";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useExerciseDatabase, Exercise } from "@/hooks/useExerciseDatabase";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface WorkoutLoggerAIProps {
   onBack: () => void;
@@ -21,15 +22,6 @@ interface WorkoutSet {
   reps: number;
   weight: number;
   rir: number;
-}
-
-interface Exercise {
-  id: string;
-  name: string;
-  muscle_groups: string[];
-  equipment: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  category: string;
 }
 
 interface WorkoutExercise {
@@ -48,64 +40,12 @@ interface WorkoutSession {
   notes?: string;
 }
 
-// Large exercise database
-const EXERCISE_DATABASE: Exercise[] = [
-  // Chest
-  { id: '1', name: 'Barbell Bench Press', muscle_groups: ['Chest', 'Triceps'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '2', name: 'Dumbbell Bench Press', muscle_groups: ['Chest', 'Triceps'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '3', name: 'Incline Barbell Press', muscle_groups: ['Upper Chest', 'Triceps'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '4', name: 'Incline Dumbbell Press', muscle_groups: ['Upper Chest', 'Triceps'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '5', name: 'Decline Bench Press', muscle_groups: ['Lower Chest', 'Triceps'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '6', name: 'Chest Flyes', muscle_groups: ['Chest'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '7', name: 'Cable Flyes', muscle_groups: ['Chest'], equipment: 'Cable Machine', difficulty: 'Beginner', category: 'Strength' },
-  { id: '8', name: 'Push-ups', muscle_groups: ['Chest', 'Triceps'], equipment: 'Bodyweight', difficulty: 'Beginner', category: 'Strength' },
-  { id: '9', name: 'Dips', muscle_groups: ['Chest', 'Triceps'], equipment: 'Dip Station', difficulty: 'Intermediate', category: 'Strength' },
-  
-  // Back
-  { id: '10', name: 'Deadlift', muscle_groups: ['Back', 'Hamstrings', 'Glutes'], equipment: 'Barbell', difficulty: 'Advanced', category: 'Strength' },
-  { id: '11', name: 'Pull-ups', muscle_groups: ['Lats', 'Biceps'], equipment: 'Pull-up Bar', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '12', name: 'Chin-ups', muscle_groups: ['Lats', 'Biceps'], equipment: 'Pull-up Bar', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '13', name: 'Barbell Rows', muscle_groups: ['Lats', 'Rhomboids'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '14', name: 'Dumbbell Rows', muscle_groups: ['Lats', 'Rhomboids'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '15', name: 'Lat Pulldowns', muscle_groups: ['Lats', 'Biceps'], equipment: 'Cable Machine', difficulty: 'Beginner', category: 'Strength' },
-  { id: '16', name: 'Cable Rows', muscle_groups: ['Lats', 'Rhomboids'], equipment: 'Cable Machine', difficulty: 'Beginner', category: 'Strength' },
-  { id: '17', name: 'T-Bar Rows', muscle_groups: ['Lats', 'Rhomboids'], equipment: 'T-Bar', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '18', name: 'Face Pulls', muscle_groups: ['Rear Delts', 'Rhomboids'], equipment: 'Cable Machine', difficulty: 'Beginner', category: 'Strength' },
-  
-  // Legs
-  { id: '19', name: 'Back Squat', muscle_groups: ['Quadriceps', 'Glutes'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '20', name: 'Front Squat', muscle_groups: ['Quadriceps', 'Core'], equipment: 'Barbell', difficulty: 'Advanced', category: 'Strength' },
-  { id: '21', name: 'Romanian Deadlift', muscle_groups: ['Hamstrings', 'Glutes'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '22', name: 'Bulgarian Split Squats', muscle_groups: ['Quadriceps', 'Glutes'], equipment: 'Dumbbells', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '23', name: 'Leg Press', muscle_groups: ['Quadriceps', 'Glutes'], equipment: 'Leg Press Machine', difficulty: 'Beginner', category: 'Strength' },
-  { id: '24', name: 'Leg Curls', muscle_groups: ['Hamstrings'], equipment: 'Leg Curl Machine', difficulty: 'Beginner', category: 'Strength' },
-  { id: '25', name: 'Leg Extensions', muscle_groups: ['Quadriceps'], equipment: 'Leg Extension Machine', difficulty: 'Beginner', category: 'Strength' },
-  { id: '26', name: 'Walking Lunges', muscle_groups: ['Quadriceps', 'Glutes'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '27', name: 'Calf Raises', muscle_groups: ['Calves'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  
-  // Shoulders
-  { id: '28', name: 'Overhead Press', muscle_groups: ['Shoulders', 'Triceps'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '29', name: 'Dumbbell Shoulder Press', muscle_groups: ['Shoulders', 'Triceps'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '30', name: 'Lateral Raises', muscle_groups: ['Side Delts'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '31', name: 'Rear Delt Flyes', muscle_groups: ['Rear Delts'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '32', name: 'Arnold Press', muscle_groups: ['Shoulders'], equipment: 'Dumbbells', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '33', name: 'Upright Rows', muscle_groups: ['Shoulders', 'Traps'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  
-  // Arms
-  { id: '34', name: 'Barbell Curls', muscle_groups: ['Biceps'], equipment: 'Barbell', difficulty: 'Beginner', category: 'Strength' },
-  { id: '35', name: 'Dumbbell Curls', muscle_groups: ['Biceps'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '36', name: 'Hammer Curls', muscle_groups: ['Biceps', 'Forearms'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-  { id: '37', name: 'Close-Grip Bench Press', muscle_groups: ['Triceps', 'Chest'], equipment: 'Barbell', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '38', name: 'Tricep Dips', muscle_groups: ['Triceps'], equipment: 'Dip Station', difficulty: 'Intermediate', category: 'Strength' },
-  { id: '39', name: 'Tricep Pushdowns', muscle_groups: ['Triceps'], equipment: 'Cable Machine', difficulty: 'Beginner', category: 'Strength' },
-  { id: '40', name: 'Overhead Tricep Extension', muscle_groups: ['Triceps'], equipment: 'Dumbbells', difficulty: 'Beginner', category: 'Strength' },
-];
-
 const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { exercises, loading, suggestions, searchExercises, getExerciseSuggestions, getRandomExercises } = useExerciseDatabase();
   
   const [workout, setWorkout] = useState<WorkoutSession>({
     name: 'New Workout',
@@ -115,10 +55,10 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   });
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [activeTab, setActiveTab] = useState('search');
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   
   // Custom exercise form
   const [customExercise, setCustomExercise] = useState({
@@ -141,18 +81,25 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     return () => clearInterval(interval);
   }, [isWorkoutActive, workout.start_time]);
 
-  // Search exercises
+  // Load random exercises on mount
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = EXERCISE_DATABASE.filter(exercise =>
-        exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        exercise.muscle_groups.some(group => group.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        exercise.equipment.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredExercises(filtered.slice(0, 10)); // Limit to 10 results
-    } else {
-      setFilteredExercises([]);
+    if (activeTab === 'search' && exercises.length === 0 && !searchQuery) {
+      getRandomExercises(8);
     }
+  }, [activeTab]);
+
+  // Handle search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        searchExercises(searchQuery);
+        getExerciseSuggestions(searchQuery);
+      } else {
+        getRandomExercises(8);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
   const formatDuration = (seconds: number) => {
@@ -180,13 +127,14 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }));
 
     setSearchQuery('');
+    setSelectedExercise(null);
     toast({
       title: "Exercise added! 💪",
       description: `${exercise.name} has been added to your workout.`,
     });
   };
 
-  const addCustomExercise = () => {
+  const addCustomExercise = async () => {
     if (!customExercise.name.trim()) {
       toast({
         title: "Exercise name required",
@@ -199,10 +147,18 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     const exercise: Exercise = {
       id: Date.now().toString(),
       name: customExercise.name,
-      muscle_groups: customExercise.muscle_groups.split(',').map(m => m.trim()).filter(Boolean),
+      description: 'Custom exercise',
+      instructions: '',
+      primary_muscles: customExercise.muscle_groups.split(',').map(m => m.trim()).filter(Boolean),
+      secondary_muscles: [],
       equipment: customExercise.equipment || 'Unknown',
-      difficulty: customExercise.difficulty,
-      category: 'Strength'
+      difficulty_level: customExercise.difficulty,
+      category: 'Strength',
+      force_type: 'Push',
+      mechanics: 'Compound',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     addExerciseToWorkout(exercise);
@@ -352,6 +308,11 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    searchExercises(suggestion);
+  };
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-black via-indigo-900/10 to-violet-800/20 text-white">
@@ -377,7 +338,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">
                       Workout Logger
                     </h1>
-                    <p className="text-xs sm:text-sm text-gray-400">Track your workouts and progressive overload</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Track your workouts with our exercise database</p>
                   </div>
                 </div>
               </div>
@@ -426,13 +387,16 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   <Sparkles className="w-5 h-5 mr-2 text-violet-400" />
                   Add Exercises
                 </CardTitle>
+                <CardDescription className="text-violet-200/70">
+                  Search from our curated database of gym exercises
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                   <TabsList className="grid w-full grid-cols-2 bg-violet-900/30">
                     <TabsTrigger value="search" className="data-[state=active]:bg-violet-500/30">
                       <Search className="w-4 h-4 mr-2" />
-                      Search
+                      Search Database
                     </TabsTrigger>
                     <TabsTrigger value="custom" className="data-[state=active]:bg-violet-500/30">
                       <Plus className="w-4 h-4 mr-2" />
@@ -447,36 +411,102 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                         ref={searchInputRef}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search exercises (e.g., 'bench press', 'squats', 'back')..."
+                        placeholder="Search exercises, muscle groups, or equipment..."
                         className="bg-gray-800/50 border-violet-500/30 text-white pl-12 focus:border-violet-400"
                       />
+                      {loading && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
                     </div>
 
-                    {filteredExercises.length > 0 && (
-                      <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
-                        {filteredExercises.map((exercise) => (
+                    {/* Search Suggestions */}
+                    {suggestions.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-400 mb-3">Suggestions:</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {suggestions.map((suggestion) => (
+                            <Button
+                              key={suggestion}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              variant="outline"
+                              size="sm"
+                              className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20 hover:border-violet-400"
+                            >
+                              {suggestion}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Exercise Results */}
+                    {exercises.length > 0 && (
+                      <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+                        {exercises.map((exercise) => (
                           <Card
                             key={exercise.id}
-                            onClick={() => addExerciseToWorkout(exercise)}
                             className="bg-gray-800/30 border-gray-600/50 hover:bg-gray-700/40 transition-all cursor-pointer group"
                           >
                             <CardContent className="p-4">
                               <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center space-x-2">
-                                  <Dumbbell className="w-4 h-4 text-violet-400" />
-                                  <h4 className="font-semibold text-white group-hover:text-violet-300">
-                                    {exercise.name}
-                                  </h4>
+                                <div className="flex items-start space-x-3 flex-1">
+                                  <div className="flex items-center space-x-2">
+                                    <Dumbbell className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="font-semibold text-white group-hover:text-violet-300 truncate">
+                                        {exercise.name}
+                                      </h4>
+                                      <p className="text-sm text-gray-400 truncate">
+                                        🎯 {exercise.primary_muscles.join(', ')}
+                                      </p>
+                                      {exercise.secondary_muscles.length > 0 && (
+                                        <p className="text-xs text-gray-500 truncate">
+                                          Secondary: {exercise.secondary_muscles.join(', ')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                  <Badge className={getDifficultyColor(exercise.difficulty)}>
-                                    {exercise.difficulty}
+                                <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                                  <Badge className={getDifficultyColor(exercise.difficulty_level)}>
+                                    {exercise.difficulty_level}
                                   </Badge>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedExercise(exercise);
+                                          }}
+                                          className="p-1 h-6 w-6"
+                                        >
+                                          <Info className="w-3 h-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>View details</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  <Button
+                                    onClick={() => addExerciseToWorkout(exercise)}
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20"
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Add
+                                  </Button>
                                 </div>
                               </div>
                               <div className="flex items-center justify-between text-xs text-gray-400">
-                                <span>🎯 {exercise.muscle_groups.join(', ')}</span>
                                 <span>🏋️ {exercise.equipment}</span>
+                                <span>{exercise.mechanics} • {exercise.force_type}</span>
                               </div>
                             </CardContent>
                           </Card>
@@ -484,7 +514,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                       </div>
                     )}
 
-                    {searchQuery && filteredExercises.length === 0 && (
+                    {!loading && searchQuery && exercises.length === 0 && (
                       <div className="text-center py-8 text-gray-400">
                         <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p>No exercises found. Try a different search term or create a custom exercise!</p>
@@ -534,6 +564,88 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               </CardContent>
             </Card>
 
+            {/* Exercise Detail Modal */}
+            {selectedExercise && (
+              <Card className="bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-sm border-gray-600/50 fixed inset-4 z-50 overflow-y-auto">
+                <CardHeader className="sticky top-0 bg-gray-900/95 backdrop-blur-sm">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white text-xl">{selectedExercise.name}</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedExercise(null)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">Primary Muscles:</span>
+                      <p className="text-white">{selectedExercise.primary_muscles.join(', ')}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Equipment:</span>
+                      <p className="text-white">{selectedExercise.equipment}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Difficulty:</span>
+                      <Badge className={getDifficultyColor(selectedExercise.difficulty_level)}>
+                        {selectedExercise.difficulty_level}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Type:</span>
+                      <p className="text-white">{selectedExercise.mechanics} • {selectedExercise.force_type}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedExercise.description && (
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Description</h4>
+                      <p className="text-gray-300">{selectedExercise.description}</p>
+                    </div>
+                  )}
+                  
+                  {selectedExercise.instructions && (
+                    <div>
+                      <h4 className="text-white font-medium mb-2">Instructions</h4>
+                      <p className="text-gray-300">{selectedExercise.instructions}</p>
+                    </div>
+                  )}
+                  
+                  {selectedExercise.form_cues && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                      <h4 className="text-blue-400 font-medium mb-2">Form Cues</h4>
+                      <p className="text-blue-300 text-sm">{selectedExercise.form_cues}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex space-x-3">
+                    <Button
+                      onClick={() => {
+                        addExerciseToWorkout(selectedExercise);
+                        setSelectedExercise(null);
+                      }}
+                      className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add to Workout
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedExercise(null)}
+                      className="border-gray-500/30 text-gray-400 hover:bg-gray-500/20"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Workout Exercises */}
             <div className="space-y-4">
               {workout.exercises.map((workoutExercise, exerciseIndex) => (
@@ -545,9 +657,9 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                         <div>
                           <CardTitle className="text-white text-lg">{workoutExercise.exercise.name}</CardTitle>
                           <CardDescription className="flex items-center space-x-2">
-                            <span>{workoutExercise.exercise.muscle_groups.join(', ')}</span>
-                            <Badge className={getDifficultyColor(workoutExercise.exercise.difficulty)}>
-                              {workoutExercise.exercise.difficulty}
+                            <span>{workoutExercise.exercise.primary_muscles.join(', ')}</span>
+                            <Badge className={getDifficultyColor(workoutExercise.exercise.difficulty_level)}>
+                              {workoutExercise.exercise.difficulty_level}
                             </Badge>
                           </CardDescription>
                         </div>
@@ -652,7 +764,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   <Dumbbell className="w-12 h-12 mx-auto mb-4 text-violet-400 opacity-50" />
                   <h3 className="text-xl font-semibold text-white mb-2">Ready to start your workout?</h3>
                   <p className="text-gray-400 mb-4">
-                    Search for exercises or create custom ones to begin tracking your workout!
+                    Search our comprehensive exercise database to begin tracking your workout!
                   </p>
                 </CardContent>
               </Card>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dumbbell, ArrowLeft, Download, Play, MessageCircle, Sparkles, Target, Users, Clock, History } from 'lucide-react';
 import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import FeatureGate from "@/components/FeatureGate";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/contexts/UserDataContext";
@@ -45,6 +46,7 @@ const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
   const [showHistory, setShowHistory] = useState(false);
   const { canUseFeature, incrementUsage } = useUsageTracking();
   const { getCleanUserContext } = useUserData();
+  const { canUse } = useFeatureAccess('smart_training');
 
   useEffect(() => {
     loadConversationHistory();
@@ -146,12 +148,13 @@ const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
   ];
 
   const handleExampleClick = (prompt: string) => {
+    if (!canUse) return;
     setInput(prompt);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !canUseFeature('training_programs')) return;
+    if (!input.trim() || !canUse) return;
     
     const success = await incrementUsage('training_programs');
     if (!success) return;
@@ -397,237 +400,241 @@ Based on your request: ${input}
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/20 to-blue-700 animate-fade-in">
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                onClick={onBack} 
-                className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Dashboard
-              </Button>
+    <FeatureGate featureKey="smart_training" previewMode={!canUse}>
+      <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/20 to-blue-700 animate-fade-in">
+        <div className="p-6">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Header */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-blue-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 border border-blue-400/20">
-                  <Dumbbell className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent">
-                    Smart Training AI
-                  </h1>
-                  <p className="text-slate-400 text-lg">Evidence-based program design (Jeff Nippard style)</p>
+                <Button 
+                  variant="ghost" 
+                  onClick={onBack} 
+                  className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Dashboard
+                </Button>
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-blue-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 border border-blue-400/20">
+                    <Dumbbell className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent">
+                      Smart Training AI
+                    </h1>
+                    <p className="text-slate-400 text-lg">Evidence-based program design (Jeff Nippard style)</p>
+                  </div>
                 </div>
               </div>
+              
+              <div className="flex items-center space-x-3">
+                <Button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="bg-blue-600/20 hover:bg-blue-700/30 border border-blue-500/30 backdrop-blur-sm"
+                  disabled={!canUse}
+                >
+                  <History className="w-4 h-4 mr-2" />
+                  History
+                </Button>
+                <UsageIndicator featureKey="training_programs" featureName="Training Programs" compact />
+              </div>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <Button
-                onClick={() => setShowHistory(!showHistory)}
-                className="bg-blue-600/20 hover:bg-blue-700/30 border border-blue-500/30 backdrop-blur-sm"
-              >
-                <History className="w-4 h-4 mr-2" />
-                History
-              </Button>
-              <UsageIndicator featureKey="training_programs" featureName="Training Programs" compact />
-            </div>
-          </div>
 
-          {/* History Panel */}
-          {showHistory && (
-            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Training Program History</CardTitle>
-              </CardHeader>
-              <CardContent className="max-h-96 overflow-y-auto space-y-4">
-                {conversationHistory.length === 0 ? (
-                  <p className="text-slate-400">No previous training programs found.</p>
-                ) : (
-                  conversationHistory.map((entry) => (
-                    <div key={entry.id} className="bg-slate-800/30 rounded-lg p-4 space-y-2">
-                      <div className="text-sm text-slate-400">
-                        {new Date(entry.timestamp).toLocaleDateString()}
-                      </div>
-                      <div className="text-white">
-                        <strong>Prompt:</strong> {entry.prompt}
-                      </div>
-                      <div className="text-slate-300 text-sm">
-                        <strong>Program:</strong> {entry.response.substring(0, 200)}...
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant={entry.feedback === 'positive' ? 'default' : 'outline'}
-                          onClick={() => provideFeedback(entry.id, 'positive')}
-                          className="text-xs"
-                        >
-                          👍
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={entry.feedback === 'negative' ? 'default' : 'outline'}
-                          onClick={() => provideFeedback(entry.id, 'negative')}
-                          className="text-xs"
-                        >
-                          👎
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Status Badge */}
-          <div className="flex justify-center">
-            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 px-4 py-2 text-sm">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Jeff Nippard & TNF inspired - Evidence-based training science
-            </Badge>
-          </div>
-
-          {/* Main Content */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Input Panel */}
-            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white text-xl flex items-center">
-                  <MessageCircle className="w-5 h-5 mr-3 text-blue-400" />
-                  Program Design
-                </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Science-based training programs with RPE autoregulation
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Loading Tips */}
-                {isLoading && (
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
-                      <span className="text-blue-300 font-medium">Designing Your Program...</span>
-                    </div>
-                    <p className="text-slate-300 text-sm leading-relaxed">
-                      {loadingTips[currentTipIndex]}
-                    </p>
-                    <div className="mt-3 text-xs text-slate-400">
-                      Check out other modules while I apply the latest training science!
-                    </div>
-                  </div>
-                )}
-
-                {/* Example Prompts */}
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium flex items-center">
-                    <Target className="w-4 h-4 mr-2 text-blue-400" />
-                    Program Templates
-                  </h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    {examplePrompts.map((example, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleExampleClick(example.prompt)}
-                        className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-200 group backdrop-blur-sm"
-                      >
-                        <div className="flex items-center space-x-3 mb-2">
-                          <div className="text-blue-400 group-hover:text-blue-300 transition-colors">
-                            {example.icon}
-                          </div>
-                          <span className="text-white font-medium">{example.title}</span>
+            {/* History Panel */}
+            {showHistory && (
+              <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-white">Training Program History</CardTitle>
+                </CardHeader>
+                <CardContent className="max-h-96 overflow-y-auto space-y-4">
+                  {conversationHistory.length === 0 ? (
+                    <p className="text-slate-400">No previous training programs found.</p>
+                  ) : (
+                    conversationHistory.map((entry) => (
+                      <div key={entry.id} className="bg-slate-800/30 rounded-lg p-4 space-y-2">
+                        <div className="text-sm text-slate-400">
+                          {new Date(entry.timestamp).toLocaleDateString()}
                         </div>
-                        <p className="text-slate-400 text-sm">"{example.prompt}"</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                        <div className="text-white">
+                          <strong>Prompt:</strong> {entry.prompt}
+                        </div>
+                        <div className="text-slate-300 text-sm">
+                          <strong>Program:</strong> {entry.response.substring(0, 200)}...
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            variant={entry.feedback === 'positive' ? 'default' : 'outline'}
+                            onClick={() => provideFeedback(entry.id, 'positive')}
+                            className="text-xs"
+                          >
+                            👍
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={entry.feedback === 'negative' ? 'default' : 'outline'}
+                            onClick={() => provideFeedback(entry.id, 'negative')}
+                            className="text-xs"
+                          >
+                            👎
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-                {/* Input Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <Textarea
-                    placeholder="Describe your training goals, experience level, available equipment, time constraints, and any specific preferences (strength, hypertrophy, powerlifting, etc.)..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-blue-500 transition-colors resize-none backdrop-blur-sm"
-                    disabled={!canUseFeature('training_programs')}
-                  />
-                  <Button 
-                    type="submit" 
-                    disabled={!input.trim() || isLoading || !canUseFeature('training_programs')}
-                    className="w-full bg-gradient-to-r from-blue-500/80 to-cyan-600/80 hover:from-blue-600/80 hover:to-cyan-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 backdrop-blur-sm"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating Evidence-Based Program...
-                      </>
-                    ) : (
-                      <>
-                        <Dumbbell className="w-4 h-4 mr-2" />
-                        Generate Training Program
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            {/* Status Badge */}
+            <div className="flex justify-center">
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 px-4 py-2 text-sm">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Jeff Nippard & TNF inspired - Evidence-based training science
+              </Badge>
+            </div>
 
-            {/* Results Panel */}
-            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-white text-xl flex items-center">
-                  <Play className="w-5 h-5 mr-3 text-blue-400" />
-                  Your Training Program
-                </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Evidence-based program with RPE autoregulation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {response ? (
-                  <div className="space-y-6">
-                    {/* Action Button */}
-                    <div className="flex items-center justify-between">
-                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                        <Play className="w-3 h-3 mr-1" />
-                        Program Ready
-                      </Badge>
-                      <Button 
-                        onClick={handleDownload}
-                        variant="outline" 
-                        size="sm"
-                        className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-blue-500/50 backdrop-blur-sm"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Program
-                      </Button>
+            {/* Main Content */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Input Panel */}
+              <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-white text-xl flex items-center">
+                    <MessageCircle className="w-5 h-5 mr-3 text-blue-400" />
+                    Program Design
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Science-based training programs with RPE autoregulation
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Loading Tips */}
+                  {isLoading && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                        <span className="text-blue-300 font-medium">Designing Your Program...</span>
+                      </div>
+                      <p className="text-slate-300 text-sm leading-relaxed">
+                        {loadingTips[currentTipIndex]}
+                      </p>
+                      <div className="mt-3 text-xs text-slate-400">
+                        Check out other modules while I apply the latest training science!
+                      </div>
                     </div>
+                  )}
 
-                    {/* Response Content */}
-                    <div className="bg-slate-800/20 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto backdrop-blur-sm">
-                      <FormattedAIResponse content={response} />
+                  {/* Example Prompts */}
+                  <div className="space-y-4">
+                    <h4 className="text-white font-medium flex items-center">
+                      <Target className="w-4 h-4 mr-2 text-blue-400" />
+                      Program Templates
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      {examplePrompts.map((example, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleExampleClick(example.prompt)}
+                          className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-blue-500/50 transition-all duration-200 group backdrop-blur-sm"
+                          disabled={!canUse}
+                        >
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="text-blue-400 group-hover:text-blue-300 transition-colors">
+                              {example.icon}
+                            </div>
+                            <span className="text-white font-medium">{example.title}</span>
+                          </div>
+                          <p className="text-slate-400 text-sm">"{example.prompt}"</p>
+                        </button>
+                      ))}
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-16">
-                    <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Dumbbell className="w-8 h-8 text-slate-500" />
+
+                  {/* Input Form */}
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <Textarea
+                      placeholder="Describe your training goals, experience level, available equipment, time constraints, and any specific preferences (strength, hypertrophy, powerlifting, etc.)..."
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-blue-500 transition-colors resize-none backdrop-blur-sm"
+                      disabled={!canUse}
+                    />
+                    <Button 
+                      type="submit" 
+                      disabled={!input.trim() || isLoading || !canUse}
+                      className="w-full bg-gradient-to-r from-blue-500/80 to-cyan-600/80 hover:from-blue-600/80 hover:to-cyan-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 backdrop-blur-sm"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Creating Evidence-Based Program...
+                        </>
+                      ) : (
+                        <>
+                          <Dumbbell className="w-4 h-4 mr-2" />
+                          Generate Training Program
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Results Panel */}
+              <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-white text-xl flex items-center">
+                    <Play className="w-5 h-5 mr-3 text-blue-400" />
+                    Your Training Program
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Evidence-based program with RPE autoregulation
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {response ? (
+                    <div className="space-y-6">
+                      {/* Action Button */}
+                      <div className="flex items-center justify-between">
+                        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                          <Play className="w-3 h-3 mr-1" />
+                          Program Ready
+                        </Badge>
+                        <Button 
+                          onClick={handleDownload}
+                          variant="outline" 
+                          size="sm"
+                          className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-blue-500/50 backdrop-blur-sm"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download Program
+                        </Button>
+                      </div>
+
+                      {/* Response Content */}
+                      <div className="bg-slate-800/20 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto backdrop-blur-sm">
+                        <FormattedAIResponse content={response} />
+                      </div>
                     </div>
-                    <h3 className="text-white font-medium mb-2">Ready to Design Your Program</h3>
-                    <p className="text-slate-400 text-sm">
-                      Enter your training goals for an evidence-based program
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <div className="text-center py-16">
+                      <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Dumbbell className="w-8 h-8 text-slate-500" />
+                      </div>
+                      <h3 className="text-white font-medium mb-2">Ready to Design Your Program</h3>
+                      <p className="text-slate-400 text-sm">
+                        Enter your training goals for an evidence-based program
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </FeatureGate>
   );
 };
 

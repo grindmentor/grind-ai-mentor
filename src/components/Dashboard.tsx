@@ -99,6 +99,7 @@ const Dashboard = () => {
   // Separate Progress Hub from other modules
   const progressHubModule = modules.find(m => m.id === 'progress-hub');
   const otherModules = modules.filter(m => m.id !== 'progress-hub');
+  const favoriteModules = otherModules.filter(module => favorites.includes(module.id));
 
   return (
     <ErrorBoundary>
@@ -115,35 +116,6 @@ const Dashboard = () => {
               <p className="text-gray-400 text-base sm:text-lg">
                 Ready to achieve your fitness goals with science-backed training?
               </p>
-            </div>
-
-            {/* Favorites Section */}
-            {favorites.length > 0 && (
-              <div className="mb-8 sm:mb-12">
-                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
-                  <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
-                  Favorites
-                </h2>
-                <ModuleGrid
-                  modules={otherModules.filter(module => favorites.includes(module.id))}
-                  favorites={favorites}
-                  onModuleClick={handleModuleClick}
-                  onToggleFavorite={toggleFavorite}
-                />
-              </div>
-            )}
-
-            {/* All Modules */}
-            <div className="mb-8 sm:mb-12">
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
-                All Modules
-              </h2>
-              <ModuleGrid
-                modules={otherModules}
-                favorites={favorites}
-                onModuleClick={handleModuleClick}
-                onToggleFavorite={toggleFavorite}
-              />
             </div>
 
             {/* Progress Hub - Long Rectangular Button */}
@@ -173,6 +145,40 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </Button>
+              </div>
+            )}
+
+            {/* Favorites Section - Only show if there are favorites */}
+            {favoriteModules.length > 0 && (
+              <div className="mb-8 sm:mb-12">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
+                  <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
+                  Favorites
+                </h2>
+                <ModuleGrid
+                  modules={favoriteModules}
+                  favorites={favorites}
+                  onModuleClick={handleModuleClick}
+                  onToggleFavorite={toggleFavorite}
+                />
+              </div>
+            )}
+
+            {/* All Modules - Only show if no favorites */}
+            {favoriteModules.length === 0 && (
+              <div className="mb-8 sm:mb-12">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+                  Explore Modules
+                </h2>
+                <p className="text-gray-400 mb-6">
+                  Star your favorite modules to see them here. All modules are available to explore.
+                </p>
+                <ModuleGrid
+                  modules={otherModules}
+                  favorites={favorites}
+                  onModuleClick={handleModuleClick}
+                  onToggleFavorite={toggleFavorite}
+                />
               </div>
             )}
           </div>

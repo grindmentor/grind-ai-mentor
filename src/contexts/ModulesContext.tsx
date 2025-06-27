@@ -189,7 +189,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="smart-training" {...props} />,
       gradient: 'from-red-500 to-pink-500',
       usageKey: 'smart_training',
-      isPremium: true, // Made premium
+      isPremium: true, // Premium
       isNew: false
     },
     {
@@ -244,7 +244,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="meal-plan-generator" {...props} />,
       gradient: 'from-yellow-500 to-orange-500',
       usageKey: 'meal_plan_generator',
-      isPremium: true, // Made premium
+      isPremium: true, // Premium
       isNew: false
     },
     {
@@ -266,7 +266,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="recovery-coach" {...props} />,
       gradient: 'from-teal-500 to-green-500',
       usageKey: 'recovery_coach',
-      isPremium: false, // Made free
+      isPremium: false, // Free
       isNew: false
     },
     {

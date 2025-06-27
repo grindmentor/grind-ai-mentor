@@ -1,4 +1,6 @@
 
+import OpenAI from 'openai';
+
 const SCIENCE_FITNESS_CONTEXT = `
 You are a science-based fitness AI coach with deep knowledge of exercise physiology, biomechanics, and evidence-based training principles. Your responses should be grounded in peer-reviewed research and established scientific principles.
 
@@ -28,8 +30,6 @@ Always prioritize evidence-based recommendations while acknowledging limitations
 
 When discussing techniques or methods, reference the underlying physiological mechanisms rather than relying on anecdotal evidence.
 `;
-
-import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,

@@ -76,14 +76,24 @@ const Index = () => {
         {/* Hero Section */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-transparent to-orange-600/10" />
-          <div className="relative px-6 pt-20 pb-16 mx-auto max-w-7xl lg:px-8">
-            <div className="mx-auto max-w-2xl text-center animate-fade-in">
-              <Badge className="mb-8 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 transition-colors">
+          <div className="relative px-4 sm:px-6 pt-12 sm:pt-20 pb-12 sm:pb-16 mx-auto max-w-7xl lg:px-8">
+            <div className="mx-auto max-w-4xl text-center animate-fade-in">
+              {/* Logo */}
+              <div className="mb-8">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-orange-500/25">
+                  <div className="text-2xl sm:text-3xl font-bold text-white">GM</div>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  GrindMentor
+                </h2>
+              </div>
+              
+              <Badge className="mb-6 sm:mb-8 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 transition-colors">
                 <Zap className="w-4 h-4 mr-2" />
                 Science-Powered Fitness AI
               </Badge>
               
-              <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight mb-4 sm:mb-6">
                 <span className="bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent">
                   Transform Your
                 </span>
@@ -93,26 +103,26 @@ const Index = () => {
                 </span>
               </h1>
               
-              <p className="text-lg leading-8 text-gray-300 mb-10">
+              <p className="text-base sm:text-lg leading-7 sm:leading-8 text-gray-300 mb-8 sm:mb-10 px-4 sm:px-0">
                 Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. 
                 Based on the latest scientific research for optimal results.
               </p>
               
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 sm:px-0">
                 <Button 
                   onClick={() => navigate(user ? '/app' : '/signin')}
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  {user ? 'Go to Dashboard' : 'Start Your Journey'}
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                  {user ? 'Go to Dashboard' : 'Start for Free'}
+                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
                 
                 <Button 
                   onClick={() => navigate('/about')}
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto border-gray-600 text-white hover:bg-gray-800/50 backdrop-blur-sm px-8 py-4 text-lg"
+                  className="w-full sm:w-auto border-gray-600 text-white hover:bg-gray-800/50 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
                 >
                   Learn More
                 </Button>
@@ -122,31 +132,31 @@ const Index = () => {
         </div>
 
         {/* Features Section */}
-        <div className="py-24 px-6 mx-auto max-w-7xl lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+        <div className="py-16 sm:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
               <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                 Powered by Science
               </span>
             </h2>
-            <p className="text-gray-400 text-lg">
+            <p className="text-gray-400 text-base sm:text-lg">
               Experience the future of fitness with AI that understands your unique needs
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {features.map((feature, index) => (
               <AnimatedCard 
                 key={index}
                 className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300"
                 delay={feature.delay}
               >
-                <CardHeader className="text-center pb-6">
-                  <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 flex items-center justify-center ${feature.color}`}>
+                <CardHeader className="text-center pb-6 p-4 sm:p-6">
+                  <div className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 flex items-center justify-center ${feature.color}`}>
                     {feature.icon}
                   </div>
-                  <CardTitle className="text-xl text-white mb-2">{feature.title}</CardTitle>
-                  <CardDescription className="text-gray-400 leading-relaxed">
+                  <CardTitle className="text-lg sm:text-xl text-white mb-2">{feature.title}</CardTitle>
+                  <CardDescription className="text-gray-400 leading-relaxed text-sm sm:text-base">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -156,27 +166,27 @@ const Index = () => {
         </div>
 
         {/* Benefits Section */}
-        <div className="py-24 px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
-          <div className="mx-auto max-w-2xl text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4 text-white">
+        <div className="py-16 sm:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
+          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4 text-white">
               Why Choose Our Platform?
             </h2>
-            <p className="text-gray-400 text-lg">
+            <p className="text-gray-400 text-base sm:text-lg">
               Built for serious fitness enthusiasts who want real results
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
               <AnimatedCard 
                 key={index}
-                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 p-6 text-center hover:bg-gray-800/50 transition-all duration-300"
+                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 p-4 sm:p-6 text-center hover:bg-gray-800/50 transition-all duration-300"
                 delay={index * 100}
               >
                 <div className="text-orange-500 mb-4 flex justify-center">
                   {benefit.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{benefit.title}</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-2">{benefit.title}</h3>
                 <p className="text-gray-400 text-sm">{benefit.description}</p>
               </AnimatedCard>
             ))}
@@ -184,33 +194,33 @@ const Index = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="py-24 px-6 mx-auto max-w-7xl lg:px-8">
+        <div className="py-16 sm:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
           <AnimatedCard 
-            className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/20 p-12 text-center"
+            className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/20 p-8 sm:p-12 text-center"
             delay={400}
           >
-            <h2 className="text-3xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
               <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                 Ready to Transform?
               </span>
             </h2>
-            <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
+            <p className="text-gray-300 text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto">
               Join thousands of users who are already achieving their fitness goals with AI-powered guidance
             </p>
             <Button 
               onClick={() => navigate(user ? '/app' : '/signin')}
               size="lg"
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 text-lg font-semibold"
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold"
             >
-              {user ? 'Go to Dashboard' : 'Get Started Now'}
-              <ArrowRight className="ml-2 w-5 h-5" />
+              {user ? 'Go to Dashboard' : 'Start for Free'}
+              <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </AnimatedCard>
         </div>
 
         {/* Footer Links */}
         <footer className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 lg:px-8">
             <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-8">
               <button
                 onClick={() => navigate('/about')}
@@ -237,9 +247,9 @@ const Index = () => {
                 Support
               </button>
             </div>
-            <div className="mt-8 text-center">
+            <div className="mt-6 sm:mt-8 text-center">
               <p className="text-xs text-gray-500">
-                © 2024 Grind AI Mentor. All rights reserved.
+                © 2024 GrindMentor. All rights reserved.
               </p>
             </div>
           </div>

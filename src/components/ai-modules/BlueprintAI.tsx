@@ -186,7 +186,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   if (loading) {
     return (
       <MobileModuleWrapper title="Blueprint AI" onBack={onBack}>
-        <div className="p-6">
+        <div className="p-6 space-y-6 bg-gradient-to-br from-blue-900/80 to-black min-h-screen">
           <div className="animate-pulse space-y-6">
             <div className="h-12 bg-blue-500/20 rounded-xl"></div>
             <div className="space-y-4">
@@ -204,188 +204,190 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
 
   return (
     <MobileModuleWrapper title="Blueprint AI" onBack={onBack}>
-      <div className="p-4 sm:p-6 space-y-6">
-        {/* AI Recommendations Section */}
-        {personalizedWorkouts.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                <Star className="w-4 h-4 text-white" />
+      <div className="bg-gradient-to-br from-blue-900/80 to-black min-h-screen">
+        <div className="p-4 sm:p-6 space-y-6">
+          {/* AI Recommendations Section */}
+          {personalizedWorkouts.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                  <Star className="w-4 h-4 text-white" />
+                </div>
+                <h2 className="text-lg font-semibold text-white">AI Recommendations</h2>
               </div>
-              <h2 className="text-lg font-semibold text-white">AI Recommendations</h2>
-            </div>
-            <div className="grid gap-3">
-              {personalizedWorkouts.map((workout) => (
-                <Card 
-                  key={`rec-${workout.id}`}
-                  className={`${workout.color} backdrop-blur-sm border-opacity-50 hover:scale-[1.02] transition-all duration-200`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        {getCategoryIcon(workout.category)}
-                        <h3 className="font-semibold text-white">{workout.title}</h3>
-                      </div>
-                      <Badge className={getDifficultyColor(workout.difficulty)}>
-                        {workout.difficulty}
-                      </Badge>
-                    </div>
-                    <p className="text-white/80 text-sm mb-3">{workout.description}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3 text-sm text-white/70">
-                        <span className="flex items-center">
-                          <Timer className="w-3 h-3 mr-1" />
-                          {workout.duration}
-                        </span>
-                        <span>{workout.exercises.length} exercises</span>
-                      </div>
-                      <Button
-                        onClick={() => addToWorkoutLog(workout)}
-                        size="sm"
-                        className="bg-white/20 hover:bg-white/30 text-white border-0"
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Search and Filters */}
-        <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              placeholder="Search workouts, exercises, or goals..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-400 h-12"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Categories</SelectItem>
-                <SelectItem value="Split Programs">Split Programs</SelectItem>
-                <SelectItem value="Single Workouts">Single Workouts</SelectItem>
-                <SelectItem value="Cardio">Cardio</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-              <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12">
-                <SelectValue placeholder="Difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Levels</SelectItem>
-                <SelectItem value="Beginner">Beginner</SelectItem>
-                <SelectItem value="Intermediate">Intermediate</SelectItem>
-                <SelectItem value="Advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Workout Templates Grid */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-white">All Blueprints</h2>
-          
-          {filteredWorkouts.length === 0 ? (
-            <div className="text-center py-12">
-              <Target className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No workouts found</h3>
-              <p className="text-gray-400">Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {filteredWorkouts.map((workout) => (
-                <Card 
-                  key={workout.id}
-                  className={`${workout.color} backdrop-blur-sm border-opacity-50 hover:scale-[1.02] transition-all duration-200`}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        {getCategoryIcon(workout.category)}
-                        <CardTitle className="text-white text-lg">{workout.title}</CardTitle>
-                      </div>
-                      <Badge className={getDifficultyColor(workout.difficulty)}>
-                        {workout.difficulty}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    <p className="text-white/80 text-sm">{workout.description}</p>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {workout.focus.map((focus, index) => (
-                        <Badge 
-                          key={index}
-                          variant="outline" 
-                          className="border-white/30 text-white/80 bg-white/10"
-                        >
-                          {focus}
+              <div className="grid gap-3">
+                {personalizedWorkouts.map((workout) => (
+                  <Card 
+                    key={`rec-${workout.id}`}
+                    className="bg-gradient-to-r from-blue-600/30 to-blue-800/40 backdrop-blur-sm border-blue-500/30 hover:scale-[1.02] transition-all duration-200"
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {getCategoryIcon(workout.category)}
+                          <h3 className="font-semibold text-white">{workout.title}</h3>
+                        </div>
+                        <Badge className={getDifficultyColor(workout.difficulty)}>
+                          {workout.difficulty}
                         </Badge>
-                      ))}
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm text-white/70">
-                        <span className="flex items-center">
-                          <Timer className="w-3 h-3 mr-1" />
-                          {workout.duration}
-                        </span>
-                        <span>{workout.exercises.length} exercises</span>
                       </div>
-                      
-                      <div className="space-y-1">
-                        {workout.exercises.slice(0, 3).map((exercise, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedExercise(exercise)}
-                            className="w-full text-left p-2 bg-white/10 rounded text-sm text-white/80 hover:bg-white/20 transition-colors"
-                          >
-                            {exercise.name} - {exercise.sets} sets × {exercise.reps}
-                          </button>
-                        ))}
-                        {workout.exercises.length > 3 && (
-                          <p className="text-xs text-white/60 px-2">
-                            +{workout.exercises.length - 3} more exercises
-                          </p>
-                        )}
+                      <p className="text-white/80 text-sm mb-3">{workout.description}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3 text-sm text-white/70">
+                          <span className="flex items-center">
+                            <Timer className="w-3 h-3 mr-1" />
+                            {workout.duration}
+                          </span>
+                          <span>{workout.exercises.length} exercises</span>
+                        </div>
+                        <Button
+                          onClick={() => addToWorkoutLog(workout)}
+                          size="sm"
+                          className="bg-blue-500/30 hover:bg-blue-500/50 text-white border-0"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Add
+                        </Button>
                       </div>
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <Button
-                        onClick={() => addToWorkoutLog(workout)}
-                        className="flex-1 bg-white/20 hover:bg-white/30 text-white border-0"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add to Log
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="border-white/30 text-white hover:bg-white/20"
-                      >
-                        <Play className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
+
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                placeholder="Search workouts, exercises, or goals..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 bg-gray-900/50 border-blue-500/30 text-white placeholder:text-gray-400 h-12"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="bg-gray-900/50 border-blue-500/30 text-white h-12">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Categories</SelectItem>
+                  <SelectItem value="Split Programs">Split Programs</SelectItem>
+                  <SelectItem value="Single Workouts">Single Workouts</SelectItem>
+                  <SelectItem value="Cardio">Cardio</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                <SelectTrigger className="bg-gray-900/50 border-blue-500/30 text-white h-12">
+                  <SelectValue placeholder="Difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Levels</SelectItem>
+                  <SelectItem value="Beginner">Beginner</SelectItem>
+                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                  <SelectItem value="Advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Workout Templates Grid */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-white">All Blueprints</h2>
+            
+            {filteredWorkouts.length === 0 ? (
+              <div className="text-center py-12">
+                <Target className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">No workouts found</h3>
+                <p className="text-gray-400">Try adjusting your search or filters</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {filteredWorkouts.map((workout) => (
+                  <Card 
+                    key={workout.id}
+                    className="bg-gradient-to-r from-blue-600/20 to-blue-800/30 backdrop-blur-sm border-blue-500/30 hover:scale-[1.02] transition-all duration-200"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {getCategoryIcon(workout.category)}
+                          <CardTitle className="text-white text-lg">{workout.title}</CardTitle>
+                        </div>
+                        <Badge className={getDifficultyColor(workout.difficulty)}>
+                          {workout.difficulty}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <p className="text-white/80 text-sm">{workout.description}</p>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {workout.focus.map((focus, index) => (
+                          <Badge 
+                            key={index}
+                            variant="outline" 
+                            className="border-blue-400/30 text-blue-300 bg-blue-500/10"
+                          >
+                            {focus}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm text-white/70">
+                          <span className="flex items-center">
+                            <Timer className="w-3 h-3 mr-1" />
+                            {workout.duration}
+                          </span>
+                          <span>{workout.exercises.length} exercises</span>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          {workout.exercises.slice(0, 3).map((exercise, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setSelectedExercise(exercise)}
+                              className="w-full text-left p-2 bg-blue-500/10 rounded text-sm text-white/80 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
+                            >
+                              {exercise.name} - {exercise.sets} sets × {exercise.reps}
+                            </button>
+                          ))}
+                          {workout.exercises.length > 3 && (
+                            <p className="text-xs text-white/60 px-2">
+                              +{workout.exercises.length - 3} more exercises
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => addToWorkoutLog(workout)}
+                          className="flex-1 bg-blue-500/30 hover:bg-blue-500/50 text-white border-0"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add to Log
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-blue-400/30 text-blue-300 hover:bg-blue-500/20"
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -45,7 +45,7 @@ export const aiModules: AIModule[] = [
     title: 'Blueprint AI',
     description: 'Intelligent session planner with science-backed workout templates',
     icon: Target,
-    gradient: 'from-cyan-600/80 to-blue-800/90 border-cyan-500/60',
+    gradient: 'from-blue-600/80 to-blue-800/90 border-blue-500/60',
     component: BlueprintAI,
     isPremium: false,
     isNew: true

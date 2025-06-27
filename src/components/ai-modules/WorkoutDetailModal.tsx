@@ -35,13 +35,11 @@ interface WorkoutTemplate {
 interface WorkoutDetailModalProps {
   workout: WorkoutTemplate;
   onClose: () => void;
-  onExerciseClick?: (exercise: Exercise) => void;
 }
 
 export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
   workout,
-  onClose,
-  onExerciseClick
+  onClose
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -158,7 +156,7 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
               {workout.exercises.map((exercise, index) => (
                 <div key={exercise.id} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
+                    <div>
                       <h4 className="font-semibold text-white mb-1">
                         {index + 1}. {exercise.name}
                       </h4>
@@ -173,26 +171,14 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
                         </span>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      {onExerciseClick && (
-                        <Button
-                          onClick={() => onExerciseClick(exercise)}
-                          size="sm"
-                          variant="outline"
-                          className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                        >
-                          View Details
-                        </Button>
-                      )}
-                      <Button
-                        onClick={() => addExerciseToLog(exercise)}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add to Log
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={() => addExerciseToLog(exercise)}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add to Log
+                    </Button>
                   </div>
                   
                   {/* Primary Muscles */}

@@ -21,44 +21,15 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-// Enhanced caching with compression and expiration
-class OptimizedCache {
-  private cache = new Map<string, { data: any; timestamp: number; compressed: boolean }>();
-  private readonly maxSize = 100;
+// Simple cache implementation
+class SimpleCache {
+  private cache = new Map<string, { data: any; timestamp: number }>();
   private readonly ttl = 30 * 60 * 1000; // 30 minutes
 
-  private compress(data: string): string {
-    try {
-      // Simple compression using built-in compression
-      return btoa(encodeURIComponent(data));
-    } catch {
-      return data;
-    }
-  }
-
-  private decompress(data: string, isCompressed: boolean): string {
-    if (!isCompressed) return data;
-    try {
-      return decodeURIComponent(atob(data));
-    } catch {
-      return data;
-    }
-  }
-
   set(key: string, value: any): void {
-    // Remove oldest entries if cache is full
-    if (this.cache.size >= this.maxSize) {
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
-    }
-
-    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
-    const compressed = stringValue.length > 1000;
-    
     this.cache.set(key, {
-      data: compressed ? this.compress(stringValue) : stringValue,
-      timestamp: Date.now(),
-      compressed
+      data: value,
+      timestamp: Date.now()
     });
   }
 
@@ -72,12 +43,7 @@ class OptimizedCache {
       return null;
     }
 
-    const decompressed = this.decompress(entry.data, entry.compressed);
-    try {
-      return JSON.parse(decompressed);
-    } catch {
-      return decompressed;
-    }
+    return entry.data;
   }
 
   clear(): void {
@@ -85,23 +51,7 @@ class OptimizedCache {
   }
 }
 
-const optimizedCache = new OptimizedCache();
-
-// Request deduplication
-const pendingRequests = new Map<string, Promise<string>>();
-
-// Optimized debounce function
-const debounce = (func: Function, wait: number) => {
-  let timeout: NodeJS.Timeout;
-  return function executedFunction(...args: any[]) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
+const cache = new SimpleCache();
 
 export const getOptimizedAIResponse = async (prompt: string, options: {
   maxTokens?: number;
@@ -120,87 +70,38 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
   
   // Check cache first
   if (useCache) {
-    const cached = optimizedCache.get(cacheKey);
+    const cached = cache.get(cacheKey);
     if (cached) return cached;
   }
 
-  // Check for pending request
-  if (pendingRequests.has(cacheKey)) {
-    return await pendingRequests.get(cacheKey)!;
-  }
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: "system", content: SCIENCE_FITNESS_CONTEXT },
+        { role: "user", content: prompt }
+      ],
+      max_tokens: maxTokens,
+      temperature,
+    });
 
-  // Choose model based on priority and requirements
-  const model = priority === 'high' ? 'gpt-4o-mini' : 'gpt-4o-mini'; // Always use mini for cost optimization
-
-  const requestPromise = async (): Promise<string> => {
-    try {
-      const completion = await openai.chat.completions.create({
-        model,
-        messages: [
-          { role: "system", content: SCIENCE_FITNESS_CONTEXT },
-          { role: "user", content: prompt }
-        ],
-        max_tokens: maxTokens,
-        temperature,
-        stream: false, // Disable streaming for better caching
-      });
-
-      const response = completion.choices[0].message.content || "I'm having trouble processing your request right now. Please try again later.";
-      
-      // Cache successful responses
-      if (useCache) {
-        optimizedCache.set(cacheKey, response);
-      }
-
-      return response;
-    } catch (error) {
-      console.error("Optimized AI Error:", error);
-      return "I'm having trouble processing your request right now. Please try again later.";
-    } finally {
-      pendingRequests.delete(cacheKey);
-    }
-  };
-
-  const request = requestPromise();
-  pendingRequests.set(cacheKey, request);
-  return await request;
-};
-
-// Batch processing for multiple requests
-export const batchAIRequests = async (requests: Array<{
-  prompt: string;
-  options?: Parameters<typeof getOptimizedAIResponse>[1];
-}>): Promise<string[]> => {
-  // Process in chunks to avoid rate limits
-  const chunkSize = 3;
-  const results: string[] = [];
-
-  for (let i = 0; i < requests.length; i += chunkSize) {
-    const chunk = requests.slice(i, i + chunkSize);
-    const chunkResults = await Promise.all(
-      chunk.map(req => getOptimizedAIResponse(req.prompt, req.options))
-    );
-    results.push(...chunkResults);
+    const response = completion.choices[0].message.content || "I'm having trouble processing your request right now. Please try again later.";
     
-    // Small delay between chunks
-    if (i + chunkSize < requests.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    // Cache successful responses
+    if (useCache) {
+      cache.set(cacheKey, response);
     }
+
+    return response;
+  } catch (error) {
+    console.error("Optimized AI Error:", error);
+    return "I'm having trouble processing your request right now. Please try again later.";
   }
-
-  return results;
-};
-
-// Cleanup function
-export const cleanupAIService = () => {
-  optimizedCache.clear();
-  pendingRequests.clear();
 };
 
 // Export optimized service with all methods
 export const optimizedAiService = {
   getResponse: getOptimizedAIResponse,
-  getCoachingAdvice: getOptimizedAIResponse, // Add explicit alias
-  batchRequests: batchAIRequests,
-  cleanup: cleanupAIService
+  getCoachingAdvice: getOptimizedAIResponse,
+  cleanup: () => cache.clear()
 };

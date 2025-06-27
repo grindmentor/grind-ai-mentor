@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
-import { optimizedAiService } from '@/services/optimizedAiService';
+import { getOptimizedAIResponse } from '@/services/optimizedAiService';
 
 interface Message {
   id: string;
@@ -56,14 +56,17 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         .order('created_at', { ascending: true })
         .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading conversation:', error);
+        return;
+      }
 
-      const conversationMessages = data.map(msg => ({
+      const conversationMessages = data?.map(msg => ({
         id: msg.id,
         role: msg.message_role as 'user' | 'assistant',
         content: msg.message_content,
         timestamp: new Date(msg.created_at)
-      }));
+      })) || [];
 
       setMessages(conversationMessages);
     } catch (error) {
@@ -88,7 +91,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
 
     try {
       // Save user message
-      await supabase
+      const { error: saveError } = await supabase
         .from('coach_conversations')
         .insert({
           user_id: user.id,
@@ -96,6 +99,10 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
           message_role: 'user',
           message_content: userMessage.content
         });
+
+      if (saveError) {
+        console.error('Error saving user message:', saveError);
+      }
 
       // Check for meal plan or training program requests
       const lowerInput = input.toLowerCase();
@@ -107,6 +114,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, redirectMessage]);
+        
         await supabase
           .from('coach_conversations')
           .insert({
@@ -115,6 +123,8 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
             message_role: 'assistant',
             message_content: redirectMessage.content
           });
+        
+        setIsLoading(false);
         return;
       }
 
@@ -126,6 +136,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, redirectMessage]);
+        
         await supabase
           .from('coach_conversations')
           .insert({
@@ -134,10 +145,12 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
             message_role: 'assistant',
             message_content: redirectMessage.content
           });
+        
+        setIsLoading(false);
         return;
       }
 
-      // Get AI response for general coaching using the correct method
+      // Get AI response for general coaching
       const systemPrompt = `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
       - Exercise form and technique
       - Training principles and methods  
@@ -149,9 +162,14 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       
       Be encouraging, professional, and cite scientific principles when relevant.`;
 
-      const response = await optimizedAiService.getResponse(
+      const response = await getOptimizedAIResponse(
         `${systemPrompt}\n\nUser question: ${userMessage.content}`,
-        { useCache: true, priority: 'normal' }
+        { 
+          useCache: true, 
+          priority: 'normal',
+          maxTokens: 300,
+          temperature: 0.7
+        }
       );
 
       const assistantMessage: Message = {

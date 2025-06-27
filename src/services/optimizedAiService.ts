@@ -197,9 +197,10 @@ export const cleanupAIService = () => {
   pendingRequests.clear();
 };
 
-// Export optimized service
+// Export optimized service with all methods
 export const optimizedAiService = {
   getResponse: getOptimizedAIResponse,
+  getCoachingAdvice: getOptimizedAIResponse, // Add explicit alias
   batchRequests: batchAIRequests,
   cleanup: cleanupAIService
 };

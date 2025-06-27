@@ -1,12 +1,11 @@
-
 import { useEffect, useCallback, useMemo, useState } from 'react';
 import { debounce } from 'lodash';
 
 // Performance monitoring and optimization utilities
 export const usePerformanceOptimization = () => {
-  // Debounced function factory
-  const createDebouncedFunction = useCallback((fn: (...args: any[]) => void, delay: number = 300) => {
-    return debounce(fn, delay, { leading: false, trailing: true });
+  // Debounced function factory with proper typing
+  const createDebouncedFunction = useCallback(<T extends (...args: any[]) => void>(fn: T, delay: number = 300): T => {
+    return debounce(fn, delay, { leading: false, trailing: true }) as T;
   }, []);
 
   // Image optimization utilities

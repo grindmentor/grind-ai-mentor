@@ -21,19 +21,20 @@ const defaultPreferences: Omit<UserPreferences, 'id' | 'user_id' | 'created_at' 
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
 
-export const usePreferences = () => {
-  const context = useContext(PreferencesContext);
-  if (!context) {
-    throw new Error('usePreferences must be used within a PreferencesProvider');
-  }
-  return context;
+// Type guard functions
+const isValidWeightUnit = (value: any): value is 'kg' | 'lbs' => {
+  return value === 'kg' || value === 'lbs';
 };
 
-export const PreferencesProvider = ({ children }: { children: React.ReactNode }) => {
+const isValidHeightUnit = (value: any): value is 'cm' | 'ft-in' | 'in' => {
+  return value === 'cm' || value === 'ft-in' || value === 'in';
+};
+
+export const PreferencesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [preferences, setPreferences] = useState(defaultPreferences);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -47,59 +48,102 @@ export const PreferencesProvider = ({ children }: { children: React.ReactNode })
     if (!user) return;
 
     try {
+      console.log('Loading preferences for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading preferences:', error);
         return;
       }
 
       if (data) {
+        console.log('Loaded preferences:', data);
         setPreferences({
-          weight_unit: data.weight_unit || 'kg',
-          height_unit: data.height_unit || 'cm',
+          weight_unit: isValidWeightUnit(data.weight_unit) ? data.weight_unit : 'kg',
+          height_unit: isValidHeightUnit(data.height_unit) ? data.height_unit : 'cm',
           notifications: data.notifications ?? true,
           email_updates: data.email_updates ?? true,
           dark_mode: data.dark_mode ?? true
         });
+      } else {
+        console.log('No preferences found, creating default preferences');
+        await createDefaultPreferences();
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
+      console.error('Error in loadPreferences:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updatePreference = async (field: keyof typeof defaultPreferences, value: any) => {
+  const createDefaultPreferences = async () => {
     if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_preferences')
+        .insert({
+          user_id: user.id,
+          ...defaultPreferences
+        });
+
+      if (error) {
+        console.error('Error creating default preferences:', error);
+      } else {
+        console.log('Created default preferences');
+      }
+    } catch (error) {
+      console.error('Error in createDefaultPreferences:', error);
+    }
+  };
+
+  const updatePreference = async (field: keyof typeof preferences, value: any) => {
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
+
+    console.log(`Updating preference ${field} to:`, value);
+
+    // Update local state immediately
+    const updatedPreferences = { ...preferences, [field]: value };
+    setPreferences(updatedPreferences);
 
     try {
       const { error } = await supabase
         .from('user_preferences')
         .upsert({
           user_id: user.id,
-          [field]: value,
-          updated_at: new Date().toISOString()
+          [field]: value
+        }, {
+          onConflict: 'user_id'
         });
 
-      if (error) throw error;
-
-      setPreferences(prev => ({ ...prev, [field]: value }));
-      toast({
-        title: "Preferences updated",
-        description: "Your preferences have been saved successfully.",
-      });
+      if (error) {
+        console.error(`Error updating ${field}:`, error);
+        // Revert local state on error
+        setPreferences(preferences);
+        toast({
+          title: "Error saving preference",
+          description: `Failed to update ${field}. Please try again.`,
+          variant: "destructive",
+        });
+        throw error;
+      } else {
+        console.log(`Successfully updated ${field}`);
+        toast({
+          title: "Preference saved",
+          description: `${field.replace('_', ' ')} updated successfully`,
+        });
+      }
     } catch (error) {
-      console.error('Error updating preference:', error);
-      toast({
-        title: "Error updating preferences",
-        description: "Please try again.",
-        variant: "destructive"
-      });
+      console.error(`Error in updatePreference for ${field}:`, error);
+      throw error;
     }
   };
 
@@ -108,4 +152,12 @@ export const PreferencesProvider = ({ children }: { children: React.ReactNode })
       {children}
     </PreferencesContext.Provider>
   );
+};
+
+export const usePreferences = () => {
+  const context = useContext(PreferencesContext);
+  if (context === undefined) {
+    throw new Error('usePreferences must be used within a PreferencesProvider');
+  }
+  return context;
 };

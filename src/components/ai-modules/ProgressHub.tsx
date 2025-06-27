@@ -55,28 +55,19 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     if (!user) return;
 
     try {
-      setLoading(true);
-      
-      // Check if progress_entries table exists, if not create mock data
       const { data, error } = await supabase
         .from('progress_entries')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
-      if (error) {
-        console.error('Progress entries table might not exist:', error);
-        // Set empty entries instead of failing
-        setEntries([]);
-      } else {
-        setEntries(data || []);
-      }
+      if (error) throw error;
+      setEntries(data || []);
     } catch (error) {
       console.error('Error loading progress entries:', error);
-      setEntries([]);
       toast({
-        title: 'Progress tracking unavailable',
-        description: 'Progress tracking feature is being set up. Please check back later.',
+        title: 'Error loading progress',
+        description: 'Please try again',
         variant: 'destructive'
       });
     } finally {
@@ -95,7 +86,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         thighs: parseFloat(currentEntry.thighs) || undefined
       };
 
-      // Try to insert, but handle if table doesn't exist
       const { error } = await supabase
         .from('progress_entries')
         .insert({
@@ -108,15 +98,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
           measurements: Object.values(measurements).some(v => v !== undefined) ? measurements : undefined
         });
 
-      if (error) {
-        console.error('Error adding progress entry:', error);
-        toast({
-          title: 'Progress tracking unavailable',
-          description: 'Progress tracking feature is being set up. Your data will be saved once available.',
-          variant: 'destructive'
-        });
-        return;
-      }
+      if (error) throw error;
 
       toast({
         title: 'Progress entry added',
@@ -139,7 +121,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       console.error('Error adding progress entry:', error);
       toast({
         title: 'Error adding entry',
-        description: 'Please try again later',
+        description: 'Please try again',
         variant: 'destructive'
       });
     }

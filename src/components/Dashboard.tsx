@@ -14,6 +14,8 @@ import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import NotificationCenter from '@/components/NotificationCenter';
 
 const Dashboard = () => {
+  console.log('Dashboard component rendering');
+  
   const { user } = useAuth();
   const { modules } = useModules();
   const [selectedModule, setSelectedModule] = useState(null);
@@ -21,19 +23,23 @@ const Dashboard = () => {
 
   // Load favorites from localStorage safely
   useEffect(() => {
+    console.log('Dashboard: Loading favorites from localStorage');
     try {
       const savedFavorites = localStorage.getItem('module-favorites');
       if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
+        const parsedFavorites = JSON.parse(savedFavorites);
+        console.log('Dashboard: Loaded favorites:', parsedFavorites);
+        setFavorites(parsedFavorites);
       }
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      console.error('Dashboard: Error loading favorites:', error);
       setFavorites([]);
     }
   }, []);
 
   // Save favorites to localStorage
   const toggleFavorite = (moduleId) => {
+    console.log('Dashboard: Toggling favorite for module:', moduleId);
     try {
       const newFavorites = favorites.includes(moduleId) 
         ? favorites.filter(id => id !== moduleId)
@@ -41,31 +47,51 @@ const Dashboard = () => {
       
       setFavorites(newFavorites);
       localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+      console.log('Dashboard: Updated favorites:', newFavorites);
     } catch (error) {
-      console.error('Error saving favorites:', error);
+      console.error('Dashboard: Error saving favorites:', error);
     }
   };
 
   const handleModuleClick = (module) => {
-    console.log('Module clicked:', module.id);
-    setSelectedModule(module);
+    console.log('Dashboard: Module clicked:', module?.id);
+    if (module) {
+      setSelectedModule(module);
+    }
   };
 
   const handleBackToDashboard = () => {
+    console.log('Dashboard: Returning to dashboard');
     setSelectedModule(null);
   };
 
   const handleFoodLogged = (data) => {
-    console.log('Food logged:', data);
+    console.log('Dashboard: Food logged:', data);
   };
 
-  // Handle case where modules might not be loaded yet
+  // Safety checks
+  if (!user) {
+    console.log('Dashboard: No user found, showing loading screen');
+    return <LoadingScreen message="Loading user data..." />;
+  }
+
   if (!modules || modules.length === 0) {
+    console.log('Dashboard: No modules found, showing loading screen');
     return <LoadingScreen message="Loading modules..." />;
   }
 
+  console.log('Dashboard: Loaded', modules.length, 'modules');
+
   if (selectedModule) {
+    console.log('Dashboard: Rendering selected module:', selectedModule.title);
     const ModuleComponent = selectedModule.component;
+    
+    if (!ModuleComponent) {
+      console.error('Dashboard: Selected module has no component:', selectedModule);
+      setSelectedModule(null);
+      return <LoadingScreen message="Loading module..." />;
+    }
+    
     return (
       <ErrorBoundary>
         <PageTransition>
@@ -103,6 +129,12 @@ const Dashboard = () => {
   const regularModules = modules.filter(m => m.id !== 'progress-hub');
   const progressHubModule = modules.find(m => m.id === 'progress-hub');
 
+  console.log('Dashboard: Rendering main dashboard view');
+  console.log('Dashboard: Regular modules:', regularModules.length);
+  console.log('Dashboard: Progress hub module:', progressHubModule ? 'found' : 'not found');
+
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion';
+
   return (
     <ErrorBoundary>
       <PageTransition>
@@ -113,7 +145,7 @@ const Dashboard = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div className="mb-8 sm:mb-12 text-center">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
-                Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
+                Welcome back, {userName}! 👋
               </h1>
               <p className="text-gray-400 text-base sm:text-lg">
                 Ready to achieve your fitness goals with science-backed training?
@@ -122,13 +154,19 @@ const Dashboard = () => {
 
             {/* Dashboard Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 sm:mb-12">
-              <ScientificStudies />
-              <PersonalizedSummary />
+              <ErrorBoundary>
+                <ScientificStudies />
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <PersonalizedSummary />
+              </ErrorBoundary>
             </div>
 
             {/* Notification Center */}
             <div className="mb-8 sm:mb-12">
-              <NotificationCenter />
+              <ErrorBoundary>
+                <NotificationCenter />
+              </ErrorBoundary>
             </div>
 
             {/* Show only favorites if they exist, otherwise show message */}
@@ -138,12 +176,14 @@ const Dashboard = () => {
                   <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
                   Your Favorites
                 </h2>
-                <ModuleGrid
-                  modules={regularModules.filter(module => favorites.includes(module.id))}
-                  favorites={favorites}
-                  onModuleClick={handleModuleClick}
-                  onToggleFavorite={toggleFavorite}
-                />
+                <ErrorBoundary>
+                  <ModuleGrid
+                    modules={regularModules.filter(module => favorites.includes(module.id))}
+                    favorites={favorites}
+                    onModuleClick={handleModuleClick}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                </ErrorBoundary>
               </div>
             ) : (
               <div className="mb-8 sm:mb-12 text-center">
@@ -163,33 +203,35 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Progress Hub - Long Rectangular Button - Now Purple */}
+            {/* Progress Hub - Purple Button */}
             {progressHubModule && (
               <div className="mb-8">
-                <Button
-                  onClick={() => handleModuleClick(progressHubModule)}
-                  className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"
-                >
-                  <div className="flex items-center justify-between w-full px-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-white" />
+                <ErrorBoundary>
+                  <Button
+                    onClick={() => handleModuleClick(progressHubModule)}
+                    className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"
+                  >
+                    <div className="flex items-center justify-between w-full px-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
+                          <TrendingUp className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
+                            Progress Hub
+                          </h3>
+                          <p className="text-sm text-gray-300">
+                            Track your fitness journey with detailed analytics
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
-                          Progress Hub
-                        </h3>
-                        <p className="text-sm text-gray-300">
-                          Track your fitness journey with detailed analytics
-                        </p>
+                      <div className="flex items-center space-x-2">
+                        <Sparkles className="w-5 h-5 text-purple-400" />
+                        <span className="text-sm text-purple-300">View Progress</span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Sparkles className="w-5 h-5 text-purple-400" />
-                      <span className="text-sm text-purple-300">View Progress</span>
-                    </div>
-                  </div>
-                </Button>
+                  </Button>
+                </ErrorBoundary>
               </div>
             )}
           </div>

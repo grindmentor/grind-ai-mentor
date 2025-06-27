@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Crown, Sparkles, Grid, List } from "lucide-react";
+import { Star, Crown, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Module {
@@ -44,7 +44,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
           return (
             <Card 
               key={module.id}
-              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${module.gradient} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`}
+              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl backdrop-blur-sm border-opacity-30 hover:border-opacity-60 ${module.gradient}`}
               onClick={() => onModuleClick(module)}
             >
               <CardContent className="p-4">
@@ -113,7 +113,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         return (
           <Card 
             key={module.id}
-            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ${module.gradient} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 relative overflow-hidden`}
+            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl backdrop-blur-sm border-opacity-30 hover:border-opacity-60 relative overflow-hidden ${module.gradient}`}
             onClick={() => onModuleClick(module)}
           >
             {/* Animated background gradient */}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -163,32 +164,28 @@ const ModuleLibrary = () => {
                   </div>
                 </div>
                 
-                {/* View Mode Toggle */}
-                <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
+                {/* View Mode Toggle - Fixed for mobile */}
+                <div className="flex items-center space-x-1 bg-orange-900/20 rounded-lg p-1">
+                  <button
                     onClick={() => handleViewModeChange('grid')}
-                    className={`p-2 transition-all duration-200 ${
+                    className={`p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
                       viewMode === 'grid' 
                         ? 'bg-orange-500/30 text-orange-300' 
                         : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
                     }`}
                   >
                     <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
+                  </button>
+                  <button
                     onClick={() => handleViewModeChange('list')}
-                    className={`p-2 transition-all duration-200 ${
+                    className={`p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
                       viewMode === 'list' 
                         ? 'bg-orange-500/30 text-orange-300' 
                         : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
                     }`}
                   >
                     <List className="w-4 h-4" />
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>

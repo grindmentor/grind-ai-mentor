@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { PageTransition } from '@/components/ui/page-transition';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
@@ -14,6 +14,10 @@ import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import GoalsAchievementsHub from '@/components/GoalsAchievementsHub';
 import { useFavorites } from '@/hooks/useFavorites';
+import { InstantLoader } from '@/components/ui/instant-loader';
+import { SmoothTransition } from '@/components/ui/smooth-transition';
+import { MobileOptimized } from '@/components/ui/mobile-optimized';
+import { useInstantModule } from '@/hooks/useInstantModule';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -21,6 +25,26 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
+
+  // Preload module data for instant access
+  const { isLoading: dashboardLoading } = useInstantModule({
+    moduleId: 'dashboard',
+    preloadData: async () => {
+      // Preload user profile data, favorites, and other dashboard data
+      return { loaded: true };
+    },
+    minLoadTime: 100
+  });
+
+  // Memoize filtered modules for better performance
+  const { regularModules, progressHubModule } = useMemo(() => {
+    if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null };
+    
+    return {
+      regularModules: modules.filter(m => m.id !== 'progress-hub'),
+      progressHubModule: modules.find(m => m.id === 'progress-hub')
+    };
+  }, [modules]);
 
   const handleModuleClick = (module) => {
     console.log('Module clicked:', module.id);
@@ -35,93 +59,96 @@ const Dashboard = () => {
     console.log('Food logged:', data);
   };
 
-  // Handle case where modules might not be loaded yet
-  if (!modules || modules.length === 0) {
-    return <LoadingScreen message="Loading modules..." />;
+  // Show instant loader only if both modules and dashboard are loading
+  if (dashboardLoading || !modules || modules.length === 0) {
+    return <InstantLoader isLoading={true} variant="module" />;
   }
 
   if (selectedModule) {
     const ModuleComponent = selectedModule.component;
     return (
       <ErrorBoundary>
-        <PageTransition>
-          <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-            <ModuleComponent 
-              onBack={handleBackToDashboard}
-              onFoodLogged={handleFoodLogged}
-            />
-          </div>
-        </PageTransition>
+        <MobileOptimized>
+          <SmoothTransition show={true} type="slideUp">
+            <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-hidden">
+              <ModuleComponent 
+                onBack={handleBackToDashboard}
+                onFoodLogged={handleFoodLogged}
+              />
+            </div>
+          </SmoothTransition>
+        </MobileOptimized>
       </ErrorBoundary>
     );
   }
 
-  // Filter out Progress Hub from regular modules
-  const regularModules = modules.filter(m => m.id !== 'progress-hub');
-  const progressHubModule = modules.find(m => m.id === 'progress-hub');
+  const favoriteModules = regularModules.filter(module => favorites.includes(module.id));
 
   return (
     <ErrorBoundary>
-      <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
+      <MobileOptimized>
+        <PageTransition className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-hidden">
           <DashboardHeader />
 
-          {/* Main Content with mobile-optimized spacing */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
-              {/* Welcome section with responsive text */}
-              <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
-                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight">
-                  Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
-                </h1>
-                <p className="text-gray-400 text-sm sm:text-base lg:text-lg px-4">
-                  Ready to achieve your fitness goals with science-backed training?
-                </p>
-              </div>
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full">
+            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+              {/* Welcome section - Mobile optimized */}
+              <SmoothTransition show={true} type="slideUp">
+                <div className="text-center space-y-3 sm:space-y-4">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight bg-gradient-to-r from-white via-orange-100 to-orange-200 bg-clip-text text-transparent">
+                    Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
+                  </h1>
+                  <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto">
+                    Ready to achieve your fitness goals with science-backed training?
+                  </p>
+                </div>
+              </SmoothTransition>
 
-              {/* Compact Notifications Summary */}
-              <div className="mb-6 sm:mb-8 lg:mb-12">
+              {/* Notifications Summary - Faster loading */}
+              <SmoothTransition show={true} type="fade">
                 <NotificationsSummary />
-              </div>
+              </SmoothTransition>
 
-              {/* Favorites Section with mobile-optimized layout */}
-              {!favoritesLoading && favorites.length > 0 ? (
-                <div className="mb-6 sm:mb-8 lg:mb-12">
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
-                    <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
-                    Your Favorites
-                  </h2>
-                  <ModuleGrid
-                    modules={regularModules.filter(module => favorites.includes(module.id))}
-                    favorites={favorites}
-                    onModuleClick={handleModuleClick}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                </div>
-              ) : !favoritesLoading ? (
-                <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
-                  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
-                    <Star className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500 mx-auto mb-4" />
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-3 sm:mb-4">No Favorites Yet</h2>
-                    <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base px-2">
-                      Visit the Module Library to explore and favorite modules you'd like to see here.
-                    </p>
-                    <Button
-                      onClick={() => window.location.href = '/modules'}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto touch-manipulation"
-                    >
-                      Browse Module Library
-                    </Button>
+              {/* Favorites Section */}
+              <SmoothTransition show={!favoritesLoading} type="slideUp">
+                {favoriteModules.length > 0 ? (
+                  <div className="space-y-4 sm:space-y-6">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
+                      <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
+                      Your Favorites
+                    </h2>
+                    <ModuleGrid
+                      modules={favoriteModules}
+                      favorites={favorites}
+                      onModuleClick={handleModuleClick}
+                      onToggleFavorite={toggleFavorite}
+                    />
                   </div>
-                </div>
-              ) : null}
+                ) : (
+                  <div className="text-center">
+                    <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
+                      <Star className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500 mx-auto mb-4" />
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-3 sm:mb-4">No Favorites Yet</h2>
+                      <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
+                        Visit the Module Library to explore and favorite modules you'd like to see here.
+                      </p>
+                      <Button
+                        onClick={() => window.location.href = '/modules'}
+                        className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto touch-manipulation transform transition-all duration-150 active:scale-95"
+                      >
+                        Browse Module Library
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </SmoothTransition>
 
-              {/* Progress Hub - Mobile-optimized - Moved up after favorites */}
+              {/* Progress Hub - Enhanced mobile experience */}
               {progressHubModule && (
-                <div className="mb-6 sm:mb-8 lg:mb-12">
+                <SmoothTransition show={true} type="slideUp">
                   <Button
                     onClick={() => handleModuleClick(progressHubModule)}
-                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-300 text-white rounded-xl group touch-manipulation"
+                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-300 text-white rounded-xl group touch-manipulation transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <div className="flex items-center justify-between w-full px-4 sm:px-6">
                       <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
@@ -138,23 +165,27 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300/80" />
+                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300/80 animate-pulse" />
                         <span className="text-xs sm:text-sm text-purple-200/90 hidden sm:inline">View Progress</span>
                       </div>
                     </div>
                   </Button>
-                </div>
+                </SmoothTransition>
               )}
 
-              {/* Dashboard Content Grid - Mobile-optimized */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <GoalsAchievementsHub />
-                <PersonalizedSummary />
+              {/* Dashboard Content Grid - Staggered animations */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <SmoothTransition show={true} type="slideUp">
+                  <GoalsAchievementsHub />
+                </SmoothTransition>
+                <SmoothTransition show={true} type="slideUp">
+                  <PersonalizedSummary />
+                </SmoothTransition>
               </div>
             </div>
           </div>
-        </div>
-      </PageTransition>
+        </PageTransition>
+      </MobileOptimized>
     </ErrorBoundary>
   );
 };

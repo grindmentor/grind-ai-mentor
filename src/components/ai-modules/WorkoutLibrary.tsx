@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ interface WorkoutLibraryProps {
   onBack: () => void;
 }
 
-// Mock exercise data since useExerciseDatabase hook might not be available
+// Mock exercise data
 const mockExercises = [
   {
     id: 1,
@@ -62,10 +62,8 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
   const [isAIThinking, setIsAIThinking] = useState(false);
-  const [exercises] = useState(mockExercises);
-  const [loading] = useState(false);
 
-  const filteredExercises = exercises.filter(exercise => {
+  const filteredExercises = mockExercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (exercise.instructions && exercise.instructions.toLowerCase().includes(searchQuery.toLowerCase()));
     
@@ -83,7 +81,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       setChatHistory(prev => [...prev, { type: 'user', message: chatMessage }]);
       setIsAIThinking(true);
       
-      // Simulate AI response with realistic delay
+      // Simulate AI response
       setTimeout(() => {
         setChatHistory(prev => [...prev, { 
           type: 'ai', 
@@ -95,17 +93,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       setChatMessage('');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/10 to-blue-800/20 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-blue-300">Loading exercise database...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/10 to-blue-800/20 text-white">
@@ -119,7 +106,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
               className="text-white hover:bg-blue-500/20 backdrop-blur-sm hover:text-blue-400 transition-all duration-200 font-medium flex items-center space-x-2 px-3 py-2 rounded-lg"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Dashboard</span>
+              <span>Back</span>
             </Button>
             
             <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">

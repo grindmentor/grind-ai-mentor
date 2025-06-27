@@ -8,16 +8,13 @@ const CoachGPT = lazy(() => import('@/components/ai-modules/CoachGPT'));
 const SmartTraining = lazy(() => import('@/components/ai-modules/SmartTraining'));
 const MealPlanAI = lazy(() => import('@/components/ai-modules/MealPlanAI'));
 const SmartFoodLog = lazy(() => import('@/components/ai-modules/SmartFoodLog'));
-const TDEECalculator = lazy(() => import('@/components/calculators/TDEECalculator'));
-const CutCalc = lazy(() => import('@/components/calculators/CutCalc'));
+const TDEECalculator = lazy(() => import('@/components/ai-modules/TDEECalculator'));
+const CutCalc = lazy(() => import('@/components/ai-modules/CutCalcPro'));
 const WorkoutTimer = lazy(() => import('@/components/ai-modules/WorkoutTimer'));
 const WorkoutLoggerAI = lazy(() => import('@/components/ai-modules/WorkoutLoggerAI'));
 const BlueprintAI = lazy(() => import('@/components/ai-modules/BlueprintAI'));
 const PhysiqueAI = lazy(() => import('@/components/ai-modules/PhysiqueAI'));
-const ProgressHub = lazy(() => import('@/components/progress/ProgressHub'));
-const BodyweightTrainer = lazy(() => import('@/components/ai-modules/BodyweightTrainer'));
-const StretchingGuide = lazy(() => import('@/components/ai-modules/StretchingGuide'));
-const NutritionTracker = lazy(() => import('@/components/ai-modules/NutritionTracker'));
+const ProgressHub = lazy(() => import('@/components/ai-modules/ProgressHub'));
 const HabitTracker = lazy(() => import('@/components/ai-modules/HabitTracker'));
 
 export interface Module {
@@ -60,7 +57,7 @@ import {
   User, 
   TrendingUp, 
   Activity, 
-  Stretch,
+  Move,
   Apple,
   CheckSquare
 } from 'lucide-react';
@@ -161,24 +158,6 @@ export const ModulesProvider: React.FC<{ children: React.ReactNode }> = ({ child
       component: ProgressHub,
       category: 'Progress',
       gradient: 'from-purple-900/40 to-violet-900/60'
-    },
-    {
-      id: 'bodyweight-trainer',
-      title: 'Bodyweight Trainer',
-      description: 'No-equipment workouts and bodyweight exercise progressions',
-      icon: Activity,
-      component: BodyweightTrainer,
-      category: 'AI Training',
-      gradient: 'from-teal-900/40 to-cyan-900/60'
-    },
-    {
-      id: 'stretching-guide',
-      title: 'Stretching Guide',
-      description: 'Comprehensive mobility and flexibility routines for better recovery',
-      icon: Stretch,
-      component: StretchingGuide,
-      category: 'AI Training',
-      gradient: 'from-pink-900/40 to-rose-900/60'
     },
     {
       id: 'smart-food-log',

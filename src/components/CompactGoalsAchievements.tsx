@@ -1,31 +1,117 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Trophy, Target, ChevronDown, ChevronUp, Award } from 'lucide-react';
+import { Trophy, Target, ChevronDown, ChevronUp, Award, Plus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const CompactGoalsAchievements = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [goals, setGoals] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const quickStats = {
-    activeGoals: 3,
-    completedToday: 2,
-    weeklyStreak: 5,
-    totalPoints: 1250
+  const [quickStats, setQuickStats] = useState({
+    activeGoals: 0,
+    completedToday: 0,
+    weeklyStreak: 0,
+    totalPoints: 0
+  });
+
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+
+    try {
+      // Load active goals
+      const { data: goalsData, error: goalsError } = await supabase
+        .from('user_goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_completed', false)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (goalsError) {
+        console.error('Error loading goals:', goalsError);
+      } else {
+        setGoals(goalsData || []);
+      }
+
+      // Calculate completed today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: completedTodayData, error: completedTodayError } = await supabase
+        .from('user_goals')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true)
+        .gte('updated_at', today);
+
+      // Get workout streak (simplified calculation)
+      const { data: recentWorkouts, error: workoutsError } = await supabase
+        .from('workout_sessions')
+        .select('session_date')
+        .eq('user_id', user.id)
+        .order('session_date', { ascending: false })
+        .limit(7);
+
+      let streak = 0;
+      if (recentWorkouts && recentWorkouts.length > 0) {
+        const today = new Date();
+        let checkDate = new Date(today);
+        
+        for (const workout of recentWorkouts) {
+          const workoutDate = new Date(workout.session_date);
+          if (workoutDate.toDateString() === checkDate.toDateString()) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Mock achievements for now - in a real app these would be calculated
+      const mockAchievements = [];
+
+      setQuickStats({
+        activeGoals: goalsData?.length || 0,
+        completedToday: completedTodayData?.length || 0,
+        weeklyStreak: streak,
+        totalPoints: 0 // This would be calculated from actual achievements
+      });
+
+      setAchievements(mockAchievements);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const recentGoals = [
-    { title: "Weekly Workout Goal", progress: 75, current: 3, target: 4 },
-    { title: "Daily Protein Target", progress: 60, current: 3, target: 5 },
-    { title: "Weight Loss Milestone", progress: 40, current: 0.8, target: 2 }
-  ];
-
-  const recentAchievements = [
-    { title: "7-Day Streak Champion", points: 100, time: "2 hours ago" },
-    { title: "Protein Master", points: 75, time: "1 day ago" }
-  ];
+  if (loading) {
+    return (
+      <Card className="bg-gradient-to-r from-blue-900/20 to-indigo-900/30 backdrop-blur-sm border-blue-500/30">
+        <CardContent className="p-4">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-700 rounded mb-2"></div>
+            <div className="h-3 bg-gray-800 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-gradient-to-r from-blue-900/20 to-indigo-900/30 backdrop-blur-sm border-blue-500/30">
@@ -69,29 +155,60 @@ const CompactGoalsAchievements = () => {
             <div className="space-y-4">
               {/* Goals Section */}
               <div>
-                <h4 className="text-white text-sm font-semibold mb-3 flex items-center">
-                  <Target className="w-4 h-4 mr-2 text-orange-400" />
-                  Active Goals
-                </h4>
-                <div className="space-y-2">
-                  {recentGoals.slice(0, 2).map((goal, index) => (
-                    <div key={index} className="p-3 bg-gray-900/40 rounded-lg border border-gray-700/50">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-white text-xs font-medium">{goal.title}</span>
-                        <span className="text-blue-400 text-xs">{goal.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-1.5">
-                        <div 
-                          className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all duration-300"
-                          style={{ width: `${goal.progress}%` }}
-                        />
-                      </div>
-                      <div className="mt-1 text-xs text-gray-400">
-                        {goal.current}/{goal.target}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-white text-sm font-semibold flex items-center">
+                    <Target className="w-4 h-4 mr-2 text-orange-400" />
+                    Active Goals
+                  </h4>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-orange-400 hover:bg-orange-500/10 h-6 px-2"
+                    onClick={() => navigate('/modules')} // Navigate to create goals
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Goal
+                  </Button>
                 </div>
+                
+                {goals.length === 0 ? (
+                  <div className="p-3 bg-gray-900/40 rounded-lg border border-gray-700/50 text-center">
+                    <Target className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                    <p className="text-gray-400 text-xs mb-2">No active goals yet</p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-orange-400 hover:bg-orange-500/10 text-xs"
+                      onClick={() => navigate('/modules')}
+                    >
+                      Create Your First Goal
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {goals.slice(0, 2).map((goal, index) => (
+                      <div key={goal.id} className="p-3 bg-gray-900/40 rounded-lg border border-gray-700/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-white text-xs font-medium">{goal.title}</span>
+                          <span className="text-blue-400 text-xs">
+                            {goal.target_value ? Math.round((goal.current_value / goal.target_value) * 100) : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-1.5">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 rounded-full transition-all duration-300"
+                            style={{ 
+                              width: `${goal.target_value ? Math.min(100, (goal.current_value / goal.target_value) * 100) : 0}%` 
+                            }}
+                          />
+                        </div>
+                        <div className="mt-1 text-xs text-gray-400">
+                          {goal.current_value || 0}/{goal.target_value || 0} {goal.unit || ''}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Achievements Section */}
@@ -100,24 +217,33 @@ const CompactGoalsAchievements = () => {
                   <Trophy className="w-4 h-4 mr-2 text-yellow-400" />
                   Recent Achievements
                 </h4>
-                <div className="space-y-2">
-                  {recentAchievements.map((achievement, index) => (
-                    <div key={index} className="p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/20 rounded-lg border border-yellow-500/30">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Trophy className="w-4 h-4 text-yellow-400" />
-                          <div>
-                            <span className="text-white text-xs font-medium">{achievement.title}</span>
-                            <p className="text-gray-400 text-xs">{achievement.time}</p>
+                
+                {achievements.length === 0 ? (
+                  <div className="p-3 bg-gray-900/40 rounded-lg border border-gray-700/50 text-center">
+                    <Trophy className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                    <p className="text-gray-400 text-xs">No achievements yet</p>
+                    <p className="text-gray-500 text-xs mt-1">Complete goals to earn achievements!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {achievements.map((achievement, index) => (
+                      <div key={index} className="p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/20 rounded-lg border border-yellow-500/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Trophy className="w-4 h-4 text-yellow-400" />
+                            <div>
+                              <span className="text-white text-xs font-medium">{achievement.title}</span>
+                              <p className="text-gray-400 text-xs">{achievement.time}</p>
+                            </div>
                           </div>
+                          <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 text-xs">
+                            +{achievement.points}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 text-xs">
-                          +{achievement.points}
-                        </Badge>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

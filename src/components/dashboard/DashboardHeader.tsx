@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { User, Settings, Crown, Library, Menu } from 'lucide-react';
@@ -5,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Logo from '@/components/ui/logo';
+import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +44,11 @@ export const DashboardHeader: React.FC = () => {
               >
                 <Library className="w-4 h-4" />
               </Button>
+              
+              {/* Notifications bell in mobile menu */}
+              <div className="scale-75">
+                <NotificationsSummary />
+              </div>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -93,7 +100,7 @@ export const DashboardHeader: React.FC = () => {
     );
   }
 
-  // Desktop version remains the same
+  // Desktop version with notification bell integrated
   return (
     <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -111,6 +118,12 @@ export const DashboardHeader: React.FC = () => {
               <Library className="w-4 h-4 mr-2" />
               Module Library
             </Button>
+            
+            {/* Notifications bell integrated into menu */}
+            <div className="scale-90">
+              <NotificationsSummary />
+            </div>
+            
             <Button
               onClick={() => navigate('/profile')}
               variant="ghost"

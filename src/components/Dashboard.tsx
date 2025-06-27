@@ -9,10 +9,9 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { Star, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ScientificStudies from '@/components/ScientificStudies';
-import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import CompactGoalsAchievements from '@/components/CompactGoalsAchievements';
+import LatestResearch from '@/components/homepage/LatestResearch';
 import { useFavorites } from '@/hooks/useFavorites';
 import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
 
@@ -104,11 +103,6 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {/* Scientific Studies Button */}
-              <div className="mb-6 sm:mb-8 text-center">
-                <ScientificStudies />
-              </div>
-
               {/* Favorites Section with mobile-optimized layout */}
               {!favoritesLoading && favorites.length > 0 ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
@@ -174,7 +168,7 @@ const Dashboard = () => {
               {/* Dashboard Content Grid - Mobile-optimized */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
                 <CompactGoalsAchievements />
-                <PersonalizedSummary />
+                <LatestResearch />
               </div>
             </div>
           </div>

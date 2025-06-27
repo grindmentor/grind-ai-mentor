@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,12 +33,88 @@ const Profile = () => {
     body_fat_percentage: ''
   });
 
+  // Dynamic progress stats
+  const [progressStats, setProgressStats] = useState({
+    workouts: 0,
+    goals: 0,
+    streak: 0,
+    progress: 0
+  });
+
   useEffect(() => {
     if (user) {
       loadProfile();
       loadPreferences();
+      loadProgressStats();
     }
   }, [user]);
+
+  const loadProgressStats = async () => {
+    if (!user) return;
+
+    try {
+      // Get actual workout count for this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const { data: workouts, error: workoutError } = await supabase
+        .from('workout_sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .gte('session_date', startOfMonth.toISOString().split('T')[0]);
+
+      // Get actual goals count
+      const { data: goals, error: goalsError } = await supabase
+        .from('user_goals')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_completed', false);
+
+      // Calculate streak (simplified - consecutive workout days)
+      const { data: recentWorkouts, error: streakError } = await supabase
+        .from('workout_sessions')
+        .select('session_date')
+        .eq('user_id', user.id)
+        .order('session_date', { ascending: false })
+        .limit(30);
+
+      let streak = 0;
+      if (recentWorkouts && recentWorkouts.length > 0) {
+        const today = new Date();
+        let checkDate = new Date(today);
+        
+        for (const workout of recentWorkouts) {
+          const workoutDate = new Date(workout.session_date);
+          if (workoutDate.toDateString() === checkDate.toDateString()) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Calculate progress percentage based on completed goals
+      const { data: completedGoals, error: completedError } = await supabase
+        .from('user_goals')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true);
+
+      const totalGoals = (goals?.length || 0) + (completedGoals?.length || 0);
+      const progressPercentage = totalGoals > 0 ? Math.round(((completedGoals?.length || 0) / totalGoals) * 100) : 0;
+
+      setProgressStats({
+        workouts: workouts?.length || 0,
+        goals: goals?.length || 0,
+        streak: streak,
+        progress: progressPercentage
+      });
+    } catch (error) {
+      console.error('Error loading progress stats:', error);
+    }
+  };
 
   const loadProfile = async () => {
     try {
@@ -165,11 +242,10 @@ const Profile = () => {
 
   const getGoalDisplay = (goal) => {
     switch (goal) {
-      case 'weight_loss': return 'Cut';
-      case 'muscle_gain': return 'Bulk';
-      case 'general_fitness': return 'Maintenance';
-      case 'body_recomposition': return 'Recomp';
-      default: return goal ? goal.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not set';
+      case 'cut': return 'Cut';
+      case 'bulk': return 'Bulk';
+      case 'maintain': return 'Maintain';
+      default: return goal ? goal.charAt(0).toUpperCase() + goal.slice(1) : 'Not set';
     }
   };
 
@@ -193,18 +269,21 @@ const Profile = () => {
     }
   };
 
-  // Mock progress data - in real app this would come from user's actual progress
-  const progressStats = [
-    { icon: Activity, title: "Workouts", value: "12", subtitle: "This Month", color: "text-green-400" },
-    { icon: Target, title: "Goals", value: "3", subtitle: "Active", color: "text-blue-400" },
-    { icon: Calendar, title: "Streak", value: "8", subtitle: "Days", color: "text-orange-400" },
-    { icon: TrendingUp, title: "Progress", value: "85%", subtitle: "This Month", color: "text-purple-400" }
-  ];
+  const getActivityDescription = (activity) => {
+    switch (activity) {
+      case 'sedentary': return 'Little to no exercise';
+      case 'lightly_active': return 'Light exercise 1-3 days/week';
+      case 'moderately_active': return 'Moderate exercise 3-5 days/week';
+      case 'very_active': return 'Hard exercise 6-7 days/week';
+      case 'extremely_active': return 'Very hard exercise, physical job';
+      default: return '';
+    }
+  };
 
   const achievements = [
-    { icon: Trophy, title: "First Workout", description: "Completed your first workout", earned: true },
-    { icon: Flame, title: "Week Warrior", description: "Complete 5 workouts in a week", earned: true },
-    { icon: Zap, title: "Consistency King", description: "7-day workout streak", earned: true },
+    { icon: Trophy, title: "First Workout", description: "Completed your first workout", earned: false },
+    { icon: Flame, title: "Week Warrior", description: "Complete 5 workouts in a week", earned: false },
+    { icon: Zap, title: "Consistency King", description: "7-day workout streak", earned: false },
     { icon: Award, title: "Goal Crusher", description: "Achieve your first goal", earned: false }
   ];
 
@@ -247,16 +326,38 @@ const Profile = () => {
 
           {/* Progress Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {progressStats.map((stat, index) => (
-              <Card key={index} className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <stat.icon className={`w-6 h-6 sm:w-8 sm:h-8 ${stat.color} mx-auto mb-2 sm:mb-3`} />
-                  <div className="text-xl sm:text-2xl font-bold text-white mb-1">{stat.value}</div>
-                  <p className="text-gray-400 text-xs sm:text-sm">{stat.subtitle}</p>
-                  <h3 className="text-white font-medium text-sm sm:text-base">{stat.title}</h3>
-                </CardContent>
-              </Card>
-            ))}
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 mx-auto mb-2 sm:mb-3" />
+                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{progressStats.workouts}</div>
+                <p className="text-gray-400 text-xs sm:text-sm">This Month</p>
+                <h3 className="text-white font-medium text-sm sm:text-base">Workouts</h3>
+              </CardContent>
+            </Card>
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <Target className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mx-auto mb-2 sm:mb-3" />
+                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{progressStats.goals}</div>
+                <p className="text-gray-400 text-xs sm:text-sm">Active</p>
+                <h3 className="text-white font-medium text-sm sm:text-base">Goals</h3>
+              </CardContent>
+            </Card>
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-orange-400 mx-auto mb-2 sm:mb-3" />
+                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{progressStats.streak}</div>
+                <p className="text-gray-400 text-xs sm:text-sm">Days</p>
+                <h3 className="text-white font-medium text-sm sm:text-base">Streak</h3>
+              </CardContent>
+            </Card>
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 mx-auto mb-2 sm:mb-3" />
+                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{progressStats.progress}%</div>
+                <p className="text-gray-400 text-xs sm:text-sm">This Month</p>
+                <h3 className="text-white font-medium text-sm sm:text-base">Progress</h3>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Editable Profile Information */}
@@ -321,7 +422,7 @@ const Profile = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-white mb-2">Body Fat %</label>
+                    <label className="block text-sm font-medium text-white mb-2">Body Fat % <span className="text-gray-400">(optional)</span></label>
                     <Input
                       type="number"
                       step="0.1"
@@ -358,12 +459,9 @@ const Profile = () => {
                       <SelectValue placeholder="Select your primary goal" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="weight_loss">Weight Loss</SelectItem>
-                      <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
-                      <SelectItem value="strength">Strength</SelectItem>
-                      <SelectItem value="endurance">Endurance</SelectItem>
-                      <SelectItem value="general_fitness">General Fitness</SelectItem>
-                      <SelectItem value="body_recomposition">Body Recomposition</SelectItem>
+                      <SelectItem value="cut">Cut</SelectItem>
+                      <SelectItem value="bulk">Bulk</SelectItem>
+                      <SelectItem value="maintain">Maintain</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -387,13 +485,41 @@ const Profile = () => {
                       <SelectValue placeholder="Select activity level" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectItem value="sedentary">Sedentary</SelectItem>
-                      <SelectItem value="lightly_active">Lightly Active</SelectItem>
-                      <SelectItem value="moderately_active">Moderately Active</SelectItem>
-                      <SelectItem value="very_active">Very Active</SelectItem>
-                      <SelectItem value="extremely_active">Extremely Active</SelectItem>
+                      <SelectItem value="sedentary">
+                        <div>
+                          <div>Sedentary</div>
+                          <div className="text-xs text-gray-400">Little to no exercise</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="lightly_active">
+                        <div>
+                          <div>Lightly Active</div>
+                          <div className="text-xs text-gray-400">Light exercise 1-3 days/week</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="moderately_active">
+                        <div>
+                          <div>Moderately Active</div>
+                          <div className="text-xs text-gray-400">Moderate exercise 3-5 days/week</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="very_active">
+                        <div>
+                          <div>Very Active</div>
+                          <div className="text-xs text-gray-400">Hard exercise 6-7 days/week</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="extremely_active">
+                        <div>
+                          <div>Extremely Active</div>
+                          <div className="text-xs text-gray-400">Very hard exercise, physical job</div>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  {editableProfile.activity && (
+                    <p className="text-xs text-gray-400 mt-1">{getActivityDescription(editableProfile.activity)}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -412,11 +538,11 @@ const Profile = () => {
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Weight</p>
-                  <p className="text-white">{getWeightDisplay(profile?.weight)}</p>
+                  <p className="text-white">{profile?.weight ? getWeightDisplay(profile.weight) : 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Height</p>
-                  <p className="text-white">{getHeightDisplay(profile?.height)}</p>
+                  <p className="text-white">{profile?.height ? getHeightDisplay(profile.height) : 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Goal</p>
@@ -465,11 +591,6 @@ const Profile = () => {
                           {achievement.description}
                         </p>
                       </div>
-                      {achievement.earned && (
-                        <Badge className="bg-orange-500 text-white ml-auto">
-                          Earned
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 ))}

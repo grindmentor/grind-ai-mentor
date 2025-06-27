@@ -61,17 +61,6 @@ const ComingSoonComponent = ({ title }: { title?: string }) => (
 const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
   const modules: Module[] = [
     {
-      id: 'dashboard',
-      title: 'Dashboard',
-      description: 'Your personalized fitness overview',
-      icon: LayoutDashboard,
-      component: () => <ComingSoonComponent title="Dashboard" />,
-      gradient: 'from-orange-500 to-red-500',
-      usageKey: 'general_access',
-      isPremium: false,
-      isNew: false
-    },
-    {
       id: 'smart-training',
       title: 'Smart Training',
       description: 'AI-powered workout recommendations',
@@ -173,7 +162,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
     {
       id: 'progress-hub',
       title: 'Progress Hub',
-      description: 'Track your fitness progress with detailed measurements, weight tracking, and visual progress monitoring',
+      description: 'Track your fitness progress with detailed measurements and analytics',
       icon: TrendingUp,
       component: ProgressHub,
       gradient: 'from-blue-500 to-blue-700',

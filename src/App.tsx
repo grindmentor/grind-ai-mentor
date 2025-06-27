@@ -7,7 +7,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import { ModulesProvider } from "./contexts/ModulesContext";
+import ModulesProvider from "./contexts/ModulesContext";
 import { PreferencesProvider } from "./contexts/PreferencesContext";
 import { UserDataProvider } from "./contexts/UserDataContext";
 import { SoundEffects } from "./utils/soundEffects";

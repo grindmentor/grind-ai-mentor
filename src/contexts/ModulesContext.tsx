@@ -1,14 +1,14 @@
+
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, Menu, MessageSquare, Music, Pizza, Settings, ShoppingBag, Speaker, Star, Timer, TrendingUp, Weight } from 'lucide-react';
 import SmartTraining from '@/components/ai-modules/SmartTraining';
 import CoachGPT from '@/components/ai-modules/CoachGPT';
 import TDEECalculator from '@/components/ai-modules/TDEECalculator';
-import MealPlanGenerator from '@/components/ai-modules/MealPlanGenerator';
+import MealPlanAI from '@/components/ai-modules/MealPlanAI';
 import RecoveryCoach from '@/components/ai-modules/RecoveryCoach';
-import WorkoutLogger from '@/components/ai-modules/WorkoutLogger';
+import WorkoutLoggerAI from '@/components/ai-modules/WorkoutLoggerAI';
 import FoodPhotoLogger from '@/components/ai-modules/FoodPhotoLogger';
-import ExerciseDatabase from '@/components/ai-modules/ExerciseDatabase';
-import SupplementAssistant from '@/components/ai-modules/SupplementAssistant';
+import WorkoutLibrary from '@/components/ai-modules/WorkoutLibrary';
 import ProgressHub from '@/components/ai-modules/ProgressHub';
 
 type ModuleId =
@@ -101,7 +101,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Meal Plan Generator',
       description: 'Generate personalized meal plans',
       icon: ChefHat,
-      component: MealPlanGenerator,
+      component: MealPlanAI,
       gradient: 'from-yellow-500 to-orange-500',
       usageKey: 'meal_plan_generator',
       isPremium: true,
@@ -123,7 +123,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Workout Logger',
       description: 'Log and track your workouts',
       icon: ListChecks,
-      component: WorkoutLogger,
+      component: WorkoutLoggerAI,
       gradient: 'from-purple-500 to-indigo-500',
       usageKey: 'workout_logger',
       isPremium: false,
@@ -145,7 +145,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Exercise Database',
       description: 'Browse a comprehensive exercise library',
       icon: BookOpen,
-      component: ExerciseDatabase,
+      component: WorkoutLibrary,
       gradient: 'from-slate-500 to-gray-500',
       usageKey: 'exercise_database',
       isPremium: false,
@@ -156,7 +156,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Supplement Assistant',
       description: 'Get AI-powered supplement recommendations',
       icon: Speaker,
-      component: SupplementAssistant,
+      component: () => <div className="p-6 text-center text-white">Coming Soon</div>,
       gradient: 'from-stone-500 to-zinc-500',
       usageKey: 'supplement_assistant',
       isPremium: true,

@@ -1,7 +1,8 @@
 
-const CACHE_NAME = 'grindmentor-v2';
-const STATIC_CACHE = 'grindmentor-static-v2';
-const DYNAMIC_CACHE = 'grindmentor-dynamic-v2';
+const CACHE_NAME = 'myotopia-v3';
+const STATIC_CACHE = 'myotopia-static-v3';
+const DYNAMIC_CACHE = 'myotopia-dynamic-v3';
+const OFFLINE_QUEUE_CACHE = 'myotopia-offline-queue-v1';
 
 // Critical assets to cache immediately
 const STATIC_ASSETS = [
@@ -18,14 +19,10 @@ const STATIC_ASSETS = [
   '/icon-1024.png'
 ];
 
-// Cache strategies
-const CACHE_STRATEGIES = {
-  CACHE_FIRST: 'cache-first',
-  NETWORK_FIRST: 'network-first',
-  STALE_WHILE_REVALIDATE: 'stale-while-revalidate'
-};
+// Offline queue for failed requests
+let offlineQueue = [];
 
-// Install event - cache static assets
+// Install event - cache static assets and register for background sync
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   
@@ -38,6 +35,16 @@ self.addEventListener('install', (event) => {
       caches.open(DYNAMIC_CACHE).then((cache) => {
         console.log('[SW] Dynamic cache initialized');
         return cache;
+      }),
+      caches.open(OFFLINE_QUEUE_CACHE).then((cache) => {
+        console.log('[SW] Offline queue cache initialized');
+        return cache;
+      }),
+      // Register for periodic background sync
+      self.registration.periodicSync?.register('background-sync', {
+        minInterval: 24 * 60 * 60 * 1000, // 24 hours
+      }).catch(() => {
+        console.log('[SW] Periodic background sync not supported');
       })
     ]).then(() => {
       console.log('[SW] Installation complete');
@@ -54,7 +61,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+          if (!cacheName.includes('myotopia-v3') && !cacheName.includes('myotopia-offline-queue-v1')) {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -67,16 +74,15 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - handle requests with different strategies
+// Enhanced fetch event with better offline support
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
   
   // Skip non-HTTP requests
   if (!request.url.startsWith('http')) {
     return;
   }
-  
+
   // Handle different types of requests
   if (isStaticAsset(request)) {
     event.respondWith(handleStaticAsset(request));
@@ -116,6 +122,13 @@ async function handleStaticAsset(request) {
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
+      // Try to update cache in background
+      fetch(request).then(response => {
+        if (response.ok) {
+          cache.put(request, response.clone());
+        }
+      }).catch(() => {});
+      
       return cachedResponse;
     }
     
@@ -133,7 +146,7 @@ async function handleStaticAsset(request) {
   }
 }
 
-// Handle API requests with network-first strategy
+// Enhanced API request handling with offline queue
 async function handleAPIRequest(request) {
   try {
     const networkResponse = await fetch(request);
@@ -146,8 +159,9 @@ async function handleAPIRequest(request) {
     
     return networkResponse;
   } catch (error) {
-    console.log('[SW] API request failed, trying cache:', error);
+    console.log('[SW] API request failed:', error);
     
+    // For GET requests, try cache
     if (request.method === 'GET') {
       const cache = await caches.open(DYNAMIC_CACHE);
       const cachedResponse = await cache.match(request);
@@ -155,6 +169,18 @@ async function handleAPIRequest(request) {
       if (cachedResponse) {
         return cachedResponse;
       }
+    } else {
+      // For POST/PUT/DELETE, queue for background sync
+      await queueOfflineRequest(request);
+      
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Request queued for when you\'re back online',
+        offline: true 
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
     
     return new Response(JSON.stringify({ 
@@ -167,20 +193,99 @@ async function handleAPIRequest(request) {
   }
 }
 
-// Handle navigation requests
+// Queue offline requests for background sync
+async function queueOfflineRequest(request) {
+  const requestData = {
+    url: request.url,
+    method: request.method,
+    headers: Object.fromEntries(request.headers.entries()),
+    body: request.method !== 'GET' ? await request.text() : null,
+    timestamp: Date.now()
+  };
+  
+  const cache = await caches.open(OFFLINE_QUEUE_CACHE);
+  const queueKey = `offline-${Date.now()}-${Math.random()}`;
+  
+  await cache.put(queueKey, new Response(JSON.stringify(requestData)));
+  
+  // Try to register for background sync
+  if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    try {
+      await self.registration.sync.register('offline-sync');
+    } catch (err) {
+      console.log('[SW] Background sync registration failed:', err);
+    }
+  }
+}
+
+// Handle navigation requests with offline support
 async function handleNavigationRequest(request) {
   try {
     const networkResponse = await fetch(request);
+    
+    // Cache successful navigation responses
+    if (networkResponse.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    
     return networkResponse;
   } catch (error) {
-    console.log('[SW] Navigation request failed, serving app shell:', error);
+    console.log('[SW] Navigation request failed, serving cached version or app shell:', error);
     
-    const cache = await caches.open(STATIC_CACHE);
+    // Try cached version first
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    // Fall back to app shell
     const appShell = await cache.match('/');
-    
-    return appShell || new Response('App not available offline', {
-      status: 503,
-      statusText: 'Service Unavailable'
+    return appShell || new Response(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Myotopia - Offline</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { 
+              font-family: system-ui, -apple-system, sans-serif; 
+              text-align: center; 
+              padding: 2rem;
+              background: linear-gradient(135deg, #000 0%, #f97316 100%);
+              color: white;
+              min-height: 100vh;
+              margin: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-direction: column;
+            }
+            .offline-icon { font-size: 4rem; margin-bottom: 1rem; }
+            h1 { margin-bottom: 1rem; }
+            p { opacity: 0.8; max-width: 400px; line-height: 1.6; }
+          </style>
+        </head>
+        <body>
+          <div class="offline-icon">🏋️‍♂️</div>
+          <h1>You're Offline</h1>
+          <p>Myotopia is not available right now. Check your connection and try again.</p>
+          <button onclick="location.reload()" style="
+            background: #f97316; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            cursor: pointer;
+            margin-top: 1rem;
+          ">Try Again</button>
+        </body>
+      </html>
+    `, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
     });
   }
 }
@@ -200,36 +305,136 @@ async function handleDynamicRequest(request) {
   return cachedResponse || await fetchPromise;
 }
 
-// Background sync for offline actions
+// Enhanced background sync for offline actions
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync triggered:', event.tag);
+  
+  if (event.tag === 'offline-sync') {
+    event.waitUntil(processOfflineQueue());
+  } else if (event.tag === 'background-sync') {
+    event.waitUntil(doBackgroundSync());
+  }
+});
+
+// Process queued offline requests
+async function processOfflineQueue() {
+  console.log('[SW] Processing offline queue...');
+  
+  const cache = await caches.open(OFFLINE_QUEUE_CACHE);
+  const requests = await cache.keys();
+  
+  for (const request of requests) {
+    try {
+      const response = await cache.match(request);
+      const requestData = JSON.parse(await response.text());
+      
+      // Recreate and send the request
+      const originalRequest = new Request(requestData.url, {
+        method: requestData.method,
+        headers: requestData.headers,
+        body: requestData.body
+      });
+      
+      const networkResponse = await fetch(originalRequest);
+      
+      if (networkResponse.ok) {
+        await cache.delete(request);
+        console.log('[SW] Offline request processed successfully:', requestData.url);
+        
+        // Notify the app about successful sync
+        self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'OFFLINE_REQUEST_SYNCED',
+              url: requestData.url,
+              method: requestData.method
+            });
+          });
+        });
+      }
+    } catch (error) {
+      console.log('[SW] Failed to process offline request:', error);
+    }
+  }
+}
+
+// Regular background sync for app updates
+async function doBackgroundSync() {
+  console.log('[SW] Performing background sync...');
+  
+  try {
+    // Update static assets
+    const cache = await caches.open(STATIC_CACHE);
+    await Promise.allSettled(
+      STATIC_ASSETS.map(async (asset) => {
+        try {
+          const response = await fetch(asset);
+          if (response.ok) {
+            await cache.put(asset, response);
+          }
+        } catch (error) {
+          console.log('[SW] Failed to update asset:', asset, error);
+        }
+      })
+    );
+    
+    // Notify clients about updates
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'BACKGROUND_SYNC_COMPLETE',
+          timestamp: Date.now()
+        });
+      });
+    });
+    
+  } catch (error) {
+    console.log('[SW] Background sync failed:', error);
+  }
+}
+
+// Periodic background sync
+self.addEventListener('periodicsync', (event) => {
+  console.log('[SW] Periodic background sync triggered:', event.tag);
   
   if (event.tag === 'background-sync') {
     event.waitUntil(doBackgroundSync());
   }
 });
 
-async function doBackgroundSync() {
-  console.log('[SW] Performing background sync...');
-  // Handle offline data synchronization here
-}
-
-// Push notifications support
+// Enhanced push notifications support
 self.addEventListener('push', (event) => {
   console.log('[SW] Push notification received');
   
-  const options = {
-    body: event.data ? event.data.text() : 'New update available!',
+  let notificationData = {
+    title: 'Myotopia',
+    body: 'New update available!',
     icon: '/icon-192.png',
-    badge: '/favicon-32x32.png',
+    badge: '/favicon-32x32.png'
+  };
+  
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = { ...notificationData, ...data };
+    } catch (error) {
+      notificationData.body = event.data.text();
+    }
+  }
+  
+  const options = {
+    body: notificationData.body,
+    icon: notificationData.icon,
+    badge: notificationData.badge,
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: 1
+      primaryKey: notificationData.id || 1,
+      url: notificationData.url || '/'
     },
     actions: [
       {
-        action: 'explore',
+        action: 'open',
         title: 'Open App',
         icon: '/icon-192.png'
       },
@@ -238,11 +443,13 @@ self.addEventListener('push', (event) => {
         title: 'Close',
         icon: '/favicon-32x32.png'
       }
-    ]
+    ],
+    requireInteraction: true,
+    silent: false
   };
   
   event.waitUntil(
-    self.registration.showNotification('GrindMentor', options)
+    self.registration.showNotification(notificationData.title, options)
   );
 });
 
@@ -252,14 +459,47 @@ self.addEventListener('notificationclick', (event) => {
   
   event.notification.close();
   
-  if (event.action === 'explore') {
+  const urlToOpen = event.notification.data.url || '/';
+  
+  if (event.action === 'open' || !event.action) {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true
+      }).then((clientList) => {
+        // Try to focus existing window
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin)) {
+            return client.focus();
+          }
+        }
+        // Open new window if none exists
+        return clients.openWindow(urlToOpen);
+      })
     );
   }
 });
 
-// iOS-specific optimizations
+// Handle notification close
+self.addEventListener('notificationclose', (event) => {
+  console.log('[SW] Notification closed:', event.notification.data);
+  
+  // Track notification dismissal
+  event.waitUntil(
+    fetch('/api/analytics/notification-dismissed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        notificationId: event.notification.data.primaryKey,
+        timestamp: Date.now()
+      })
+    }).catch(() => {
+      // Fail silently for analytics
+    })
+  );
+});
+
+// Message handling for communication with the app
 self.addEventListener('message', (event) => {
   console.log('[SW] Message received:', event.data);
   
@@ -270,6 +510,18 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'GET_VERSION') {
     event.ports[0].postMessage({ version: CACHE_NAME });
   }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+      }).then(() => {
+        event.ports[0].postMessage({ success: true });
+      })
+    );
+  }
 });
 
-console.log('[SW] Service Worker registered successfully');
+console.log('[SW] Myotopia Service Worker registered successfully with enhanced offline capabilities');

@@ -179,7 +179,7 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
   }
 };
 
-const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
+export const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
   const modules: Module[] = [
     {
       id: 'smart-training',

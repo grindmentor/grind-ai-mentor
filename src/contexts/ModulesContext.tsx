@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
-import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
 
 type ModuleId =
@@ -12,7 +12,6 @@ type ModuleId =
   | 'recovery-coach'
   | 'workout-logger'
   | 'smart-food-log'
-  | 'workout-library'
   | 'progress-hub'
   | 'workout-timer'
   | 'cut-calc-pro'
@@ -211,26 +210,6 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
           <ModuleErrorBoundary moduleName="Smart Food Log" onBack={onBack}>
             <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}>
               <SmartFoodLog onBack={onBack || (() => {})} onFoodLogged={onFoodLogged || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'workout-library':
-        const WorkoutLibrary = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutLibrary')
-            .then(module => {
-              console.log(`Successfully loaded WorkoutLibrary module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load WorkoutLibrary module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Workout Library" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Workout Library" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Workout Library" onBack={onBack} />}>
-              <WorkoutLibrary onBack={onBack || (() => {})} />
             </React.Suspense>
           </ModuleErrorBoundary>
         );
@@ -451,17 +430,6 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       component: (props: any) => <SafeComponent moduleName="workout-timer" {...props} />,
       gradient: 'from-cyan-500 to-blue-500',
       usageKey: 'workout_timer',
-      isPremium: false,
-      isNew: false
-    },
-    {
-      id: 'workout-library',
-      title: 'Workout Library',
-      description: 'AI-powered exercise database with personalized recommendations',
-      icon: BookOpen,
-      component: (props: any) => <SafeComponent moduleName="workout-library" {...props} />,
-      gradient: 'from-slate-500 to-gray-500',
-      usageKey: 'workout_library',
       isPremium: false,
       isNew: false
     },

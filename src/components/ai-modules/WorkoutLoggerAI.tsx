@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +10,24 @@ import { useToast } from "@/hooks/use-toast";
 import { PageTransition } from "@/components/ui/page-transition";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useExerciseDatabase, Exercise } from "@/hooks/useExerciseDatabase";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 
 interface WorkoutLoggerAIProps {
   onBack: () => void;
+}
+
+interface Exercise {
+  id: string;
+  name: string;
+  description: string;
+  primary_muscles: string[];
+  secondary_muscles: string[];
+  equipment: string;
+  difficulty_level: string;
+  category: string;
+  force_type: string;
+  mechanics: string;
 }
 
 interface WorkoutSet {
@@ -59,7 +70,6 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { exercises, loading, suggestions, searchExercises, getExerciseSuggestions, getRandomExercises } = useExerciseDatabase();
   
   const [workout, setWorkout] = useState<WorkoutSession>({
     name: 'New Workout',
@@ -68,7 +78,9 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     notes: ''
   });
   
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('search');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [showAIChat, setShowAIChat] = useState(false);
@@ -84,21 +96,43 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     difficulty: 'Beginner'
   });
 
-  // Load random exercises on mount
-  useEffect(() => {
-    if (activeTab === 'search' && exercises.length === 0 && !searchQuery) {
-      getRandomExercises(8);
+  // Search exercises in database
+  const searchExercises = async (query: string) => {
+    if (!query.trim()) {
+      setExercises([]);
+      return;
     }
-  }, [activeTab]);
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .or(`name.ilike.%${query}%, primary_muscles.cs.{${query}}, equipment.ilike.%${query}%`)
+        .eq('is_active', true)
+        .limit(20);
+
+      if (error) throw error;
+      setExercises(data || []);
+    } catch (error) {
+      console.error('Error searching exercises:', error);
+      toast({
+        title: "Search failed",
+        description: "Could not search exercises. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle search with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim()) {
         searchExercises(searchQuery);
-        getExerciseSuggestions(searchQuery);
       } else {
-        getRandomExercises(8);
+        setExercises([]);
       }
     }, 300);
 
@@ -384,11 +418,6 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    searchExercises(suggestion);
-  };
-
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-black via-indigo-900/10 to-violet-800/20 text-white">
@@ -484,26 +513,6 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                             </div>
                           )}
                         </div>
-
-                        {/* Search Suggestions */}
-                        {suggestions.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-400 mb-3">Suggestions:</h3>
-                            <div className="flex flex-wrap gap-2">
-                              {suggestions.map((suggestion) => (
-                                <Button
-                                  key={suggestion}
-                                  onClick={() => handleSuggestionClick(suggestion)}
-                                  variant="outline"
-                                  size="sm"
-                                  className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20 hover:border-violet-400"
-                                >
-                                  {suggestion}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         {/* Exercise Results */}
                         {exercises.length > 0 && (

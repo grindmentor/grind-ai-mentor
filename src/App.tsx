@@ -96,51 +96,61 @@ const App = () => {
               <Route 
                 path="/profile" 
                 element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Profile />
-                    </UserDataProvider>
-                  </PreferencesProvider>
+                  <AuthProvider>
+                    <PreferencesProvider>
+                      <UserDataProvider>
+                        <Profile />
+                      </UserDataProvider>
+                    </PreferencesProvider>
+                  </AuthProvider>
                 } 
               />
               <Route 
                 path="/modules" 
                 element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <ModuleLibrary />
-                    </UserDataProvider>
-                  </PreferencesProvider>
+                  <AuthProvider>
+                    <PreferencesProvider>
+                      <UserDataProvider>
+                        <ModuleLibrary />
+                      </UserDataProvider>
+                    </PreferencesProvider>
+                  </AuthProvider>
                 } 
               />
               <Route 
                 path="/pricing" 
                 element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Pricing />
-                    </UserDataProvider>
-                  </PreferencesProvider>
+                  <AuthProvider>
+                    <PreferencesProvider>
+                      <UserDataProvider>
+                        <Pricing />
+                      </UserDataProvider>
+                    </PreferencesProvider>
+                  </AuthProvider>
                 } 
               />
               <Route 
                 path="/account" 
                 element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Account />
-                    </UserDataProvider>
-                  </PreferencesProvider>
+                  <AuthProvider>
+                    <PreferencesProvider>
+                      <UserDataProvider>
+                        <Account />
+                      </UserDataProvider>
+                    </PreferencesProvider>
+                  </AuthProvider>
                 } 
               />
               <Route 
                 path="/settings" 
                 element={
-                  <PreferencesProvider>
-                    <UserDataProvider>
-                      <Settings />
-                    </UserDataProvider>
-                  </PreferencesProvider>
+                  <AuthProvider>
+                    <PreferencesProvider>
+                      <UserDataProvider>
+                        <Settings />
+                      </UserDataProvider>
+                    </PreferencesProvider>
+                  </AuthProvider>
                 } 
               />
               <Route path="/notifications" element={<Notifications />} />

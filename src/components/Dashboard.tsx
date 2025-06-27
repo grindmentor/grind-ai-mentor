@@ -34,20 +34,29 @@ const Dashboard = () => {
 
   // Load favorites from localStorage
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('module-favorites');
-    if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites));
+    try {
+      const savedFavorites = localStorage.getItem('module-favorites');
+      if (savedFavorites) {
+        setFavorites(JSON.parse(savedFavorites));
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+      setFavorites([]);
     }
   }, []);
 
   // Save favorites to localStorage
   const toggleFavorite = (moduleId: string) => {
-    const newFavorites = favorites.includes(moduleId) 
-      ? favorites.filter(id => id !== moduleId)
-      : [...favorites, moduleId];
-    
-    setFavorites(newFavorites);
-    localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+    try {
+      const newFavorites = favorites.includes(moduleId) 
+        ? favorites.filter(id => id !== moduleId)
+        : [...favorites, moduleId];
+      
+      setFavorites(newFavorites);
+      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+    } catch (error) {
+      console.error('Error saving favorites:', error);
+    }
   };
 
   const handleModuleClick = (module: Module) => {
@@ -62,14 +71,32 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   // Mobile menu toggle
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
+  // Handle case where modules might not be loaded yet
+  if (!modules || modules.length === 0) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading modules...</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   if (selectedModule) {
     const ModuleComponent = selectedModule.component;
@@ -171,7 +198,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center space-x-4">
                   <div className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                    GrindMentor
+                    Myotopia
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">

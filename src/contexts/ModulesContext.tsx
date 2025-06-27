@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
-import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, Menu, MessageSquare, Music, Pizza, Settings, ShoppingBag, Speaker, Star, Timer, TrendingUp, Weight } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, Speaker, TrendingUp } from 'lucide-react';
 import SmartTraining from '@/components/ai-modules/SmartTraining';
 import CoachGPT from '@/components/ai-modules/CoachGPT';
 import TDEECalculator from '@/components/ai-modules/TDEECalculator';
@@ -50,6 +50,14 @@ export const useModules = () => {
   return context;
 };
 
+// Simple placeholder component for missing modules
+const ComingSoonComponent = ({ title }: { title?: string }) => (
+  <div className="p-6 text-center text-white">
+    <h2 className="text-2xl font-bold mb-4">{title || 'Coming Soon'}</h2>
+    <p className="text-gray-400">This feature is currently under development.</p>
+  </div>
+);
+
 const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
   const modules: Module[] = [
     {
@@ -57,7 +65,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Dashboard',
       description: 'Your personalized fitness overview',
       icon: LayoutDashboard,
-      component: () => null,
+      component: () => <ComingSoonComponent title="Dashboard" />,
       gradient: 'from-orange-500 to-red-500',
       usageKey: 'general_access',
       isPremium: false,
@@ -156,7 +164,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Supplement Assistant',
       description: 'Get AI-powered supplement recommendations',
       icon: Speaker,
-      component: () => <div className="p-6 text-center text-white">Coming Soon</div>,
+      component: () => <ComingSoonComponent title="Supplement Assistant" />,
       gradient: 'from-stone-500 to-zinc-500',
       usageKey: 'supplement_assistant',
       isPremium: true,

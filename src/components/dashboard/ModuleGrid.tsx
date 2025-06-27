@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,80 +24,80 @@ interface ModuleGridProps {
   viewMode?: 'grid' | 'list';
 }
 
-// Enhanced function to get module-specific background colors and themes
+// Enhanced function to get module-specific background colors and themes that match interior colors
 const getModuleTheme = (moduleId: string, gradient: string) => {
   const moduleThemes: { [key: string]: { bg: string; border: string; iconColor: string; accent: string } } = {
     'cut-calc-pro': {
-      bg: 'bg-gradient-to-br from-red-900/50 to-red-800/60',
-      border: 'border-red-500/40',
-      iconColor: 'text-red-400',
-      accent: 'text-red-300'
+      bg: 'bg-gradient-to-br from-red-600/50 to-red-700/60',
+      border: 'border-red-400/50',
+      iconColor: 'text-red-300',
+      accent: 'text-red-200'
     },
     'smart-training': {
-      bg: 'bg-gradient-to-br from-blue-900/50 to-blue-800/60',
-      border: 'border-blue-500/40',
-      iconColor: 'text-blue-400',
-      accent: 'text-blue-300'
+      bg: 'bg-gradient-to-br from-blue-600/50 to-blue-700/60',
+      border: 'border-blue-400/50',
+      iconColor: 'text-blue-300',
+      accent: 'text-blue-200'
     },
     'meal-plan-ai': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-green-800/60',
-      border: 'border-green-500/40',
-      iconColor: 'text-green-400',
-      accent: 'text-green-300'
+      bg: 'bg-gradient-to-br from-green-600/50 to-green-700/60',
+      border: 'border-green-400/50',
+      iconColor: 'text-green-300',
+      accent: 'text-green-200'
     },
     'recovery-coach': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-purple-800/60',
-      border: 'border-purple-500/40',
-      iconColor: 'text-purple-400',
-      accent: 'text-purple-300'
+      bg: 'bg-gradient-to-br from-purple-600/50 to-purple-700/60',
+      border: 'border-purple-400/50',
+      iconColor: 'text-purple-300',
+      accent: 'text-purple-200'
     },
     'progress-hub': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-purple-800/60',
-      border: 'border-purple-500/40',
-      iconColor: 'text-purple-400',
-      accent: 'text-purple-300'
+      bg: 'bg-gradient-to-br from-purple-600/50 to-purple-700/60',
+      border: 'border-purple-400/50',
+      iconColor: 'text-purple-300',
+      accent: 'text-purple-200'
     },
     'tdee-calculator': {
-      bg: 'bg-gradient-to-br from-orange-900/50 to-orange-800/60',
-      border: 'border-orange-500/40',
-      iconColor: 'text-orange-400',
-      accent: 'text-orange-300'
+      bg: 'bg-gradient-to-br from-orange-600/50 to-orange-700/60',
+      border: 'border-orange-400/50',
+      iconColor: 'text-orange-300',
+      accent: 'text-orange-200'
     },
     'smart-food-log': {
-      bg: 'bg-gradient-to-br from-teal-900/50 to-teal-800/60',
-      border: 'border-teal-500/40',
-      iconColor: 'text-teal-400',
-      accent: 'text-teal-300'
+      bg: 'bg-gradient-to-br from-teal-600/50 to-teal-700/60',
+      border: 'border-teal-400/50',
+      iconColor: 'text-teal-300',
+      accent: 'text-teal-200'
     },
     'habit-tracker': {
-      bg: 'bg-gradient-to-br from-pink-900/50 to-pink-800/60',
-      border: 'border-pink-500/40',
-      iconColor: 'text-pink-400',
-      accent: 'text-pink-300'
+      bg: 'bg-gradient-to-br from-pink-600/50 to-pink-700/60',
+      border: 'border-pink-400/50',
+      iconColor: 'text-pink-300',
+      accent: 'text-pink-200'
     },
     'cardio-ai': {
-      bg: 'bg-gradient-to-br from-indigo-900/50 to-indigo-800/60',
-      border: 'border-indigo-500/40',
-      iconColor: 'text-indigo-400',
-      accent: 'text-indigo-300'
+      bg: 'bg-gradient-to-br from-indigo-600/50 to-indigo-700/60',
+      border: 'border-indigo-400/50',
+      iconColor: 'text-indigo-300',
+      accent: 'text-indigo-200'
     },
     'workout-timer': {
-      bg: 'bg-gradient-to-br from-yellow-900/50 to-yellow-800/60',
-      border: 'border-yellow-500/40',
-      iconColor: 'text-yellow-400',
-      accent: 'text-yellow-300'
+      bg: 'bg-gradient-to-br from-yellow-600/50 to-yellow-700/60',
+      border: 'border-yellow-400/50',
+      iconColor: 'text-yellow-300',
+      accent: 'text-yellow-200'
     },
     'coach-gpt': {
-      bg: 'bg-gradient-to-br from-cyan-900/50 to-cyan-800/60',
-      border: 'border-cyan-500/40',
-      iconColor: 'text-cyan-400',
-      accent: 'text-cyan-300'
+      bg: 'bg-gradient-to-br from-cyan-600/50 to-cyan-700/60',
+      border: 'border-cyan-400/50',
+      iconColor: 'text-cyan-300',
+      accent: 'text-cyan-200'
     },
     'workout-logger-ai': {
-      bg: 'bg-gradient-to-br from-emerald-900/50 to-emerald-800/60',
-      border: 'border-emerald-500/40',
-      iconColor: 'text-emerald-400',
-      accent: 'text-emerald-300'
+      bg: 'bg-gradient-to-br from-emerald-600/50 to-emerald-700/60',
+      border: 'border-emerald-400/50',
+      iconColor: 'text-emerald-300',
+      accent: 'text-emerald-200'
     }
   };
 
@@ -114,37 +113,37 @@ const getModuleTheme = (moduleId: string, gradient: string) => {
 // Function to convert gradient classes to background colors with opacity
 const getModuleBackgroundColor = (gradient: string) => {
   const gradientMap: { [key: string]: string } = {
-    'from-blue-900/60 to-indigo-900/80': 'bg-gradient-to-br from-blue-900/50 to-indigo-800/60',
-    'from-green-900/60 to-emerald-900/80': 'bg-gradient-to-br from-green-900/50 to-emerald-800/60',
-    'from-orange-900/60 to-red-900/80': 'bg-gradient-to-br from-orange-900/50 to-red-800/60',
-    'from-purple-900/60 to-violet-900/80': 'bg-gradient-to-br from-purple-900/50 to-violet-800/60',
-    'from-red-900/60 to-pink-900/80': 'bg-gradient-to-br from-red-900/50 to-pink-800/60',
-    'from-teal-900/60 to-cyan-900/80': 'bg-gradient-to-br from-teal-900/50 to-cyan-800/60',
-    'from-yellow-900/60 to-orange-900/80': 'bg-gradient-to-br from-yellow-900/50 to-orange-800/60',
-    'from-pink-900/60 to-rose-900/80': 'bg-gradient-to-br from-pink-900/50 to-rose-800/60',
-    'from-indigo-900/60 to-blue-900/80': 'bg-gradient-to-br from-indigo-900/50 to-blue-800/60',
-    'from-gray-900/60 to-slate-900/80': 'bg-gradient-to-br from-gray-900/50 to-slate-800/60',
+    'from-blue-900/60 to-indigo-900/80': 'bg-gradient-to-br from-blue-600/50 to-indigo-700/60',
+    'from-green-900/60 to-emerald-900/80': 'bg-gradient-to-br from-green-600/50 to-emerald-700/60',
+    'from-orange-900/60 to-red-900/80': 'bg-gradient-to-br from-orange-600/50 to-red-700/60',
+    'from-purple-900/60 to-violet-900/80': 'bg-gradient-to-br from-purple-600/50 to-violet-700/60',
+    'from-red-900/60 to-pink-900/80': 'bg-gradient-to-br from-red-600/50 to-pink-700/60',
+    'from-teal-900/60 to-cyan-900/80': 'bg-gradient-to-br from-teal-600/50 to-cyan-700/60',
+    'from-yellow-900/60 to-orange-900/80': 'bg-gradient-to-br from-yellow-600/50 to-orange-700/60',
+    'from-pink-900/60 to-rose-900/80': 'bg-gradient-to-br from-pink-600/50 to-rose-700/60',
+    'from-indigo-900/60 to-blue-900/80': 'bg-gradient-to-br from-indigo-600/50 to-blue-700/60',
+    'from-gray-900/60 to-slate-900/80': 'bg-gradient-to-br from-gray-600/50 to-slate-700/60',
   };
   
-  return gradientMap[gradient] || 'bg-gradient-to-br from-gray-900/50 to-gray-800/60';
+  return gradientMap[gradient] || 'bg-gradient-to-br from-gray-600/50 to-gray-700/60';
 };
 
 // Function to get icon color based on module theme
 const getIconColor = (gradient: string) => {
   const colorMap: { [key: string]: string } = {
-    'from-blue-900/60 to-indigo-900/80': 'text-blue-400',
-    'from-green-900/60 to-emerald-900/80': 'text-green-400',
-    'from-orange-900/60 to-red-900/80': 'text-orange-400',
-    'from-purple-900/60 to-violet-900/80': 'text-purple-400',
-    'from-red-900/60 to-pink-900/80': 'text-red-400',
-    'from-teal-900/60 to-cyan-900/80': 'text-teal-400',
-    'from-yellow-900/60 to-orange-900/80': 'text-yellow-400',
-    'from-pink-900/60 to-rose-900/80': 'text-pink-400',
-    'from-indigo-900/60 to-blue-900/80': 'text-indigo-400',
-    'from-gray-900/60 to-slate-900/80': 'text-gray-400',
+    'from-blue-900/60 to-indigo-900/80': 'text-blue-300',
+    'from-green-900/60 to-emerald-900/80': 'text-green-300',
+    'from-orange-900/60 to-red-900/80': 'text-orange-300',
+    'from-purple-900/60 to-violet-900/80': 'text-purple-300',
+    'from-red-900/60 to-pink-900/80': 'text-red-300',
+    'from-teal-900/60 to-cyan-900/80': 'text-teal-300',
+    'from-yellow-900/60 to-orange-900/80': 'text-yellow-300',
+    'from-pink-900/60 to-rose-900/80': 'text-pink-300',
+    'from-indigo-900/60 to-blue-900/80': 'text-indigo-300',
+    'from-gray-900/60 to-slate-900/80': 'text-gray-300',
   };
   
-  return colorMap[gradient] || 'text-gray-400';
+  return colorMap[gradient] || 'text-gray-300';
 };
 
 export const ModuleGrid: React.FC<ModuleGridProps> = ({
@@ -172,7 +171,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/20`}>
+                  <div className={`w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 border border-white/30`}>
                     <IconComponent className={`w-6 h-6 ${theme.iconColor}`} />
                   </div>
                   
@@ -245,7 +244,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
             
             <CardHeader className="relative z-10 pb-2">
               <div className="flex items-start justify-between mb-3">
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-white/20`}>
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-white/30`}>
                   <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${theme.iconColor}`} />
                 </div>
                 <Button
@@ -294,8 +293,8 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
               </CardDescription>
             </CardContent>
             
-            {/* Hover indicator */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+            {/* Module-specific colored hover indicator */}
+            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${theme.iconColor.replace('text-', 'from-').replace('-300', '-500')} to-${theme.iconColor.replace('text-', '').replace('-300', '-600')} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
           </Card>
         );
       })}

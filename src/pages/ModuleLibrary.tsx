@@ -40,7 +40,7 @@ const ModuleLibrary = () => {
       setViewMode('grid');
     } finally {
       // Simulate loading delay for smooth transition
-      setTimeout(() => setIsLoading(false), 500);
+      setTimeout(() => setIsLoading(false), 300);
     }
   }, []);
 
@@ -96,24 +96,24 @@ const ModuleLibrary = () => {
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
           <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-14 sm:h-16">
                 <button
                   onClick={handleBackToLibrary}
-                  className="text-white hover:text-orange-400 transition-colors font-medium flex items-center space-x-2"
+                  className="text-white hover:text-orange-400 transition-colors font-medium flex items-center space-x-2 p-2 -ml-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Library</span>
+                  <span className="text-sm sm:text-base">Library</span>
                 </button>
-                <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
+                <h1 className="text-base sm:text-lg font-semibold text-center flex-1 px-2 sm:px-4 truncate">
                   {selectedModule.title}
                 </h1>
-                <div className="w-20"></div>
+                <div className="w-16 sm:w-20"></div>
               </div>
             </div>
           </div>
           
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
             <ModuleComponent onBack={handleBackToLibrary} />
           </div>
         </div>
@@ -125,13 +125,13 @@ const ModuleLibrary = () => {
     return (
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <div className="p-4 sm:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-8 h-8 bg-orange-500/20 rounded animate-pulse" />
-                <div className="h-8 w-48 bg-orange-500/20 rounded animate-pulse" />
+          <div className="p-3 sm:p-4 md:p-6">
+            <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+              <div className="flex items-center space-x-3 mb-4 sm:mb-6">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-500/20 rounded animate-pulse" />
+                <div className="h-6 sm:h-8 w-32 sm:w-48 bg-orange-500/20 rounded animate-pulse" />
               </div>
-              <LoadingSkeleton type="card" count={6} />
+              <LoadingSkeleton type="card" count={isMobile ? 3 : 6} />
             </div>
           </div>
         </div>
@@ -142,33 +142,33 @@ const ModuleLibrary = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-        <div className="p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <div className="p-3 sm:p-4 md:p-6">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {/* Mobile-optimized Header */}
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   <Button 
                     variant="ghost" 
                     onClick={() => navigate('/app')}
                     className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors p-2"
                     size="sm"
                   >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                       Module Library
                     </h1>
-                    <p className="text-gray-400 text-sm">Discover AI fitness tools</p>
+                    <p className="text-gray-400 text-xs sm:text-sm">Discover AI fitness tools</p>
                   </div>
                 </div>
                 
-                {/* View Mode Toggle - Fixed for mobile */}
+                {/* View Mode Toggle - Improved for mobile */}
                 <div className="flex items-center space-x-1 bg-orange-900/20 rounded-lg p-1">
                   <button
                     onClick={() => handleViewModeChange('grid')}
-                    className={`p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
+                    className={`p-2 sm:p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
                       viewMode === 'grid' 
                         ? 'bg-orange-500/30 text-orange-300' 
                         : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
@@ -178,7 +178,7 @@ const ModuleLibrary = () => {
                   </button>
                   <button
                     onClick={() => handleViewModeChange('list')}
-                    className={`p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
+                    className={`p-2 sm:p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
                       viewMode === 'list' 
                         ? 'bg-orange-500/30 text-orange-300' 
                         : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
@@ -191,24 +191,24 @@ const ModuleLibrary = () => {
             </div>
 
             {/* Enhanced Search and Filters */}
-            <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4 sm:p-6">
-              <div className="space-y-4">
+            <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border border-orange-500/30 rounded-xl p-3 sm:p-4 md:p-6">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-4 h-4 sm:w-5 sm:h-5" />
                   <Input
                     placeholder="Search modules..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl transition-all duration-200"
+                    className="pl-10 sm:pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-10 sm:h-12 text-sm sm:text-lg focus:border-orange-400 rounded-xl transition-all duration-200"
                   />
                 </div>
                 
                 {/* Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
-                      <Filter className="w-4 h-4 mr-2 text-orange-400" />
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-10 sm:h-12 rounded-xl transition-all duration-200 text-sm">
+                      <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-orange-400" />
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
@@ -220,7 +220,7 @@ const ModuleLibrary = () => {
                   </Select>
                   
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-10 sm:h-12 rounded-xl transition-all duration-200 text-sm">
                       <SelectValue placeholder="Sort by..." />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
@@ -234,18 +234,18 @@ const ModuleLibrary = () => {
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Badge variant="outline" className="border-orange-500/40 text-orange-300 bg-orange-500/10 px-3 py-1">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <Badge variant="outline" className="border-orange-500/40 text-orange-300 bg-orange-500/10 px-2 sm:px-3 py-1 text-xs">
                 {sortedModules.length} modules
               </Badge>
-              <Badge variant="outline" className="border-green-500/40 text-green-400 bg-green-500/10 px-3 py-1">
+              <Badge variant="outline" className="border-green-500/40 text-green-400 bg-green-500/10 px-2 sm:px-3 py-1 text-xs">
                 {sortedModules.filter(m => !m.isPremium).length} free
               </Badge>
-              <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 bg-yellow-500/10 px-3 py-1">
+              <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 bg-yellow-500/10 px-2 sm:px-3 py-1 text-xs">
                 <Crown className="w-3 h-3 mr-1" />
                 {sortedModules.filter(m => m.isPremium).length} premium
               </Badge>
-              <Badge variant="outline" className="border-orange-500/40 text-orange-400 bg-orange-500/10 px-3 py-1">
+              <Badge variant="outline" className="border-orange-500/40 text-orange-400 bg-orange-500/10 px-2 sm:px-3 py-1 text-xs">
                 <Star className="w-3 h-3 mr-1" />
                 {favorites.length} favorites
               </Badge>
@@ -253,12 +253,12 @@ const ModuleLibrary = () => {
 
             {/* Modules Display */}
             {sortedModules.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Search className="w-10 h-10 text-orange-500/50" />
+              <div className="text-center py-12 sm:py-16">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Search className="w-8 h-8 sm:w-10 sm:h-10 text-orange-500/50" />
                 </div>
-                <h3 className="text-2xl font-semibold text-white mb-2">No modules found</h3>
-                <p className="text-orange-300/70 text-lg">Try adjusting your search or filters</p>
+                <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2">No modules found</h3>
+                <p className="text-orange-300/70 text-base sm:text-lg">Try adjusting your search or filters</p>
               </div>
             ) : (
               <ModuleGrid

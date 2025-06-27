@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -40,26 +39,8 @@ const Dashboard = () => {
   }, []);
 
   const debouncedModuleClick = useMemo(() => 
-    createDebouncedFunction(handleModuleClick, 150)
+    createDebouncedFunction(handleModuleClick, 150) as (module: any) => void
   , [createDebouncedFunction, handleModuleClick]);
-
-  const handleBackToDashboard = useCallback(() => {
-    console.log('Returning to dashboard at', new Date().toISOString());
-    try {
-      setSelectedModule(null);
-      setShowNotifications(false);
-    } catch (error) {
-      console.error('Error returning to dashboard:', error);
-    }
-  }, []);
-
-  const handleNotificationsClick = useCallback(() => {
-    setShowNotifications(true);
-  }, []);
-
-  const handleFoodLogged = useCallback((data: any) => {
-    console.log('Food logged:', data);
-  }, []);
 
   // Memoized computed values with error handling
   const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {

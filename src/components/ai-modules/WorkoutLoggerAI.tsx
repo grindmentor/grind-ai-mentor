@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +43,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
   
   const [workout, setWorkout] = useState<WorkoutSession>({
     name: 'New Workout',
@@ -70,16 +70,31 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     return () => clearInterval(interval);
   }, [isWorkoutActive, workout.start_time]);
 
-  // Debounced search
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.trim()) {
-        searchExercises(searchQuery);
-      }
-    }, 500);
+  // Improved debounced search
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchExercises]);
+    // Set new timeout
+    if (value.trim()) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchExercises(value);
+      }, 800);
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -246,13 +261,19 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   };
 
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Cardio': return <Zap className="w-4 h-4" />;
-      case 'Strength': return <Target className="w-4 h-4" />;
-      case 'Full Workout': return <Trophy className="w-4 h-4" />;
-      default: return <Sparkles className="w-4 h-4" />;
-    }
+    return <Target className="w-4 h-4" />;
   };
+
+  const liftingExamples = [
+    'lateral raises',
+    'tricep pushdowns', 
+    'romanian deadlifts',
+    'bench press',
+    'bicep curls',
+    'leg press',
+    'shoulder press',
+    'barbell rows'
+  ];
 
   return (
     <PageTransition>
@@ -338,8 +359,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   <Input
                     ref={searchInputRef}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="e.g., 'chest workout', 'cardio for fat loss', 'leg day'..."
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="e.g., 'lateral raises', 'tricep pushdowns', 'romanian deadlifts'..."
                     className="bg-gray-800/50 border-violet-500/30 text-white pl-12 focus:border-violet-400"
                   />
                   {searchLoading && (
@@ -348,6 +369,26 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                     </div>
                   )}
                 </div>
+
+                {/* Popular Searches */}
+                {!searchQuery && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-400 mb-3">Popular Exercises:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {liftingExamples.map((exercise) => (
+                        <Button
+                          key={exercise}
+                          onClick={() => handleSearchChange(exercise)}
+                          variant="outline"
+                          size="sm"
+                          className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20 hover:border-violet-400"
+                        >
+                          {exercise}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* AI Search Results */}
                 {searchResults.length > 0 && (
@@ -513,13 +554,13 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   <Sparkles className="w-12 h-12 mx-auto mb-4 text-violet-400 opacity-50" />
                   <h3 className="text-xl font-semibold text-white mb-2">Ready to start training?</h3>
                   <p className="text-gray-400 mb-4">
-                    Use the AI search above to find exercises, or describe what you want to train!
+                    Use the AI search above to find specific lifting exercises!
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {['chest workout', 'leg day', 'cardio hiit', 'full body'].map((suggestion) => (
+                    {liftingExamples.slice(0, 4).map((suggestion) => (
                       <Button
                         key={suggestion}
-                        onClick={() => setSearchQuery(suggestion)}
+                        onClick={() => handleSearchChange(suggestion)}
                         variant="outline"
                         size="sm"
                         className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20"

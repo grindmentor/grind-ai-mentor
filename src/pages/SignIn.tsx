@@ -102,9 +102,9 @@ const SignIn = () => {
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center space-x-2 mb-8">
             <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-white text-sm">GM</span>
+              <span className="font-bold text-white text-sm">M</span>
             </div>
-            <span className="text-2xl font-bold">GrindMentor</span>
+            <span className="text-2xl font-bold">Myotopia</span>
           </div>
           
           <EnhancedSignUp 
@@ -140,9 +140,9 @@ const SignIn = () => {
         {/* Logo */}
         <div className="flex items-center justify-center space-x-2 mb-8">
           <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-            <span className="font-bold text-white text-sm">GM</span>
+            <span className="font-bold text-white text-sm">M</span>
           </div>
-          <span className="text-2xl font-bold">GrindMentor</span>
+          <span className="text-2xl font-bold">Myotopia</span>
         </div>
 
         <Card className="bg-gray-900 border-gray-800">

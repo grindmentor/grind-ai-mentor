@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AIExercise {
@@ -17,7 +17,7 @@ export const useAIExerciseSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const searchExercises = async (query: string) => {
+  const searchExercises = useCallback(async (query: string) => {
     if (!query.trim()) {
       setExercises([]);
       return;
@@ -41,7 +41,7 @@ export const useAIExerciseSearch = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     exercises,

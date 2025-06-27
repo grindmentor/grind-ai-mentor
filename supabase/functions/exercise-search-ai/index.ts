@@ -28,15 +28,15 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a fitness exercise expert. When given a search query, return 5-6 relevant exercises in JSON format. Include cardio, strength training, and full workout routines. Each exercise should have: name, category (Cardio/Strength/Full Workout), muscle_groups (array), equipment, difficulty (Beginner/Intermediate/Advanced), description (2-3 sentences), and estimated_duration. Focus on scientifically-backed exercises.`
+            content: `You are a strength training expert. Focus ONLY on specific weight lifting exercises and movements. When given a search query, return 4-5 relevant strength training exercises in JSON format. Focus on isolation exercises, compound movements, and specific lifting techniques like lateral raises, tricep pushdowns, RDL, bench press, squats, etc. Each exercise should have: name, category (always "Strength"), muscle_groups (array), equipment, difficulty (Beginner/Intermediate/Advanced), description (2-3 sentences about form and technique), and estimated_duration. Do NOT include cardio or full workout routines - only specific lifting movements.`
           },
           {
             role: 'user',
-            content: `Search query: "${query}". Return exercises in this exact JSON format: {"exercises": [{"name": "Exercise Name", "category": "Cardio/Strength/Full Workout", "muscle_groups": ["Primary", "Secondary"], "equipment": "Equipment needed", "difficulty": "Beginner/Intermediate/Advanced", "description": "Brief description", "estimated_duration": "X minutes"}]}`
+            content: `Search query: "${query}". Return strength training exercises in this exact JSON format: {"exercises": [{"name": "Exercise Name", "category": "Strength", "muscle_groups": ["Primary", "Secondary"], "equipment": "Equipment needed", "difficulty": "Beginner/Intermediate/Advanced", "description": "Brief description focusing on form and technique", "estimated_duration": "X sets"}]}`
           }
         ],
-        temperature: 0.7,
-        max_tokens: 1000,
+        temperature: 0.3,
+        max_tokens: 800,
       }),
     });
 
@@ -54,11 +54,11 @@ serve(async (req) => {
           {
             name: "Custom Exercise",
             category: "Strength",
-            muscle_groups: ["Full Body"],
+            muscle_groups: ["Target Muscle"],
             equipment: "Various",
             difficulty: "Intermediate",
             description: "AI-generated exercise based on your search.",
-            estimated_duration: "30 minutes"
+            estimated_duration: "3-4 sets"
           }
         ]
       };

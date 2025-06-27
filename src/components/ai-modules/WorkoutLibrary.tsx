@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,14 +16,34 @@ interface WorkoutLibraryProps {
 const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const { exercises, loading, searchExercises } = useAIExerciseSearch();
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      searchExercises(query);
+  // Improved debounced search
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout
+    if (value.trim()) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchExercises(value);
+      }, 800);
     }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -35,32 +55,22 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
   };
 
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Cardio': return <Zap className="w-5 h-5" />;
-      case 'Strength': return <Dumbbell className="w-5 h-5" />;
-      case 'Full Workout': return <Trophy className="w-5 h-5" />;
-      default: return <Sparkles className="w-5 h-5" />;
-    }
+    return <Target className="w-5 h-5" />;
   };
 
   const getCategoryGradient = (category: string) => {
-    switch (category) {
-      case 'Cardio': return 'from-red-500/20 to-orange-500/20 border-red-500/30';
-      case 'Strength': return 'from-blue-500/20 to-indigo-500/20 border-blue-500/30';
-      case 'Full Workout': return 'from-purple-500/20 to-pink-500/20 border-purple-500/30';
-      default: return 'from-gray-500/20 to-gray-600/20 border-gray-500/30';
-    }
+    return 'from-blue-500/20 to-indigo-500/20 border-blue-500/30';
   };
 
-  const popularSearches = [
-    'chest workout',
-    'leg day',
-    'cardio HIIT',
-    'back exercises',
-    'full body routine',
-    'abs workout',
-    'shoulder training',
-    'arms workout'
+  const liftingExamples = [
+    'lateral raises',
+    'tricep pushdowns',
+    'romanian deadlifts', 
+    'bench press',
+    'bicep curls',
+    'leg press',
+    'shoulder press',
+    'barbell rows'
   ];
 
   return (
@@ -100,7 +110,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                   AI Exercise Discovery
                 </CardTitle>
                 <CardDescription className="text-slate-300">
-                  Describe what you want to train and get personalized exercise recommendations
+                  Search for specific lifting exercises and strength training movements
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -108,8 +118,8 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <Input
                     value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    placeholder="e.g., 'build bigger chest', 'improve cardio endurance', 'home leg workout'..."
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="e.g., 'lateral raises', 'tricep pushdowns', 'romanian deadlifts'..."
                     className="bg-gray-800/50 border-slate-500/30 text-white pl-12 focus:border-slate-400 text-base"
                   />
                   {loading && (
@@ -122,17 +132,17 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                 {/* Popular Searches */}
                 {!searchQuery && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-400 mb-3">Popular Searches:</h3>
+                    <h3 className="text-sm font-medium text-gray-400 mb-3">Popular Exercises:</h3>
                     <div className="flex flex-wrap gap-2">
-                      {popularSearches.map((search) => (
+                      {liftingExamples.map((exercise) => (
                         <Button
-                          key={search}
-                          onClick={() => handleSearch(search)}
+                          key={exercise}
+                          onClick={() => handleSearchChange(exercise)}
                           variant="outline"
                           size="sm"
                           className="border-slate-500/30 text-slate-400 hover:bg-slate-500/20 hover:border-slate-400"
                         >
-                          {search}
+                          {exercise}
                         </Button>
                       ))}
                     </div>
@@ -159,7 +169,7 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                             {exercise.difficulty}
                           </Badge>
                           <Badge variant="outline" className="border-gray-500 text-gray-300 text-xs">
-                            {exercise.category}
+                            Strength
                           </Badge>
                         </div>
                       </div>
@@ -212,24 +222,24 @@ const WorkoutLibrary = ({ onBack }: WorkoutLibraryProps) => {
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Welcome to AI Workout Library</h3>
                   <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-                    Discover personalized exercises powered by AI. Search for specific muscle groups, 
-                    workout types, or describe your fitness goals to get scientifically-backed recommendations.
+                    Discover specific strength training exercises powered by AI. Search for muscle groups, 
+                    exercise names, or equipment to get scientifically-backed recommendations.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                    <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
-                      <Zap className="w-6 h-6 text-red-400 mx-auto mb-2" />
-                      <h4 className="font-semibold text-white mb-1">Cardio</h4>
-                      <p className="text-xs text-gray-400">HIIT, running, cycling</p>
-                    </div>
                     <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                      <Dumbbell className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                      <h4 className="font-semibold text-white mb-1">Strength</h4>
-                      <p className="text-xs text-gray-400">Weights, resistance</p>
+                      <Target className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                      <h4 className="font-semibold text-white mb-1">Isolation</h4>
+                      <p className="text-xs text-gray-400">Targeted movements</p>
+                    </div>
+                    <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <Dumbbell className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                      <h4 className="font-semibold text-white mb-1">Compound</h4>
+                      <p className="text-xs text-gray-400">Multi-muscle exercises</p>
                     </div>
                     <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
                       <Trophy className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-                      <h4 className="font-semibold text-white mb-1">Full Workouts</h4>
-                      <p className="text-xs text-gray-400">Complete routines</p>
+                      <h4 className="font-semibold text-white mb-1">Advanced</h4>
+                      <p className="text-xs text-gray-400">Expert techniques</p>
                     </div>
                   </div>
                 </CardContent>

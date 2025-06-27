@@ -14,12 +14,21 @@ import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import NotificationCenter from '@/components/NotificationCenter';
 
 const Dashboard = () => {
-  console.log('Dashboard component rendering');
+  console.log('Dashboard component rendering - start');
   
   const { user } = useAuth();
   const { modules } = useModules();
   const [selectedModule, setSelectedModule] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Safety check for user
+  useEffect(() => {
+    console.log('Dashboard: User check effect running', { user: !!user });
+    if (user) {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   // Load favorites from localStorage safely
   useEffect(() => {
@@ -29,7 +38,7 @@ const Dashboard = () => {
       if (savedFavorites) {
         const parsedFavorites = JSON.parse(savedFavorites);
         console.log('Dashboard: Loaded favorites:', parsedFavorites);
-        setFavorites(parsedFavorites);
+        setFavorites(Array.isArray(parsedFavorites) ? parsedFavorites : []);
       }
     } catch (error) {
       console.error('Dashboard: Error loading favorites:', error);
@@ -55,8 +64,10 @@ const Dashboard = () => {
 
   const handleModuleClick = (module) => {
     console.log('Dashboard: Module clicked:', module?.id);
-    if (module) {
+    if (module && module.component) {
       setSelectedModule(module);
+    } else {
+      console.error('Dashboard: Invalid module clicked:', module);
     }
   };
 
@@ -69,19 +80,21 @@ const Dashboard = () => {
     console.log('Dashboard: Food logged:', data);
   };
 
-  // Safety checks
-  if (!user) {
-    console.log('Dashboard: No user found, showing loading screen');
+  // Early loading state
+  if (isLoading || !user) {
+    console.log('Dashboard: Showing loading screen - user loading');
     return <LoadingScreen message="Loading user data..." />;
   }
 
-  if (!modules || modules.length === 0) {
+  // Safety check for modules
+  if (!modules || !Array.isArray(modules) || modules.length === 0) {
     console.log('Dashboard: No modules found, showing loading screen');
     return <LoadingScreen message="Loading modules..." />;
   }
 
   console.log('Dashboard: Loaded', modules.length, 'modules');
 
+  // Handle selected module rendering
   if (selectedModule) {
     console.log('Dashboard: Rendering selected module:', selectedModule.title);
     const ModuleComponent = selectedModule.component;
@@ -126,8 +139,8 @@ const Dashboard = () => {
   }
 
   // Filter out Progress Hub from regular modules
-  const regularModules = modules.filter(m => m.id !== 'progress-hub');
-  const progressHubModule = modules.find(m => m.id === 'progress-hub');
+  const regularModules = modules.filter(m => m && m.id !== 'progress-hub');
+  const progressHubModule = modules.find(m => m && m.id === 'progress-hub');
 
   console.log('Dashboard: Rendering main dashboard view');
   console.log('Dashboard: Regular modules:', regularModules.length);
@@ -154,17 +167,17 @@ const Dashboard = () => {
 
             {/* Dashboard Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 sm:mb-12">
-              <ErrorBoundary>
+              <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load scientific studies</div>}>
                 <ScientificStudies />
               </ErrorBoundary>
-              <ErrorBoundary>
+              <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load personalized summary</div>}>
                 <PersonalizedSummary />
               </ErrorBoundary>
             </div>
 
             {/* Notification Center */}
             <div className="mb-8 sm:mb-12">
-              <ErrorBoundary>
+              <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load notifications</div>}>
                 <NotificationCenter />
               </ErrorBoundary>
             </div>
@@ -176,9 +189,9 @@ const Dashboard = () => {
                   <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
                   Your Favorites
                 </h2>
-                <ErrorBoundary>
+                <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load favorite modules</div>}>
                   <ModuleGrid
-                    modules={regularModules.filter(module => favorites.includes(module.id))}
+                    modules={regularModules.filter(module => module && favorites.includes(module.id))}
                     favorites={favorites}
                     onModuleClick={handleModuleClick}
                     onToggleFavorite={toggleFavorite}
@@ -206,7 +219,7 @@ const Dashboard = () => {
             {/* Progress Hub - Purple Button */}
             {progressHubModule && (
               <div className="mb-8">
-                <ErrorBoundary>
+                <ErrorBoundary fallback={<div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 text-center text-gray-400">Unable to load Progress Hub</div>}>
                   <Button
                     onClick={() => handleModuleClick(progressHubModule)}
                     className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"

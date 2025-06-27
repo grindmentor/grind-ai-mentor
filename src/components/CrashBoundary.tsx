@@ -7,6 +7,7 @@ import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  componentName?: string;
 }
 
 interface State {
@@ -27,21 +28,22 @@ class CrashBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('CrashBoundary detailed error:', error, errorInfo);
+    console.error('Component that crashed:', this.props.componentName || 'Unknown');
     this.setState({ errorInfo });
   }
 
   private handleReset = () => {
-    console.log('Resetting crash boundary');
+    console.log('Resetting crash boundary for:', this.props.componentName || 'Unknown component');
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
   private handleReload = () => {
-    console.log('Reloading page');
+    console.log('Reloading page due to crash');
     window.location.reload();
   };
 
   private handleGoHome = () => {
-    console.log('Going to home');
+    console.log('Going to home due to crash');
     window.location.href = '/';
   };
 
@@ -58,11 +60,13 @@ class CrashBoundary extends Component<Props, State> {
               <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-400" />
               </div>
-              <CardTitle className="text-white">Site Crashed</CardTitle>
+              <CardTitle className="text-white">
+                {this.props.componentName ? `${this.props.componentName} Crashed` : 'Site Crashed'}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-gray-400">
-                We encountered an unexpected error. This crash has been logged.
+                We encountered an unexpected error. This crash has been logged and we're working to fix it.
               </p>
               
               <div className="space-y-3">

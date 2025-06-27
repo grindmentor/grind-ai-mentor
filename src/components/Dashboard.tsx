@@ -1,425 +1,378 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Crown, Star, ArrowLeft, Zap, Heart, Plus, Bell } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useModules } from '@/contexts/ModulesContext';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { SmoothButton } from '@/components/ui/smooth-button';
-import { PageTransition } from '@/components/ui/page-transition';
-import { playSuccessSound, playClickSound } from '@/utils/soundEffects';
+import { useModules } from '@/contexts/ModulesContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Star, Settings, User, Crown, Zap, Menu, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import PricingTable from './PricingTable';
-import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { PageTransition } from '@/components/ui/page-transition';
+import { AnimatedCard } from '@/components/ui/animated-card';
+
+interface Module {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  component: React.ComponentType<any>;
+  gradient: string;
+  usageKey: string;
+  isPremium: boolean;
+  isNew: boolean;
+}
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const { modules } = useModules();
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const featureAccess = useFeatureAccess('image_uploads');
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [selectedModule, setSelectedModule] = useState<string>('');
-  const [showModule, setShowModule] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  React.useEffect(() => {
-    if (user) {
-      loadFavorites();
+  // Load favorites from localStorage
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('module-favorites');
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites));
     }
-  }, [user]);
+  }, []);
 
-  const loadFavorites = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('favorite_modules')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading favorites:', error);
-        return;
-      }
-
-      if (data?.favorite_modules) {
-        setFavorites(data.favorite_modules);
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-    }
-  };
-
-  const toggleFavorite = async (moduleId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (!user) return;
-
-    const isFavorited = favorites.includes(moduleId);
-    const newFavorites = isFavorited
+  // Save favorites to localStorage
+  const toggleFavorite = (moduleId: string) => {
+    const newFavorites = favorites.includes(moduleId) 
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
-
+    
     setFavorites(newFavorites);
-    playSuccessSound();
-
-    try {
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          favorite_modules: newFavorites
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: isFavorited ? 'Removed from favorites' : 'Added to favorites',
-        description: `Module ${isFavorited ? 'removed from' : 'added to'} your dashboard`,
-      });
-    } catch (error) {
-      console.error('Error updating favorites:', error);
-      setFavorites(favorites);
-      toast({
-        title: 'Error updating favorites',
-        description: 'Please try again',
-        variant: 'destructive'
-      });
-    }
+    localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
   };
 
-  const handleModuleSelect = (moduleId: string) => {
-    // Check if module requires premium access for image uploads
-    const imageModules = ['food-photo-logger'];
-
-    if (imageModules.includes(moduleId) && !featureAccess.canAccess) {
-      setShowUpgrade(true);
-      return;
+  const handleModuleClick = (module: Module) => {
+    setSelectedModule(module);
+    if (isMobile) {
+      setIsMenuOpen(false);
     }
-
-    setSelectedModule(moduleId);
-    setShowModule(true);
-    playClickSound();
   };
 
   const handleBackToDashboard = () => {
-    setShowModule(false);
-    setSelectedModule('');
+    setSelectedModule(null);
   };
 
-  const handleUpgrade = (plan: 'basic' | 'premium') => {
-    console.log(`Upgrading to ${plan}`);
-    setShowUpgrade(false);
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
-  // Get module-specific background color based on gradient
-  const getModuleBackgroundColor = (gradient: string) => {
-    const colorMap: { [key: string]: string } = {
-      'from-blue-500 to-blue-700': 'bg-blue-500/20 border-blue-500/30',
-      'from-purple-500 to-purple-700': 'bg-purple-500/20 border-purple-500/30',
-      'from-rose-500 to-rose-700': 'bg-rose-500/20 border-rose-500/30',
-      'from-green-500 to-green-700': 'bg-green-500/20 border-green-500/30',
-      'from-orange-500 to-orange-700': 'bg-orange-500/20 border-orange-500/30',
-      'from-red-500 to-red-700': 'bg-red-500/20 border-red-500/30',
-      'from-pink-500 to-pink-700': 'bg-pink-500/20 border-pink-500/30',
-      'from-emerald-500 to-emerald-700': 'bg-emerald-500/20 border-emerald-500/30',
-      'from-cyan-500 to-cyan-700': 'bg-cyan-500/20 border-cyan-500/30',
-      'from-indigo-500 to-indigo-700': 'bg-indigo-500/20 border-indigo-500/30',
-      'from-teal-500 to-teal-700': 'bg-teal-500/20 border-teal-500/30',
-      'from-violet-500 to-violet-700': 'bg-violet-500/20 border-violet-500/30',
-      'from-yellow-500 to-yellow-700': 'bg-yellow-500/20 border-yellow-500/30'
-    };
-    return colorMap[gradient] || 'bg-gray-500/20 border-gray-500/30';
+  // Mobile menu toggle
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
-  const favoriteModules = modules.filter(module => favorites.includes(module.id));
-  const availableModules = modules.filter(module => !favorites.includes(module.id));
-
-  if (showModule && selectedModule) {
-    const module = modules.find(m => m.id === selectedModule);
-    if (module) {
-      const ModuleComponent = module.component;
-      return (
-        <PageTransition>
-          <ModuleComponent onBack={handleBackToDashboard} />
-        </PageTransition>
-      );
-    }
+  if (selectedModule) {
+    const ModuleComponent = selectedModule.component;
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+          {/* Header with back button */}
+          <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <Button
+                  onClick={handleBackToDashboard}
+                  variant="ghost"
+                  className="text-white hover:bg-gray-800/50"
+                >
+                  ← Back to Dashboard
+                </Button>
+                <h1 className="text-lg font-semibold text-center flex-1">
+                  {selectedModule.title}
+                </h1>
+                <div className="w-32"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Module Content */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <ModuleComponent />
+          </div>
+        </div>
+      </PageTransition>
+    );
   }
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white animate-fade-in">
-        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
-            {/* Header with Notifications */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0 sm:space-x-4 mb-6 sm:mb-8">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500/20 to-orange-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-orange-400/20">
-                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-                    Myotopia Dashboard
-                  </h1>
-                  <p className="text-xs sm:text-sm md:text-base text-gray-400">Your fitness journey starts here</p>
-                </div>
-              </div>
-              
-              {/* Notifications Button */}
-              <SmoothButton
-                variant="ghost"
-                onClick={() => navigate('/notifications')}
-                className="text-white hover:bg-gray-800/50 backdrop-blur-sm border border-orange-500/30 relative"
-                size={isMobile ? 'sm' : 'default'}
-              >
-                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                {!isMobile && <span className="ml-2">Notifications</span>}
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              </SmoothButton>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <div className="fixed top-4 right-4 z-50">
+            <Button
+              onClick={toggleMenu}
+              variant="outline"
+              size="icon"
+              className="bg-black/80 backdrop-blur-md border-gray-700 text-white hover:bg-gray-800/80"
+            >
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
+        )}
 
-            {/* Favorites Section */}
-            {favoriteModules.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center">
-                    <Heart className="w-5 h-5 mr-2 text-red-400 fill-current" />
-                    Your Favorites
-                  </h2>
-                  <SmoothButton
-                    onClick={() => setShowFavoritesModal(true)}
-                    variant="outline"
-                    size="sm"
-                    className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Favorites
-                  </SmoothButton>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-                  {favoriteModules.map((module) => {
-                    const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
-                    return (
-                      <Card
-                        key={`fav-${module.id}`}
-                        className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0 overflow-hidden`}
-                        onClick={() => handleModuleSelect(module.id)}
-                      >
-                        <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6">
-                          <div className="flex items-start justify-between mb-2 sm:mb-3">
-                            <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient} flex-shrink-0`}>
-                              <module.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
-                            </div>
-                            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
-                              <button
-                                onClick={(e) => toggleFavorite(module.id, e)}
-                                className="p-1 sm:p-1.5 rounded-full transition-all duration-200 hover:scale-110 text-yellow-400 hover:text-yellow-300"
-                              >
-                                <Star className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 fill-current" />
-                              </button>
-                              {module.isPremium && (
-                                <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
-                                  <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                                  {isMobile ? 'PRO' : 'PRO'}
-                                </Badge>
-                              )}
-                              {module.isNew && (
-                                <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
-                                  NEW
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="space-y-1 sm:space-y-2">
-                            <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight break-words">
-                              {module.title}
-                            </CardTitle>
-                            <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed break-words">
-                              {module.description}
-                            </CardDescription>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs text-gray-500 uppercase tracking-wider font-medium break-words">
-                              {module.usageKey.replace(/_/g, ' ')}
-                            </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-400 flex items-center justify-center">
-                                <ArrowLeft className="w-2 h-2 sm:w-3 sm:h-3 rotate-180 text-gray-400" />
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* All Modules Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl font-bold text-white">
-                  {favoriteModules.length > 0 ? 'All Modules' : 'Available Modules'}
-                </h2>
-                {favoriteModules.length === 0 && (
-                  <SmoothButton
-                    onClick={() => setShowFavoritesModal(true)}
-                    variant="outline"
-                    size="sm"
-                    className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Favorites
-                  </SmoothButton>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-                {(favoriteModules.length > 0 ? availableModules : modules).map((module) => {
-                  const isFavorited = favorites.includes(module.id);
-                  const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
-
-                  return (
-                    <Card
-                      key={module.id}
-                      className={`${moduleBackgroundColor} backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300 cursor-pointer group hover:shadow-lg hover:shadow-gray-900/20 hover:scale-[1.02] sm:hover:scale-105 min-h-0 overflow-hidden`}
-                      onClick={() => handleModuleSelect(module.id)}
-                    >
-                      <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6">
-                        <div className="flex items-start justify-between mb-2 sm:mb-3">
-                          <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/10 bg-gradient-to-r ${module.gradient} flex-shrink-0`}>
-                            <module.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
-                          </div>
-                          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
-                            <button
-                              onClick={(e) => toggleFavorite(module.id, e)}
-                              className={`p-1 sm:p-1.5 rounded-full transition-all duration-200 hover:scale-110 ${
-                                isFavorited
-                                  ? 'text-yellow-400 hover:text-yellow-300'
-                                  : 'text-gray-500 hover:text-yellow-400'
-                              }`}
-                            >
-                              <Star
-                                className={`w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ${
-                                  isFavorited ? 'fill-current' : ''
-                                }`}
-                              />
-                            </button>
-                            {module.isPremium && (
-                              <Badge className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
-                                <Crown className="w-2 h-2 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                                {isMobile ? 'PRO' : 'PRO'}
-                              </Badge>
-                            )}
-                            {module.isNew && (
-                              <Badge className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 whitespace-nowrap">
-                                NEW
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="space-y-1 sm:space-y-2">
-                          <CardTitle className="text-sm sm:text-lg md:text-xl text-white group-hover:text-gray-100 transition-colors leading-tight break-words">
-                            {module.title}
-                          </CardTitle>
-                          <CardDescription className="text-xs sm:text-sm text-gray-400 line-clamp-2 group-hover:text-gray-300 transition-colors leading-relaxed break-words">
-                            {module.description}
-                          </CardDescription>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0 p-3 sm:p-4 md:p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs text-gray-500 uppercase tracking-wider font-medium break-words">
-                            {module.usageKey.replace(/_/g, ' ')}
-                          </div>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-400 flex items-center justify-center">
-                              <ArrowLeft className="w-2 h-2 sm:w-3 sm:h-3 rotate-180 text-gray-400" />
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Info Section */}
-            <div className="mt-8 sm:mt-12 text-center">
-              <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">
-                  🔬 Science-Backed Modules
-                </h2>
-                <p className="text-sm sm:text-base text-gray-400 max-w-3xl mx-auto leading-relaxed">
-                  Each module uses the best available information from scientific research.{' '}
-                  Our AI provides recommendations based on evidence, though it can make mistakes.{' '}
-                  Click the star to add modules to your dashboard favorites.
-                </p>
+        {/* Mobile Slide-out Menu */}
+        {isMobile && (
+          <div className={`fixed inset-y-0 right-0 z-40 w-80 bg-black/95 backdrop-blur-md transform transition-transform duration-300 ${
+            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          } border-l border-gray-800/50`}>
+            <div className="p-6 pt-20">
+              <div className="flex flex-col space-y-4">
+                <Button
+                  onClick={() => navigate('/profile')}
+                  variant="ghost"
+                  className="justify-start text-white hover:bg-gray-800/50"
+                >
+                  <User className="w-5 h-5 mr-3" />
+                  Profile
+                </Button>
+                <Button
+                  onClick={() => navigate('/settings')}
+                  variant="ghost"
+                  className="justify-start text-white hover:bg-gray-800/50"
+                >
+                  <Settings className="w-5 h-5 mr-3" />
+                  Settings
+                </Button>
+                <Button
+                  onClick={() => navigate('/pricing')}
+                  variant="ghost"
+                  className="justify-start text-white hover:bg-gray-800/50"
+                >
+                  <Crown className="w-5 h-5 mr-3" />
+                  Upgrade
+                </Button>
+                <Button
+                  onClick={handleSignOut}
+                  variant="ghost"
+                  className="justify-start text-red-400 hover:bg-red-900/20"
+                >
+                  Sign Out
+                </Button>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Favorites Modal */}
-        <Dialog open={showFavoritesModal} onOpenChange={setShowFavoritesModal}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-900 border-gray-700">
-            <DialogHeader>
-              <DialogTitle className="text-white text-xl">Add to Favorites</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2">
-              {availableModules.map((module) => (
-                <Card
-                  key={`modal-${module.id}`}
-                  className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all cursor-pointer overflow-hidden"
-                  onClick={(e) => {
-                    toggleFavorite(module.id, e);
-                    setShowFavoritesModal(false);
-                  }}
-                >
-                  <CardHeader className="pb-3 p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-r ${module.gradient} flex-shrink-0`}>
-                        <module.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-white text-sm break-words">{module.title}</CardTitle>
-                        <CardDescription className="text-xs text-gray-400 line-clamp-1">
-                          {module.description}
-                        </CardDescription>
-                      </div>
-                      <Star className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
+        {/* Desktop Header */}
+        {!isMobile && (
+          <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <div className="flex items-center space-x-4">
+                  <div className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                    GrindMentor
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Button
+                    onClick={() => navigate('/profile')}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-gray-800/50"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Profile
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/settings')}
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-gray-800/50"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/pricing')}
+                    variant="ghost"
+                    size="sm"
+                    className="bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-400 hover:from-orange-500/30 hover:to-red-500/30 border border-orange-500/30"
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Upgrade
+                  </Button>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-400 hover:bg-red-900/20"
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        )}
 
-        {/* Upgrade Dialog */}
-        <Dialog open={showUpgrade} onOpenChange={setShowUpgrade}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
-            <DialogHeader>
-              <DialogTitle className="text-white text-2xl text-center">
-                Upgrade to <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">Myotopia</span>
-              </DialogTitle>
-            </DialogHeader>
-            <PricingTable onUpgrade={handleUpgrade} />
-          </DialogContent>
-        </Dialog>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Welcome Section */}
+          <div className="mb-12 text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4">
+              Welcome back, {user?.user_metadata?.name || 'Champion'}! 👋
+            </h1>
+            <p className="text-gray-400 text-lg">
+              Ready to crush your fitness goals today?
+            </p>
+          </div>
+
+          {/* Favorites Section */}
+          {favorites.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold mb-6 flex items-center">
+                <Star className="w-6 h-6 mr-2 text-yellow-500" />
+                Your Favorites
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {modules
+                  .filter(module => favorites.includes(module.id))
+                  .map((module, index) => {
+                    const IconComponent = module.icon;
+                    return (
+                      <AnimatedCard
+                        key={module.id}
+                        className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300 cursor-pointer group"
+                        delay={index * 100}
+                        onClick={() => handleModuleClick(module)}
+                      >
+                        <CardHeader className="pb-4">
+                          <div className="flex items-start justify-between">
+                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${module.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                              <IconComponent className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="flex gap-2">
+                              {module.isPremium && (
+                                <Badge variant="secondary" className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30">
+                                  <Crown className="w-3 h-3 mr-1" />
+                                  Pro
+                                </Badge>
+                              )}
+                              {module.isNew && (
+                                <Badge variant="secondary" className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30">
+                                  <Zap className="w-3 h-3 mr-1" />
+                                  New
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <CardTitle className="text-xl font-semibold text-white group-hover:text-orange-400 transition-colors">
+                            {module.title}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                            {module.description}
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+                            >
+                              Open
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(module.id);
+                              }}
+                              className="text-yellow-500 hover:bg-yellow-500/10"
+                            >
+                              <Star className="w-4 h-4 fill-current" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </AnimatedCard>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* All Modules Section */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">
+              All Modules
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {modules.map((module, index) => {
+                const IconComponent = module.icon;
+                const isFavorited = favorites.includes(module.id);
+                
+                return (
+                  <AnimatedCard
+                    key={module.id}
+                    className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300 cursor-pointer group"
+                    delay={index * 50}
+                    onClick={() => handleModuleClick(module)}
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${module.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                          <IconComponent className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex gap-2">
+                          {module.isPremium && (
+                            <Badge variant="secondary" className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30">
+                              <Crown className="w-3 h-3 mr-1" />
+                              Pro
+                            </Badge>
+                          )}
+                          {module.isNew && (
+                            <Badge variant="secondary" className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30">
+                              <Zap className="w-3 h-3 mr-1" />
+                              New
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <CardTitle className="text-lg font-semibold text-white group-hover:text-orange-400 transition-colors">
+                        {module.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                        {module.description}
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <Button
+                          size="sm"
+                          className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+                        >
+                          Open
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(module.id);
+                          }}
+                          className={`${isFavorited ? 'text-yellow-500' : 'text-gray-500'} hover:bg-yellow-500/10`}
+                        >
+                          <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </AnimatedCard>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </PageTransition>
   );

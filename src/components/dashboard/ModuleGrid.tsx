@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,12 @@ const getModuleTheme = (moduleId: string, gradient: string) => {
       border: 'border-red-500/50',
       iconColor: 'text-red-400',
       accent: 'text-red-200'
+    },
+    'blueprint-ai': {
+      bg: 'bg-gradient-to-br from-blue-900/50 to-indigo-900/60',
+      border: 'border-blue-500/50',
+      iconColor: 'text-blue-400',
+      accent: 'text-blue-200'
     },
     'smart-training': {
       bg: 'bg-gradient-to-br from-blue-900/50 to-indigo-900/60',

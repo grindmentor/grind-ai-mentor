@@ -163,30 +163,30 @@ const Dashboard = () => {
               <PersonalizedSummary />
             </div>
 
-            {/* Progress Hub - Darker Purple Button */}
+            {/* Progress Hub - Updated with darker purple styling */}
             {progressHubModule && (
               <div className="mb-8">
                 <Button
                   onClick={() => handleModuleClick(progressHubModule)}
-                  className="w-full h-20 bg-gradient-to-r from-purple-900/40 to-purple-800/60 backdrop-blur-sm border border-purple-700/40 hover:from-purple-900/60 hover:to-purple-800/80 transition-all duration-300 text-white rounded-xl group"
+                  className="w-full h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-300 text-white rounded-xl group"
                 >
                   <div className="flex items-center justify-between w-full px-6">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-800 to-purple-900 flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-white" />
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-800/80 to-purple-900/90 border border-purple-700/40 flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-purple-200" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-200 transition-colors">
+                        <h3 className="text-lg font-semibold text-purple-100 group-hover:text-purple-50 transition-colors">
                           Progress Hub
                         </h3>
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-purple-200/80">
                           Track your fitness journey with detailed analytics
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Sparkles className="w-5 h-5 text-purple-300" />
-                      <span className="text-sm text-purple-200">View Progress</span>
+                      <Sparkles className="w-5 h-5 text-purple-300/80" />
+                      <span className="text-sm text-purple-200/90">View Progress</span>
                     </div>
                   </div>
                 </Button>

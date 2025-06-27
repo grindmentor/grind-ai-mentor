@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Utensils, Clock, Camera, Upload, Sparkles, Target, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Utensils, Clock, Camera, Upload, Sparkles, Target, AlertCircle, Calculator } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,7 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [showCustomIngredient, setShowCustomIngredient] = useState(false);
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [analyzedFoods, setAnalyzedFoods] = useState<AnalyzedFood[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -60,6 +61,17 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
     fat: '',
     fiber: '',
     portion_size: ''
+  });
+  const [customIngredient, setCustomIngredient] = useState({
+    name: '',
+    meal_type: '',
+    calories_per_100g: '',
+    protein_per_100g: '',
+    carbs_per_100g: '',
+    fat_per_100g: '',
+    fiber_per_100g: '',
+    amount_consumed: '',
+    unit: 'g' // g, ml, oz, cups, etc.
   });
 
   useEffect(() => {
@@ -326,6 +338,75 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
     }
   };
 
+  const handleCustomIngredientSubmit = async () => {
+    if (!user || !customIngredient.name || !customIngredient.meal_type || !customIngredient.amount_consumed) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in ingredient name, meal type, and amount consumed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Calculate macros based on amount consumed
+      const amountInGrams = parseFloat(customIngredient.amount_consumed);
+      const multiplier = amountInGrams / 100; // Convert per 100g to actual amount
+
+      const calculatedCalories = Math.round((parseFloat(customIngredient.calories_per_100g) || 0) * multiplier);
+      const calculatedProtein = Math.round((parseFloat(customIngredient.protein_per_100g) || 0) * multiplier * 10) / 10;
+      const calculatedCarbs = Math.round((parseFloat(customIngredient.carbs_per_100g) || 0) * multiplier * 10) / 10;
+      const calculatedFat = Math.round((parseFloat(customIngredient.fat_per_100g) || 0) * multiplier * 10) / 10;
+      const calculatedFiber = Math.round((parseFloat(customIngredient.fiber_per_100g) || 0) * multiplier * 10) / 10;
+
+      const entryData = {
+        user_id: user.id,
+        food_name: customIngredient.name,
+        meal_type: customIngredient.meal_type,
+        calories: calculatedCalories,
+        protein: calculatedProtein,
+        carbs: calculatedCarbs,
+        fat: calculatedFat,
+        fiber: calculatedFiber,
+        portion_size: `${customIngredient.amount_consumed}${customIngredient.unit} (Custom)`,
+        logged_date: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('food_log_entries')
+        .insert([entryData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Custom ingredient logged!",
+        description: `${customIngredient.name} (${calculatedCalories} cal) has been added to your log.`,
+      });
+
+      // Reset form and reload entries
+      setCustomIngredient({
+        name: '',
+        meal_type: '',
+        calories_per_100g: '',
+        protein_per_100g: '',
+        carbs_per_100g: '',
+        fat_per_100g: '',
+        fiber_per_100g: '',
+        amount_consumed: '',
+        unit: 'g'
+      });
+      setShowCustomIngredient(false);
+      loadEntries();
+    } catch (error) {
+      console.error('Error adding custom ingredient:', error);
+      toast({
+        title: "Error adding custom ingredient",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteEntry = (id: string) => {
     setEntries(entries.filter(entry => entry.id !== id));
   };
@@ -420,6 +501,14 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
                 {showPhotoUpload ? 'Cancel Photo' : 'Photo Analysis'}
               </Button>
               <Button 
+                onClick={() => setShowCustomIngredient(!showCustomIngredient)}
+                className="bg-purple-500 hover:bg-purple-600 text-white"
+                size={isMobile ? "default" : "lg"}
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                {showCustomIngredient ? 'Cancel Custom' : 'Custom Ingredient'}
+              </Button>
+              <Button 
                 onClick={() => setShowAddForm(!showAddForm)}
                 className="bg-green-500 hover:bg-green-600 text-white"
                 size={isMobile ? "default" : "lg"}
@@ -510,6 +599,179 @@ const SmartFoodLog = ({ onBack }: SmartFoodLogProps) => {
                         Analyze Food Photo
                       </>
                     )}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Custom Ingredient Section */}
+            {showCustomIngredient && (
+              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg sm:text-xl flex items-center">
+                    <Calculator className="w-5 h-5 mr-2 text-purple-400" />
+                    Custom Ingredient Calculator
+                  </CardTitle>
+                  <CardDescription>Add your own ingredient with nutritional values per 100g</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">Ingredient Name</label>
+                      <Input
+                        value={customIngredient.name}
+                        onChange={(e) => setCustomIngredient({...customIngredient, name: e.target.value})}
+                        placeholder="e.g., Homemade Protein Bar"
+                        className="bg-gray-800 border-gray-700 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">Meal Type</label>
+                      <Select value={customIngredient.meal_type} onValueChange={(value) => setCustomIngredient({...customIngredient, meal_type: value})}>
+                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                          <SelectValue placeholder="Select meal type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700">
+                          <SelectItem value="breakfast">🌅 Breakfast</SelectItem>
+                          <SelectItem value="lunch">☀️ Lunch</SelectItem>
+                          <SelectItem value="dinner">🌙 Dinner</SelectItem>
+                          <SelectItem value="snack">🥨 Snack</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
+                    <h4 className="text-purple-300 font-medium mb-3">Nutritional Values per 100g</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-purple-200 mb-1">Calories</label>
+                        <Input
+                          type="number"
+                          value={customIngredient.calories_per_100g}
+                          onChange={(e) => setCustomIngredient({...customIngredient, calories_per_100g: e.target.value})}
+                          placeholder="0"
+                          className="bg-gray-800 border-gray-700 text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-purple-200 mb-1">Protein (g)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={customIngredient.protein_per_100g}
+                          onChange={(e) => setCustomIngredient({...customIngredient, protein_per_100g: e.target.value})}
+                          placeholder="0"
+                          className="bg-gray-800 border-gray-700 text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-purple-200 mb-1">Carbs (g)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={customIngredient.carbs_per_100g}
+                          onChange={(e) => setCustomIngredient({...customIngredient, carbs_per_100g: e.target.value})}
+                          placeholder="0"
+                          className="bg-gray-800 border-gray-700 text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-purple-200 mb-1">Fat (g)</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={customIngredient.fat_per_100g}
+                          onChange={(e) => setCustomIngredient({...customIngredient, fat_per_100g: e.target.value})}
+                          placeholder="0"
+                          className="bg-gray-800 border-gray-700 text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4 w-full sm:w-1/4">
+                      <label className="block text-xs font-medium text-purple-200 mb-1">Fiber (g)</label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={customIngredient.fiber_per_100g}
+                        onChange={(e) => setCustomIngredient({...customIngredient, fiber_per_100g: e.target.value})}
+                        placeholder="0"
+                        className="bg-gray-800 border-gray-700 text-white text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                    <h4 className="text-green-300 font-medium mb-3">Amount Consumed</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-green-200 mb-2">Amount</label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={customIngredient.amount_consumed}
+                          onChange={(e) => setCustomIngredient({...customIngredient, amount_consumed: e.target.value})}
+                          placeholder="0"
+                          className="bg-gray-800 border-gray-700 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-green-200 mb-2">Unit</label>
+                        <Select value={customIngredient.unit} onValueChange={(value) => setCustomIngredient({...customIngredient, unit: value})}>
+                          <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 border-gray-700">
+                            <SelectItem value="g">Grams (g)</SelectItem>
+                            <SelectItem value="ml">Milliliters (ml)</SelectItem>
+                            <SelectItem value="oz">Ounces (oz)</SelectItem>
+                            <SelectItem value="cups">Cups</SelectItem>
+                            <SelectItem value="tbsp">Tablespoons</SelectItem>
+                            <SelectItem value="tsp">Teaspoons</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Calculated Values Preview */}
+                    {customIngredient.amount_consumed && (
+                      <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
+                        <h5 className="text-green-300 font-medium mb-2">Calculated Macros:</h5>
+                        <div className="grid grid-cols-4 gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="text-white font-medium">
+                              {Math.round((parseFloat(customIngredient.calories_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100)}
+                            </div>
+                            <div className="text-gray-400">cal</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-white font-medium">
+                              {(Math.round((parseFloat(customIngredient.protein_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100 * 10) / 10).toFixed(1)}g
+                            </div>
+                            <div className="text-gray-400">protein</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-white font-medium">
+                              {(Math.round((parseFloat(customIngredient.carbs_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100 * 10) / 10).toFixed(1)}g
+                            </div>
+                            <div className="text-gray-400">carbs</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-white font-medium">
+                              {(Math.round((parseFloat(customIngredient.fat_per_100g) || 0) * (parseFloat(customIngredient.amount_consumed) || 0) / 100 * 10) / 10).toFixed(1)}g
+                            </div>
+                            <div className="text-gray-400">fat</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button 
+                    onClick={handleCustomIngredientSubmit}
+                    className="bg-purple-500 hover:bg-purple-600 text-white w-full"
+                  >
+                    Add Custom Ingredient
                   </Button>
                 </CardContent>
               </Card>

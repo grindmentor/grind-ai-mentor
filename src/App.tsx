@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +9,7 @@ import { ExerciseShareProvider } from "@/contexts/ExerciseShareContext";
 import Index from "@/pages/Index";
 import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
-import AppPage from "@/pages/AppPage";
+import App as AppPage from "@/pages/App";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";

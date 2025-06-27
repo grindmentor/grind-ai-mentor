@@ -11,7 +11,7 @@ import { Star, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
-import NotificationCenter from '@/components/NotificationCenter';
+import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -120,12 +120,12 @@ const Dashboard = () => {
               </p>
             </div>
 
-            {/* Notifications Center */}
+            {/* Compact Notifications Summary */}
             <div className="mb-8 sm:mb-12">
-              <NotificationCenter />
+              <NotificationsSummary />
             </div>
 
-            {/* Favorites Section - Moved to top */}
+            {/* Favorites Section */}
             {favorites.length > 0 ? (
               <div className="mb-8 sm:mb-12">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
@@ -163,7 +163,7 @@ const Dashboard = () => {
               <PersonalizedSummary />
             </div>
 
-            {/* Progress Hub - Updated with darker purple styling */}
+            {/* Progress Hub */}
             {progressHubModule && (
               <div className="mb-8">
                 <Button

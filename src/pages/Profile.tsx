@@ -12,14 +12,42 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
 import BasicInformation from '@/components/settings/BasicInformation';
 import FitnessProfile from '@/components/settings/FitnessProfile';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentTier, currentTierData, subscriptionEnd, billingCycle } = useSubscription();
-  const { userData } = useUserData();
+  const { userData, updateUserData } = useUserData();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
+  const [preferences, setPreferences] = useState({
+    weight_unit: 'lbs',
+    height_unit: 'ft-in'
+  });
+
+  // Load user preferences
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('weight_unit, height_unit')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data && !error) {
+        setPreferences({
+          weight_unit: data.weight_unit || 'lbs',
+          height_unit: data.height_unit || 'ft-in'
+        });
+      }
+    };
+    
+    loadPreferences();
+  }, [user?.id]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
@@ -40,6 +68,73 @@ const Profile = () => {
       case 'basic': return Star;
       default: return User;
     }
+  };
+
+  // Calculate age from birthday
+  const calculatedAge = userData.birthday 
+    ? new Date().getFullYear() - new Date(userData.birthday).getFullYear()
+    : null;
+
+  // Profile data for BasicInformation component
+  const profileData = {
+    weight: userData.weight?.toString() || '',
+    birthday: userData.birthday || '',
+    height: userData.height?.toString() || '',
+    heightFeet: '',
+    heightInches: '',
+    experience: userData.experience || '',
+    activity: userData.activity || '',
+    goal: userData.goal || ''
+  };
+
+  // Profile data for FitnessProfile component
+  const fitnessProfileData = {
+    experience: userData.experience || '',
+    activity: userData.activity || '',
+    goal: userData.goal || ''
+  };
+
+  // Handle input changes
+  const handleInputChange = async (field: string, value: string) => {
+    try {
+      if (!user?.id) return;
+      
+      // Update local state
+      await updateUserData({ [field]: value });
+      
+      // Update database
+      const { error } = await supabase
+        .from('profiles')
+        .update({ [field]: value })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
+  };
+
+  // Handle weight changes with unit conversion
+  const handleWeightChange = (value: string) => {
+    handleInputChange('weight', value);
+  };
+
+  // Handle height changes with unit conversion
+  const handleHeightChange = (value: string) => {
+    handleInputChange('height', value);
+  };
+
+  // Get weight display with unit
+  const getWeightDisplay = () => {
+    return userData.weight ? `${userData.weight}` : '';
+  };
+
+  // Get height display with unit
+  const getHeightDisplay = () => {
+    return userData.height ? `${userData.height}` : '';
   };
 
   const tabs = [
@@ -164,23 +259,23 @@ const Profile = () => {
                   </Card>
 
                   {/* Fitness Stats */}
-                  {(userData.weight || userData.height || userData.age) && (
+                  {(userData.weight || userData.height || calculatedAge) && (
                     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
                       <CardHeader>
                         <CardTitle className="text-white">Quick Stats</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                          {userData.age && (
+                          {calculatedAge && (
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-orange-400">{userData.age}</div>
+                              <div className="text-2xl font-bold text-orange-400">{calculatedAge}</div>
                               <div className="text-sm text-gray-400">Years Old</div>
                             </div>
                           )}
                           {userData.weight && (
                             <div className="text-center">
                               <div className="text-2xl font-bold text-orange-400">
-                                {userData.weight}{userData.weightUnit}
+                                {userData.weight}{preferences.weight_unit}
                               </div>
                               <div className="text-sm text-gray-400">Weight</div>
                             </div>
@@ -188,7 +283,7 @@ const Profile = () => {
                           {userData.height && (
                             <div className="text-center">
                               <div className="text-2xl font-bold text-orange-400">
-                                {userData.height}{userData.heightUnit === 'cm' ? 'cm' : '"'}
+                                {userData.height}{preferences.height_unit === 'cm' ? 'cm' : '"'}
                               </div>
                               <div className="text-sm text-gray-400">Height</div>
                             </div>
@@ -201,13 +296,25 @@ const Profile = () => {
 
                 <TabsContent value="basic" className="mt-0">
                   <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6">
-                    <BasicInformation />
+                    <BasicInformation 
+                      profile={profileData}
+                      preferences={preferences}
+                      calculatedAge={calculatedAge}
+                      onInputChange={handleInputChange}
+                      onWeightChange={handleWeightChange}
+                      onHeightChange={handleHeightChange}
+                      getWeightDisplay={getWeightDisplay}
+                      getHeightDisplay={getHeightDisplay}
+                    />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="fitness" className="mt-0">
                   <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6">
-                    <FitnessProfile />
+                    <FitnessProfile 
+                      profile={fitnessProfileData}
+                      onInputChange={handleInputChange}
+                    />
                   </div>
                 </TabsContent>
               </div>

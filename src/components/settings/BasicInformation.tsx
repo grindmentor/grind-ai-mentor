@@ -38,7 +38,8 @@ const formatGoal = (goal: string) => {
     'cut': 'Cut',
     'bulk': 'Bulk',
     'maintain': 'Maintain',
-    'recomp': 'Body Recomposition'
+    'recomp': 'Body Recomposition',
+    'improve_strength': 'Improve Strength'
   };
   
   return goalMap[goal] || goal.split('_').map(word => 
@@ -70,7 +71,8 @@ const getGoalTooltip = (goal: string) => {
     'lose_weight': 'Primary focus on reducing overall body weight for health or aesthetics',
     'gain_weight': 'Primary focus on increasing overall body weight, often for underweight individuals',
     'build_muscle': 'Focus on increasing muscle mass and strength through progressive overload',
-    'recomp': 'Simultaneously lose fat and gain muscle - challenging but rewarding approach'
+    'recomp': 'Simultaneously lose fat and gain muscle - challenging but rewarding approach',
+    'improve_strength': 'Focus on increasing strength and power through progressive training'
   };
   
   return tooltips[goal] || 'Your primary fitness goal drives your training and nutrition approach';
@@ -183,7 +185,7 @@ const BasicInformation = ({
             </div>
           )}
 
-          {/* Activity Level Display with proper icon */}
+          {/* Activity Level Display */}
           {profile.activity && (
             <div>
               <label className="block text-sm font-medium text-white mb-2">

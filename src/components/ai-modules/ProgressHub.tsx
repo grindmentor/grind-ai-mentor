@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 
 interface WorkoutSession {
   id: string;
@@ -158,12 +158,16 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
           </div>
         </div>
         
-        <div className="p-4 sm:p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="animate-pulse space-y-4">
-              <div className="h-6 sm:h-8 bg-purple-700/30 rounded w-1/4"></div>
-              <div className="h-24 sm:h-32 bg-purple-700/30 rounded"></div>
-              <div className="h-48 sm:h-64 bg-purple-700/30 rounded"></div>
+        <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-6">
+            <div className="animate-pulse">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500/30 to-purple-700/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Hexagon className="w-8 h-8 text-purple-400" />
+              </div>
+            </div>
+            <div className="flex items-center justify-center space-x-3">
+              <div className="w-6 h-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
+              <span className="text-white text-lg font-medium">Loading Progress Data...</span>
             </div>
           </div>
         </div>
@@ -194,7 +198,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       
       <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
         <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-          {/* Mobile-optimized Stats Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
               <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
@@ -267,7 +270,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </Card>
           </div>
 
-          {/* Mobile-optimized Hexagon Radar Chart */}
           <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-6 sm:mb-8">
             <CardHeader className="p-3 sm:p-4 lg:p-6">
               <CardTitle className="text-white flex items-center text-base sm:text-lg lg:text-xl">
@@ -285,26 +287,21 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                     cursor={false} 
                     content={<ChartTooltipContent hideLabel />} 
                   />
-                  <PolarGrid stroke="rgba(147, 51, 234, 0.3)" />
+                  <PolarGrid stroke="rgba(147, 51, 234, 0.2)" strokeWidth={1} />
                   <PolarAngleAxis 
                     dataKey="metric" 
                     tick={{ fill: 'white', fontSize: isMobile ? 10 : 12 }}
-                  />
-                  <PolarRadiusAxis 
-                    angle={0} 
-                    domain={[0, 100]} 
-                    tick={{ fill: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? 8 : 10 }}
                   />
                   <Radar
                     dataKey="value"
                     stroke="rgba(147, 51, 234, 0.8)"
                     fill="rgba(147, 51, 234, 0.3)"
                     strokeWidth={2}
+                    dot={{ fill: 'rgba(147, 51, 234, 0.8)', r: 4 }}
                   />
                 </RadarChart>
               </ChartContainer>
               
-              {/* Mobile-optimized Metrics Legend */}
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 mt-4 sm:mt-6">
                 <div className="text-center">
                   <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.dedication}%</div>
@@ -330,7 +327,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </CardContent>
           </Card>
 
-          {/* Recent Workouts */}
           <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-8">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
@@ -373,7 +369,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </CardContent>
           </Card>
 
-          {/* AI Insights */}
           <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white flex items-center">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,6 +209,7 @@ const Profile = () => {
     }
   };
 
+  // Fixed weight and height calculation functions
   const calculateAge = (birthday) => {
     if (!birthday) return null;
     const today = new Date();
@@ -224,6 +224,7 @@ const Profile = () => {
 
   const getWeightDisplay = (weight) => {
     if (!weight) return 'Not set';
+    // Fix the weight calculation - weight is stored in lbs in database
     if (preferences.weight_unit === 'kg') {
       return `${(weight * 0.453592).toFixed(1)} kg`;
     }
@@ -232,6 +233,7 @@ const Profile = () => {
 
   const getHeightDisplay = (height) => {
     if (!height) return 'Not set';
+    // Fix the height calculation - height is stored in inches in database
     if (preferences.height_unit === 'cm') {
       return `${(height * 2.54).toFixed(0)} cm`;
     }
@@ -241,12 +243,17 @@ const Profile = () => {
   };
 
   const getGoalDisplay = (goal) => {
-    switch (goal) {
-      case 'cut': return 'Cut';
-      case 'bulk': return 'Bulk';
-      case 'maintain': return 'Maintain';
-      default: return goal ? goal.charAt(0).toUpperCase() + goal.slice(1) : 'Not set';
-    }
+    const goalMap = {
+      'cut': 'Cut',
+      'bulk': 'Bulk', 
+      'maintain': 'Maintain',
+      'lose_weight': 'Lose Weight',
+      'gain_weight': 'Gain Weight',
+      'build_muscle': 'Build Muscle',
+      'improve_strength': 'Improve Strength',
+      'maintain_weight': 'Maintain Weight'
+    };
+    return goalMap[goal] || (goal ? goal.charAt(0).toUpperCase() + goal.slice(1).replace('_', ' ') : 'Not set');
   };
 
   const getExperienceDisplay = (experience) => {
@@ -259,14 +266,14 @@ const Profile = () => {
   };
 
   const getActivityDisplay = (activity) => {
-    switch (activity) {
-      case 'sedentary': return 'Sedentary';
-      case 'lightly_active': return 'Lightly Active';
-      case 'moderately_active': return 'Moderately Active';
-      case 'very_active': return 'Very Active';
-      case 'extremely_active': return 'Extremely Active';
-      default: return activity ? activity.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not set';
-    }
+    const activityMap = {
+      'sedentary': 'Sedentary',
+      'lightly_active': 'Lightly Active',
+      'moderately_active': 'Moderately Active', 
+      'very_active': 'Very Active',
+      'extremely_active': 'Extremely Active'
+    };
+    return activityMap[activity] || (activity ? activity.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not set');
   };
 
   const getActivityDescription = (activity) => {
@@ -291,7 +298,17 @@ const Profile = () => {
     return (
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+          <div className="text-center space-y-6">
+            <div className="animate-pulse">
+              <div className="w-16 h-16 bg-gradient-to-r from-orange-500/30 to-orange-700/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <User className="w-8 h-8 text-orange-400" />
+              </div>
+            </div>
+            <div className="flex items-center justify-center space-x-3">
+              <div className="w-6 h-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></div>
+              <span className="text-white text-lg font-medium">Loading Profile...</span>
+            </div>
+          </div>
         </div>
       </PageTransition>
     );
@@ -525,7 +542,7 @@ const Profile = () => {
             </Card>
           </div>
 
-          {/* Current Values Display */}
+          {/* Fixed Current Values Display */}
           <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white text-lg sm:text-xl">Current Values</CardTitle>

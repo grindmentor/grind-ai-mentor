@@ -10,7 +10,6 @@ import { useModules } from '@/contexts/ModulesContext';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { useFavorites } from '@/hooks/useFavorites';
 
 type ViewMode = 'grid' | 'list';
@@ -26,9 +25,8 @@ const ModuleLibrary = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('name');
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Load preferences from localStorage
+  // Load preferences from localStorage - no artificial delays
   useEffect(() => {
     try {
       const savedViewMode = localStorage.getItem('module-view-mode');
@@ -38,9 +36,6 @@ const ModuleLibrary = () => {
     } catch (error) {
       console.error('Error loading view mode:', error);
       setViewMode('grid');
-    } finally {
-      // Simulate loading delay for smooth transition
-      setTimeout(() => setIsLoading(false), 300);
     }
   }, []);
 
@@ -100,9 +95,9 @@ const ModuleLibrary = () => {
               <div className="flex items-center justify-between h-14 sm:h-16">
                 <button
                   onClick={handleBackToLibrary}
-                  className="text-white hover:text-orange-400 transition-colors font-medium flex items-center space-x-2 p-2 -ml-2"
+                  className="text-white hover:text-orange-400 transition-colors font-medium flex items-center space-x-2 p-3 -ml-2 min-h-[48px] min-w-[48px] justify-center"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4 mr-1" />
                   <span className="text-sm sm:text-base">Library</span>
                 </button>
                 <h1 className="text-base sm:text-lg font-semibold text-center flex-1 px-2 sm:px-4 truncate">
@@ -121,19 +116,12 @@ const ModuleLibrary = () => {
     );
   }
 
-  if (isLoading) {
+  // Instant loading - no skeleton or artificial delays
+  if (!modules || modules.length === 0) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <div className="p-3 sm:p-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-              <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-500/20 rounded animate-pulse" />
-                <div className="h-6 sm:h-8 w-32 sm:w-48 bg-orange-500/20 rounded animate-pulse" />
-              </div>
-              <LoadingSkeleton type="card" count={isMobile ? 3 : 6} />
-            </div>
-          </div>
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
         </div>
       </PageTransition>
     );
@@ -144,14 +132,14 @@ const ModuleLibrary = () => {
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
         <div className="p-3 sm:p-4 md:p-6">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-            {/* Mobile-optimized Header */}
+            {/* Mobile-optimized Header with better touch targets */}
             <div className="flex flex-col space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 sm:space-x-3">
                   <Button 
                     variant="ghost" 
                     onClick={() => navigate('/app')}
-                    className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors p-2"
+                    className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors p-3 min-h-[48px] min-w-[48px]"
                     size="sm"
                   >
                     <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -164,11 +152,11 @@ const ModuleLibrary = () => {
                   </div>
                 </div>
                 
-                {/* View Mode Toggle - Improved for mobile */}
+                {/* View Mode Toggle - Better touch targets */}
                 <div className="flex items-center space-x-1 bg-orange-900/20 rounded-lg p-1">
                   <button
                     onClick={() => handleViewModeChange('grid')}
-                    className={`p-2 sm:p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
+                    className={`p-3 transition-all duration-150 rounded-md min-h-[44px] min-w-[44px] flex items-center justify-center ${
                       viewMode === 'grid' 
                         ? 'bg-orange-500/30 text-orange-300' 
                         : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
@@ -178,7 +166,7 @@ const ModuleLibrary = () => {
                   </button>
                   <button
                     onClick={() => handleViewModeChange('list')}
-                    className={`p-2 sm:p-2.5 transition-all duration-200 rounded-md touch-manipulation ${
+                    className={`p-3 transition-all duration-150 rounded-md min-h-[44px] min-w-[44px] flex items-center justify-center ${
                       viewMode === 'list' 
                         ? 'bg-orange-500/30 text-orange-300' 
                         : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
@@ -200,14 +188,14 @@ const ModuleLibrary = () => {
                     placeholder="Search modules..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 sm:pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-10 sm:h-12 text-sm sm:text-lg focus:border-orange-400 rounded-xl transition-all duration-200"
+                    className="pl-10 sm:pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 sm:h-14 text-sm sm:text-lg focus:border-orange-400 rounded-xl transition-all duration-150"
                   />
                 </div>
                 
                 {/* Filters */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-10 sm:h-12 rounded-xl transition-all duration-200 text-sm">
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 sm:h-14 rounded-xl transition-all duration-150 text-sm">
                       <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-2 text-orange-400" />
                       <SelectValue />
                     </SelectTrigger>
@@ -220,7 +208,7 @@ const ModuleLibrary = () => {
                   </Select>
                   
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-10 sm:h-12 rounded-xl transition-all duration-200 text-sm">
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 sm:h-14 rounded-xl transition-all duration-150 text-sm">
                       <SelectValue placeholder="Sort by..." />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">

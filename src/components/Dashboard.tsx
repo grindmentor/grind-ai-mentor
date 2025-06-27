@@ -8,40 +8,21 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { Star, TrendingUp, Sparkles, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
-import { InstantLoader } from '@/components/ui/instant-loader';
-import { SmoothTransition } from '@/components/ui/smooth-transition';
 import { MobileOptimized, TouchButton } from '@/components/ui/mobile-optimized';
-import { useInstantModule } from '@/hooks/useInstantModule';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
-  const [showModuleSelector, setShowModuleSelector] = useState(false);
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
 
-  // Instant preloading with memory cache
-  const { isLoading: dashboardLoading } = useInstantModule({
-    moduleId: 'dashboard',
-    preloadData: async () => {
-      // Pre-cache essential data
-      return { 
-        loaded: true,
-        timestamp: Date.now(),
-        userProfile: user 
-      };
-    },
-    minLoadTime: 50 // Reduced for instant feel
-  });
-
-  // Optimized module filtering with memoization
+  // Optimized module filtering with memoization - no artificial delays
   const { regularModules, progressHubModule } = useMemo(() => {
     if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null };
     
@@ -64,9 +45,13 @@ const Dashboard = () => {
     console.log('Food logged:', data);
   };
 
-  // Instant loading - show content immediately
-  if (dashboardLoading || !modules || modules.length === 0) {
-    return <InstantLoader isLoading={true} variant="module" />;
+  // Instant loading - no artificial delays
+  if (!modules || modules.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400"></div>
+      </div>
+    );
   }
 
   if (selectedModule) {
@@ -74,14 +59,12 @@ const Dashboard = () => {
     return (
       <ErrorBoundary>
         <MobileOptimized>
-          <SmoothTransition show={true} type="slideUp">
-            <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-hidden">
-              <ModuleComponent 
-                onBack={handleBackToDashboard}
-                onFoodLogged={handleFoodLogged}
-              />
-            </div>
-          </SmoothTransition>
+          <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-hidden">
+            <ModuleComponent 
+              onBack={handleBackToDashboard}
+              onFoodLogged={handleFoodLogged}
+            />
+          </div>
         </MobileOptimized>
       </ErrorBoundary>
     );
@@ -98,21 +81,19 @@ const Dashboard = () => {
 
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full">
             <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
-              {/* Welcome section - Instant display */}
-              <SmoothTransition show={true} type="slideUp">
-                <div className="text-center space-y-3 sm:space-y-4">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight bg-gradient-to-r from-white via-orange-100 to-orange-200 bg-clip-text text-transparent">
-                    Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
-                  </h1>
-                  <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto">
-                    Ready to achieve your fitness goals with science-backed training?
-                  </p>
-                </div>
-              </SmoothTransition>
+              {/* Welcome section */}
+              <div className="text-center space-y-3 sm:space-y-4">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight bg-gradient-to-r from-white via-orange-100 to-orange-200 bg-clip-text text-transparent">
+                  Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
+                </h1>
+                <p className="text-gray-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto">
+                  Ready to achieve your fitness goals with science-backed training?
+                </p>
+              </div>
 
-              {/* Favorites Section - Optimized rendering */}
-              <SmoothTransition show={!favoritesLoading} type="slideUp">
-                {favoriteModules.length > 0 ? (
+              {/* Favorites Section - Improved button responsiveness */}
+              {!favoritesLoading && (
+                favoriteModules.length > 0 ? (
                   <div className="space-y-4 sm:space-y-6">
                     <div className="flex items-center justify-between">
                       <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
@@ -120,54 +101,13 @@ const Dashboard = () => {
                         Your Favorites
                       </h2>
                       
-                      <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
-                        <SheetTrigger asChild>
-                          <TouchButton 
-                            onClick={() => setShowModuleSelector(true)}
-                            className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add More
-                          </TouchButton>
-                        </SheetTrigger>
-                        <SheetContent side="right" className="w-full sm:max-w-md bg-black/95 backdrop-blur-md border-l border-gray-800/50">
-                          <SheetHeader>
-                            <SheetTitle className="text-white flex items-center">
-                              <Star className="w-5 h-5 mr-2 text-yellow-400" />
-                              Add to Favorites
-                            </SheetTitle>
-                          </SheetHeader>
-                          <ScrollArea className="mt-6 h-[calc(100vh-8rem)]">
-                            <div className="space-y-3 pr-4">
-                              {availableModules.map((module) => (
-                                <div
-                                  key={module.id}
-                                  className="flex items-center justify-between p-4 bg-gray-900/40 border border-gray-700/50 rounded-xl hover:bg-gray-800/60 transition-all duration-200"
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500/20 to-red-600/30 flex items-center justify-center">
-                                      <module.icon className="w-5 h-5 text-orange-400" />
-                                    </div>
-                                    <div>
-                                      <h3 className="text-white font-medium text-sm">{module.title}</h3>
-                                      <p className="text-gray-400 text-xs">{module.description}</p>
-                                    </div>
-                                  </div>
-                                  <TouchButton
-                                    onClick={() => {
-                                      toggleFavorite(module.id);
-                                      setShowModuleSelector(false);
-                                    }}
-                                    className="text-yellow-400 hover:bg-yellow-500/20 p-2 rounded-lg transition-colors"
-                                  >
-                                    <Star className="w-4 h-4" />
-                                  </TouchButton>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </SheetContent>
-                      </Sheet>
+                      <TouchButton 
+                        onClick={() => navigate('/modules')}
+                        className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        <span className="hidden sm:inline">Add More</span>
+                      </TouchButton>
                     </div>
                     
                     <ModuleGrid
@@ -177,19 +117,15 @@ const Dashboard = () => {
                       onToggleFavorite={toggleFavorite}
                     />
                     
-                    {/* Add More button below modules */}
+                    {/* Add More button below modules - Better touch targets */}
                     <div className="flex justify-center pt-4">
-                      <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
-                        <SheetTrigger asChild>
-                          <TouchButton 
-                            onClick={() => setShowModuleSelector(true)}
-                            className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Add More Favorites</span>
-                          </TouchButton>
-                        </SheetTrigger>
-                      </Sheet>
+                      <TouchButton 
+                        onClick={() => navigate('/modules')}
+                        className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-8 py-4 rounded-xl font-medium transition-all duration-150 flex items-center space-x-2 min-h-[48px]"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add More Favorites</span>
+                      </TouchButton>
                     </div>
                   </div>
                 ) : (
@@ -200,56 +136,48 @@ const Dashboard = () => {
                       <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">
                         Visit the Module Library to explore and favorite modules you'd like to see here.
                       </p>
-                      <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
-                        <SheetTrigger asChild>
-                          <TouchButton
-                            onClick={() => setShowModuleSelector(true)}
-                            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-150 active:scale-95"
-                          >
-                            Browse Modules
-                          </TouchButton>
-                        </SheetTrigger>
-                      </Sheet>
+                      <TouchButton
+                        onClick={() => navigate('/modules')}
+                        className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto px-8 py-4 rounded-xl font-medium transition-all duration-150 active:scale-95 min-h-[48px]"
+                      >
+                        Browse Modules
+                      </TouchButton>
                     </div>
                   </div>
-                )}
-              </SmoothTransition>
-
-              {/* Progress Hub - Enhanced mobile experience */}
-              {progressHubModule && (
-                <SmoothTransition show={true} type="slideUp">
-                  <TouchButton
-                    onClick={() => handleModuleClick(progressHubModule)}
-                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-300 text-white rounded-xl group transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <div className="flex items-center justify-between w-full px-4 sm:px-6">
-                      <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r from-purple-800/80 to-purple-900/90 border border-purple-700/40 flex items-center justify-center flex-shrink-0">
-                          <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-200" />
-                        </div>
-                        <div className="text-left min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-semibold text-purple-100 group-hover:text-purple-50 transition-colors truncate">
-                            Progress Hub
-                          </h3>
-                          <p className="text-xs sm:text-sm text-purple-200/80 truncate">
-                            Track your fitness journey with detailed analytics
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300/80 animate-pulse" />
-                        <span className="text-xs sm:text-sm text-purple-200/90 hidden sm:inline">View Progress</span>
-                      </div>
-                    </div>
-                  </TouchButton>
-                </SmoothTransition>
+                )
               )}
 
-              {/* Dashboard Content - Just Personalized Summary now */}
+              {/* Progress Hub - Enhanced mobile experience with better touch targets */}
+              {progressHubModule && (
+                <TouchButton
+                  onClick={() => handleModuleClick(progressHubModule)}
+                  className="w-full min-h-[72px] bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-white rounded-xl group transform hover:scale-[1.01] active:scale-[0.99] p-4"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-r from-purple-800/80 to-purple-900/90 border border-purple-700/40 flex items-center justify-center flex-shrink-0">
+                        <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-purple-200" />
+                      </div>
+                      <div className="text-left min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-semibold text-purple-100 group-hover:text-purple-50 transition-colors truncate">
+                          Progress Hub
+                        </h3>
+                        <p className="text-xs sm:text-sm text-purple-200/80 truncate">
+                          Track your fitness journey with detailed analytics
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300/80 animate-pulse" />
+                      <span className="text-xs sm:text-sm text-purple-200/90 hidden sm:inline">View Progress</span>
+                    </div>
+                  </div>
+                </TouchButton>
+              )}
+
+              {/* Dashboard Content */}
               <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                <SmoothTransition show={true} type="slideUp">
-                  <PersonalizedSummary />
-                </SmoothTransition>
+                <PersonalizedSummary />
               </div>
             </div>
           </div>

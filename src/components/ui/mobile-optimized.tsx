@@ -52,6 +52,7 @@ export const TouchButton: React.FC<{
         "touch-manipulation select-none",
         "transform transition-all duration-150 ease-out",
         "active:scale-95 active:brightness-90",
+        "min-h-[44px] min-w-[44px] flex items-center justify-center", // Improved touch targets
         disabled && "opacity-50 pointer-events-none",
         className
       )}

@@ -4,7 +4,6 @@ import {
   Utensils, 
   Activity, 
   Calculator, 
-  Dumbbell, 
   Timer, 
   Brain, 
   TrendingUp,
@@ -20,7 +19,6 @@ import CoachGPT from '@/components/ai-modules/CoachGPT';
 import SmartFoodLog from '@/components/ai-modules/SmartFoodLog';
 import WorkoutLoggerAI from '@/components/ai-modules/WorkoutLoggerAI';
 import TDEECalculator from '@/components/ai-modules/TDEECalculator';
-import WorkoutLibrary from '@/components/ai-modules/WorkoutLibrary';
 import WorkoutTimer from '@/components/ai-modules/WorkoutTimer';
 import MealPlanAI from '@/components/ai-modules/MealPlanAI';
 import ProgressHub from '@/components/ai-modules/ProgressHub';
@@ -76,15 +74,6 @@ export const aiModules: AIModule[] = [
     icon: Calculator,
     gradient: 'from-indigo-600/80 to-indigo-800/90 border-indigo-500/60',
     component: TDEECalculator,
-    isPremium: false
-  },
-  {
-    id: 'workout-library',
-    title: 'Workout Library',
-    description: 'Comprehensive database of exercises and workout programs',
-    icon: Dumbbell,
-    gradient: 'from-orange-600/80 to-orange-800/90 border-orange-500/60',
-    component: WorkoutLibrary,
     isPremium: false
   },
   {

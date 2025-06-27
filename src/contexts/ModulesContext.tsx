@@ -1,15 +1,14 @@
-
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Brain, Camera, Calculator, Dumbbell, Apple, Timer, BarChart3, Target, TrendingUp, Crown } from 'lucide-react';
-import CoachGPT from '@/components/modules/CoachGPT';
-import PhysiqueAI from '@/components/modules/PhysiqueAI';
-import CutCalculator from '@/components/modules/CutCalculator';
-import TrainingProgramGenerator from '@/components/modules/TrainingProgramGenerator';
-import FoodLogger from '@/components/modules/FoodLogger';
-import WorkoutTimer from '@/components/modules/WorkoutTimer';
-import ProgressAnalyzer from '@/components/modules/ProgressAnalyzer';
-import HabitTracker from '@/components/modules/HabitTracker';
-import ProgressHub from '@/components/modules/ProgressHub';
+import CoachGPT from '@/components/ai-modules/CoachGPT';
+import PhysiqueAI from '@/components/ai-modules/PhysiqueAI';
+import CutCalculator from '@/components/ai-modules/CutCalculator';
+import TrainingProgramGenerator from '@/components/ai-modules/TrainingProgramGenerator';
+import FoodLogger from '@/components/ai-modules/FoodLogger';
+import WorkoutTimer from '@/components/ai-modules/WorkoutTimer';
+import ProgressAnalyzer from '@/components/ai-modules/ProgressAnalyzer';
+import HabitTracker from '@/components/ai-modules/HabitTracker';
+import ProgressHub from '@/components/ai-modules/ProgressHub';
 
 export interface Module {
   id: string;

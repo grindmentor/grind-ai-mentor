@@ -50,26 +50,26 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
     monthlyPrice: 10,
     annualPrice: 100,
     features: [
-      '30 CoachGPT queries/month',
-      '8 MealPlanAI generations',
-      '25 Smart Food Log analyses',
-      '10 TDEE calculations',
-      '5 Smart Training programs',
-      '5 Physique AI analyses',
-      '100 Habit checks',
+      '50 CoachGPT queries/month',
+      '15 MealPlanAI generations',
+      '50 Smart Food Log analyses',
+      '20 TDEE calculations',
+      '10 Smart Training programs',
+      '15 Physique AI analyses',
+      '200 Habit checks',
       'Science-backed recommendations'
     ],
     limits: {
-      coach_gpt_queries: 30,
-      meal_plan_generations: 8,
-      food_log_analyses: 25,
-      tdee_calculations: 10,
-      habit_checks: 100,
-      training_programs: 5,
-      progress_analyses: 5,
-      cut_calc_uses: 10,
-      workout_timer_sessions: 25,
-      food_photo_analyses: 10
+      coach_gpt_queries: 50,
+      meal_plan_generations: 15,
+      food_log_analyses: 50,
+      tdee_calculations: 20,
+      habit_checks: 200,
+      training_programs: 10,
+      progress_analyses: 15,
+      cut_calc_uses: 20,
+      workout_timer_sessions: 50,
+      food_photo_analyses: 25
     }
   },
   premium: {
@@ -83,7 +83,9 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       'Unlimited Smart Training',
       'Unlimited Physique AI',
       'Priority support',
-      'All future features'
+      'All future features',
+      'Custom workout creation',
+      'Advanced analytics'
     ],
     limits: {
       coach_gpt_queries: -1,
@@ -139,8 +141,8 @@ export const useSubscription = () => {
     try {
       setIsLoading(true);
 
-      // Special handling for emilbelq@gmail.com
-      if (user.email === 'emilbelq@gmail.com') {
+      // Special handling for premium users
+      if (user.email === 'emilbelq@gmail.com' || user.email === 'lucasblandquist@gmail.com') {
         const newStatus = { tier: 'premium', end: null, billing: null };
         setCurrentTier('premium');
         setSubscriptionEnd(null);

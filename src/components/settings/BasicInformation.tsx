@@ -1,9 +1,12 @@
 
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { User, Calendar, Target, Activity, Info, Zap } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Calendar, Save } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface BasicInformationProps {
   profile: {
@@ -21,77 +24,14 @@ interface BasicInformationProps {
     height_unit: string;
   };
   calculatedAge: number | null;
-  onInputChange: (field: string, value: string) => void;
+  onInputChange: (field: string, value: string) => Promise<void>;
   onWeightChange: (value: string) => void;
   onHeightChange: (value: string) => void;
   getWeightDisplay: () => string;
   getHeightDisplay: () => string;
 }
 
-// Function to format goal display properly
-const formatGoal = (goal: string) => {
-  const goalMap: { [key: string]: string } = {
-    'lose_weight': 'Lose Weight',
-    'gain_weight': 'Gain Weight',
-    'maintain_weight': 'Maintain Weight',
-    'build_muscle': 'Build Muscle',
-    'cut': 'Cut',
-    'bulk': 'Bulk',
-    'maintain': 'Maintain',
-    'recomp': 'Body Recomposition',
-    'improve_strength': 'Improve Strength'
-  };
-  
-  return goalMap[goal] || goal.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-};
-
-// Function to format activity level properly
-const formatActivityLevel = (activity: string) => {
-  const activityMap: { [key: string]: string } = {
-    'sedentary': 'Sedentary',
-    'lightly_active': 'Lightly Active',
-    'moderately_active': 'Moderately Active',
-    'very_active': 'Very Active',
-    'extremely_active': 'Extremely Active'
-  };
-  
-  return activityMap[activity] || activity.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-};
-
-// Goal tooltips with clear explanations
-const getGoalTooltip = (goal: string) => {
-  const tooltips: { [key: string]: string } = {
-    'cut': 'Fat loss while maintaining strength and muscle mass - ideal for reducing body fat percentage',
-    'bulk': 'Muscle gain with controlled fat gain - focus on building size and strength',
-    'maintain': 'Maintain current weight and body composition while improving performance',
-    'lose_weight': 'Primary focus on reducing overall body weight for health or aesthetics',
-    'gain_weight': 'Primary focus on increasing overall body weight, often for underweight individuals',
-    'build_muscle': 'Focus on increasing muscle mass and strength through progressive overload',
-    'recomp': 'Simultaneously lose fat and gain muscle - challenging but rewarding approach',
-    'improve_strength': 'Focus on increasing strength and power through progressive training'
-  };
-  
-  return tooltips[goal] || 'Your primary fitness goal drives your training and nutrition approach';
-};
-
-// Activity level tooltips
-const getActivityTooltip = (activity: string) => {
-  const tooltips: { [key: string]: string } = {
-    'sedentary': 'Little to no exercise, desk job, minimal daily movement',
-    'lightly_active': 'Light exercise 1-3 days per week, some walking or light activities',
-    'moderately_active': 'Moderate exercise 3-5 days per week, regular gym sessions',
-    'very_active': 'Hard exercise 6-7 days per week, intense training schedule',
-    'extremely_active': 'Very hard exercise, physical job, or 2x/day training sessions'
-  };
-  
-  return tooltips[activity] || 'Your daily activity level affects calorie needs and recovery requirements';
-};
-
-const BasicInformation = ({
+const BasicInformation: React.FC<BasicInformationProps> = ({
   profile,
   preferences,
   calculatedAge,
@@ -100,116 +40,186 @@ const BasicInformation = ({
   onHeightChange,
   getWeightDisplay,
   getHeightDisplay
-}: BasicInformationProps) => {
+}) => {
+  const [localProfile, setLocalProfile] = useState(profile);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleLocalChange = (field: string, value: string) => {
+    setLocalProfile(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Convert units properly before saving
+      const updates: Record<string, any> = {};
+      
+      if (localProfile.weight !== profile.weight) {
+        let weightValue = parseFloat(localProfile.weight);
+        if (isNaN(weightValue)) weightValue = 0;
+        
+        // Convert to kg if input is in lbs
+        if (preferences.weight_unit === 'lbs') {
+          weightValue = weightValue / 2.20462; // Convert lbs to kg
+        }
+        updates.weight = Math.round(weightValue);
+      }
+      
+      if (localProfile.height !== profile.height) {
+        let heightValue = parseFloat(localProfile.height);
+        if (isNaN(heightValue)) heightValue = 0;
+        
+        // Convert to cm if input is in inches
+        if (preferences.height_unit === 'ft-in') {
+          heightValue = heightValue * 2.54; // Convert inches to cm
+        }
+        updates.height = Math.round(heightValue);
+      }
+      
+      // Handle other fields
+      Object.keys(localProfile).forEach(field => {
+        if (field !== 'weight' && field !== 'height' && localProfile[field as keyof typeof localProfile] !== profile[field as keyof typeof profile]) {
+          updates[field] = localProfile[field as keyof typeof localProfile];
+        }
+      });
+      
+      // Save all updates
+      for (const [field, value] of Object.entries(updates)) {
+        await onInputChange(field, value.toString());
+      }
+      
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const hasChanges = JSON.stringify(localProfile) !== JSON.stringify(profile);
+
   return (
-    <TooltipProvider>
-      <Card className="bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center">
-            <User className="w-5 h-5 mr-2 text-orange-500" />
-            Basic Information
-          </CardTitle>
-          <CardDescription>
-            Your personal details for accurate fitness recommendations
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="weight" className="block text-sm font-medium text-white mb-2">
-                Weight ({preferences.weight_unit})
-              </label>
-              <Input
-                id="weight"
-                value={getWeightDisplay()}
-                onChange={(e) => onWeightChange(e.target.value)}
-                placeholder={`Enter weight in ${preferences.weight_unit}`}
-                className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-              />
-            </div>
-            <div>
-              <label htmlFor="height" className="block text-sm font-medium text-white mb-2">
-                Height ({preferences.height_unit})
-              </label>
-              <Input
-                id="height"
-                value={getHeightDisplay()}
-                onChange={(e) => onHeightChange(e.target.value)}
-                placeholder={`Enter height in ${preferences.height_unit}`}
-                className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label htmlFor="birthday" className="block text-sm font-medium text-white mb-2">
-              Birthday
-            </label>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="birthday"
-                type="date"
-                value={profile.birthday}
-                onChange={(e) => onInputChange('birthday', e.target.value)}
-                className="bg-gray-800 border-gray-700 text-white min-h-[48px]"
-              />
-              {calculatedAge && (
-                <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 flex items-center">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  Age: {calculatedAge}
-                </Badge>
-              )}
-            </div>
-          </div>
+    <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+      <CardHeader>
+        <CardTitle className="text-white">Basic Information</CardTitle>
+        <CardDescription className="text-gray-400">
+          Update your personal information and fitness profile
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Weight */}
+        <div className="space-y-2">
+          <Label htmlFor="weight" className="text-white">
+            Weight ({preferences.weight_unit})
+          </Label>
+          <Input
+            id="weight"
+            type="number"
+            value={localProfile.weight}
+            onChange={(e) => handleLocalChange('weight', e.target.value)}
+            placeholder={`Enter weight in ${preferences.weight_unit}`}
+            className="bg-gray-800/50 border-gray-600 text-white"
+          />
+        </div>
 
-          {/* Current Goal Display */}
-          {profile.goal && (
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                Primary Goal
-              </label>
-              <div className="flex items-center space-x-2">
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 flex items-center text-sm px-3 py-2">
-                  <Target className="w-4 h-4 mr-2" />
-                  {formatGoal(profile.goal)}
-                </Badge>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="w-4 h-4 text-gray-400 hover:text-gray-300" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">{getGoalTooltip(profile.goal)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          )}
+        {/* Height */}
+        <div className="space-y-2">
+          <Label htmlFor="height" className="text-white">
+            Height ({preferences.height_unit === 'cm' ? 'cm' : 'inches'})
+          </Label>
+          <Input
+            id="height"
+            type="number"
+            value={localProfile.height}
+            onChange={(e) => handleLocalChange('height', e.target.value)}
+            placeholder={`Enter height in ${preferences.height_unit === 'cm' ? 'cm' : 'inches'}`}
+            className="bg-gray-800/50 border-gray-600 text-white"
+          />
+        </div>
 
-          {/* Activity Level Display */}
-          {profile.activity && (
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">
-                Activity Level
-              </label>
-              <div className="flex items-center space-x-2">
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 flex items-center text-sm px-3 py-2">
-                  <Zap className="w-4 h-4 mr-2" />
-                  {formatActivityLevel(profile.activity)}
-                </Badge>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="w-4 h-4 text-gray-400 hover:text-gray-300" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">{getActivityTooltip(profile.activity)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </TooltipProvider>
+        {/* Birthday */}
+        <div className="space-y-2">
+          <Label htmlFor="birthday" className="text-white flex items-center">
+            <Calendar className="w-4 h-4 mr-2" />
+            Birthday
+            {calculatedAge && (
+              <span className="ml-2 text-sm text-gray-400">
+                (Age: {calculatedAge})
+              </span>
+            )}
+          </Label>
+          <Input
+            id="birthday"
+            type="date"
+            value={localProfile.birthday}
+            onChange={(e) => handleLocalChange('birthday', e.target.value)}
+            className="bg-gray-800/50 border-gray-600 text-white"
+          />
+        </div>
+
+        {/* Experience Level */}
+        <div className="space-y-2">
+          <Label htmlFor="experience" className="text-white">Experience Level</Label>
+          <Select value={localProfile.experience} onValueChange={(value) => handleLocalChange('experience', value)}>
+            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+              <SelectValue placeholder="Select experience level" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-gray-600">
+              <SelectItem value="beginner">Beginner (0-1 years)</SelectItem>
+              <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
+              <SelectItem value="advanced">Advanced (3+ years)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Activity Level */}
+        <div className="space-y-2">
+          <Label htmlFor="activity" className="text-white">Activity Level</Label>
+          <Select value={localProfile.activity} onValueChange={(value) => handleLocalChange('activity', value)}>
+            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+              <SelectValue placeholder="Select activity level" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-gray-600">
+              <SelectItem value="sedentary">Sedentary (Little to no exercise)</SelectItem>
+              <SelectItem value="lightly_active">Lightly Active (Light exercise 1-3 days/week)</SelectItem>
+              <SelectItem value="moderately_active">Moderately Active (Moderate exercise 3-5 days/week)</SelectItem>
+              <SelectItem value="very_active">Very Active (Hard exercise 6-7 days/week)</SelectItem>
+              <SelectItem value="extra_active">Extra Active (Very hard exercise & physical job)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Primary Goal */}
+        <div className="space-y-2">
+          <Label htmlFor="goal" className="text-white">Primary Goal</Label>
+          <Select value={localProfile.goal} onValueChange={(value) => handleLocalChange('goal', value)}>
+            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+              <SelectValue placeholder="Select primary goal" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-800 border-gray-600">
+              <SelectItem value="lose_weight">Lose Weight</SelectItem>
+              <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
+              <SelectItem value="maintain_weight">Maintain Weight</SelectItem>
+              <SelectItem value="improve_endurance">Improve Endurance</SelectItem>
+              <SelectItem value="general_fitness">General Fitness</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Save Button */}
+        {hasChanges && (
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

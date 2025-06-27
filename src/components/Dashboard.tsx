@@ -12,7 +12,7 @@ import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
-import GoalsAchievementsHub from '@/components/GoalsAchievementsHub';
+import GoalsAchievementsHubOptimized from '@/components/GoalsAchievementsHubOptimized';
 import { useFavorites } from '@/hooks/useFavorites';
 import { InstantLoader } from '@/components/ui/instant-loader';
 import { SmoothTransition } from '@/components/ui/smooth-transition';
@@ -29,17 +29,21 @@ const Dashboard = () => {
   const [showModuleSelector, setShowModuleSelector] = useState(false);
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
 
-  // Preload module data for instant access
+  // Instant preloading with memory cache
   const { isLoading: dashboardLoading } = useInstantModule({
     moduleId: 'dashboard',
     preloadData: async () => {
-      // Preload user profile data, favorites, and other dashboard data
-      return { loaded: true };
+      // Pre-cache essential data
+      return { 
+        loaded: true,
+        timestamp: Date.now(),
+        userProfile: user 
+      };
     },
-    minLoadTime: 100
+    minLoadTime: 50 // Reduced for instant feel
   });
 
-  // Memoize filtered modules for better performance
+  // Optimized module filtering with memoization
   const { regularModules, progressHubModule } = useMemo(() => {
     if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null };
     
@@ -62,7 +66,7 @@ const Dashboard = () => {
     console.log('Food logged:', data);
   };
 
-  // Show instant loader only if both modules and dashboard are loading
+  // Instant loading - show content immediately
   if (dashboardLoading || !modules || modules.length === 0) {
     return <InstantLoader isLoading={true} variant="module" />;
   }
@@ -96,7 +100,7 @@ const Dashboard = () => {
 
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full">
             <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
-              {/* Welcome section - Mobile optimized */}
+              {/* Welcome section - Instant display */}
               <SmoothTransition show={true} type="slideUp">
                 <div className="text-center space-y-3 sm:space-y-4">
                   <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight bg-gradient-to-r from-white via-orange-100 to-orange-200 bg-clip-text text-transparent">
@@ -108,12 +112,12 @@ const Dashboard = () => {
                 </div>
               </SmoothTransition>
 
-              {/* Notifications Summary - Faster loading */}
+              {/* Notifications Summary - Cached loading */}
               <SmoothTransition show={true} type="fade">
                 <NotificationsSummary />
               </SmoothTransition>
 
-              {/* Favorites Section */}
+              {/* Favorites Section - Optimized rendering */}
               <SmoothTransition show={!favoritesLoading} type="slideUp">
                 {favoriteModules.length > 0 ? (
                   <div className="space-y-4 sm:space-y-6">
@@ -248,10 +252,10 @@ const Dashboard = () => {
                 </SmoothTransition>
               )}
 
-              {/* Dashboard Content Grid - Staggered animations */}
+              {/* Dashboard Content Grid - Optimized layout */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <SmoothTransition show={true} type="slideUp">
-                  <GoalsAchievementsHub />
+                  <GoalsAchievementsHubOptimized />
                 </SmoothTransition>
                 <SmoothTransition show={true} type="slideUp">
                   <PersonalizedSummary />

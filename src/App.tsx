@@ -73,6 +73,14 @@ function App() {
                       }
                     />
                     <Route
+                      path="/goals-manager"
+                      element={
+                        <ProtectedRoute>
+                          <GoalsManager />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path="/settings"
                       element={
                         <ProtectedRoute>

@@ -25,7 +25,29 @@ interface ModuleGridProps {
   viewMode?: 'grid' | 'list';
 }
 
-export const ModuleGrid: React.FC<ModuleGridProps> = ({
+// Module-specific color mappings for vibrant cards
+const getModuleColors = (moduleId: string, gradient: string) => {
+  const colorMap: Record<string, string> = {
+    'coach-gpt': 'bg-gradient-to-br from-blue-500/50 to-indigo-600/50 border-blue-400/40',
+    'smart-training': 'bg-gradient-to-br from-purple-500/50 to-pink-600/50 border-purple-400/40',
+    'meal-plan-ai': 'bg-gradient-to-br from-green-500/50 to-emerald-600/50 border-green-400/40',
+    'smart-food-log': 'bg-gradient-to-br from-orange-500/50 to-red-600/50 border-orange-400/40',
+    'progress-ai': 'bg-gradient-to-br from-cyan-500/50 to-blue-600/50 border-cyan-400/40',
+    'tdee-calculator': 'bg-gradient-to-br from-yellow-500/50 to-orange-600/50 border-yellow-400/40',
+    'cut-calc-pro': 'bg-gradient-to-br from-red-500/50 to-pink-600/50 border-red-400/40',
+    'workout-timer': 'bg-gradient-to-br from-indigo-500/50 to-purple-600/50 border-indigo-400/40',
+    'habit-tracker': 'bg-gradient-to-br from-teal-500/50 to-green-600/50 border-teal-400/40',
+    'recovery-coach': 'bg-gradient-to-br from-violet-500/50 to-indigo-600/50 border-violet-400/40',
+    'workout-library': 'bg-gradient-to-br from-slate-500/50 to-gray-600/50 border-slate-400/40',
+    'cardio-ai': 'bg-gradient-to-br from-pink-500/50 to-rose-600/50 border-pink-400/40',
+    'workout-logger-ai': 'bg-gradient-to-br from-emerald-500/50 to-teal-600/50 border-emerald-400/40',
+    'food-photo-logger': 'bg-gradient-to-br from-amber-500/50 to-yellow-600/50 border-amber-400/40'
+  };
+
+  return colorMap[moduleId] || 'bg-gradient-to-br from-gray-500/50 to-slate-600/50 border-gray-400/40';
+};
+
+export const ModuleGrid: React.FC<ModuleGridProps> = React.memo(({
   modules,
   favorites,
   onModuleClick,
@@ -40,38 +62,39 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         {modules.map((module) => {
           const IconComponent = module.icon;
           const isFavorited = favorites.includes(module.id);
+          const moduleColors = getModuleColors(module.id, module.gradient);
           
           return (
             <Card 
               key={module.id}
-              className="group cursor-pointer hover:shadow-lg backdrop-blur-sm border-opacity-30 hover:border-opacity-50 relative overflow-hidden bg-black/40"
+              className={`group cursor-pointer hover:shadow-xl backdrop-blur-sm border-opacity-60 hover:border-opacity-80 relative overflow-hidden transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] ${moduleColors}`}
               onClick={() => onModuleClick(module)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
-                    <IconComponent className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <IconComponent className="w-6 h-6 text-white drop-shadow-sm" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-semibold text-white text-lg truncate">
+                      <h3 className="font-semibold text-white text-lg truncate drop-shadow-sm">
                         {module.title}
                       </h3>
                       {module.isNew && (
-                        <Badge className="bg-orange-500/40 text-orange-200 border-orange-400/50 text-xs">
+                        <Badge className="bg-orange-500/60 text-orange-100 border-orange-300/60 text-xs shadow-md">
                           <Sparkles className="w-3 h-3 mr-1" />
                           New
                         </Badge>
                       )}
                       {module.isPremium && (
-                        <Badge className="bg-yellow-500/40 text-yellow-200 border-yellow-400/50 text-xs">
+                        <Badge className="bg-yellow-500/60 text-yellow-100 border-yellow-300/60 text-xs shadow-md">
                           <Crown className="w-3 h-3 mr-1" />
                           Pro
                         </Badge>
                       )}
                     </div>
-                    <p className="text-white/90 text-sm line-clamp-2">
+                    <p className="text-white/95 text-sm line-clamp-2 drop-shadow-sm">
                       {module.description}
                     </p>
                   </div>
@@ -83,10 +106,10 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                     }}
                     variant="ghost"
                     size="sm"
-                    className={`flex-shrink-0 p-2 touch-manipulation ${
+                    className={`flex-shrink-0 p-3 touch-manipulation rounded-lg transition-all duration-200 ${
                       isFavorited 
-                        ? 'text-orange-300 hover:text-orange-200' 
-                        : 'text-white/70 hover:text-orange-300'
+                        ? 'text-orange-200 hover:text-orange-100 bg-orange-500/20' 
+                        : 'text-white/80 hover:text-orange-200 hover:bg-orange-500/20'
                     }`}
                   >
                     <Star className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
@@ -109,17 +132,18 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
       {modules.map((module) => {
         const IconComponent = module.icon;
         const isFavorited = favorites.includes(module.id);
+        const moduleColors = getModuleColors(module.id, module.gradient);
         
         return (
           <Card 
             key={module.id}
-            className="group cursor-pointer hover:shadow-lg backdrop-blur-sm border-opacity-30 hover:border-opacity-50 relative overflow-hidden bg-black/40 touch-manipulation"
+            className={`group cursor-pointer hover:shadow-xl backdrop-blur-sm border-opacity-60 hover:border-opacity-80 relative overflow-hidden transform hover:scale-[1.02] transition-all duration-200 active:scale-[0.98] touch-manipulation ${moduleColors}`}
             onClick={() => onModuleClick(module)}
           >
             <CardHeader className="relative z-10 pb-2 p-4">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <IconComponent className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <IconComponent className="w-6 h-6 text-white drop-shadow-sm" />
                 </div>
                 <Button
                   onClick={(e) => {
@@ -128,10 +152,10 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                   }}
                   variant="ghost"
                   size="sm"
-                  className={`p-2 touch-manipulation ${
+                  className={`p-3 touch-manipulation rounded-lg transition-all duration-200 ${
                     isFavorited 
-                      ? 'text-orange-300 hover:text-orange-200' 
-                      : 'text-white/70 hover:text-orange-300'
+                      ? 'text-orange-200 hover:text-orange-100 bg-orange-500/20' 
+                      : 'text-white/80 hover:text-orange-200 hover:bg-orange-500/20'
                   }`}
                 >
                   <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
@@ -140,11 +164,11 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
               
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <CardTitle className="text-white text-lg font-bold">
+                  <CardTitle className="text-white text-lg font-bold drop-shadow-sm">
                     {module.title}
                   </CardTitle>
                   {module.isNew && (
-                    <Badge className="bg-orange-500/40 text-orange-200 border-orange-400/50 text-xs">
+                    <Badge className="bg-orange-500/60 text-orange-100 border-orange-300/60 text-xs shadow-md">
                       <Sparkles className="w-3 h-3 mr-1" />
                       New
                     </Badge>
@@ -152,7 +176,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                 </div>
                 
                 {module.isPremium && (
-                  <Badge className="bg-yellow-500/40 text-yellow-200 border-yellow-400/50 w-fit">
+                  <Badge className="bg-yellow-500/60 text-yellow-100 border-yellow-300/60 w-fit shadow-md">
                     <Crown className="w-3 h-3 mr-1" />
                     Premium
                   </Badge>
@@ -161,7 +185,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
             </CardHeader>
             
             <CardContent className="relative z-10 pt-0 p-4">
-              <CardDescription className="text-white/90 text-sm leading-relaxed">
+              <CardDescription className="text-white/95 text-sm leading-relaxed drop-shadow-sm">
                 {module.description}
               </CardDescription>
             </CardContent>
@@ -170,4 +194,6 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
       })}
     </div>
   );
-};
+});
+
+ModuleGrid.displayName = 'ModuleGrid';

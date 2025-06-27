@@ -147,11 +147,15 @@ export type Database = {
           image_url: string | null
           instructions: string | null
           is_active: boolean
+          is_bodyweight: boolean | null
+          is_weighted: boolean | null
           mechanics: string | null
+          movement_type: string | null
           muscle_bias: string | null
           name: string
           primary_muscles: string[]
           secondary_muscles: string[]
+          technique_notes: string | null
           updated_at: string
         }
         Insert: {
@@ -168,11 +172,15 @@ export type Database = {
           image_url?: string | null
           instructions?: string | null
           is_active?: boolean
+          is_bodyweight?: boolean | null
+          is_weighted?: boolean | null
           mechanics?: string | null
+          movement_type?: string | null
           muscle_bias?: string | null
           name: string
           primary_muscles?: string[]
           secondary_muscles?: string[]
+          technique_notes?: string | null
           updated_at?: string
         }
         Update: {
@@ -189,11 +197,15 @@ export type Database = {
           image_url?: string | null
           instructions?: string | null
           is_active?: boolean
+          is_bodyweight?: boolean | null
+          is_weighted?: boolean | null
           mechanics?: string | null
+          movement_type?: string | null
           muscle_bias?: string | null
           name?: string
           primary_muscles?: string[]
           secondary_muscles?: string[]
+          technique_notes?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -737,6 +749,69 @@ export type Database = {
         }
         Relationships: []
       }
+      user_custom_exercises: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          difficulty_level: string | null
+          equipment: string
+          force_type: string | null
+          form_cues: string | null
+          id: string
+          is_bodyweight: boolean | null
+          is_weighted: boolean | null
+          mechanics: string | null
+          movement_type: string | null
+          name: string
+          primary_muscles: string[]
+          secondary_muscles: string[]
+          technique_notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          equipment: string
+          force_type?: string | null
+          form_cues?: string | null
+          id?: string
+          is_bodyweight?: boolean | null
+          is_weighted?: boolean | null
+          mechanics?: string | null
+          movement_type?: string | null
+          name: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          technique_notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          equipment?: string
+          force_type?: string | null
+          form_cues?: string | null
+          id?: string
+          is_bodyweight?: boolean | null
+          is_weighted?: boolean | null
+          mechanics?: string | null
+          movement_type?: string | null
+          name?: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          technique_notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_goals: {
         Row: {
           category: string
@@ -963,12 +1038,44 @@ export type Database = {
           image_url: string | null
           instructions: string | null
           is_active: boolean
+          is_bodyweight: boolean | null
+          is_weighted: boolean | null
           mechanics: string | null
+          movement_type: string | null
           muscle_bias: string | null
           name: string
           primary_muscles: string[]
           secondary_muscles: string[]
+          technique_notes: string | null
           updated_at: string
+        }[]
+      }
+      search_exercises_optimized: {
+        Args: {
+          search_query?: string
+          muscle_filter?: string[]
+          equipment_filter?: string
+          limit_count?: number
+          search_user_id?: string
+        }
+        Returns: {
+          id: string
+          name: string
+          description: string
+          primary_muscles: string[]
+          secondary_muscles: string[]
+          equipment: string
+          difficulty_level: string
+          category: string
+          force_type: string
+          mechanics: string
+          movement_type: string
+          is_bodyweight: boolean
+          is_weighted: boolean
+          technique_notes: string
+          form_cues: string
+          is_custom: boolean
+          relevance_score: number
         }[]
       }
     }

@@ -28,6 +28,12 @@ interface Exercise {
   category: string;
   force_type: string;
   mechanics: string;
+  movement_type?: string;
+  is_bodyweight?: boolean;
+  is_weighted?: boolean;
+  technique_notes?: string;
+  form_cues?: string;
+  is_custom?: boolean;
 }
 
 interface WorkoutSet {
@@ -96,7 +102,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     difficulty: 'Beginner'
   });
 
-  // Search exercises in database
+  // Search exercises using the new optimized function
   const searchExercises = async (query: string) => {
     if (!query.trim()) {
       setExercises([]);
@@ -105,15 +111,43 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .or(`name.ilike.%${query}%, primary_muscles.cs.{${query}}, equipment.ilike.%${query}%`)
-        .eq('is_active', true)
-        .limit(20);
+      console.log('Searching exercises with query:', query);
+      
+      // Use the new optimized search function
+      const { data, error } = await supabase.rpc('search_exercises_optimized', {
+        search_query: query,
+        limit_count: 20,
+        search_user_id: user?.id || null
+      });
 
-      if (error) throw error;
-      setExercises(data || []);
+      if (error) {
+        console.error('Search error:', error);
+        throw error;
+      }
+
+      console.log('Search results:', data);
+      
+      // Transform the data to match our Exercise interface
+      const transformedExercises: Exercise[] = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        primary_muscles: item.primary_muscles || [],
+        secondary_muscles: item.secondary_muscles || [],
+        equipment: item.equipment || 'Unknown',
+        difficulty_level: item.difficulty_level || 'Beginner',
+        category: item.category || 'Strength',
+        force_type: item.force_type || 'Push',
+        mechanics: item.mechanics || 'Compound',
+        movement_type: item.movement_type,
+        is_bodyweight: item.is_bodyweight,
+        is_weighted: item.is_weighted,
+        technique_notes: item.technique_notes,
+        form_cues: item.form_cues,
+        is_custom: item.is_custom
+      }));
+
+      setExercises(transformedExercises);
     } catch (error) {
       console.error('Error searching exercises:', error);
       toast({
@@ -121,6 +155,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         description: "Could not search exercises. Please try again.",
         variant: "destructive"
       });
+      setExercises([]);
     } finally {
       setLoading(false);
     }
@@ -137,7 +172,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, user?.id]);
 
   // Load previous weight for exercise recommendation
   const loadPreviousWeight = async (exerciseName: string) => {
@@ -216,11 +251,11 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     if (!user) return;
 
     try {
-      // Save custom exercise to database
+      // Save custom exercise to user_custom_exercises table
       const exerciseData = {
+        user_id: user.id,
         name: customExercise.name,
         description: 'Custom exercise',
-        instructions: '',
         primary_muscles: customExercise.muscle_groups.split(',').map(m => m.trim()).filter(Boolean),
         secondary_muscles: [],
         equipment: customExercise.equipment || 'Unknown',
@@ -228,19 +263,39 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         category: 'Strength',
         force_type: 'Push',
         mechanics: 'Compound',
-        is_active: true,
-        external_id: `custom_${user.id}_${Date.now()}`
+        is_bodyweight: customExercise.equipment.toLowerCase().includes('bodyweight') || customExercise.equipment === '',
+        is_weighted: !customExercise.equipment.toLowerCase().includes('bodyweight') && customExercise.equipment !== ''
       };
 
       const { data, error } = await supabase
-        .from('exercises')
+        .from('user_custom_exercises')
         .insert([exerciseData])
         .select()
         .single();
 
       if (error) throw error;
 
-      addExerciseToWorkout(data);
+      // Transform to Exercise interface and add to workout
+      const newExercise: Exercise = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        primary_muscles: data.primary_muscles || [],
+        secondary_muscles: data.secondary_muscles || [],
+        equipment: data.equipment,
+        difficulty_level: data.difficulty_level,
+        category: data.category,
+        force_type: data.force_type || 'Push',
+        mechanics: data.mechanics || 'Compound',
+        movement_type: data.movement_type,
+        is_bodyweight: data.is_bodyweight,
+        is_weighted: data.is_weighted,
+        technique_notes: data.technique_notes,
+        form_cues: data.form_cues,
+        is_custom: true
+      };
+
+      addExerciseToWorkout(newExercise);
       
       // Reset form
       setCustomExercise({
@@ -334,10 +389,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       const workoutData = {
         user_id: user.id,
         workout_name: workout.name,
-        start_time: workout.start_time,
-        end_time: new Date().toISOString(),
-        notes: workout.notes,
         session_date: new Date().toISOString().split('T')[0],
+        duration_minutes: 0,
         exercises_data: workout.exercises.map(ex => ({
           exercise_name: ex.exercise.name,
           exercise_id: ex.exercise.id,
@@ -345,7 +398,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
           sets: ex.sets,
           notes: ex.notes
         })),
-        duration_minutes: 0 // We removed timer, so duration is 0
+        notes: workout.notes
       };
 
       const { error } = await supabase
@@ -528,9 +581,16 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                                       <div className="flex items-center space-x-2">
                                         <Dumbbell className="w-4 h-4 text-violet-400 flex-shrink-0" />
                                         <div className="min-w-0 flex-1">
-                                          <h4 className="font-semibold text-white group-hover:text-violet-300 truncate">
-                                            {exercise.name}
-                                          </h4>
+                                          <div className="flex items-center space-x-2">
+                                            <h4 className="font-semibold text-white group-hover:text-violet-300 truncate">
+                                              {exercise.name}
+                                            </h4>
+                                            {exercise.is_custom && (
+                                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                                                Custom
+                                              </Badge>
+                                            )}
+                                          </div>
                                           <p className="text-sm text-gray-400 truncate">
                                             🎯 {exercise.primary_muscles.join(', ')}
                                           </p>
@@ -559,6 +619,14 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                                 </CardContent>
                               </Card>
                             ))}
+                          </div>
+                        )}
+
+                        {searchQuery && exercises.length === 0 && !loading && (
+                          <div className="text-center py-8 text-gray-400">
+                            <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>No exercises found for "{searchQuery}"</p>
+                            <p className="text-sm mt-1">Try searching for muscle groups, equipment, or exercise names</p>
                           </div>
                         )}
                       </TabsContent>
@@ -605,7 +673,14 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                           <div className="flex items-center space-x-3">
                             <Dumbbell className="w-5 h-5 text-violet-400" />
                             <div>
-                              <CardTitle className="text-white text-lg">{workoutExercise.exercise.name}</CardTitle>
+                              <div className="flex items-center space-x-2">
+                                <CardTitle className="text-white text-lg">{workoutExercise.exercise.name}</CardTitle>
+                                {workoutExercise.exercise.is_custom && (
+                                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                                    Custom
+                                  </Badge>
+                                )}
+                              </div>
                               <CardDescription className="flex items-center space-x-2">
                                 <span>{workoutExercise.exercise.primary_muscles.join(', ')}</span>
                                 {workoutExercise.previousWeight && (

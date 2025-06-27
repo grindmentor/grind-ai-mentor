@@ -10,9 +10,7 @@ import { Star, TrendingUp, Sparkles, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
-import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
-import GoalsAchievementsHubOptimized from '@/components/GoalsAchievementsHubOptimized';
 import { useFavorites } from '@/hooks/useFavorites';
 import { InstantLoader } from '@/components/ui/instant-loader';
 import { SmoothTransition } from '@/components/ui/smooth-transition';
@@ -110,11 +108,6 @@ const Dashboard = () => {
                     Ready to achieve your fitness goals with science-backed training?
                   </p>
                 </div>
-              </SmoothTransition>
-
-              {/* Notifications Summary - Cached loading */}
-              <SmoothTransition show={true} type="fade">
-                <NotificationsSummary />
               </SmoothTransition>
 
               {/* Favorites Section - Optimized rendering */}
@@ -252,11 +245,8 @@ const Dashboard = () => {
                 </SmoothTransition>
               )}
 
-              {/* Dashboard Content Grid - Optimized layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <SmoothTransition show={true} type="slideUp">
-                  <GoalsAchievementsHubOptimized />
-                </SmoothTransition>
+              {/* Dashboard Content - Just Personalized Summary now */}
+              <div className="grid grid-cols-1 gap-4 sm:gap-6">
                 <SmoothTransition show={true} type="slideUp">
                   <PersonalizedSummary />
                 </SmoothTransition>

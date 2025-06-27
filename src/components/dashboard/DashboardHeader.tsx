@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { User, Settings, Crown, Library, Menu } from 'lucide-react';
+import { User, Settings, Crown, Library, Menu, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -34,6 +35,15 @@ export const DashboardHeader: React.FC = () => {
             <Logo size="sm" />
             
             <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => navigate('/goals-manager')}
+                variant="ghost"
+                size="sm"
+                className="text-blue-400 hover:bg-blue-500/10 border border-blue-500/30 px-3 py-2"
+              >
+                <Bell className="w-4 h-4" />
+              </Button>
+              
               <Button
                 onClick={() => navigate('/modules')}
                 variant="ghost"
@@ -93,7 +103,7 @@ export const DashboardHeader: React.FC = () => {
     );
   }
 
-  // Desktop version remains the same
+  // Desktop version
   return (
     <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,6 +112,15 @@ export const DashboardHeader: React.FC = () => {
             <Logo size="sm" />
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
+            <Button
+              onClick={() => navigate('/goals-manager')}
+              variant="ghost"
+              size="sm"
+              className="text-blue-400 hover:bg-blue-500/10 border border-blue-500/30"
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              Notifications
+            </Button>
             <Button
               onClick={() => navigate('/modules')}
               variant="ghost"

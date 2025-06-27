@@ -1,4 +1,3 @@
-
 import { 
   MessageSquare, 
   Utensils, 
@@ -11,7 +10,8 @@ import {
   Heart,
   CheckCircle,
   Camera,
-  Zap
+  Zap,
+  Target
 } from 'lucide-react';
 
 // Import components
@@ -26,6 +26,7 @@ import RecoveryCoach from '@/components/ai-modules/RecoveryCoach';
 import HabitTracker from '@/components/ai-modules/HabitTracker';
 import ProgressAI from '@/components/ai-modules/ProgressAI';
 import CutCalcPro from '@/components/ai-modules/CutCalcPro';
+import BlueprintAI from '@/components/ai-modules/BlueprintAI';
 
 export interface AIModule {
   id: string;
@@ -40,6 +41,16 @@ export interface AIModule {
 
 export const aiModules: AIModule[] = [
   {
+    id: 'blueprint-ai',
+    title: 'Blueprint AI',
+    description: 'Intelligent session planner with science-backed workout templates',
+    icon: Target,
+    gradient: 'from-cyan-600/80 to-blue-800/90 border-cyan-500/60',
+    component: BlueprintAI,
+    isPremium: false,
+    isNew: true
+  },
+  {
     id: 'coach-gpt',
     title: 'Coach GPT',
     description: 'Your AI fitness coach for personalized guidance and motivation',
@@ -47,7 +58,7 @@ export const aiModules: AIModule[] = [
     gradient: 'from-green-600/80 to-green-800/90 border-green-500/60',
     component: CoachGPT,
     isPremium: false,
-    isNew: true
+    isNew: false
   },
   {
     id: 'smart-food-log',

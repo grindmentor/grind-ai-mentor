@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
@@ -16,7 +15,8 @@ type ModuleId =
   | 'workout-timer'
   | 'cut-calc-pro'
   | 'habit-tracker'
-  | 'physique-ai';
+  | 'physique-ai'
+  | 'blueprint-ai';
 
 export interface Module {
   id: ModuleId;
@@ -74,6 +74,26 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
   try {
     // Dynamically import components with enhanced error handling
     switch (moduleName) {
+      case 'blueprint-ai':
+        const BlueprintAI = React.lazy(() => 
+          import('@/components/ai-modules/BlueprintAI')
+            .then(module => {
+              console.log(`Successfully loaded BlueprintAI module`);
+              return module;
+            })
+            .catch(error => {
+              console.error(`Failed to load BlueprintAI module:`, error);
+              return { default: (props: any) => <PlaceholderComponent title="Blueprint AI" {...props} /> };
+            })
+        );
+        return (
+          <ModuleErrorBoundary moduleName="Blueprint AI" onBack={onBack}>
+            <React.Suspense fallback={<PlaceholderComponent title="Blueprint AI" onBack={onBack} />}>
+              <BlueprintAI onBack={onBack || (() => {})} />
+            </React.Suspense>
+          </ModuleErrorBoundary>
+        );
+      
       case 'smart-training':
         const SmartTraining = React.lazy(() => 
           import('@/components/ai-modules/SmartTraining')
@@ -93,6 +113,7 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
             </React.Suspense>
           </ModuleErrorBoundary>
         );
+
       
       case 'coach-gpt':
         const CoachGPT = React.lazy(() => 
@@ -334,6 +355,17 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
 
 const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
   const modules: Module[] = [
+    {
+      id: 'blueprint-ai',
+      title: 'Blueprint AI',
+      description: 'Your intelligent session planner and workout archive with science-backed programs',
+      icon: Target,
+      component: (props: any) => <SafeComponent moduleName="blueprint-ai" {...props} />,
+      gradient: 'from-cyan-500 to-blue-500',
+      usageKey: 'training_programs',
+      isPremium: false,
+      isNew: true
+    },
     {
       id: 'smart-training',
       title: 'Smart Training',

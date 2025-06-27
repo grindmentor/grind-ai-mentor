@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { EnhancedSignUp } from "@/components/EnhancedSignUp";
+import { SoundButton } from "@/components/SoundButton";
+import { playSuccessSound, playErrorSound, playClickSound } from "@/utils/soundEffects";
 import { Mail, Lock, ArrowLeft, CheckCircle, RefreshCw } from "lucide-react";
 
 const SignIn = () => {
@@ -18,66 +21,67 @@ const SignIn = () => {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
-  const { signIn, signUp, resetPassword, user, authPending } = useAuth();
+  const { signIn, resetPassword, user, canResendEmail, authPending } = useAuth();
 
   useEffect(() => {
     if (user) {
+      // Redirect users to app - the app will handle email verification
       navigate("/app");
     }
   }, [user, navigate]);
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-
-    try {
-      const { error } = await signUp(email, password);
-      if (error) {
-        setError(error.message);
-      } else {
-        setAwaitingConfirmation(true);
-      }
-    } catch (err) {
-      setError("An unexpected error occurred");
-    }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-
-    try {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setError(error.message);
-      }
-    } catch (err) {
-      setError("An unexpected error occurred");
-    }
-  };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       setError("Please enter your email address");
+      playErrorSound();
       return;
     }
 
     setError("");
     setMessage("");
+    playClickSound();
 
     try {
       const { error } = await resetPassword(email);
+
       if (error) {
         setError(error.message);
+        playErrorSound();
       } else {
         setMessage("Password reset email sent! Check your inbox for instructions.");
         setResetEmailSent(true);
+        playSuccessSound();
       }
     } catch (err) {
       setError("An unexpected error occurred");
+      playErrorSound();
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    playClickSound();
+
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          setError("Invalid email or password. Please check your credentials.");
+        } else if (error.message.includes("Email not confirmed")) {
+          setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+        } else {
+          setError(error.message);
+        }
+        playErrorSound();
+      } else {
+        playSuccessSound();
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+      playErrorSound();
     }
   };
 
@@ -88,12 +92,36 @@ const SignIn = () => {
     setResetEmailSent(false);
     setError("");
     setMessage("");
+    playClickSound();
   };
+
+  // Show enhanced signup
+  if (isSignUp) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center space-x-2 mb-8">
+            <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+              <span className="font-bold text-white text-sm">M</span>
+            </div>
+            <span className="text-2xl font-bold">Myotopia</span>
+          </div>
+          
+          <EnhancedSignUp 
+            onSuccess={() => setAwaitingConfirmation(true)}
+            onSwitchToSignIn={() => setIsSignUp(false)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   const getTitle = () => {
     if (awaitingConfirmation) return "Check Your Email";
-    if (isForgotPassword) return resetEmailSent ? "Reset Link Sent" : "Reset Password";
-    return isSignUp ? "Create Account" : "Welcome Back";
+    if (isForgotPassword) {
+      return resetEmailSent ? "Reset Link Sent" : "Reset Password";
+    }
+    return "Welcome Back";
   };
 
   const getDescription = () => {
@@ -103,12 +131,13 @@ const SignIn = () => {
         ? "Check your email for password reset instructions"
         : "Enter your email to receive reset instructions";
     }
-    return isSignUp ? "Join Myotopia and start your fitness journey" : "Sign in to continue your progress";
+    return "Sign in to continue your progress";
   };
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md">
+        {/* Logo */}
         <div className="flex items-center justify-center space-x-2 mb-8">
           <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
             <span className="font-bold text-white text-sm">M</span>
@@ -132,14 +161,14 @@ const SignIn = () => {
                     We've sent a confirmation link to <strong className="text-white">{email}</strong>. 
                     Click the link in your email to activate your account, then return here to sign in.
                   </p>
-                  <Button 
+                  <SoundButton 
                     onClick={resetForm}
                     variant="outline"
                     className="border-gray-700 text-gray-900 bg-white hover:bg-gray-100 hover:text-black"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Sign In
-                  </Button>
+                  </SoundButton>
                 </div>
               </div>
             ) : resetEmailSent ? (
@@ -152,23 +181,23 @@ const SignIn = () => {
                     Password reset instructions have been sent to <strong className="text-white">{email}</strong>.
                     Check your inbox and follow the link to reset your password.
                   </p>
-                  <Button 
+                  <SoundButton 
                     onClick={resetForm}
                     className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
                   >
                     Back to Sign In
-                  </Button>
+                  </SoundButton>
                 </div>
               </div>
             ) : (
-              <form onSubmit={isForgotPassword ? handleForgotPassword : (isSignUp ? handleSignUp : handleSignIn)} className="space-y-4">
+              <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-4">
                 {error && (
-                  <div className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded border border-red-500/20">
+                  <div className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded border border-red-500/20 animate-fade-in">
                     {error}
                   </div>
                 )}
                 {message && (
-                  <div className="text-green-400 text-sm text-center bg-green-500/10 p-3 rounded border border-green-500/20">
+                  <div className="text-green-400 text-sm text-center bg-green-500/10 p-3 rounded border border-green-500/20 animate-fade-in">
                     {message}
                   </div>
                 )}
@@ -209,10 +238,11 @@ const SignIn = () => {
                   </div>
                 )}
                 
-                <Button 
+                <SoundButton 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transition-all hover:scale-105"
-                  disabled={authPending}
+                  disabled={authPending || (isForgotPassword && !canResendEmail)}
+                  soundType="success"
                 >
                   {authPending ? (
                     <div className="flex items-center justify-center space-x-2">
@@ -220,9 +250,11 @@ const SignIn = () => {
                       <span>Please wait...</span>
                     </div>
                   ) : (
-                    isForgotPassword ? "Send Reset Email" : (isSignUp ? "Sign Up" : "Sign In")
+                    isForgotPassword ? 
+                      (canResendEmail ? "Send Reset Email" : "Wait before resending") 
+                      : "Sign In"
                   )}
-                </Button>
+                </SoundButton>
               </form>
             )}
             
@@ -232,14 +264,13 @@ const SignIn = () => {
                   {!isForgotPassword && (
                     <button
                       onClick={() => {
-                        setIsSignUp(!isSignUp);
-                        setError("");
-                        setMessage("");
+                        setIsSignUp(true);
+                        playClickSound();
                       }}
                       className="text-orange-400 hover:text-orange-300 text-sm block transition-colors"
                       disabled={authPending}
                     >
-                      {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+                      Don't have an account? Sign up
                     </button>
                   )}
                   
@@ -249,6 +280,7 @@ const SignIn = () => {
                       setResetEmailSent(false);
                       setError("");
                       setMessage("");
+                      playClickSound();
                     }}
                     className="text-gray-400 hover:text-white text-sm block transition-colors"
                     disabled={authPending}

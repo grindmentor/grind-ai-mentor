@@ -1,121 +1,130 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Check, Crown, Sparkles } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
+import SubscriptionCard from "@/components/SubscriptionCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Pricing = () => {
+  const navigate = useNavigate();
+  const { currentTier, refreshSubscription } = useSubscription();
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+
+  const handleSelectPlan = async (tierKey: string) => {
+    if (tierKey === 'free' || tierKey === currentTier) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: { tier: tierKey }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        // Refresh subscription status after payment
+        setTimeout(() => {
+          refreshSubscription();
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Error",
+        description: "Unable to process payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link 
-              to="/"
-              className="text-white hover:text-orange-400 transition-colors font-medium flex items-center"
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center space-x-4 mb-8">
+          <Button variant="ghost" onClick={() => navigate('/app')} className="text-white hover:bg-gray-800">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-white mb-4">Choose Your Plan</h1>
+          <p className="text-gray-400 text-lg">
+            All plans include science-backed AI recommendations with peer-reviewed research citations
+          </p>
+          
+          {/* Billing Period Toggle */}
+          <div className="mt-6 flex items-center justify-center space-x-4">
+            <Button
+              variant={billingPeriod === 'monthly' ? 'default' : 'ghost'}
+              onClick={() => setBillingPeriod('monthly')}
+              className={billingPeriod === 'monthly' 
+                ? "bg-white text-black hover:bg-gray-200" 
+                : "text-gray-300 hover:text-white hover:bg-gray-800"
+              }
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Link>
-            <h1 className="text-lg font-semibold">Pricing</h1>
-            <div className="w-32"></div>
+              Monthly
+            </Button>
+            <Button
+              variant={billingPeriod === 'annual' ? 'default' : 'ghost'}
+              onClick={() => setBillingPeriod('annual')}
+              className={`relative ${billingPeriod === 'annual' 
+                ? "bg-white text-black hover:bg-gray-200" 
+                : "text-gray-300 hover:text-white hover:bg-gray-800"
+              }`}
+            >
+              Annual
+              {billingPeriod === 'annual' && (
+                <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs">
+                  Save 17%
+                </Badge>
+              )}
+            </Button>
+          </div>
+          
+          <div className="mt-6 space-y-2">
+            <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+              Cancel anytime • No hidden fees
+            </Badge>
+            {billingPeriod === 'annual' && (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                Annual plans: Save 17% compared to monthly
+              </Badge>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">
-            Choose Your <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">Fitness Journey</span>
-          </h1>
-          <p className="text-xl text-gray-400">
-            Unlock the power of science-based training with our premium plans
-          </p>
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => (
+            <SubscriptionCard
+              key={key}
+              tier={tier}
+              isCurrentTier={key === currentTier}
+              isPopular={key === 'premium'}
+              onSelect={() => handleSelectPlan(key)}
+              billingPeriod={billingPeriod}
+              isProcessing={isProcessing}
+            />
+          ))}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Free Plan */}
-          <Card className="bg-gray-900/50 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white text-2xl">Free</CardTitle>
-              <CardDescription className="text-gray-400">
-                Get started with basic features
-              </CardDescription>
-              <div className="text-3xl font-bold text-white">
-                $0<span className="text-lg text-gray-400">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 text-green-400" />
-                  <span className="text-gray-300">Basic workout modules</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 text-green-400" />
-                  <span className="text-gray-300">Progress tracking</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 text-green-400" />
-                  <span className="text-gray-300">Basic AI recommendations</span>
-                </div>
-              </div>
-              <Link to="/signup">
-                <Button className="w-full bg-gray-700 hover:bg-gray-600 text-white">
-                  Get Started Free
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Premium Plan */}
-          <Card className="bg-gradient-to-br from-orange-900/30 to-red-800/20 border-orange-700/50 relative">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center">
-                <Crown className="w-4 h-4 mr-1" />
-                Most Popular
-              </div>
-            </div>
-            <CardHeader>
-              <CardTitle className="text-white text-2xl">Premium</CardTitle>
-              <CardDescription className="text-orange-200">
-                Unlock your full potential
-              </CardDescription>
-              <div className="text-3xl font-bold text-white">
-                $15<span className="text-lg text-gray-400">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="text-white">Everything in Free</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="text-white">Advanced AI Personal Trainer</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="text-white">Unlimited Module Access</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="text-white">Personalized Meal Plans</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="text-white">Priority Support</span>
-                </div>
-              </div>
-              <Button className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
-                Upgrade to Premium
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="text-center mt-12 space-y-4">
+          <div className="flex justify-center space-x-8 text-sm text-gray-500">
+            <span>✓ No refunds policy</span>
+            <span>✓ Secure payment processing</span>
+            <span>✓ Cancel anytime</span>
+          </div>
         </div>
       </div>
     </div>

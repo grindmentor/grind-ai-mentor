@@ -1,362 +1,257 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Star, TrendingUp, Users, Shield, Zap, Target, Award, CheckCircle, ArrowRight } from 'lucide-react';
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Brain, Target, Zap, Star, Users, Trophy, Shield } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { PageTransition } from "@/components/ui/page-transition";
+import { AnimatedCard } from "@/components/ui/animated-card";
+import Logo from "@/components/ui/logo";
 
 const Index = () => {
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      role: "Fitness Enthusiast",
-      content: "Myotopia transformed my approach to fitness. The science-based recommendations actually work!",
-      rating: 5
-    },
-    {
-      name: "Mike Chen",
-      role: "Personal Trainer",
-      content: "As a trainer, I love how Myotopia backs everything with research. My clients see real results.",
-      rating: 5
-    },
-    {
-      name: "Emma Davis",
-      role: "Busy Professional",
-      content: "Finally, a fitness app that adapts to my schedule and gives me workouts that actually fit my life.",
-      rating: 5
-    }
-  ];
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    checkUser();
+  }, []);
 
   const features = [
     {
-      icon: <TrendingUp className="w-8 h-8 text-blue-400" />,
-      title: "Science-Based Training",
-      description: "Every workout and recommendation is backed by peer-reviewed research and proven methodologies."
+      icon: <Brain className="w-6 h-6 sm:w-8 sm:h-8" />,
+      title: "AI-Powered Coaching",
+      description: "Get personalized fitness advice from our advanced AI coach trained on scientific research",
+      color: "text-blue-500",
+      delay: 0
     },
     {
-      icon: <Star className="w-8 h-8 text-green-400" />,
-      title: "AI-Powered Personalization",
-      description: "Advanced AI analyzes your progress and preferences to create truly personalized fitness plans."
+      icon: <Target className="w-6 h-6 sm:w-8 sm:h-8" />,
+      title: "Smart Training Plans",
+      description: "Receive customized workout programs that adapt to your progress and goals",
+      color: "text-green-500",
+      delay: 100
     },
     {
-      icon: <Users className="w-8 h-8 text-purple-400" />,
-      title: "Expert Community",
-      description: "Connect with fitness professionals and enthusiasts who share your commitment to evidence-based training."
+      icon: <Zap className="w-6 h-6 sm:w-8 sm:h-8" />,
+      title: "Real-time Analysis",
+      description: "Track your progress with intelligent insights and data-driven recommendations",
+      color: "text-purple-500",
+      delay: 200
+    }
+  ];
+
+  const benefits = [
+    {
+      icon: <Star className="w-5 h-5 sm:w-6 sm:h-6" />,
+      title: "Science-Backed",
+      description: "Every recommendation is based on the latest fitness research"
     },
     {
-      icon: <Shield className="w-8 h-8 text-orange-400" />,
-      title: "Safety First",
-      description: "All exercises and programs are designed with injury prevention and proper form as top priorities."
+      icon: <Users className="w-5 h-5 sm:w-6 sm:h-6" />,
+      title: "Personalized",
+      description: "Tailored specifically to your fitness level and goals"
     },
     {
-      icon: <Zap className="w-8 h-8 text-yellow-400" />,
-      title: "Adaptive Programs",
-      description: "Your workouts evolve with you, automatically adjusting based on your progress and feedback."
+      icon: <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />,
+      title: "Results-Driven",
+      description: "Proven methods that deliver real, measurable results"
     },
     {
-      icon: <Target className="w-8 h-8 text-red-400" />,
-      title: "Goal-Oriented",
-      description: "Whether building muscle, losing fat, or improving performance, we create targeted plans for your goals."
+      icon: <Shield className="w-5 h-5 sm:w-6 sm:h-6" />,
+      title: "Safe & Effective",
+      description: "Designed with injury prevention and long-term health in mind"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                <Dumbbell className="w-4 h-4 text-white" />
+    <PageTransition>
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-transparent to-orange-600/10" />
+          <div className="relative px-4 sm:px-6 pt-8 sm:pt-12 md:pt-20 pb-12 sm:pb-16 mx-auto max-w-7xl lg:px-8">
+            <div className="mx-auto max-w-4xl text-center animate-fade-in">
+              {/* Logo */}
+              <div className="mb-6 sm:mb-8">
+                <Logo size={isMobile ? "lg" : "xl"} />
               </div>
-              <span className="text-xl font-bold text-white">Myotopia</span>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/about" className="text-gray-300 hover:text-white transition-colors">
-                About
-              </Link>
-              <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
-                Pricing
-              </Link>
-              <Link to="/support" className="text-gray-300 hover:text-white transition-colors">
-                Support
-              </Link>
-              <Link to="/privacy" className="text-gray-300 hover:text-white transition-colors">
-                Privacy
-              </Link>
-              <Link to="/terms" className="text-gray-300 hover:text-white transition-colors">
-                Terms
-              </Link>
-              <Link to="/signin" className="text-gray-300 hover:text-white transition-colors">
-                Sign In
-              </Link>
-              <Link to="/signup">
-                <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center space-y-8">
-            {/* Logo */}
-            <div className="flex items-center justify-center space-x-3 mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-                <Dumbbell className="w-8 h-8 text-white" />
-              </div>
-              <span className="text-4xl font-bold text-white">Myotopia</span>
-            </div>
-
-            {/* Headline */}
-            <div className="space-y-6">
-              <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-white via-orange-200 to-red-200 bg-clip-text text-transparent">
-                Science-Based Fitness
+              
+              <Badge className="mb-4 sm:mb-6 md:mb-8 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 transition-colors">
+                <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                Science-Powered Fitness AI
+              </Badge>
+              
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-6 leading-tight">
+                <span className="bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent">
+                  Transform Your
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  Fitness Journey
+                </span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto">
-                Transform your body with AI-powered training programs backed by scientific research. 
-                No more guesswork, just results that actually work.
+              
+              <p className="text-sm sm:text-base md:text-lg leading-6 sm:leading-7 md:leading-8 text-gray-300 mb-6 sm:mb-8 md:mb-10 px-2 sm:px-4 md:px-0 max-w-3xl mx-auto">
+                Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. 
+                Based on the latest scientific research for optimal results.
               </p>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-              <Link to="/signup">
-                <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-3 text-lg">
-                  Start Your Journey Free
-                  <ArrowRight className="w-5 h-5 ml-2" />
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0">
+                <Button 
+                  onClick={() => navigate(user ? '/app' : '/signin')}
+                  size={isMobile ? "default" : "lg"}
+                  className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {user ? 'Go to Dashboard' : 'Start for Free'}
+                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
-              </Link>
-              <Link to="/about">
-                <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800 px-8 py-3 text-lg">
+                
+                <Button 
+                  onClick={() => navigate('/about')}
+                  variant="outline"
+                  size={isMobile ? "default" : "lg"}
+                  className="w-full sm:w-auto border-gray-600 text-white hover:bg-gray-800/50 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg"
+                >
                   Learn More
                 </Button>
-              </Link>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="pt-12 text-center">
-              <p className="text-gray-400 mb-4">Trusted by thousands of fitness enthusiasts</p>
-              <div className="flex justify-center items-center space-x-8 text-sm text-gray-500">
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                  <span>4.9/5 Rating</span>
-                </div>
-                <div className="flex items-center">
-                  <Users className="w-4 h-4 text-blue-400 mr-1" />
-                  <span>10K+ Active Users</span>
-                </div>
-                <div className="flex items-center">
-                  <Award className="w-4 h-4 text-green-400 mr-1" />
-                  <span>Science-Backed</span>
-                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Why Choose <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">Myotopia</span>?
-          </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            We combine cutting-edge AI technology with proven scientific methods to deliver 
-            personalized fitness solutions that actually work.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <Card key={index} className="bg-gray-900/50 border-gray-700 hover:bg-gray-900/70 transition-all duration-300">
-              <CardHeader>
-                <div className="w-16 h-16 bg-gray-800/50 rounded-xl flex items-center justify-center mb-4">
-                  {feature.icon}
-                </div>
-                <CardTitle className="text-white text-xl">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-400">{feature.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Testimonials Section */}
-      <div className="bg-gray-900/30 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
-            <p className="text-xl text-gray-400">Real results from real people</p>
+        {/* Features Section */}
+        <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4">
+              <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                Powered by Science
+              </span>
+            </h2>
+            <p className="text-gray-400 text-sm sm:text-base md:text-lg">
+              Experience the future of fitness with AI that understands your unique needs
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="bg-gray-900/50 border-gray-700">
-                <CardHeader>
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                    ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            {features.map((feature, index) => (
+              <AnimatedCard 
+                key={index}
+                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300"
+                delay={feature.delay}
+              >
+                <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 flex items-center justify-center ${feature.color}`}>
+                    {feature.icon}
                   </div>
-                  <CardTitle className="text-white text-lg">{testimonial.name}</CardTitle>
-                  <CardDescription className="text-gray-400">{testimonial.role}</CardDescription>
+                  <CardTitle className="text-base sm:text-lg md:text-xl text-white mb-2">{feature.title}</CardTitle>
+                  <CardDescription className="text-gray-400 leading-relaxed text-xs sm:text-sm md:text-base">
+                    {feature.description}
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300 italic">"{testimonial.content}"</p>
-                </CardContent>
-              </Card>
+              </AnimatedCard>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Pricing Preview */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-          <p className="text-xl text-gray-400">Start free, upgrade when you're ready</p>
+        {/* Benefits Section */}
+        <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
+          <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4 text-white">
+              Why Choose Our Platform?
+            </h2>
+            <p className="text-gray-400 text-sm sm:text-base md:text-lg">
+              Built for serious fitness enthusiasts who want real results
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            {benefits.map((benefit, index) => (
+              <AnimatedCard 
+                key={index}
+                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 p-3 sm:p-4 md:p-6 text-center hover:bg-gray-800/50 transition-all duration-300"
+                delay={index * 100}
+              >
+                <div className="text-orange-500 mb-2 sm:mb-3 md:mb-4 flex justify-center">
+                  {benefit.icon}
+                </div>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-1 sm:mb-2">{benefit.title}</h3>
+                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{benefit.description}</p>
+              </AnimatedCard>
+            ))}
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <Card className="bg-gray-900/50 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white text-2xl">Free</CardTitle>
-              <CardDescription className="text-gray-400">Perfect for getting started</CardDescription>
-              <div className="text-4xl font-bold text-white">$0</div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-green-400 mr-3" />
-                  <span className="text-gray-300">Basic workout modules</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-green-400 mr-3" />
-                  <span className="text-gray-300">Progress tracking</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-green-400 mr-3" />
-                  <span className="text-gray-300">Community access</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-900/30 to-red-800/20 border-orange-700/50">
-            <CardHeader>
-              <CardTitle className="text-white text-2xl">Premium</CardTitle>
-              <CardDescription className="text-orange-200">Unlock your full potential</CardDescription>
-              <div className="text-4xl font-bold text-white">$15<span className="text-lg text-gray-400">/mo</span></div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-yellow-400 mr-3" />
-                  <span className="text-white">Everything in Free</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-yellow-400 mr-3" />
-                  <span className="text-white">AI Personal Trainer</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-yellow-400 mr-3" />
-                  <span className="text-white">Unlimited modules</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-yellow-400 mr-3" />
-                  <span className="text-white">Personalized meal plans</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="text-center mt-8">
-          <Link to="/pricing">
-            <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
-              View Full Pricing
+        {/* CTA Section */}
+        <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
+          <AnimatedCard 
+            className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/20 p-6 sm:p-8 md:p-12 text-center"
+            delay={400}
+          >
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
+              <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                Ready to Transform?
+              </span>
+            </h2>
+            <p className="text-gray-300 text-sm sm:text-base md:text-lg mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto">
+              Join thousands of users who are already achieving their fitness goals with AI-powered guidance
+            </p>
+            <Button 
+              onClick={() => navigate(user ? '/app' : '/signin')}
+              size={isMobile ? "default" : "lg"}
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold"
+            >
+              {user ? 'Go to Dashboard' : 'Start for Free'}
+              <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
-          </Link>
+          </AnimatedCard>
         </div>
-      </div>
 
-      {/* Final CTA */}
-      <div className="bg-gradient-to-r from-orange-900/50 to-red-800/50 py-20">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Transform Your Fitness Journey?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Join thousands of people who have discovered the power of science-based training. 
-            Start your free trial today - no credit card required.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/signup">
-              <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-3 text-lg">
-                Start Free Trial
-              </Button>
-            </Link>
-            <Link to="/signin">
-              <Button variant="outline" className="border-gray-600 text-white hover:bg-gray-800 px-8 py-3 text-lg">
-                Sign In
-              </Button>
-            </Link>
+        {/* Footer Links */}
+        <footer className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 md:py-12 lg:px-8">
+            <div className="flex flex-col md:flex-row justify-center items-center space-y-3 md:space-y-0 md:space-x-8">
+              <button
+                onClick={() => navigate('/about')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                About
+              </button>
+              <button
+                onClick={() => navigate('/privacy')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                Privacy Policy
+              </button>
+              <button
+                onClick={() => navigate('/terms')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                Terms of Service
+              </button>
+              <button
+                onClick={() => navigate('/support')}
+                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
+              >
+                Support
+              </button>
+            </div>
+            <div className="mt-4 sm:mt-6 md:mt-8 text-center">
+              <p className="text-xs text-gray-500">
+                © 2024 Myotopia. All rights reserved.
+              </p>
+            </div>
           </div>
-        </div>
+        </footer>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-black/50 py-12 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                  <Dumbbell className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xl font-bold">Myotopia</span>
-              </div>
-              <p className="text-gray-400">Science-based fitness for everyone</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <div className="space-y-2">
-                <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">About</Link>
-                <Link to="/pricing" className="block text-gray-400 hover:text-white transition-colors">Pricing</Link>
-                <Link to="/modules" className="block text-gray-400 hover:text-white transition-colors">Features</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <div className="space-y-2">
-                <Link to="/support" className="block text-gray-400 hover:text-white transition-colors">Help Center</Link>
-                <Link to="/privacy" className="block text-gray-400 hover:text-white transition-colors">Privacy</Link>
-                <Link to="/terms" className="block text-gray-400 hover:text-white transition-colors">Terms</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <div className="space-y-2">
-                <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">Our Story</Link>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Careers</a>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Contact</a>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 Myotopia. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </PageTransition>
   );
 };
 

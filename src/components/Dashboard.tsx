@@ -28,8 +28,8 @@ const Dashboard = () => {
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
 
   // Optimized module click handler with debouncing
-  const handleModuleClick = useMemo(() => 
-    createDebouncedFunction((module: any) => {
+  const handleModuleClick = useMemo(() => {
+    const handler = (module: any) => {
       console.log('Module clicked:', module.id, 'at', new Date().toISOString());
       try {
         setSelectedModule(module);
@@ -37,25 +37,28 @@ const Dashboard = () => {
       } catch (error) {
         console.error('Error setting selected module:', error);
       }
-    }, 150), [createDebouncedFunction]
-  );
+    };
+    return createDebouncedFunction(handler, 150);
+  }, [createDebouncedFunction]);
 
-  const handleBackToDashboard = useMemo(() => 
-    createDebouncedFunction(() => {
+  const handleBackToDashboard = useMemo(() => {
+    const handler = () => {
       console.log('Returning to dashboard at', new Date().toISOString());
       try {
         setSelectedModule(null);
       } catch (error) {
         console.error('Error returning to dashboard:', error);
       }
-    }, 100), [createDebouncedFunction]
-  );
+    };
+    return createDebouncedFunction(handler, 100);
+  }, [createDebouncedFunction]);
 
-  const handleFoodLogged = useMemo(() => 
-    createDebouncedFunction((data: any) => {
+  const handleFoodLogged = useMemo(() => {
+    const handler = (data: any) => {
       console.log('Food logged:', data);
-    }, 200), [createDebouncedFunction]
-  );
+    };
+    return createDebouncedFunction(handler, 200);
+  }, [createDebouncedFunction]);
 
   // Memoized computed values
   const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {

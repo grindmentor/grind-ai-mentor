@@ -37,19 +37,19 @@ if ('serviceWorker' in navigator) {
       });
       
       // Listen for service worker messages
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        console.log('Message from service worker:', event.data);
+      navigator.serviceWorker.addEventListener('message', (swEvent) => {
+        console.log('Message from service worker:', swEvent.data);
         
-        if (event.data.type === 'OFFLINE_REQUEST_SYNCED') {
+        if (swEvent.data.type === 'OFFLINE_REQUEST_SYNCED') {
           // Show success notification when offline requests are synced
-          const event = new CustomEvent('offlineRequestSynced', {
-            detail: { url: event.data.url, method: event.data.method }
+          const syncEvent = new CustomEvent('offlineRequestSynced', {
+            detail: { url: swEvent.data.url, method: swEvent.data.method }
           });
-          window.dispatchEvent(event);
+          window.dispatchEvent(syncEvent);
         }
         
-        if (event.data.type === 'BACKGROUND_SYNC_COMPLETE') {
-          console.log('Background sync completed at:', new Date(event.data.timestamp));
+        if (swEvent.data.type === 'BACKGROUND_SYNC_COMPLETE') {
+          console.log('Background sync completed at:', new Date(swEvent.data.timestamp));
         }
       });
       

@@ -82,18 +82,22 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     if (!user) return;
 
     try {
-      // Load progress entries
+      setLoading(true);
+      
+      // Load progress entries with better error handling
       const { data: progressData, error: progressError } = await supabase
         .from('progress_entries')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
-      if (!progressError && progressData) {
+      if (progressError) {
+        console.error('Progress entries error:', progressError);
+      } else if (progressData) {
         setEntries(progressData);
       }
 
-      // Load workout sessions
+      // Load workout sessions with better error handling
       const { data: workoutData, error: workoutError } = await supabase
         .from('workout_sessions')
         .select('*')
@@ -101,13 +105,22 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         .order('session_date', { ascending: false })
         .limit(30);
 
-      if (!workoutError && workoutData) {
+      if (workoutError) {
+        console.error('Workout sessions error:', workoutError);
+      } else if (workoutData) {
         setWorkoutSessions(workoutData);
-        calculateUserStats(workoutData, progressData || []);
       }
+
+      // Calculate stats even if some data is missing
+      calculateUserStats(workoutData || [], progressData || []);
 
     } catch (error) {
       console.error('Error loading progress data:', error);
+      toast({
+        title: 'Loading Error',
+        description: 'Some data may not be available. Please try refreshing.',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
@@ -126,7 +139,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     
     // Calculate strength (average workout duration)
     const avgDuration = workouts.length > 0 
-      ? workouts.reduce((sum, w) => sum + w.duration_minutes, 0) / workouts.length 
+      ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length 
       : 0;
     const strength = Math.min((avgDuration / 90) * 100, 100);
     
@@ -228,12 +241,14 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-950/80 via-purple-900/40 to-purple-800/60 text-white p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-purple-700/30 rounded w-1/4"></div>
-            <div className="h-32 bg-purple-700/30 rounded"></div>
-            <div className="h-64 bg-purple-700/30 rounded"></div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-950/90 via-purple-900/50 to-purple-800/70 text-white overflow-x-hidden">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="animate-pulse space-y-4">
+              <div className="h-6 sm:h-8 bg-purple-700/30 rounded w-1/4"></div>
+              <div className="h-24 sm:h-32 bg-purple-700/30 rounded"></div>
+              <div className="h-48 sm:h-64 bg-purple-700/30 rounded"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -241,119 +256,119 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950/90 via-purple-900/50 to-purple-800/70 text-white">
-      <div className="p-4 md:p-6 lg:p-8">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-950/90 via-purple-900/50 to-purple-800/70 text-white overflow-x-hidden">
+      <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+          {/* Mobile-optimized Header */}
+          <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
               <SmoothButton
                 variant="ghost"
                 onClick={onBack}
-                className="text-white hover:bg-purple-800/50"
+                className="text-white hover:bg-purple-800/50 flex-shrink-0 touch-manipulation h-9 w-9 sm:h-auto sm:w-auto p-2 sm:px-4 sm:py-2"
                 size={isMobile ? 'sm' : 'default'}
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                <ArrowLeft className="w-4 h-4 sm:mr-2" />
+                {!isMobile && <span>Back</span>}
               </SmoothButton>
-              <div>
-                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-300 via-purple-200 to-purple-300 bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-purple-300 via-purple-200 to-purple-300 bg-clip-text text-transparent truncate">
                   Progress Hub
                 </h1>
-                <p className="text-purple-200/80 text-sm md:text-base">Track your fitness journey</p>
+                <p className="text-purple-200/80 text-xs sm:text-sm lg:text-base truncate">Track your fitness journey</p>
               </div>
             </div>
             
             <SmoothButton
               onClick={() => setShowAddEntry(true)}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 flex-shrink-0 touch-manipulation text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-2"
               size={isMobile ? 'sm' : 'default'}
             >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Add Entry
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              {!isMobile && <span>Add Entry</span>}
             </SmoothButton>
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          {/* Mobile-optimized Stats Overview */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-white text-sm">
-                  <Trophy className="w-4 h-4 mr-2 text-purple-300" />
+              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
+                  <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
                   Total Workouts
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">{workoutSessions.length}</div>
-                <div className="text-sm text-purple-200/70 mt-1">Sessions completed</div>
+              <CardContent className="p-3 sm:p-4 pt-0">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{workoutSessions.length}</div>
+                <div className="text-xs text-purple-200/70 mt-1">Sessions completed</div>
               </CardContent>
             </Card>
 
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-white text-sm">
-                  <Activity className="w-4 h-4 mr-2 text-purple-300" />
+              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
+                  <Activity className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
                   This Month
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">
+              <CardContent className="p-3 sm:p-4 pt-0">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
                   {workoutSessions.filter(w => {
                     const sessionDate = new Date(w.session_date);
                     const now = new Date();
                     return sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
                   }).length}
                 </div>
-                <div className="text-sm text-purple-200/70 mt-1">Workouts</div>
+                <div className="text-xs text-purple-200/70 mt-1">Workouts</div>
               </CardContent>
             </Card>
 
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-white text-sm">
-                  <Scale className="w-4 h-4 mr-2 text-purple-300" />
+              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
+                  <Scale className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
                   Latest Weight
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">
+              <CardContent className="p-3 sm:p-4 pt-0">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">
                   {entries[0]?.weight ? `${entries[0].weight} lbs` : 'Not recorded'}
                 </div>
-                <div className="text-sm text-purple-200/70 mt-1">Most recent</div>
+                <div className="text-xs text-purple-200/70 mt-1">Most recent</div>
               </CardContent>
             </Card>
 
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-white text-sm">
-                  <Clock className="w-4 h-4 mr-2 text-purple-300" />
+              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
                   Avg Duration
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">
+              <CardContent className="p-3 sm:p-4 pt-0">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
                   {workoutSessions.length > 0 
-                    ? Math.round(workoutSessions.reduce((sum, w) => sum + w.duration_minutes, 0) / workoutSessions.length)
+                    ? Math.round(workoutSessions.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workoutSessions.length)
                     : 0} min
                 </div>
-                <div className="text-sm text-purple-200/70 mt-1">Per workout</div>
+                <div className="text-xs text-purple-200/70 mt-1">Per workout</div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Hexagon Radar Chart */}
-          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-8">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Hexagon className="w-5 h-5 mr-2 text-purple-300" />
+          {/* Mobile-optimized Hexagon Radar Chart */}
+          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-6 sm:mb-8">
+            <CardHeader className="p-3 sm:p-4 lg:p-6">
+              <CardTitle className="text-white flex items-center text-base sm:text-lg lg:text-xl">
+                <Hexagon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-300" />
                 Performance Metrics
               </CardTitle>
-              <CardDescription className="text-purple-200/70">
+              <CardDescription className="text-purple-200/70 text-xs sm:text-sm">
                 Your comprehensive fitness progress visualization
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[400px]">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] sm:max-h-[300px] lg:max-h-[400px] w-full">
                 <RadarChart data={radarData}>
                   <ChartTooltip 
                     cursor={false} 
@@ -362,12 +377,12 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                   <PolarGrid stroke="rgba(147, 51, 234, 0.3)" />
                   <PolarAngleAxis 
                     dataKey="metric" 
-                    tick={{ fill: 'white', fontSize: 12 }}
+                    tick={{ fill: 'white', fontSize: isMobile ? 10 : 12 }}
                   />
                   <PolarRadiusAxis 
                     angle={0} 
                     domain={[0, 100]} 
-                    tick={{ fill: 'rgba(255, 255, 255, 0.6)', fontSize: 10 }}
+                    tick={{ fill: 'rgba(255, 255, 255, 0.6)', fontSize: isMobile ? 8 : 10 }}
                   />
                   <Radar
                     dataKey="value"
@@ -378,48 +393,48 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 </RadarChart>
               </ChartContainer>
               
-              {/* Metrics Legend */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+              {/* Mobile-optimized Metrics Legend */}
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 mt-4 sm:mt-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-300">{userStats.dedication}%</div>
-                  <div className="text-sm text-purple-200/70">Dedication</div>
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.dedication}%</div>
+                  <div className="text-xs text-purple-200/70">Dedication</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-300">{userStats.strength}%</div>
-                  <div className="text-sm text-purple-200/70">Strength</div>
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.strength}%</div>
+                  <div className="text-xs text-purple-200/70">Strength</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-300">{userStats.recovery}%</div>
-                  <div className="text-sm text-purple-200/70">Recovery</div>
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.recovery}%</div>
+                  <div className="text-xs text-purple-200/70">Recovery</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-300">{userStats.consistency}%</div>
-                  <div className="text-sm text-purple-200/70">Consistency</div>
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.consistency}%</div>
+                  <div className="text-xs text-purple-200/70">Consistency</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-300">{userStats.endurance}%</div>
-                  <div className="text-sm text-purple-200/70">Endurance</div>
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.endurance}%</div>
+                  <div className="text-xs text-purple-200/70">Endurance</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Add Entry Form */}
+          {/* Mobile-optimized Add Entry Form */}
           {showAddEntry && (
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-8">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-purple-300" />
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-6 sm:mb-8">
+              <CardHeader className="p-3 sm:p-4 lg:p-6">
+                <CardTitle className="text-white flex items-center text-base sm:text-lg lg:text-xl">
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-300" />
                   Add Progress Entry
                 </CardTitle>
-                <CardDescription className="text-purple-200/70">
+                <CardDescription className="text-purple-200/70 text-xs sm:text-sm">
                   Record your current measurements and progress
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 lg:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                       Weight (lbs)
                     </label>
                     <input
@@ -427,13 +442,13 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                       step="0.1"
                       value={currentEntry.weight}
                       onChange={(e) => setCurrentEntry(prev => ({...prev, weight: e.target.value}))}
-                      className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
                       placeholder="Enter weight"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                       Body Fat %
                     </label>
                     <input
@@ -441,13 +456,13 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                       step="0.1"
                       value={currentEntry.body_fat}
                       onChange={(e) => setCurrentEntry(prev => ({...prev, body_fat: e.target.value}))}
-                      className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
                       placeholder="Enter body fat %"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                       Muscle Mass (lbs)
                     </label>
                     <input
@@ -455,15 +470,15 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                       step="0.1"
                       value={currentEntry.muscle_mass}
                       onChange={(e) => setCurrentEntry(prev => ({...prev, muscle_mass: e.target.value}))}
-                      className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
                       placeholder="Enter muscle mass"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                       Chest (inches)
                     </label>
                     <input
@@ -471,13 +486,13 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                       step="0.1"
                       value={currentEntry.chest}
                       onChange={(e) => setCurrentEntry(prev => ({...prev, chest: e.target.value}))}
-                      className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
                       placeholder="Chest"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                       Waist (inches)
                     </label>
                     <input
@@ -485,13 +500,13 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                       step="0.1"
                       value={currentEntry.waist}
                       onChange={(e) => setCurrentEntry(prev => ({...prev, waist: e.target.value}))}
-                      className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
                       placeholder="Waist"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                       Arms (inches)
                     </label>
                     <input
@@ -499,13 +514,13 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                       step="0.1"
                       value={currentEntry.arms}
                       onChange={(e) => setCurrentEntry(prev => ({...prev, arms: e.target.value}))}
-                      className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
                       placeholder="Arms"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                       Thighs (inches)
                     </label>
                     <input
@@ -513,36 +528,36 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                       step="0.1"
                       value={currentEntry.thighs}
                       onChange={(e) => setCurrentEntry(prev => ({...prev, thighs: e.target.value}))}
-                      className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                      className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm"
                       placeholder="Thighs"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-purple-200 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-purple-200 mb-2">
                     Notes
                   </label>
                   <textarea
                     value={currentEntry.notes}
                     onChange={(e) => setCurrentEntry(prev => ({...prev, notes: e.target.value}))}
-                    className="w-full p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50"
+                    className="w-full p-2.5 sm:p-3 bg-purple-800/50 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:outline-none placeholder-purple-300/50 text-sm resize-none"
                     rows={3}
                     placeholder="Add any notes about your progress..."
                   />
                 </div>
 
-                <div className="flex space-x-4">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                   <SmoothButton
                     onClick={handleAddEntry}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 flex-1 touch-manipulation"
                   >
                     Save Entry
                   </SmoothButton>
                   <SmoothButton
                     variant="outline"
                     onClick={() => setShowAddEntry(false)}
-                    className="border-purple-600/50 text-purple-200 hover:bg-purple-800/50"
+                    className="border-purple-600/50 text-purple-200 hover:bg-purple-800/50 flex-1 touch-manipulation"
                   >
                     Cancel
                   </SmoothButton>

@@ -87,7 +87,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full max-w-full overflow-hidden">
       {modules.map((module) => {
         const IconComponent = module.icon;
         const isFavorited = favorites.includes(module.id);
@@ -95,41 +95,41 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         return (
           <Card
             key={module.id}
-            className={`${getModuleCardStyle(module.id)} backdrop-blur-sm transition-all duration-300 cursor-pointer group overflow-hidden border`}
+            className={`${getModuleCardStyle(module.id)} backdrop-blur-sm transition-all duration-300 cursor-pointer group overflow-hidden border w-full max-w-full touch-manipulation`}
             onClick={() => onModuleClick(module)}
           >
-            <CardHeader className="pb-4 p-4 sm:p-6">
+            <CardHeader className="pb-3 p-3 sm:p-4 lg:p-6 lg:pb-4">
               <div className="flex items-start justify-between">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${getIconStyle(module.id)} border flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" />
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl ${getIconStyle(module.id)} border flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
+                  <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
                 </div>
-                <div className="flex gap-1 sm:gap-2 flex-wrap">
+                <div className="flex gap-1 flex-wrap ml-2">
                   {module.isPremium && (
-                    <Badge variant="secondary" className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs">
-                      <Crown className="w-3 h-3 mr-1" />
+                    <Badge variant="secondary" className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30 text-xs px-1 py-0.5">
+                      <Crown className="w-2.5 h-2.5 mr-0.5" />
                       Pro
                     </Badge>
                   )}
                   {module.isNew && (
-                    <Badge variant="secondary" className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs">
-                      <Zap className="w-3 h-3 mr-1" />
+                    <Badge variant="secondary" className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 text-xs px-1 py-0.5">
+                      <Zap className="w-2.5 h-2.5 mr-0.5" />
                       New
                     </Badge>
                   )}
                 </div>
               </div>
-              <CardTitle className="text-base sm:text-lg font-semibold text-white group-hover:text-orange-400 transition-colors line-clamp-2">
+              <CardTitle className="text-sm sm:text-base lg:text-lg font-semibold text-white group-hover:text-orange-400 transition-colors line-clamp-2 leading-tight">
                 {module.title}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0 p-4 sm:p-6 sm:pt-0">
-              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4 line-clamp-3">
+            <CardContent className="pt-0 p-3 sm:p-4 lg:p-6 lg:pt-0">
+              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3">
                 {module.description}
               </p>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-2">
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs sm:text-sm"
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs sm:text-sm flex-1 min-w-0 touch-manipulation h-8 sm:h-9"
                 >
                   Open
                 </Button>
@@ -140,9 +140,9 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                     e.stopPropagation();
                     onToggleFavorite(module.id);
                   }}
-                  className={`${isFavorited ? 'text-yellow-500' : 'text-gray-500'} hover:bg-yellow-500/10 p-2`}
+                  className={`${isFavorited ? 'text-yellow-500' : 'text-gray-500'} hover:bg-yellow-500/10 p-1.5 sm:p-2 h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 touch-manipulation`}
                 >
-                  <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                  <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? 'fill-current' : ''}`} />
                 </Button>
               </div>
             </CardContent>

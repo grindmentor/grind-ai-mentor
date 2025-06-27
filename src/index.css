@@ -42,7 +42,14 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
+  
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -50,25 +57,30 @@
     -moz-osx-font-smoothing: grayscale;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: none;
+    overflow-x: hidden;
+    min-width: 320px;
   }
 }
 
-/* iOS and Mobile Optimizations */
+/* Enhanced Mobile and iOS Optimizations */
 @layer base {
-  /* Prevent zoom on iOS */
+  /* Prevent zoom on iOS and ensure proper font size */
   input, select, textarea, button {
     font-size: 16px !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
   }
   
   /* iOS safe area handling */
   .ios-safe-area {
-    padding-top: var(--safe-area-inset-top);
-    padding-bottom: var(--safe-area-inset-bottom);
-    padding-left: var(--safe-area-inset-left);
-    padding-right: var(--safe-area-inset-right);
+    padding-top: max(var(--safe-area-inset-top), 1rem);
+    padding-bottom: max(var(--safe-area-inset-bottom), 1rem);
+    padding-left: max(var(--safe-area-inset-left), 1rem);
+    padding-right: max(var(--safe-area-inset-right), 1rem);
   }
   
-  /* Smooth iOS transitions */
+  /* Enhanced mobile touch interactions */
   * {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
@@ -77,14 +89,54 @@
   }
   
   /* Allow text selection where needed */
-  input, textarea, [contenteditable] {
+  input, textarea, [contenteditable], p, span, div[role="textbox"] {
     -webkit-user-select: auto;
     user-select: auto;
   }
+  
+  /* Prevent horizontal scrolling globally */
+  *, *::before, *::after {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Enhanced scrollbar behavior */
+  html, body {
+    scroll-behavior: smooth;
+  }
 }
 
-/* Enhanced Animations */
+/* Enhanced overflow prevention */
 @layer utilities {
+  .overflow-safe {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  .container-safe {
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .text-safe {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  .touch-optimized {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: pointer;
+  }
+  
   .animate-fade-in {
     animation: fadeIn 0.6s ease-out forwards;
   }
@@ -113,6 +165,27 @@
   
   .text-shadow-lg {
     text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
+  }
+}
+
+/* Enhanced responsive grid utilities */
+@layer utilities {
+  .grid-auto-fit {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  
+  .grid-auto-fill {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  @media (max-width: 640px) {
+    .grid-auto-fit {
+      grid-template-columns: 1fr;
+    }
+    
+    .grid-auto-fill {
+      grid-template-columns: 1fr;
+    }
   }
 }
 
@@ -159,9 +232,10 @@
   }
 }
 
-/* Custom scrollbar for WebKit browsers */
+/* Enhanced custom scrollbar for WebKit browsers */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -177,15 +251,28 @@
   background: rgba(249, 115, 22, 0.7);
 }
 
-/* Focus styles for accessibility */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Enhanced focus styles for accessibility */
 @layer base {
   :focus-visible {
     outline: 2px solid rgb(249 115 22);
     outline-offset: 2px;
+    border-radius: 4px;
+  }
+  
+  /* Mobile-friendly focus styles */
+  @media (max-width: 768px) {
+    :focus-visible {
+      outline-width: 3px;
+      outline-offset: 3px;
+    }
   }
 }
 
-/* Performance optimizations */
+/* Performance and mobile optimizations */
 @layer base {
   .will-change-transform {
     will-change: transform;
@@ -193,5 +280,43 @@
   
   .transform-gpu {
     transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  /* Enhanced button touch targets */
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Mobile-friendly input styling */
+  @media (max-width: 768px) {
+    input, textarea, select {
+      padding: 12px;
+      border-radius: 8px;
+    }
+  }
+}
+
+/* Enhanced mobile viewport handling */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific styles */
+  .ios-scroll-fix {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Prevent layout shifts */
+@layer base {
+  .layout-stable {
+    contain: layout style paint;
   }
 }

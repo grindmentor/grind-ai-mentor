@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Search, Star, Grid, List, Crown, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useModules } from '@/contexts/ModulesContext';
@@ -91,19 +90,20 @@ const ModuleLibrary = () => {
     return (
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+          <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 <button
                   onClick={handleBackToLibrary}
-                  className="text-white hover:text-orange-400 transition-colors font-medium"
+                  className="text-white hover:text-orange-400 transition-colors font-medium flex items-center space-x-2"
                 >
-                  ← Back to Library
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Library</span>
                 </button>
                 <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
                   {selectedModule.title}
                 </h1>
-                <div className="w-32"></div>
+                <div className="w-20"></div>
               </div>
             </div>
           </div>
@@ -120,68 +120,71 @@ const ModuleLibrary = () => {
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
         <div className="p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0 mb-6 sm:mb-8">
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate('/app')}
-                  className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Dashboard
-                </Button>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                    Module Library
-                  </h1>
-                  <p className="text-gray-400 text-sm sm:text-base">Discover powerful AI fitness tools</p>
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Mobile-optimized Header */}
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => navigate('/app')}
+                    className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors p-2"
+                    size="sm"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                      Module Library
+                    </h1>
+                    <p className="text-gray-400 text-sm">Discover AI fitness tools</p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="bg-orange-500/20 hover:bg-orange-500/30 border-orange-500/30"
-                >
-                  <Grid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="bg-orange-500/20 hover:bg-orange-500/30 border-orange-500/30"
-                >
-                  <List className="w-4 h-4" />
-                </Button>
+                
+                {/* View Mode Toggle - Always visible */}
+                <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 ${viewMode === 'grid' ? 'bg-orange-500/30' : 'hover:bg-orange-500/20'}`}
+                  >
+                    <Grid className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 ${viewMode === 'list' ? 'bg-orange-500/30' : 'hover:bg-orange-500/20'}`}
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Search and Filters */}
-            <div className="bg-orange-900/20 backdrop-blur-sm border border-orange-500/30 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
-              <div className="flex flex-col lg:flex-row gap-4">
+            {/* Enhanced Search and Filters */}
+            <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4 sm:p-6">
+              <div className="space-y-4">
                 {/* Search */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-4 h-4" />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
                   <Input
                     placeholder="Search modules..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 min-h-[48px] focus:border-orange-400"
+                    className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl"
                   />
                 </div>
                 
                 {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="w-full sm:w-40 bg-orange-800/30 border-orange-500/40 text-white min-h-[48px]">
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
                       <Filter className="w-4 h-4 mr-2 text-orange-400" />
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-orange-500/40">
+                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
                       <SelectItem value="all">All Modules</SelectItem>
                       <SelectItem value="free">Free</SelectItem>
                       <SelectItem value="premium">Premium</SelectItem>
@@ -190,10 +193,10 @@ const ModuleLibrary = () => {
                   </Select>
                   
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-40 bg-orange-800/30 border-orange-500/40 text-white min-h-[48px]">
-                      <SelectValue />
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
+                      <SelectValue placeholder="Sort by..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-orange-500/40">
+                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
                       <SelectItem value="name">Name</SelectItem>
                       <SelectItem value="newest">Newest</SelectItem>
                       <SelectItem value="premium">Premium First</SelectItem>
@@ -203,41 +206,42 @@ const ModuleLibrary = () => {
               </div>
             </div>
 
-            {/* Module Count and Stats */}
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <Badge variant="outline" className="border-orange-500/40 text-orange-300 bg-orange-500/10">
-                {sortedModules.length} modules found
+            {/* Stats */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="outline" className="border-orange-500/40 text-orange-300 bg-orange-500/10 px-3 py-1">
+                {sortedModules.length} modules
               </Badge>
-              <Badge variant="outline" className="border-green-500/40 text-green-400 bg-green-500/10">
+              <Badge variant="outline" className="border-green-500/40 text-green-400 bg-green-500/10 px-3 py-1">
                 {sortedModules.filter(m => !m.isPremium).length} free
               </Badge>
-              <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 bg-yellow-500/10">
+              <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 bg-yellow-500/10 px-3 py-1">
                 <Crown className="w-3 h-3 mr-1" />
                 {sortedModules.filter(m => m.isPremium).length} premium
               </Badge>
-              <Badge variant="outline" className="border-orange-500/40 text-orange-400 bg-orange-500/10">
+              <Badge variant="outline" className="border-orange-500/40 text-orange-400 bg-orange-500/10 px-3 py-1">
                 <Star className="w-3 h-3 mr-1" />
                 {favorites.length} favorites
               </Badge>
             </div>
 
             {/* Modules Display */}
-            <div className="space-y-6">
-              {sortedModules.length === 0 ? (
-                <div className="text-center py-12">
-                  <Search className="w-16 h-16 text-orange-500/50 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">No modules found</h3>
-                  <p className="text-orange-300/70">Try adjusting your search or filters</p>
+            {sortedModules.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Search className="w-10 h-10 text-orange-500/50" />
                 </div>
-              ) : (
-                <ModuleGrid
-                  modules={sortedModules}
-                  favorites={favorites}
-                  onModuleClick={handleModuleClick}
-                  onToggleFavorite={toggleFavorite}
-                />
-              )}
-            </div>
+                <h3 className="text-2xl font-semibold text-white mb-2">No modules found</h3>
+                <p className="text-orange-300/70 text-lg">Try adjusting your search or filters</p>
+              </div>
+            ) : (
+              <ModuleGrid
+                modules={sortedModules}
+                favorites={favorites}
+                onModuleClick={handleModuleClick}
+                onToggleFavorite={toggleFavorite}
+                viewMode={viewMode}
+              />
+            )}
           </div>
         </div>
       </div>

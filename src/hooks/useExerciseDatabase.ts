@@ -6,56 +6,62 @@ import { useToast } from '@/hooks/use-toast';
 export interface Exercise {
   id: string;
   name: string;
-  description: string;
-  instructions: string;
+  description?: string;
+  instructions?: string;
   primary_muscles: string[];
   secondary_muscles: string[];
   equipment: string;
   category: string;
   difficulty_level: 'Beginner' | 'Intermediate' | 'Advanced';
-  force_type: 'Push' | 'Pull' | 'Static';
-  mechanics: 'Compound' | 'Isolation';
+  force_type: string;
+  mechanics: string;
   gif_url?: string;
   image_url?: string;
   form_cues?: string;
   muscle_bias?: string;
   is_active: boolean;
+  external_id?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface ExerciseSearchFilters {
-  muscle_groups?: string[];
-  equipment?: string;
-  difficulty?: string;
-  mechanics?: string;
-}
-
 export const useExerciseDatabase = () => {
+  const { toast } = useToast();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const { toast } = useToast();
+  const [cache, setCache] = useState<Map<string, Exercise[]>>(new Map());
 
-  // Search exercises with natural language
-  const searchExercises = async (query: string, filters?: ExerciseSearchFilters) => {
-    if (!query.trim() && !filters) {
-      setExercises([]);
-      return;
+  // Get cached exercises or fetch new ones
+  const getCachedOrFetch = async (key: string, fetchFn: () => Promise<Exercise[]>) => {
+    if (cache.has(key)) {
+      return cache.get(key)!;
     }
+    
+    const result = await fetchFn();
+    setCache(prev => new Map(prev.set(key, result)));
+    return result;
+  };
 
+  // Search exercises with caching
+  const searchExercises = async (query: string, muscleFilter?: string[], equipmentFilter?: string) => {
+    const cacheKey = `search-${query}-${muscleFilter?.join(',') || ''}-${equipmentFilter || ''}`;
+    
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('search_exercises', {
-        search_query: query.trim() || null,
-        muscle_filter: filters?.muscle_groups || null,
-        equipment_filter: filters?.equipment || null,
-        limit_count: 20
+      const results = await getCachedOrFetch(cacheKey, async () => {
+        const { data, error } = await supabase.rpc('search_exercises', {
+          search_query: query,
+          muscle_filter: muscleFilter || null,
+          equipment_filter: equipmentFilter || null,
+          limit_count: 20
+        });
+
+        if (error) throw error;
+        return data || [];
       });
 
-      if (error) throw error;
-
-      setExercises(data || []);
+      setExercises(results);
     } catch (error) {
       console.error('Error searching exercises:', error);
       toast({
@@ -69,91 +75,136 @@ export const useExerciseDatabase = () => {
     }
   };
 
-  // Get exercise suggestions based on input
+  // Get exercise suggestions based on query
   const getExerciseSuggestions = async (query: string) => {
-    if (!query.trim() || query.length < 2) {
+    if (!query || query.length < 2) {
       setSuggestions([]);
       return;
     }
 
     try {
+      // Get unique muscle groups and equipment that match the query
       const { data, error } = await supabase
         .from('exercises')
-        .select('name, primary_muscles')
-        .or(`name.ilike.%${query}%,primary_muscles.cs.{${query}}`)
-        .eq('is_active', true)
-        .limit(5);
+        .select('primary_muscles, equipment')
+        .is('is_active', true)
+        .limit(100);
 
       if (error) throw error;
 
-      const uniqueSuggestions = new Set<string>();
-      
-      // Add exercise names
-      data?.forEach(exercise => {
-        if (exercise.name.toLowerCase().includes(query.toLowerCase())) {
-          uniqueSuggestions.add(exercise.name);
-        }
-      });
+      const muscleSet = new Set<string>();
+      const equipmentSet = new Set<string>();
 
-      // Add muscle group suggestions
       data?.forEach(exercise => {
         exercise.primary_muscles?.forEach((muscle: string) => {
           if (muscle.toLowerCase().includes(query.toLowerCase())) {
-            uniqueSuggestions.add(`${muscle} exercises`);
+            muscleSet.add(muscle);
           }
         });
+        
+        if (exercise.equipment?.toLowerCase().includes(query.toLowerCase())) {
+          equipmentSet.add(exercise.equipment);
+        }
       });
 
-      setSuggestions(Array.from(uniqueSuggestions).slice(0, 5));
+      const suggestions = [
+        ...Array.from(muscleSet).slice(0, 3),
+        ...Array.from(equipmentSet).slice(0, 2)
+      ].slice(0, 5);
+
+      setSuggestions(suggestions);
     } catch (error) {
       console.error('Error getting suggestions:', error);
       setSuggestions([]);
     }
   };
 
-  // Get exercises by muscle group
-  const getExercisesByMuscle = async (muscleGroup: string) => {
+  // Get random exercises for initial display
+  const getRandomExercises = async (limit: number = 12) => {
+    const cacheKey = `random-${limit}`;
+    
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .contains('primary_muscles', [muscleGroup])
-        .eq('is_active', true)
-        .limit(10);
+      const results = await getCachedOrFetch(cacheKey, async () => {
+        const { data, error } = await supabase
+          .from('exercises')
+          .select('*')
+          .is('is_active', true)
+          .order('name')
+          .limit(limit);
 
-      if (error) throw error;
-      setExercises(data || []);
+        if (error) throw error;
+        return data || [];
+      });
+
+      setExercises(results);
     } catch (error) {
-      console.error('Error fetching exercises by muscle:', error);
+      console.error('Error fetching random exercises:', error);
+      toast({
+        title: 'Loading Error',
+        description: 'Failed to load exercises. Please try again.',
+        variant: 'destructive'
+      });
       setExercises([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Get random exercises for discovery
-  const getRandomExercises = async (count: number = 6) => {
+  // Get exercises by muscle group
+  const getExercisesByMuscle = async (muscleGroup: string) => {
+    const cacheKey = `muscle-${muscleGroup}`;
+    
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .eq('is_active', true)
-        .order('name')
-        .limit(count);
+      const results = await getCachedOrFetch(cacheKey, async () => {
+        const { data, error } = await supabase
+          .from('exercises')
+          .select('*')
+          .contains('primary_muscles', [muscleGroup])
+          .is('is_active', true)
+          .order('name')
+          .limit(20);
 
-      if (error) throw error;
-      
-      // Shuffle the results
-      const shuffled = data?.sort(() => 0.5 - Math.random()) || [];
-      setExercises(shuffled.slice(0, count));
+        if (error) throw error;
+        return data || [];
+      });
+
+      setExercises(results);
     } catch (error) {
-      console.error('Error fetching random exercises:', error);
+      console.error('Error fetching exercises by muscle:', error);
+      toast({
+        title: 'Loading Error',
+        description: 'Failed to load exercises. Please try again.',
+        variant: 'destructive'
+      });
       setExercises([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get exercise by ID
+  const getExerciseById = async (id: string): Promise<Exercise | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .eq('id', id)
+        .is('is_active', true)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching exercise by ID:', error);
+      return null;
+    }
+  };
+
+  // Clear cache (useful for refreshing data)
+  const clearCache = () => {
+    setCache(new Map());
   };
 
   return {
@@ -162,7 +213,9 @@ export const useExerciseDatabase = () => {
     suggestions,
     searchExercises,
     getExerciseSuggestions,
+    getRandomExercises,
     getExercisesByMuscle,
-    getRandomExercises
+    getExerciseById,
+    clearCache
   };
 };

@@ -1,15 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, Speaker, TrendingUp } from 'lucide-react';
-import SmartTraining from '@/components/ai-modules/SmartTraining';
-import CoachGPT from '@/components/ai-modules/CoachGPT';
-import TDEECalculator from '@/components/ai-modules/TDEECalculator';
-import MealPlanAI from '@/components/ai-modules/MealPlanAI';
-import RecoveryCoach from '@/components/ai-modules/RecoveryCoach';
-import WorkoutLoggerAI from '@/components/ai-modules/WorkoutLoggerAI';
-import FoodPhotoLogger from '@/components/ai-modules/FoodPhotoLogger';
-import WorkoutLibrary from '@/components/ai-modules/WorkoutLibrary';
-import ProgressHub from '@/components/ai-modules/ProgressHub';
 
 type ModuleId =
   | 'dashboard'
@@ -50,13 +41,99 @@ export const useModules = () => {
   return context;
 };
 
-// Simple placeholder component for missing modules
-const ComingSoonComponent = ({ title }: { title?: string }) => (
+// Simple placeholder component for modules
+const PlaceholderComponent = ({ title }: { title?: string }) => (
   <div className="p-6 text-center text-white">
-    <h2 className="text-2xl font-bold mb-4">{title || 'Coming Soon'}</h2>
-    <p className="text-gray-400">This feature is currently under development.</p>
+    <h2 className="text-2xl font-bold mb-4">{title || 'Module'}</h2>
+    <p className="text-gray-400">This module is loading...</p>
   </div>
 );
+
+// Safe component loader that won't crash the app
+const SafeComponent = ({ moduleName }: { moduleName: string }) => {
+  try {
+    // Dynamically import components with error handling
+    switch (moduleName) {
+      case 'smart-training':
+        const SmartTraining = React.lazy(() => 
+          import('@/components/ai-modules/SmartTraining').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Smart Training" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Smart Training" />}><SmartTraining /></React.Suspense>;
+      
+      case 'coach-gpt':
+        const CoachGPT = React.lazy(() => 
+          import('@/components/ai-modules/CoachGPT').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Coach GPT" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Coach GPT" />}><CoachGPT /></React.Suspense>;
+      
+      case 'tdee-calculator':
+        const TDEECalculator = React.lazy(() => 
+          import('@/components/ai-modules/TDEECalculator').catch(() => 
+            ({ default: () => <PlaceholderComponent title="TDEE Calculator" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="TDEE Calculator" />}><TDEECalculator /></React.Suspense>;
+      
+      case 'meal-plan-generator':
+        const MealPlanAI = React.lazy(() => 
+          import('@/components/ai-modules/MealPlanAI').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Meal Plan Generator" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Meal Plan Generator" />}><MealPlanAI /></React.Suspense>;
+      
+      case 'recovery-coach':
+        const RecoveryCoach = React.lazy(() => 
+          import('@/components/ai-modules/RecoveryCoach').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Recovery Coach" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Recovery Coach" />}><RecoveryCoach /></React.Suspense>;
+      
+      case 'workout-logger':
+        const WorkoutLoggerAI = React.lazy(() => 
+          import('@/components/ai-modules/WorkoutLoggerAI').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Workout Logger" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Workout Logger" />}><WorkoutLoggerAI /></React.Suspense>;
+      
+      case 'food-photo-logger':
+        const FoodPhotoLogger = React.lazy(() => 
+          import('@/components/ai-modules/FoodPhotoLogger').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Food Photo Logger" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Food Photo Logger" />}><FoodPhotoLogger /></React.Suspense>;
+      
+      case 'exercise-database':
+        const WorkoutLibrary = React.lazy(() => 
+          import('@/components/ai-modules/WorkoutLibrary').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Exercise Database" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Exercise Database" />}><WorkoutLibrary /></React.Suspense>;
+      
+      case 'progress-hub':
+        const ProgressHub = React.lazy(() => 
+          import('@/components/ai-modules/ProgressHub').catch(() => 
+            ({ default: () => <PlaceholderComponent title="Progress Hub" /> })
+          )
+        );
+        return <React.Suspense fallback={<PlaceholderComponent title="Progress Hub" />}><ProgressHub /></React.Suspense>;
+      
+      default:
+        return <PlaceholderComponent title={moduleName} />;
+    }
+  } catch (error) {
+    console.error(`Error loading module ${moduleName}:`, error);
+    return <PlaceholderComponent title={moduleName} />;
+  }
+};
 
 const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
   const modules: Module[] = [
@@ -65,7 +142,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Smart Training',
       description: 'AI-powered workout recommendations',
       icon: Flame,
-      component: SmartTraining,
+      component: () => <SafeComponent moduleName="smart-training" />,
       gradient: 'from-red-500 to-pink-500',
       usageKey: 'smart_training',
       isPremium: false,
@@ -76,7 +153,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Coach GPT',
       description: 'Your AI fitness coach',
       icon: MessageSquare,
-      component: CoachGPT,
+      component: () => <SafeComponent moduleName="coach-gpt" />,
       gradient: 'from-green-500 to-emerald-500',
       usageKey: 'coach_gpt',
       isPremium: false,
@@ -87,7 +164,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'TDEE Calculator',
       description: 'Calculate your Total Daily Energy Expenditure',
       icon: BarChart3,
-      component: TDEECalculator,
+      component: () => <SafeComponent moduleName="tdee-calculator" />,
       gradient: 'from-blue-500 to-cyan-500',
       usageKey: 'tdee_calculator',
       isPremium: false,
@@ -98,7 +175,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Meal Plan Generator',
       description: 'Generate personalized meal plans',
       icon: ChefHat,
-      component: MealPlanAI,
+      component: () => <SafeComponent moduleName="meal-plan-generator" />,
       gradient: 'from-yellow-500 to-orange-500',
       usageKey: 'meal_plan_generator',
       isPremium: true,
@@ -109,7 +186,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Recovery Coach',
       description: 'Optimize your recovery with AI guidance',
       icon: Activity,
-      component: RecoveryCoach,
+      component: () => <SafeComponent moduleName="recovery-coach" />,
       gradient: 'from-teal-500 to-green-500',
       usageKey: 'recovery_coach',
       isPremium: true,
@@ -120,7 +197,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Workout Logger',
       description: 'Log and track your workouts',
       icon: ListChecks,
-      component: WorkoutLoggerAI,
+      component: () => <SafeComponent moduleName="workout-logger" />,
       gradient: 'from-purple-500 to-indigo-500',
       usageKey: 'workout_logger',
       isPremium: false,
@@ -131,7 +208,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Food Photo Logger',
       description: 'Log your meals with photos',
       icon: Pizza,
-      component: FoodPhotoLogger,
+      component: () => <SafeComponent moduleName="food-photo-logger" />,
       gradient: 'from-orange-500 to-amber-500',
       usageKey: 'food_photo_logger',
       isPremium: true,
@@ -142,7 +219,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Exercise Database',
       description: 'Browse a comprehensive exercise library',
       icon: BookOpen,
-      component: WorkoutLibrary,
+      component: () => <SafeComponent moduleName="exercise-database" />,
       gradient: 'from-slate-500 to-gray-500',
       usageKey: 'exercise_database',
       isPremium: false,
@@ -153,7 +230,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Supplement Assistant',
       description: 'Get AI-powered supplement recommendations',
       icon: Speaker,
-      component: () => <ComingSoonComponent title="Supplement Assistant" />,
+      component: () => <PlaceholderComponent title="Supplement Assistant" />,
       gradient: 'from-stone-500 to-zinc-500',
       usageKey: 'supplement_assistant',
       isPremium: true,
@@ -164,7 +241,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Progress Hub',
       description: 'Track your fitness progress with detailed measurements and analytics',
       icon: TrendingUp,
-      component: ProgressHub,
+      component: () => <SafeComponent moduleName="progress-hub" />,
       gradient: 'from-blue-500 to-blue-700',
       usageKey: 'progress_tracking',
       isPremium: false,

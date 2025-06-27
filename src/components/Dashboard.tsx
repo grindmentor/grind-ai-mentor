@@ -5,7 +5,7 @@ import { useModules } from '@/contexts/ModulesContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Settings, User, Crown, Zap, Menu, X } from 'lucide-react';
+import { Star, Settings, User, Crown, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
@@ -17,9 +17,8 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
   const [favorites, setFavorites] = useState([]);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Load favorites from localStorage
+  // Load favorites from localStorage safely
   useEffect(() => {
     try {
       const savedFavorites = localStorage.getItem('module-favorites');
@@ -47,10 +46,8 @@ const Dashboard = () => {
   };
 
   const handleModuleClick = (module) => {
+    console.log('Module clicked:', module.id);
     setSelectedModule(module);
-    if (isMobile) {
-      setIsMenuOpen(false);
-    }
   };
 
   const handleBackToDashboard = () => {
@@ -128,7 +125,7 @@ const Dashboard = () => {
                   onClick={() => navigate('/profile')}
                   variant="ghost"
                   size="sm"
-                  className="text-white hover:bg-gray-800/50"
+                  className="text-white hover:bg-gray-800/50 hidden sm:flex"
                 >
                   <User className="w-4 h-4 mr-2" />
                   Profile
@@ -137,7 +134,7 @@ const Dashboard = () => {
                   onClick={() => navigate('/settings')}
                   variant="ghost"
                   size="sm"
-                  className="text-white hover:bg-gray-800/50"
+                  className="text-white hover:bg-gray-800/50 hidden sm:flex"
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
@@ -149,7 +146,7 @@ const Dashboard = () => {
                   className="bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-400 hover:from-orange-500/30 hover:to-red-500/30 border border-orange-500/30"
                 >
                   <Crown className="w-4 h-4 mr-2" />
-                  Upgrade
+                  {isMobile ? 'Pro' : 'Upgrade'}
                 </Button>
                 <Button
                   onClick={handleSignOut}
@@ -168,20 +165,20 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-12 text-center">
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-              Welcome back, {user?.user_metadata?.name || 'Champion'}! 👋
+              Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
             </h1>
             <p className="text-gray-400 text-lg">
               Ready to crush your fitness goals today?
             </p>
           </div>
 
-          {/* All Modules Section */}
+          {/* Modules Grid */}
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-6">
               All Modules
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {modules.map((module, index) => {
+              {modules.map((module) => {
                 const IconComponent = module.icon;
                 const isFavorited = favorites.includes(module.id);
                 

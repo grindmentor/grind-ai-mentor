@@ -5,6 +5,7 @@ import {
   Route,
   Routes,
   useNavigate,
+  useLocation,
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ModulesProvider from "./contexts/ModulesContext";
@@ -34,12 +35,15 @@ import ModuleLibrary from "./pages/ModuleLibrary";
 const AuthenticatedApp = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/signin");
+    // Only redirect if we're not loading and there's no user
+    // And we're not already on a public route
+    if (!loading && !user && location.pathname === '/app') {
+      navigate("/signin", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -52,6 +56,21 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // If no user and we're on /app, show loading while redirect happens
+  if (!user && location.pathname === '/app') {
+    return (
+      <PageTransition>
+        <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Redirecting to sign in...</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // Only render app if we have a user
   return user ? (
     <PreferencesProvider>
       <UserDataProvider>

@@ -177,3 +177,6 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
     </div>
   );
 };
+
+// Add default export for lazy loading
+export default ModuleGrid;

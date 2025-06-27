@@ -29,7 +29,7 @@ const Dashboard = () => {
 
   // Optimized module click handler with debouncing
   const handleModuleClick = useMemo(() => 
-    createDebouncedFunction((module) => {
+    createDebouncedFunction((module: any) => {
       console.log('Module clicked:', module.id, 'at', new Date().toISOString());
       try {
         setSelectedModule(module);
@@ -52,7 +52,7 @@ const Dashboard = () => {
   );
 
   const handleFoodLogged = useMemo(() => 
-    createDebouncedFunction((data) => {
+    createDebouncedFunction((data: any) => {
       console.log('Food logged:', data);
     }, 200), [createDebouncedFunction]
   );

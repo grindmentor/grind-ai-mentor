@@ -12,10 +12,12 @@ import { Button } from '@/components/ui/button';
 import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
+  const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
   const [favorites, setFavorites] = useState([]);
 
@@ -69,25 +71,27 @@ const Dashboard = () => {
     return (
       <ErrorBoundary>
         <PageTransition>
-          <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-            <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                  <button
-                    onClick={handleBackToDashboard}
-                    className="text-white hover:text-orange-400 transition-colors font-medium"
-                  >
-                    ← Back to Dashboard
-                  </button>
-                  <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
-                    {selectedModule.title}
-                  </h1>
-                  <div className="w-32"></div>
+          <div className={`min-h-screen ${isMobile ? 'bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20' : 'bg-white'} text-white`}>
+            {isMobile && (
+              <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex items-center justify-between h-16">
+                    <button
+                      onClick={handleBackToDashboard}
+                      className="text-white hover:text-orange-400 transition-colors font-medium"
+                    >
+                      ← Back to Dashboard
+                    </button>
+                    <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
+                      {selectedModule.title}
+                    </h1>
+                    <div className="w-32"></div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className={`${isMobile ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6' : ''}`}>
               <ModuleComponent 
                 onBack={handleBackToDashboard}
                 onFoodLogged={handleFoodLogged}

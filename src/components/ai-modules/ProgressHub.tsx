@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SmoothButton } from '@/components/ui/smooth-button';
-import { ArrowLeft, TrendingUp, Calendar, Target, Award, Activity, Scale } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, Target, Award, Activity, Scale, Hexagon, Zap, Trophy, Heart, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 
 interface ProgressEntry {
   id: string;
@@ -22,6 +25,23 @@ interface ProgressEntry {
   };
 }
 
+interface WorkoutSession {
+  id: string;
+  workout_name: string;
+  session_date: string;
+  duration_minutes: number;
+  exercises_data?: any;
+  calories_burned?: number;
+}
+
+interface UserStats {
+  dedication: number;
+  strength: number;
+  recovery: number;
+  consistency: number;
+  endurance: number;
+}
+
 interface ProgressHubProps {
   onBack: () => void;
 }
@@ -31,6 +51,14 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [entries, setEntries] = useState<ProgressEntry[]>([]);
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
+  const [userStats, setUserStats] = useState<UserStats>({
+    dedication: 0,
+    strength: 0,
+    recovery: 0,
+    consistency: 0,
+    endurance: 0
+  });
   const [loading, setLoading] = useState(true);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [currentEntry, setCurrentEntry] = useState({
@@ -46,44 +74,79 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
   useEffect(() => {
     if (user) {
-      loadProgressEntries();
+      loadAllProgressData();
     }
   }, [user]);
 
-  const loadProgressEntries = async () => {
+  const loadAllProgressData = async () => {
     if (!user) return;
 
     try {
-      // First, let's check if the table exists and create it if it doesn't
-      const { data: tableExists } = await supabase
+      // Load progress entries
+      const { data: progressData, error: progressError } = await supabase
         .from('progress_entries')
-        .select('id')
-        .limit(1);
-      
-      if (tableExists !== null) {
-        const { data, error } = await supabase
-          .from('progress_entries')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false });
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
 
-        if (error) {
-          console.error('Error loading progress entries:', error);
-          // If table doesn't exist, we'll just show empty state
-          setEntries([]);
-        } else {
-          setEntries(data || []);
-        }
-      } else {
-        // Table doesn't exist, show empty state
-        setEntries([]);
+      if (!progressError && progressData) {
+        setEntries(progressData);
       }
+
+      // Load workout sessions
+      const { data: workoutData, error: workoutError } = await supabase
+        .from('workout_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('session_date', { ascending: false })
+        .limit(30);
+
+      if (!workoutError && workoutData) {
+        setWorkoutSessions(workoutData);
+        calculateUserStats(workoutData, progressData || []);
+      }
+
     } catch (error) {
-      console.error('Error loading progress entries:', error);
-      setEntries([]);
+      console.error('Error loading progress data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateUserStats = (workouts: WorkoutSession[], progress: ProgressEntry[]) => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    // Calculate consistency (workouts in last 30 days)
+    const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= thirtyDaysAgo);
+    const consistency = Math.min((recentWorkouts.length / 20) * 100, 100);
+    
+    // Calculate dedication (total workout sessions)
+    const dedication = Math.min((workouts.length / 50) * 100, 100);
+    
+    // Calculate strength (average workout duration)
+    const avgDuration = workouts.length > 0 
+      ? workouts.reduce((sum, w) => sum + w.duration_minutes, 0) / workouts.length 
+      : 0;
+    const strength = Math.min((avgDuration / 90) * 100, 100);
+    
+    // Calculate endurance (calories burned trend)
+    const avgCalories = workouts.length > 0 
+      ? workouts.reduce((sum, w) => sum + (w.calories_burned || 0), 0) / workouts.length 
+      : 0;
+    const endurance = Math.min((avgCalories / 400) * 100, 100);
+    
+    // Calculate recovery (progress entries frequency)
+    const recentProgress = progress.filter(p => new Date(p.date) >= thirtyDaysAgo);
+    const recovery = Math.min((recentProgress.length / 10) * 100, 100);
+
+    setUserStats({
+      dedication: Math.round(dedication),
+      strength: Math.round(strength),
+      recovery: Math.round(recovery),
+      consistency: Math.round(consistency),
+      endurance: Math.round(endurance)
+    });
   };
 
   const handleAddEntry = async () => {
@@ -97,7 +160,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         thighs: parseFloat(currentEntry.thighs) || undefined
       };
 
-      // Create the entry data
       const entryData = {
         user_id: user.id,
         date: new Date().toISOString().split('T')[0],
@@ -138,7 +200,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         thighs: ''
       });
       setShowAddEntry(false);
-      loadProgressEntries();
+      loadAllProgressData();
     } catch (error) {
       console.error('Error adding progress entry:', error);
       toast({
@@ -149,25 +211,20 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     }
   };
 
-  const getProgressTrend = () => {
-    if (entries.length < 2) return null;
-    
-    const recent = entries[0];
-    const previous = entries[1];
-    
-    if (recent.weight && previous.weight) {
-      const change = recent.weight - previous.weight;
-      return {
-        type: 'weight',
-        change: change,
-        direction: change > 0 ? 'up' : change < 0 ? 'down' : 'stable'
-      };
-    }
-    
-    return null;
-  };
+  const radarData = [
+    { metric: 'Dedication', value: userStats.dedication, fullMark: 100 },
+    { metric: 'Strength', value: userStats.strength, fullMark: 100 },
+    { metric: 'Recovery', value: userStats.recovery, fullMark: 100 },
+    { metric: 'Consistency', value: userStats.consistency, fullMark: 100 },
+    { metric: 'Endurance', value: userStats.endurance, fullMark: 100 }
+  ];
 
-  const trend = getProgressTrend();
+  const chartConfig = {
+    value: {
+      label: "Progress",
+      color: "hsl(var(--chart-1))",
+    },
+  };
 
   if (loading) {
     return (
@@ -184,7 +241,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950/80 via-purple-900/40 to-purple-800/60 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-950/90 via-purple-900/50 to-purple-800/70 text-white">
       <div className="p-4 md:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Header */}
@@ -200,7 +257,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 Back
               </SmoothButton>
               <div>
-                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-300 to-purple-400 bg-clip-text text-transparent">
+                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-purple-300 via-purple-200 to-purple-300 bg-clip-text text-transparent">
                   Progress Hub
                 </h1>
                 <p className="text-purple-200/80 text-sm md:text-base">Track your fitness journey</p>
@@ -217,63 +274,135 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </SmoothButton>
           </div>
 
-          {/* Progress Overview */}
-          {entries.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center text-white">
-                    <Scale className="w-5 h-5 mr-2 text-purple-300" />
-                    Latest Weight
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {entries[0]?.weight ? `${entries[0].weight} lbs` : 'Not recorded'}
-                  </div>
-                  {trend && trend.type === 'weight' && (
-                    <div className={`text-sm flex items-center mt-2 ${
-                      trend.direction === 'up' ? 'text-green-400' : 
-                      trend.direction === 'down' ? 'text-red-400' : 'text-gray-400'
-                    }`}>
-                      <TrendingUp className={`w-4 h-4 mr-1 ${
-                        trend.direction === 'down' ? 'rotate-180' : ''
-                      }`} />
-                      {Math.abs(trend.change).toFixed(1)} lbs from last entry
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-white text-sm">
+                  <Trophy className="w-4 h-4 mr-2 text-purple-300" />
+                  Total Workouts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">{workoutSessions.length}</div>
+                <div className="text-sm text-purple-200/70 mt-1">Sessions completed</div>
+              </CardContent>
+            </Card>
 
-              <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center text-white">
-                    <Activity className="w-5 h-5 mr-2 text-purple-300" />
-                    Total Entries
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">{entries.length}</div>
-                  <div className="text-sm text-purple-200/70 mt-2">Progress tracking sessions</div>
-                </CardContent>
-              </Card>
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-white text-sm">
+                  <Activity className="w-4 h-4 mr-2 text-purple-300" />
+                  This Month
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
+                  {workoutSessions.filter(w => {
+                    const sessionDate = new Date(w.session_date);
+                    const now = new Date();
+                    return sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
+                  }).length}
+                </div>
+                <div className="text-sm text-purple-200/70 mt-1">Workouts</div>
+              </CardContent>
+            </Card>
 
-              <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center text-white">
-                    <Calendar className="w-5 h-5 mr-2 text-purple-300" />
-                    Last Updated
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {entries[0] ? new Date(entries[0].date).toLocaleDateString() : 'Never'}
-                  </div>
-                  <div className="text-sm text-purple-200/70 mt-2">Most recent entry</div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-white text-sm">
+                  <Scale className="w-4 h-4 mr-2 text-purple-300" />
+                  Latest Weight
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
+                  {entries[0]?.weight ? `${entries[0].weight} lbs` : 'Not recorded'}
+                </div>
+                <div className="text-sm text-purple-200/70 mt-1">Most recent</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-white text-sm">
+                  <Clock className="w-4 h-4 mr-2 text-purple-300" />
+                  Avg Duration
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
+                  {workoutSessions.length > 0 
+                    ? Math.round(workoutSessions.reduce((sum, w) => sum + w.duration_minutes, 0) / workoutSessions.length)
+                    : 0} min
+                </div>
+                <div className="text-sm text-purple-200/70 mt-1">Per workout</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Hexagon Radar Chart */}
+          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-8">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Hexagon className="w-5 h-5 mr-2 text-purple-300" />
+                Performance Metrics
+              </CardTitle>
+              <CardDescription className="text-purple-200/70">
+                Your comprehensive fitness progress visualization
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[400px]">
+                <RadarChart data={radarData}>
+                  <ChartTooltip 
+                    cursor={false} 
+                    content={<ChartTooltipContent hideLabel />} 
+                  />
+                  <PolarGrid stroke="rgba(147, 51, 234, 0.3)" />
+                  <PolarAngleAxis 
+                    dataKey="metric" 
+                    tick={{ fill: 'white', fontSize: 12 }}
+                  />
+                  <PolarRadiusAxis 
+                    angle={0} 
+                    domain={[0, 100]} 
+                    tick={{ fill: 'rgba(255, 255, 255, 0.6)', fontSize: 10 }}
+                  />
+                  <Radar
+                    dataKey="value"
+                    stroke="rgba(147, 51, 234, 0.8)"
+                    fill="rgba(147, 51, 234, 0.3)"
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ChartContainer>
+              
+              {/* Metrics Legend */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-300">{userStats.dedication}%</div>
+                  <div className="text-sm text-purple-200/70">Dedication</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-300">{userStats.strength}%</div>
+                  <div className="text-sm text-purple-200/70">Strength</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-300">{userStats.recovery}%</div>
+                  <div className="text-sm text-purple-200/70">Recovery</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-300">{userStats.consistency}%</div>
+                  <div className="text-sm text-purple-200/70">Consistency</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-300">{userStats.endurance}%</div>
+                  <div className="text-sm text-purple-200/70">Endurance</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Add Entry Form */}
           {showAddEntry && (
@@ -421,6 +550,49 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               </CardContent>
             </Card>
           )}
+
+          {/* Recent Workouts */}
+          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-8">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Activity className="w-5 h-5 mr-2 text-purple-300" />
+                Recent Workouts
+              </CardTitle>
+              <CardDescription className="text-purple-200/70">
+                Your latest training sessions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {workoutSessions.length === 0 ? (
+                <div className="text-center py-8">
+                  <Activity className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-purple-200 mb-2">No Workouts Yet</h3>
+                  <p className="text-purple-300/70">Start logging your workouts to see them here</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {workoutSessions.slice(0, 10).map((session) => (
+                    <div key={session.id} className="bg-purple-800/30 rounded-lg p-4 border border-purple-600/30">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-semibold text-white">{session.workout_name}</h4>
+                          <p className="text-sm text-purple-200/70">
+                            {new Date(session.session_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-purple-300 font-medium">{session.duration_minutes} min</div>
+                          {session.calories_burned && (
+                            <div className="text-sm text-purple-200/70">{session.calories_burned} cal</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Progress History */}
           <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">

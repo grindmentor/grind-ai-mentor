@@ -7,7 +7,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
-import { Star, TrendingUp, Sparkles } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Grid, Library, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
@@ -125,17 +125,35 @@ const Dashboard = () => {
               <NotificationCenter />
             </div>
 
-            {/* Dashboard Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-              <ScientificStudies />
-              <PersonalizedSummary />
+            {/* Browse Section */}
+            <div className="mb-8 sm:mb-12">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold flex items-center">
+                  <Grid className="w-6 h-6 mr-2 text-orange-500" />
+                  Browse Modules
+                </h2>
+                <Button
+                  onClick={() => window.location.href = '/modules'}
+                  variant="outline"
+                  className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
+                >
+                  <Library className="w-4 h-4 mr-2" />
+                  Full Library
+                </Button>
+              </div>
+              <ModuleGrid
+                modules={regularModules.slice(0, 6)}
+                favorites={favorites}
+                onModuleClick={handleModuleClick}
+                onToggleFavorite={toggleFavorite}
+              />
             </div>
 
-            {/* Show only favorites if they exist, otherwise show message */}
+            {/* Favorites Section */}
             {favorites.length > 0 ? (
               <div className="mb-8 sm:mb-12">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
-                  <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
+                  <Heart className="w-6 h-6 mr-2 text-red-500 fill-current" />
                   Your Favorites
                 </h2>
                 <ModuleGrid
@@ -163,30 +181,36 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Progress Hub - Purple Button */}
+            {/* Dashboard Content Grid - Scientific Studies and Progress Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+              <ScientificStudies />
+              <PersonalizedSummary />
+            </div>
+
+            {/* Progress Hub - Darker Purple Button */}
             {progressHubModule && (
               <div className="mb-8">
                 <Button
                   onClick={() => handleModuleClick(progressHubModule)}
-                  className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"
+                  className="w-full h-20 bg-gradient-to-r from-purple-800/40 to-purple-900/60 backdrop-blur-sm border border-purple-700/50 hover:from-purple-700/50 hover:to-purple-800/70 transition-all duration-300 text-white rounded-xl group"
                 >
                   <div className="flex items-center justify-between w-full px-6">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-700 to-purple-800 flex items-center justify-center">
                         <TrendingUp className="w-6 h-6 text-white" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-200 transition-colors">
                           Progress Hub
                         </h3>
-                        <p className="text-sm text-gray-300">
+                        <p className="text-sm text-purple-100">
                           Track your fitness journey with detailed analytics
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Sparkles className="w-5 h-5 text-purple-400" />
-                      <span className="text-sm text-purple-300">View Progress</span>
+                      <Sparkles className="w-5 h-5 text-purple-300" />
+                      <span className="text-sm text-purple-200">View Progress</span>
                     </div>
                   </div>
                 </Button>

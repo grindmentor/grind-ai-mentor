@@ -38,9 +38,9 @@ export const useFeatureAccess = (featureKey: string) => {
     // All users can preview premium features
     const canPreview = true;
     
-    // Feature access logic - fix Smart Training and Meal Plan access
-    const canAccess = limit > 0 || isUnlimited || isSubscribed;
-    const canUse = canAccess && (isUnlimited || remaining > 0 || isSubscribed);
+    // Feature access logic - premium users have access to everything
+    const canAccess = currentTier === 'premium' || limit > 0 || isSubscribed;
+    const canUse = canAccess && (currentTier === 'premium' || isUnlimited || remaining > 0);
 
     // Determine required tier for upgrade messaging
     let tierRequired = 'basic';
@@ -52,6 +52,9 @@ export const useFeatureAccess = (featureKey: string) => {
     } else if (currentTier === 'basic' && !canAccess) {
       tierRequired = 'premium';
       upgradeMessage = 'Upgrade to Premium for unlimited access';
+    } else if (currentTier === 'premium') {
+      // Premium users should never see upgrade messages
+      upgradeMessage = 'You have full access to this feature';
     }
 
     return {

@@ -33,7 +33,7 @@ export const MobileModuleWrapper: React.FC<MobileModuleWrapperProps> = ({
               className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors self-start"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {isMobile ? 'Back' : 'Back to Dashboard'}
+              Back
             </Button>
             
             {/* Title spans full width and stays on single line */}

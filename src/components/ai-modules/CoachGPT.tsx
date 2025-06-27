@@ -149,7 +149,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       
       Be encouraging, professional, and cite scientific principles when relevant.`;
 
-      const response = await optimizedAiService.getCoachingAdvice(
+      const response = await optimizedAiService.getResponse(
         `${systemPrompt}\n\nUser question: ${userMessage.content}`,
         { useCache: true, priority: 'normal' }
       );

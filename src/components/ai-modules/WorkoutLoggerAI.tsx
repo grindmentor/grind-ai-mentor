@@ -1,954 +1,284 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Search, Save, Minus, Sparkles, Dumbbell, Info, MessageCircle, Send, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { PageTransition } from "@/components/ui/page-transition";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Textarea } from "@/components/ui/textarea";
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Plus, Dumbbell, Clock, Target, Zap, Save } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
+import { MobileHeader } from '@/components/MobileHeader';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+interface Exercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: number;
+  weight: number;
+  rpe?: number;
+  notes?: string;
+}
 
 interface WorkoutLoggerAIProps {
   onBack: () => void;
 }
 
-interface Exercise {
-  id: string;
-  name: string;
-  description: string;
-  primary_muscles: string[];
-  secondary_muscles: string[];
-  equipment: string;
-  difficulty_level: string;
-  category: string;
-  force_type: string;
-  mechanics: string;
-  movement_type?: string;
-  is_bodyweight?: boolean;
-  is_weighted?: boolean;
-  technique_notes?: string;
-  form_cues?: string;
-  is_custom?: boolean;
-}
-
-interface WorkoutSet {
-  id: string;
-  reps: number;
-  weight: number;
-  rir?: number; // Add RIR (reps in reserve)
-}
-
-interface WorkoutExercise {
-  id: string;
-  exercise: Exercise;
-  sets: WorkoutSet[];
-  notes?: string;
-  previousWeight?: number;
-}
-
-interface WorkoutSession {
-  id?: string;
-  name: string;
-  exercises: WorkoutExercise[];
-  start_time: string;
-  end_time?: string;
-  notes?: string;
-}
-
-interface CustomExercise {
-  name: string;
-  muscle_groups: string;
-  equipment: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-}
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
-const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
+export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  
-  const [workout, setWorkout] = useState<WorkoutSession>({
-    name: 'New Workout',
-    exercises: [],
-    start_time: new Date().toISOString(),
-    notes: ''
-  });
-  
+  const [workoutName, setWorkoutName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('search');
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [showAIChat, setShowAIChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  
-  // Custom exercise form
-  const [customExercise, setCustomExercise] = useState<CustomExercise>({
-    name: '',
-    muscle_groups: '',
-    equipment: '',
-    difficulty: 'Beginner'
-  });
+  const [isLogging, setIsLogging] = useState(false);
+  const [showExerciseSearch, setShowExerciseSearch] = useState(false);
 
-  // Improved search function with better error handling and logging
-  const searchExercises = async (query: string) => {
-    if (!query.trim()) {
-      setExercises([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      console.log('Starting exercise search with query:', query);
-      console.log('User ID:', user?.id);
-      
-      // Test database connection first
-      const { data: testData, error: testError } = await supabase
-        .from('exercises')
-        .select('count')
-        .limit(1);
-      
-      if (testError) {
-        console.error('Database connection test failed:', testError);
-        throw new Error('Database connection failed');
-      }
-      
-      console.log('Database connection successful');
-      
-      // Use the optimized search function with better error handling
-      const { data, error } = await supabase.rpc('search_exercises_optimized', {
-        search_query: query.trim(),
-        limit_count: 20,
-        search_user_id: user?.id || null
-      });
-
-      if (error) {
-        console.error('Search RPC error:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        
-        // Fallback to basic search if RPC fails
-        console.log('Attempting fallback search...');
-        const fallbackResult = await supabase
-          .from('exercises')
-          .select('*')
-          .or(`name.ilike.%${query}%,equipment.ilike.%${query}%`)
-          .eq('is_active', true)
-          .limit(20);
-          
-        if (fallbackResult.error) {
-          console.error('Fallback search also failed:', fallbackResult.error);
-          throw fallbackResult.error;
-        }
-        
-        console.log('Fallback search successful:', fallbackResult.data?.length);
-        const transformedData = (fallbackResult.data || []).map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          primary_muscles: item.primary_muscles || [],
-          secondary_muscles: item.secondary_muscles || [],
-          equipment: item.equipment || 'Unknown',
-          difficulty_level: item.difficulty_level || 'Beginner',
-          category: item.category || 'Strength',
-          force_type: item.force_type || 'Push',
-          mechanics: item.mechanics || 'Compound',
-          movement_type: item.movement_type,
-          is_bodyweight: item.is_bodyweight,
-          is_weighted: item.is_weighted,
-          technique_notes: item.technique_notes,
-          form_cues: item.form_cues,
-          is_custom: false
-        }));
-        
-        setExercises(transformedData);
-        return;
-      }
-
-      console.log('RPC search successful:', data?.length || 0, 'results');
-      
-      // Transform the data to match our Exercise interface
-      const transformedExercises: Exercise[] = (data || []).map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        primary_muscles: item.primary_muscles || [],
-        secondary_muscles: item.secondary_muscles || [],
-        equipment: item.equipment || 'Unknown',
-        difficulty_level: item.difficulty_level || 'Beginner',
-        category: item.category || 'Strength',
-        force_type: item.force_type || 'Push',
-        mechanics: item.mechanics || 'Compound',
-        movement_type: item.movement_type,
-        is_bodyweight: item.is_bodyweight,
-        is_weighted: item.is_weighted,
-        technique_notes: item.technique_notes,
-        form_cues: item.form_cues,
-        is_custom: item.is_custom || false
-      }));
-
-      setExercises(transformedExercises);
-      console.log('Exercise search completed successfully');
-    } catch (error) {
-      console.error('Complete search failure:', error);
-      toast({
-        title: "Search failed",
-        description: `Could not search exercises: ${error.message}. Please check your connection and try again.`,
-        variant: "destructive"
-      });
-      setExercises([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle search with debouncing
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.trim()) {
-        searchExercises(searchQuery);
-      } else {
-        setExercises([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, user?.id]);
-
-  // Load previous weight for exercise recommendation
-  const loadPreviousWeight = async (exerciseName: string) => {
-    if (!user) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .select('exercises_data')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      // Find the most recent usage of this exercise
-      for (const session of data || []) {
-        const exercises = session.exercises_data as any[];
-        const foundExercise = exercises?.find(ex => 
-          ex.exercise?.name === exerciseName || ex.exercise_name === exerciseName
-        );
-        
-        if (foundExercise && foundExercise.sets?.length > 0) {
-          // Return the highest weight from the last session
-          const weights = foundExercise.sets.map((set: any) => set.weight || 0);
-          return Math.max(...weights);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading previous weight:', error);
-    }
-    
-    return null;
-  };
-
-  const addExerciseToWorkout = async (exercise: Exercise) => {
-    const previousWeight = await loadPreviousWeight(exercise.name);
-    
-    const newExercise: WorkoutExercise = {
+  const addExercise = (exerciseData: any) => {
+    const newExercise: Exercise = {
       id: Date.now().toString(),
-      exercise,
-      sets: [{
-        id: Date.now().toString(),
-        reps: 8,
-        weight: 0,
-        rir: 2 // Default RIR value
-      }],
-      notes: '',
-      previousWeight: previousWeight || undefined
+      name: exerciseData.name,
+      sets: 3,
+      reps: 10,
+      weight: 0,
+      rpe: 7,
+      notes: ''
     };
-
-    setWorkout(prev => ({
-      ...prev,
-      exercises: [...prev.exercises, newExercise]
-    }));
-
-    setSearchQuery('');
-    setSelectedExercise(null);
-    toast({
-      title: "Exercise added! 💪",
-      description: previousWeight 
-        ? `${exercise.name} added. Last used: ${previousWeight}kg`
-        : `${exercise.name} has been added to your workout.`,
-    });
+    setExercises([...exercises, newExercise]);
+    setShowExerciseSearch(false);
   };
 
-  const addCustomExercise = async () => {
-    if (!customExercise.name.trim()) {
+  const updateExercise = (id: string, field: keyof Exercise, value: any) => {
+    setExercises(exercises.map(ex => 
+      ex.id === id ? { ...ex, [field]: value } : ex
+    ));
+  };
+
+  const removeExercise = (id: string) => {
+    setExercises(exercises.filter(ex => ex.id !== id));
+  };
+
+  const logWorkout = async () => {
+    if (!user || !workoutName.trim() || exercises.length === 0) {
       toast({
-        title: "Exercise name required",
-        description: "Please enter an exercise name.",
-        variant: "destructive"
+        title: 'Missing Information',
+        description: 'Please add workout name and at least one exercise.',
+        variant: 'destructive'
       });
       return;
     }
 
-    if (!user) return;
-
+    setIsLogging(true);
     try {
-      // Save custom exercise to user_custom_exercises table
-      const exerciseData = {
-        user_id: user.id,
-        name: customExercise.name,
-        description: 'Custom exercise',
-        primary_muscles: customExercise.muscle_groups.split(',').map(m => m.trim()).filter(Boolean),
-        secondary_muscles: [],
-        equipment: customExercise.equipment || 'Unknown',
-        difficulty_level: customExercise.difficulty,
-        category: 'Strength',
-        force_type: 'Push',
-        mechanics: 'Compound',
-        is_bodyweight: customExercise.equipment.toLowerCase().includes('bodyweight') || customExercise.equipment === '',
-        is_weighted: !customExercise.equipment.toLowerCase().includes('bodyweight') && customExercise.equipment !== ''
-      };
-
-      const { data, error } = await supabase
-        .from('user_custom_exercises')
-        .insert([exerciseData])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Transform to Exercise interface and add to workout
-      const newExercise: Exercise = {
-        id: data.id,
-        name: data.name,
-        description: data.description || '',
-        primary_muscles: data.primary_muscles || [],
-        secondary_muscles: data.secondary_muscles || [],
-        equipment: data.equipment,
-        difficulty_level: data.difficulty_level,
-        category: data.category,
-        force_type: data.force_type || 'Push',
-        mechanics: data.mechanics || 'Compound',
-        movement_type: data.movement_type,
-        is_bodyweight: data.is_bodyweight,
-        is_weighted: data.is_weighted,
-        technique_notes: data.technique_notes,
-        form_cues: data.form_cues,
-        is_custom: true
-      };
-
-      addExerciseToWorkout(newExercise);
-      
-      // Reset form
-      setCustomExercise({
-        name: '',
-        muscle_groups: '',
-        equipment: '',
-        difficulty: 'Beginner'
-      });
-      
-      setActiveTab('search');
-    } catch (error) {
-      console.error('Error saving custom exercise:', error);
-      toast({
-        title: "Error saving exercise",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const addSet = (exerciseId: string) => {
-    setWorkout(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(ex => 
-        ex.id === exerciseId 
-          ? {
-              ...ex,
-              sets: [...ex.sets, {
-                id: Date.now().toString(),
-                reps: ex.sets[ex.sets.length - 1]?.reps || 8,
-                weight: ex.sets[ex.sets.length - 1]?.weight || 0,
-                rir: ex.sets[ex.sets.length - 1]?.rir || 2
-              }]
-            }
-          : ex
-      )
-    }));
-  };
-
-  const updateSet = (exerciseId: string, setId: string, field: keyof WorkoutSet, value: number) => {
-    setWorkout(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(ex => 
-        ex.id === exerciseId 
-          ? {
-              ...ex,
-              sets: ex.sets.map(set => 
-                set.id === setId ? { ...set, [field]: value } : set
-              )
-            }
-          : ex
-      )
-    }));
-  };
-
-  const removeSet = (exerciseId: string, setId: string) => {
-    setWorkout(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(ex => 
-        ex.id === exerciseId 
-          ? {
-              ...ex,
-              sets: ex.sets.filter(set => set.id !== setId)
-            }
-          : ex
-      )
-    }));
-  };
-
-  const removeExercise = (exerciseId: string) => {
-    setWorkout(prev => ({
-      ...prev,
-      exercises: prev.exercises.filter(ex => ex.id !== exerciseId)
-    }));
-  };
-
-  const saveWorkout = async () => {
-    if (!user) return;
-
-    const totalSets = workout.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
-    
-    if (totalSets === 0) {
-      toast({
-        title: "Add some exercises first!",
-        description: "Your workout needs at least one set to be saved.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const workoutData = {
-        user_id: user.id,
-        workout_name: workout.name,
-        session_date: new Date().toISOString().split('T')[0],
-        duration_minutes: 0,
-        exercises_data: workout.exercises.map(ex => ({
-          exercise_name: ex.exercise.name,
-          exercise_id: ex.exercise.id,
-          exercise: ex.exercise,
-          sets: ex.sets,
-          notes: ex.notes
-        })),
-        notes: workout.notes
-      };
-
       const { error } = await supabase
         .from('workout_sessions')
-        .insert([workoutData]);
+        .insert({
+          user_id: user.id,
+          workout_name: workoutName,
+          duration_minutes: 60, // Default duration
+          exercises_data: exercises,
+          notes: `Logged ${exercises.length} exercises`
+        });
 
       if (error) throw error;
 
+      // Log individual exercise entries for progressive overload tracking
+      for (const exercise of exercises) {
+        await supabase
+          .from('progressive_overload_entries')
+          .insert({
+            user_id: user.id,
+            exercise_name: exercise.name,
+            sets: exercise.sets,
+            reps: exercise.reps,
+            weight: exercise.weight,
+            rpe: exercise.rpe,
+            notes: exercise.notes
+          });
+      }
+
       toast({
-        title: "Workout saved! 🎉",
-        description: `Great job! You completed ${totalSets} sets.`,
+        title: 'Workout Logged! 💪',
+        description: `Successfully logged ${exercises.length} exercises.`
       });
 
-      // Reset workout
-      setWorkout({
-        name: 'New Workout',
-        exercises: [],
-        start_time: new Date().toISOString(),
-        notes: ''
-      });
+      // Reset form
+      setWorkoutName('');
+      setExercises([]);
     } catch (error) {
-      console.error('Error saving workout:', error);
+      console.error('Error logging workout:', error);
       toast({
-        title: "Error saving workout",
-        description: "Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to log workout. Please try again.',
+        variant: 'destructive'
       });
-    }
-  };
-
-  const sendChatMessage = async () => {
-    if (!chatInput.trim() || chatLoading) return;
-
-    const userMessage = chatInput.trim();
-    setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setChatLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: {
-          message: userMessage,
-          context: 'exercise_form_coach'
-        }
-      });
-
-      if (error) throw error;
-
-      setChatMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: data.response || "I'm here to help with exercise form and technique!"
-      }]);
-    } catch (error) {
-      console.error('Error sending chat message:', error);
-      setChatMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "Sorry, I'm having trouble responding right now. Please try again."
-      }]);
     } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Beginner': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'Intermediate': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'Advanced': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      setIsLogging(false);
     }
   };
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-indigo-900/10 to-violet-800/20 text-white">
-        <div className="p-3 sm:p-4 md:p-6">
-          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <Button 
-                  variant="ghost" 
-                  onClick={onBack}
-                  className="text-white hover:bg-gray-800/50 backdrop-blur-sm"
-                  size={isMobile ? "sm" : "default"}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  {isMobile ? "Back" : "Back to Dashboard"}
-                </Button>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-indigo-500/20 to-violet-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-indigo-400/20">
-                    <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">
-                      Workout Logger
-                    </h1>
-                    <p className="text-xs sm:text-sm text-gray-400">Track your workouts with precision</p>
-                  </div>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/50 to-blue-900/30">
+      <MobileHeader 
+        title="Workout Logger AI" 
+        onBack={onBack}
+      />
+      
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+        <Card className="bg-gradient-to-br from-blue-900/20 to-indigo-900/30 backdrop-blur-sm border-blue-500/30">
+          <CardHeader>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500/30 to-indigo-500/40 rounded-xl flex items-center justify-center border border-blue-500/30">
+                <Dumbbell className="w-5 h-5 text-blue-400" />
               </div>
-              
-              <div className="flex items-center space-x-3">
-                <Button
-                  onClick={() => setShowAIChat(!showAIChat)}
-                  variant="outline"
-                  size={isMobile ? "sm" : "default"}
-                  className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  AI Coach
-                </Button>
+              <div>
+                <CardTitle className="text-white text-xl">Workout Logger AI</CardTitle>
+                <CardDescription className="text-blue-200/80">
+                  Log your workouts with intelligent exercise tracking
+                </CardDescription>
               </div>
             </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-blue-200">Workout Name</Label>
+              <Input
+                value={workoutName}
+                onChange={(e) => setWorkoutName(e.target.value)}
+                placeholder="e.g., Push Day, Leg Day, Full Body"
+                className="bg-blue-900/30 border-blue-500/50 text-white"
+              />
+            </div>
 
-            {/* Workout Name */}
-            <Card className="bg-gradient-to-r from-indigo-900/40 to-violet-900/40 backdrop-blur-sm border-indigo-500/30">
-              <CardContent className="p-4">
-                <Input
-                  value={workout.name}
-                  onChange={(e) => setWorkout(prev => ({ ...prev, name: e.target.value }))}
-                  className="bg-gray-800/50 border-indigo-500/30 text-white text-lg font-semibold focus:border-indigo-400"
-                  placeholder="Give your workout a name..."
-                />
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-blue-200">Exercises</h3>
+                <Button
+                  onClick={() => setShowExerciseSearch(!showExerciseSearch)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Exercise
+                </Button>
+              </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Main Content */}
-              <div className="lg:col-span-3 space-y-6">
-                {/* Exercise Search/Add Section */}
-                <Card className="bg-gradient-to-r from-violet-900/40 to-purple-900/40 backdrop-blur-sm border-violet-500/30">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center text-lg sm:text-xl">
-                      <Sparkles className="w-5 h-5 mr-2 text-violet-400" />
-                      Add Exercises
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                      <TabsList className="grid w-full grid-cols-2 bg-violet-900/30">
-                        <TabsTrigger value="search" className="data-[state=active]:bg-violet-500/30">
-                          <Search className="w-4 h-4 mr-2" />
-                          Search Database
-                        </TabsTrigger>
-                        <TabsTrigger value="custom" className="data-[state=active]:bg-violet-500/30">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Custom
-                        </TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="search" className="space-y-4">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-violet-400" />
-                          <Input
-                            ref={searchInputRef}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search exercises, muscle groups, or equipment..."
-                            className="bg-gray-800/50 border-violet-500/30 text-white pl-12 focus:border-violet-400"
-                          />
-                          {loading && (
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                              <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Exercise Results */}
-                        {exercises.length > 0 && (
-                          <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
-                            {exercises.map((exercise) => (
-                              <Card
-                                key={exercise.id}
-                                className="bg-gray-800/30 border-gray-600/50 hover:bg-gray-700/40 transition-all cursor-pointer group"
-                              >
-                                <CardContent className="p-4">
-                                  <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-start space-x-3 flex-1">
-                                      <div className="flex items-center space-x-2">
-                                        <Dumbbell className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-center space-x-2">
-                                            <h4 className="font-semibold text-white group-hover:text-violet-300 truncate">
-                                              {exercise.name}
-                                            </h4>
-                                            {exercise.is_custom && (
-                                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                                                Custom
-                                              </Badge>
-                                            )}
-                                          </div>
-                                          <p className="text-sm text-gray-400 truncate">
-                                            🎯 {exercise.primary_muscles.join(', ')}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                                      <Badge className={getDifficultyColor(exercise.difficulty_level)}>
-                                        {exercise.difficulty_level}
-                                      </Badge>
-                                      <Button
-                                        onClick={() => addExerciseToWorkout(exercise)}
-                                        variant="outline"
-                                        size="sm"
-                                        className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20"
-                                      >
-                                        <Plus className="w-3 h-3 mr-1" />
-                                        Add
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center justify-between text-xs text-gray-400">
-                                    <span>🏋️ {exercise.equipment}</span>
-                                    <span>{exercise.mechanics} • {exercise.force_type}</span>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        )}
-
-                        {searchQuery && exercises.length === 0 && !loading && (
-                          <div className="text-center py-8 text-gray-400">
-                            <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>No exercises found for "{searchQuery}"</p>
-                            <p className="text-sm mt-1">Try searching for muscle groups, equipment, or exercise names</p>
-                          </div>
-                        )}
-                      </TabsContent>
-
-                      <TabsContent value="custom" className="space-y-4">
-                        <div className="space-y-4">
-                          <Input
-                            value={customExercise.name}
-                            onChange={(e) => setCustomExercise(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="Exercise name"
-                            className="bg-gray-800/50 border-violet-500/30 text-white focus:border-violet-400"
-                          />
-                          <Input
-                            value={customExercise.muscle_groups}
-                            onChange={(e) => setCustomExercise(prev => ({ ...prev, muscle_groups: e.target.value }))}
-                            placeholder="Muscle groups (e.g., 'Chest, Triceps')"
-                            className="bg-gray-800/50 border-violet-500/30 text-white focus:border-violet-400"
-                          />
-                          <Input
-                            value={customExercise.equipment}
-                            onChange={(e) => setCustomExercise(prev => ({ ...prev, equipment: e.target.value }))}
-                            placeholder="Equipment"
-                            className="bg-gray-800/50 border-violet-500/30 text-white focus:border-violet-400"
-                          />
-                          <Button
-                            onClick={addCustomExercise}
-                            className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Custom Exercise
-                          </Button>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+              {showExerciseSearch && (
+                <Card className="bg-blue-900/40 border-blue-500/40">
+                  <CardContent className="p-4">
+                    <ExerciseSearch
+                      onExerciseSelect={addExercise}
+                      placeholder="Search for exercises..."
+                    />
                   </CardContent>
                 </Card>
+              )}
 
-                {/* Workout Exercises */}
+              {exercises.length === 0 ? (
+                <div className="text-center py-8 text-blue-300/70">
+                  <Dumbbell className="w-12 h-12 mx-auto mb-3 text-blue-400/50" />
+                  <p>No exercises added yet. Search and add exercises to start logging your workout.</p>
+                </div>
+              ) : (
                 <div className="space-y-4">
-                  {workout.exercises.map((workoutExercise) => (
-                    <Card key={workoutExercise.id} className="bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-sm border-gray-600/50">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <Dumbbell className="w-5 h-5 text-violet-400" />
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <CardTitle className="text-white text-lg">{workoutExercise.exercise.name}</CardTitle>
-                                {workoutExercise.exercise.is_custom && (
-                                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                                    Custom
-                                  </Badge>
-                                )}
-                              </div>
-                              <CardDescription className="flex items-center space-x-2">
-                                <span>{workoutExercise.exercise.primary_muscles.join(', ')}</span>
-                                {workoutExercise.previousWeight && (
-                                  <span className="text-gray-500 text-sm">
-                                    (Last: {workoutExercise.previousWeight}kg)
-                                  </span>
-                                )}
-                              </CardDescription>
-                            </div>
-                          </div>
+                  {exercises.map((exercise) => (
+                    <Card key={exercise.id} className="bg-blue-900/40 border-blue-500/40">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-white">{exercise.name}</h4>
                           <Button
-                            onClick={() => removeExercise(workoutExercise.id)}
+                            onClick={() => removeExercise(exercise.id)}
                             variant="ghost"
                             size="sm"
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                            className="text-red-400 hover:text-red-300"
                           >
-                            <Minus className="w-4 h-4" />
+                            Remove
                           </Button>
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="space-y-2">
-                          {workoutExercise.sets.map((set, setIndex) => (
-                            <div key={set.id} className="flex items-center space-x-2 sm:space-x-3 p-3 bg-gray-800/40 rounded-lg border border-gray-700/30">
-                              <div className="w-12 text-center text-sm font-medium text-violet-400">
-                                Set {setIndex + 1}
-                              </div>
-                              <div className="flex-1 grid grid-cols-3 gap-2">
-                                <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Weight (kg)</label>
-                                  <Input
-                                    type="number"
-                                    value={set.weight}
-                                    onChange={(e) => updateSet(workoutExercise.id, set.id, 'weight', parseFloat(e.target.value) || 0)}
-                                    className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
-                                    placeholder={workoutExercise.previousWeight ? workoutExercise.previousWeight.toString() : "0"}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs text-gray-400 mb-1">Reps</label>
-                                  <Input
-                                    type="number"
-                                    value={set.reps}
-                                    onChange={(e) => updateSet(workoutExercise.id, set.id, 'reps', parseInt(e.target.value) || 0)}
-                                    className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
-                                    placeholder="8"
-                                  />
-                                </div>
-                                <div>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <label className="block text-xs text-gray-400 mb-1 cursor-help">
-                                          RIR <Info className="w-3 h-3 inline ml-1" />
-                                        </label>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Reps In Reserve - How many reps you could still do</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                  <Input
-                                    type="number"
-                                    value={set.rir || ''}
-                                    onChange={(e) => updateSet(workoutExercise.id, set.id, 'rir', parseInt(e.target.value) || 0)}
-                                    className="bg-gray-700/50 border-gray-600/50 text-white text-center focus:border-violet-400"
-                                    placeholder="2"
-                                    min="0"
-                                    max="10"
-                                  />
-                                </div>
-                              </div>
-                              {workoutExercise.sets.length > 1 && (
-                                <Button
-                                  onClick={() => removeSet(workoutExercise.id, set.id)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          ))}
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div>
+                            <Label className="text-blue-200 text-xs">Sets</Label>
+                            <Input
+                              type="number"
+                              value={exercise.sets}
+                              onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value))}
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-blue-200 text-xs">Reps</Label>
+                            <Input
+                              type="number"
+                              value={exercise.reps}
+                              onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value))}
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-blue-200 text-xs">Weight (lbs)</Label>
+                            <Input
+                              type="number"
+                              step="0.5"
+                              value={exercise.weight}
+                              onChange={(e) => updateExercise(exercise.id, 'weight', parseFloat(e.target.value))}
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-blue-200 text-xs">RPE</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="10"
+                              value={exercise.rpe}
+                              onChange={(e) => updateExercise(exercise.id, 'rpe', parseInt(e.target.value))}
+                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                            />
+                          </div>
                         </div>
-
-                        <Button
-                          onClick={() => addSet(workoutExercise.id)}
-                          variant="outline"
-                          size="sm"
-                          className="border-violet-500/30 text-violet-400 hover:bg-violet-500/20 hover:border-violet-400 w-full"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Set
-                        </Button>
+                        
+                        <div className="mt-3">
+                          <Label className="text-blue-200 text-xs">Notes (optional)</Label>
+                          <Input
+                            value={exercise.notes || ''}
+                            onChange={(e) => updateExercise(exercise.id, 'notes', e.target.value)}
+                            placeholder="Form notes, how it felt, etc."
+                            className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                          />
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-
-                {/* Save Workout */}
-                {workout.exercises.length > 0 && (
-                  <div className="flex justify-center pt-4">
-                    <Button 
-                      onClick={saveWorkout}
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-8 py-3 text-lg shadow-lg"
-                      size="lg"
-                    >
-                      <Save className="w-5 h-5 mr-2" />
-                      Save Workout
-                    </Button>
-                  </div>
-                )}
-
-                {workout.exercises.length === 0 && (
-                  <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                    <CardContent className="p-8 text-center">
-                      <Dumbbell className="w-12 h-12 mx-auto mb-4 text-violet-400 opacity-50" />
-                      <h3 className="text-xl font-semibold text-white mb-2">Ready to start your workout?</h3>
-                      <p className="text-gray-400 mb-4">
-                        Search our comprehensive exercise database to begin tracking your workout!
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* AI Chat Sidebar */}
-              {showAIChat && (
-                <div className="lg:col-span-1">
-                  <Card className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 backdrop-blur-sm border-purple-500/30 sticky top-4">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-white text-lg flex items-center">
-                          <MessageCircle className="w-5 h-5 mr-2 text-purple-400" />
-                          AI Form Coach
-                        </CardTitle>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowAIChat(false)}
-                          className="text-gray-400 hover:text-white"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <CardDescription className="text-purple-200/70">
-                        Ask about exercise form, technique, or muscle targeting
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="h-64 overflow-y-auto space-y-3 bg-gray-800/30 rounded-lg p-3">
-                        {chatMessages.length === 0 && (
-                          <div className="text-center text-gray-400 text-sm">
-                            <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            Ask me about exercise form, muscle targeting, or technique tips!
-                          </div>
-                        )}
-                        {chatMessages.map((msg, index) => (
-                          <div key={index} className={`${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                            <div className={`inline-block p-2 rounded-lg text-sm ${
-                              msg.role === 'user' 
-                                ? 'bg-purple-500/20 text-purple-200' 
-                                : 'bg-gray-700/50 text-gray-200'
-                            }`}>
-                              {msg.content}
-                            </div>
-                          </div>
-                        ))}
-                        {chatLoading && (
-                          <div className="text-left">
-                            <div className="inline-block p-2 rounded-lg text-sm bg-gray-700/50 text-gray-200">
-                              <div className="flex items-center space-x-1">
-                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex space-x-2">
-                        <Input
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          placeholder="Ask about form..."
-                          className="bg-gray-800/50 border-purple-500/30 text-white focus:border-purple-400"
-                          onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
-                          disabled={chatLoading}
-                        />
-                        <Button
-                          onClick={sendChatMessage}
-                          disabled={chatLoading || !chatInput.trim()}
-                          size="sm"
-                          className="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30"
-                        >
-                          <Send className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
               )}
             </div>
-          </div>
-        </div>
+
+            {exercises.length > 0 && (
+              <Button
+                onClick={logWorkout}
+                disabled={isLogging || !workoutName.trim()}
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 py-3"
+              >
+                {isLogging ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Logging Workout...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Log Workout
+                  </>
+                )}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </PageTransition>
+    </div>
   );
 };
 

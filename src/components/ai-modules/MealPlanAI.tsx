@@ -1,324 +1,399 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Utensils, Target, Clock, ChefHat } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { PageTransition } from "@/components/ui/page-transition";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Utensils, Zap, Target, Calendar, Apple, Clock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
+import { MobileHeader } from '@/components/MobileHeader';
 
 interface MealPlanAIProps {
   onBack: () => void;
 }
 
-interface MealPlan {
-  id: string;
-  meals: any[];
-  totalCalories: number;
-  totalProtein: number;
-  totalCarbs: number;
-  totalFat: number;
-  createdAt: Date;
-}
-
-const MealPlanAI = ({ onBack }: MealPlanAIProps) => {
+export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
-  const [preferences, setPreferences] = useState({
-    calorieGoal: '',
-    proteinGoal: '',
+  const [planData, setPlanData] = useState({
+    goal: '',
     dietType: '',
+    calories: '',
+    meals: '3',
     allergies: '',
-    mealsPerDay: '3'
+    preferences: '',
+    duration: '7'
   });
+  const [generatedPlan, setGeneratedPlan] = useState<any>(null);
+  const [savedPlans, setSavedPlans] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      loadSavedPlans();
+    }
+  }, [user]);
+
+  const loadSavedPlans = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('meal_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setSavedPlans(data || []);
+    } catch (error) {
+      console.error('Error loading meal plans:', error);
+    }
+  };
 
   const generateMealPlan = async () => {
-    if (!user || !preferences.calorieGoal) {
+    if (!user || !planData.goal || !planData.dietType) {
       toast({
-        title: "Missing information",
-        description: "Please fill in your calorie goal.",
-        variant: "destructive",
+        title: 'Missing Information',
+        description: 'Please fill in your goal and diet type.',
+        variant: 'destructive'
       });
       return;
     }
 
     setIsGenerating(true);
-
     try {
-      // Simulate AI meal plan generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const mockMeals = [
-        {
-          name: "Overnight Oats with Berries",
-          type: "Breakfast",
-          calories: 320,
-          protein: 12,
-          carbs: 45,
-          fat: 8,
-          ingredients: ["Oats", "Greek yogurt", "Berries", "Honey"]
-        },
-        {
-          name: "Grilled Chicken Salad",
-          type: "Lunch", 
-          calories: 450,
-          protein: 35,
-          carbs: 25,
-          fat: 18,
-          ingredients: ["Chicken breast", "Mixed greens", "Avocado", "Olive oil"]
-        },
-        {
-          name: "Salmon with Quinoa",
-          type: "Dinner",
-          calories: 520,
-          protein: 38,
-          carbs: 40,
-          fat: 22,
-          ingredients: ["Salmon fillet", "Quinoa", "Broccoli", "Lemon"]
-        }
-      ];
-
-      const totalCalories = mockMeals.reduce((sum, meal) => sum + meal.calories, 0);
-      const totalProtein = mockMeals.reduce((sum, meal) => sum + meal.protein, 0);
-      const totalCarbs = mockMeals.reduce((sum, meal) => sum + meal.carbs, 0);
-      const totalFat = mockMeals.reduce((sum, meal) => sum + meal.fat, 0);
-
-      const generatedPlan: MealPlan = {
-        id: Date.now().toString(),
-        meals: mockMeals,
-        totalCalories,
-        totalProtein,
-        totalCarbs,
-        totalFat,
-        createdAt: new Date()
+      // Mock meal plan generation - in production this would call an AI service
+      const mockPlan = {
+        title: `${planData.dietType} ${planData.goal} Plan`,
+        duration: parseInt(planData.duration),
+        calories: parseInt(planData.calories) || 2000,
+        meals: [
+          {
+            day: 'Monday',
+            breakfast: {
+              name: 'Protein Overnight Oats',
+              calories: 350,
+              macros: { protein: 25, carbs: 45, fat: 8 },
+              ingredients: ['1 cup oats', '1 scoop protein powder', '1 cup almond milk', '1 tbsp chia seeds', '1/2 banana']
+            },
+            lunch: {
+              name: 'Grilled Chicken Salad',
+              calories: 450,
+              macros: { protein: 35, carbs: 20, fat: 22 },
+              ingredients: ['6oz chicken breast', '2 cups mixed greens', '1/4 avocado', '1 tbsp olive oil', 'cherry tomatoes']
+            },
+            dinner: {
+              name: 'Salmon with Sweet Potato',
+              calories: 500,
+              macros: { protein: 40, carbs: 35, fat: 20 },
+              ingredients: ['6oz salmon fillet', '1 medium sweet potato', '1 cup broccoli', '1 tsp olive oil']
+            }
+          },
+          {
+            day: 'Tuesday',
+            breakfast: {
+              name: 'Greek Yogurt Bowl',
+              calories: 320,
+              macros: { protein: 20, carbs: 35, fat: 10 },
+              ingredients: ['1 cup Greek yogurt', '1/2 cup berries', '1 tbsp honey', '1 tbsp almonds']
+            },
+            lunch: {
+              name: 'Turkey and Hummus Wrap',
+              calories: 420,
+              macros: { protein: 30, carbs: 40, fat: 15 },
+              ingredients: ['whole wheat tortilla', '4oz turkey', '2 tbsp hummus', 'spinach', 'cucumber']
+            },
+            dinner: {
+              name: 'Lean Beef Stir Fry',
+              calories: 480,
+              macros: { protein: 35, carbs: 30, fat: 18 },
+              ingredients: ['5oz lean beef', '1 cup mixed vegetables', '1/2 cup brown rice', '1 tbsp sesame oil']
+            }
+          }
+        ]
       };
 
-      setMealPlan(generatedPlan);
-
+      setGeneratedPlan(mockPlan);
+      
       toast({
-        title: "Meal plan generated!",
-        description: "Your personalized meal plan is ready.",
+        title: 'Meal Plan Generated! 🍽️',
+        description: 'Your personalized meal plan is ready!'
       });
     } catch (error) {
       console.error('Error generating meal plan:', error);
       toast({
-        title: "Error",
-        description: "Failed to generate meal plan. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to generate meal plan. Please try again.',
+        variant: 'destructive'
       });
     } finally {
       setIsGenerating(false);
     }
   };
 
+  const saveMealPlan = async () => {
+    if (!user || !generatedPlan) return;
+
+    try {
+      const { error } = await supabase
+        .from('meal_plans')
+        .insert({
+          user_id: user.id,
+          title: generatedPlan.title,
+          content: JSON.stringify(generatedPlan),
+          user_requirements: `${planData.goal} - ${planData.dietType} - ${planData.calories} calories`
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Meal Plan Saved! 💾',
+        description: 'Your meal plan has been saved to your library.'
+      });
+
+      loadSavedPlans();
+    } catch (error) {
+      console.error('Error saving meal plan:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save meal plan. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-yellow-900/10 to-orange-800/20 text-white">
-        <div className="p-3 sm:p-4 md:p-6">
-          <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <Button 
-                variant="ghost" 
-                onClick={onBack}
-                className="text-white hover:bg-yellow-500/20 backdrop-blur-sm w-fit"
-                size={isMobile ? "sm" : "default"}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {isMobile ? "Back" : "Back to Dashboard"}
-              </Button>
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500/20 to-orange-600/40 backdrop-blur-sm rounded-xl flex items-center justify-center border border-yellow-400/20">
-                  <ChefHat className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+    <UsageLimitGuard featureKey="meal_plan_generations" featureName="Meal Plan AI">
+      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
+        <MobileHeader 
+          title="Meal Plan AI" 
+          onBack={onBack}
+        />
+        
+        <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
+                  <Utensils className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                    Meal Plan Generator
-                  </h1>
-                  <p className="text-xs sm:text-sm text-gray-400">AI-powered nutrition planning</p>
+                  <CardTitle className="text-white text-xl">Meal Plan AI</CardTitle>
+                  <CardDescription className="text-green-200/80">
+                    Generate personalized meal plans based on your goals
+                  </CardDescription>
                 </div>
               </div>
-            </div>
-
-            {/* Status Badge */}
-            <div className="flex justify-center sm:justify-start">
-              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                <Utensils className="w-3 h-3 mr-1" />
-                Personalized Nutrition
-              </Badge>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-6">
-              {/* Input Panel */}
-              <Card className="bg-gray-900/40 backdrop-blur-sm border-yellow-500/30">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Target className="w-5 h-5 mr-2 text-yellow-400" />
-                    Meal Plan Preferences
-                  </CardTitle>
-                  <CardDescription>
-                    Tell us your goals and preferences for a personalized meal plan
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              {!generatedPlan ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Daily Calorie Goal</Label>
+                      <Label className="text-green-200">Primary Goal</Label>
+                      <Select value={planData.goal} onValueChange={(value) => setPlanData({...planData, goal: value})}>
+                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
+                          <SelectValue placeholder="Select your goal" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-green-900 border-green-500">
+                          <SelectItem value="weight-loss">Weight Loss</SelectItem>
+                          <SelectItem value="muscle-gain">Muscle Gain</SelectItem>
+                          <SelectItem value="maintenance">Maintenance</SelectItem>
+                          <SelectItem value="performance">Athletic Performance</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-green-200">Diet Type</Label>
+                      <Select value={planData.dietType} onValueChange={(value) => setPlanData({...planData, dietType: value})}>
+                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
+                          <SelectValue placeholder="Select diet type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-green-900 border-green-500">
+                          <SelectItem value="balanced">Balanced</SelectItem>
+                          <SelectItem value="high-protein">High Protein</SelectItem>
+                          <SelectItem value="keto">Ketogenic</SelectItem>
+                          <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                          <SelectItem value="vegan">Vegan</SelectItem>
+                          <SelectItem value="paleo">Paleo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-green-200">Target Calories</Label>
                       <Input
                         type="number"
-                        placeholder="2000"
-                        value={preferences.calorieGoal}
-                        onChange={(e) => setPreferences({...preferences, calorieGoal: e.target.value})}
-                        className="bg-gray-800 border-yellow-500/30 text-white focus:border-yellow-400"
+                        value={planData.calories}
+                        onChange={(e) => setPlanData({...planData, calories: e.target.value})}
+                        placeholder="e.g., 2000"
+                        className="bg-green-900/30 border-green-500/50 text-white"
                       />
                     </div>
+                    
                     <div className="space-y-2">
-                      <Label className="text-gray-300">Protein Goal (g)</Label>
+                      <Label className="text-green-200">Meals per Day</Label>
+                      <Select value={planData.meals} onValueChange={(value) => setPlanData({...planData, meals: value})}>
+                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-green-900 border-green-500">
+                          <SelectItem value="3">3 Meals</SelectItem>
+                          <SelectItem value="4">4 Meals</SelectItem>
+                          <SelectItem value="5">5 Meals</SelectItem>
+                          <SelectItem value="6">6 Meals</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-green-200">Duration (days)</Label>
                       <Input
-                        type="number"  
-                        placeholder="150"
-                        value={preferences.proteinGoal}
-                        onChange={(e) => setPreferences({...preferences, proteinGoal: e.target.value})}
-                        className="bg-gray-800 border-yellow-500/30 text-white focus:border-yellow-400"
+                        type="number"
+                        value={planData.duration}
+                        onChange={(e) => setPlanData({...planData, duration: e.target.value})}
+                        placeholder="7"
+                        className="bg-green-900/30 border-green-500/50 text-white"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Diet Type</Label>
-                    <Select value={preferences.dietType} onValueChange={(value) => setPreferences({...preferences, dietType: value})}>
-                      <SelectTrigger className="bg-gray-800 border-yellow-500/30 text-white">
-                        <SelectValue placeholder="Select diet type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-yellow-500/30">
-                        <SelectItem value="balanced">Balanced</SelectItem>
-                        <SelectItem value="high-protein">High Protein</SelectItem>
-                        <SelectItem value="low-carb">Low Carb</SelectItem>
-                        <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                        <SelectItem value="vegan">Vegan</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-green-200">Food Allergies/Restrictions</Label>
+                      <Textarea
+                        value={planData.allergies}
+                        onChange={(e) => setPlanData({...planData, allergies: e.target.value})}
+                        placeholder="e.g., nuts, dairy, gluten"
+                        className="bg-green-900/30 border-green-500/50 text-white"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-green-200">Food Preferences</Label>
+                      <Textarea
+                        value={planData.preferences}
+                        onChange={(e) => setPlanData({...planData, preferences: e.target.value})}
+                        placeholder="e.g., loves chicken, dislikes fish"
+                        className="bg-green-900/30 border-green-500/50 text-white"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Meals Per Day</Label>
-                    <Select value={preferences.mealsPerDay} onValueChange={(value) => setPreferences({...preferences, mealsPerDay: value})}>
-                      <SelectTrigger className="bg-gray-800 border-yellow-500/30 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-yellow-500/30">
-                        <SelectItem value="3">3 Meals</SelectItem>
-                        <SelectItem value="4">4 Meals</SelectItem>
-                        <SelectItem value="5">5 Meals</SelectItem>
-                        <SelectItem value="6">6 Meals</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Allergies/Restrictions</Label>
-                    <Input
-                      placeholder="e.g., nuts, dairy, gluten"
-                      value={preferences.allergies}
-                      onChange={(e) => setPreferences({...preferences, allergies: e.target.value})}
-                      className="bg-gray-800 border-yellow-500/30 text-white focus:border-yellow-400"
-                    />
-                  </div>
-
-                  <Button 
+                  <Button
                     onClick={generateMealPlan}
-                    disabled={!preferences.calorieGoal || isGenerating}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white"
+                    disabled={isGenerating || !planData.goal || !planData.dietType}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3"
                   >
                     {isGenerating ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Generating Plan...
+                        <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Generating Meal Plan...
                       </>
                     ) : (
                       <>
-                        <ChefHat className="w-4 h-4 mr-2" />
+                        <Zap className="w-4 h-4 mr-2" />
                         Generate Meal Plan
                       </>
                     )}
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">{generatedPlan.title}</h2>
+                      <p className="text-green-200">{generatedPlan.duration} days • {generatedPlan.calories} calories/day</p>
+                    </div>
+                    <div className="space-x-2">
+                      <Button onClick={saveMealPlan} className="bg-green-600 hover:bg-green-700">
+                        Save Plan
+                      </Button>
+                      <Button onClick={() => setGeneratedPlan(null)} variant="outline">
+                        Generate New
+                      </Button>
+                    </div>
+                  </div>
 
-              {/* Results Panel */}
-              <Card className="bg-gray-900/40 backdrop-blur-sm border-yellow-500/30">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Clock className="w-5 h-5 mr-2 text-yellow-400" />
-                    Your Meal Plan
-                  </CardTitle>
-                  <CardDescription>
-                    Personalized nutrition plan based on your goals
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {mealPlan ? (
-                    <div className="space-y-6">
-                      {/* Nutrition Summary */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-800/30 rounded-lg p-3 text-center">
-                          <div className="text-lg font-bold text-yellow-400">{mealPlan.totalCalories}</div>
-                          <div className="text-xs text-gray-400">Total Calories</div>
-                        </div>
-                        <div className="bg-gray-800/30 rounded-lg p-3 text-center">
-                          <div className="text-lg font-bold text-orange-400">{mealPlan.totalProtein}g</div>
-                          <div className="text-xs text-gray-400">Protein</div>
-                        </div>
-                      </div>
-
-                      {/* Meals */}
-                      <div className="space-y-4">
-                        {mealPlan.meals.map((meal, index) => (
-                          <div key={index} className="bg-gray-800/20 rounded-lg p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-semibold text-white">{meal.name}</h4>
-                              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
-                                {meal.type}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-4 gap-2 text-xs text-gray-400 mb-2">
-                              <span>{meal.calories} cal</span>
-                              <span>{meal.protein}g protein</span>
-                              <span>{meal.carbs}g carbs</span>
-                              <span>{meal.fat}g fat</span>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {meal.ingredients.join(', ')}
-                            </div>
+                  <div className="space-y-4">
+                    {generatedPlan.meals.map((day: any, index: number) => (
+                      <Card key={index} className="bg-green-900/40 border-green-500/40">
+                        <CardHeader>
+                          <CardTitle className="text-green-200 flex items-center">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {day.day}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {Object.entries(day).filter(([key]) => key !== 'day').map(([mealType, meal]: [string, any]) => (
+                              <div key={mealType} className="p-4 bg-green-800/30 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-white capitalize flex items-center">
+                                    <Apple className="w-4 h-4 mr-2" />
+                                    {mealType}: {meal.name}
+                                  </h4>
+                                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                    {meal.calories} cal
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
+                                  <div className="text-green-200">P: {meal.macros.protein}g</div>
+                                  <div className="text-green-200">C: {meal.macros.carbs}g</div>
+                                  <div className="text-green-200">F: {meal.macros.fat}g</div>
+                                </div>
+                                <div className="text-green-300 text-sm">
+                                  <strong>Ingredients:</strong> {meal.ingredients.join(', ')}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <ChefHat className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-500 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-white font-medium mb-2">Ready to Generate</h3>
-                      <p className="text-gray-400 text-sm">
-                        Set your preferences and generate your personalized meal plan
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {savedPlans.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-green-200">Your Saved Meal Plans</h3>
+                  <div className="grid gap-3">
+                    {savedPlans.map((plan) => (
+                      <Card key={plan.id} className="bg-green-900/40 border-green-500/40">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-white">{plan.title}</h4>
+                              <p className="text-green-300 text-sm">{plan.user_requirements}</p>
+                            </div>
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                              Saved
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </PageTransition>
+    </UsageLimitGuard>
   );
 };
 

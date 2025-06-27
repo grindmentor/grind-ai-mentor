@@ -54,43 +54,120 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-export const getAIResponse = async (prompt: string) => {
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: SCIENCE_FITNESS_CONTEXT },
-        { role: "user", content: prompt }
-      ],
-      max_tokens: 300,
-      temperature: 0.7,
-    });
+// Simple client-side cache
+const responseCache = new Map<string, { data: string; timestamp: number }>();
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
-    return completion.choices[0].message.content;
-  } catch (error) {
-    console.error("AI Error:", error);
-    return "I'm having trouble processing your request right now. Please try again later.";
+// Batch similar requests to reduce API calls
+const requestQueue = new Map<string, Promise<string>>();
+
+export const getAIResponse = async (prompt: string) => {
+  const cacheKey = `response:${prompt}`.toLowerCase();
+  
+  // Check cache first
+  const cached = responseCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
   }
+
+  // Check if same request is already in progress
+  if (requestQueue.has(cacheKey)) {
+    return await requestQueue.get(cacheKey)!;
+  }
+
+  const requestPromise = async (): Promise<string> => {
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // Using lightest model for cost optimization
+        messages: [
+          { role: "system", content: SCIENCE_FITNESS_CONTEXT },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: 250, // Reduced for basic responses
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0].message.content || "I'm having trouble processing your request right now. Please try again later.";
+      
+      // Cache the response
+      responseCache.set(cacheKey, {
+        data: response,
+        timestamp: Date.now()
+      });
+
+      return response;
+    } catch (error) {
+      console.error("AI Error:", error);
+      return "I'm having trouble processing your request right now. Please try again later.";
+    } finally {
+      // Remove from queue when done
+      requestQueue.delete(cacheKey);
+    }
+  };
+
+  const request = requestPromise();
+  requestQueue.set(cacheKey, request);
+  return await request;
 };
 
 export const getCoachingAdvice = async (prompt: string) => {
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: SCIENCE_FITNESS_CONTEXT },
-        { role: "user", content: prompt }
-      ],
-      max_tokens: 600,
-      temperature: 0.7,
-    });
-
-    return completion.choices[0].message.content || "";
-  } catch (error) {
-    console.error("AI Error:", error);
-    return "I'm having trouble processing your request right now. Please try again later.";
+  const cacheKey = `coaching:${prompt}`.toLowerCase();
+  
+  // Check cache first
+  const cached = responseCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
   }
+
+  // Check if same request is already in progress
+  if (requestQueue.has(cacheKey)) {
+    return await requestQueue.get(cacheKey)!;
+  }
+
+  const requestPromise = async (): Promise<string> => {
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // Using lightest model for coaching
+        messages: [
+          { role: "system", content: SCIENCE_FITNESS_CONTEXT },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: 500, // Moderate token limit for coaching advice
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0].message.content || "";
+      
+      // Cache the response
+      responseCache.set(cacheKey, {
+        data: response,
+        timestamp: Date.now()
+      });
+
+      return response;
+    } catch (error) {
+      console.error("AI Error:", error);
+      return "I'm having trouble processing your request right now. Please try again later.";
+    } finally {
+      // Remove from queue when done
+      requestQueue.delete(cacheKey);
+    }
+  };
+
+  const request = requestPromise();
+  requestQueue.set(cacheKey, request);
+  return await request;
 };
+
+// Clean up cache periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of responseCache.entries()) {
+    if (now - value.timestamp > CACHE_DURATION) {
+      responseCache.delete(key);
+    }
+  }
+}, 5 * 60 * 1000); // Clean every 5 minutes
 
 // Export the service object that FoodPhotoLogger expects
 export const aiService = {

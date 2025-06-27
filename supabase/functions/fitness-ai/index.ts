@@ -9,6 +9,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple response cache
+const responseCache = new Map<string, any>();
+const CACHE_DURATION = 20 * 60 * 1000; // 20 minutes
+
+// Determine model based on query complexity and type
+function selectModel(type: string, userInput: string): string {
+  // Use lightweight model for simple queries and basic coaching
+  const simpleTypes = ['coaching', 'food_log'];
+  const shortQueries = userInput && userInput.length < 100;
+  
+  if (simpleTypes.includes(type) || shortQueries) {
+    return 'gpt-4o-mini'; // Lightest model for simple queries
+  }
+  
+  // Use more powerful model for complex training programs and detailed nutrition
+  return 'gpt-4o-mini'; // Still using lightweight model but can upgrade specific cases
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,14 +62,25 @@ serve(async (req) => {
     }
 
     const { prompt, type, userInput } = requestBody;
+    const actualInput = userInput || prompt;
 
-    if (!userInput && !prompt) {
+    if (!actualInput) {
       console.error('No user input provided');
       return new Response(JSON.stringify({ 
         error: 'User input is required',
         details: 'Please provide either userInput or prompt in the request body'
       }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check cache for identical requests
+    const cacheKey = `${type}:${actualInput}`.toLowerCase();
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('Returning cached response for:', type);
+      return new Response(JSON.stringify({ response: cached.data }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -219,7 +248,9 @@ Provide actionable insights grounded in current nutritional science.`;
 Provide evidence-based fitness guidance using the latest research from 2024-2025. Always include 2-3 recent citations with practical applications.`;
     }
 
-    console.log('Making request to OpenAI with type:', type);
+    // Select appropriate model based on complexity
+    const selectedModel = selectModel(type, actualInput);
+    console.log('Making request to OpenAI with model:', selectedModel, 'type:', type);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -228,13 +259,13 @@ Provide evidence-based fitness guidance using the latest research from 2024-2025
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: selectedModel,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userInput || prompt }
+          { role: 'user', content: actualInput }
         ],
         temperature: 0.7,
-        max_tokens: 3000,
+        max_tokens: type === 'coaching' || type === 'food_log' ? 1500 : 3000, // Optimize token usage
       }),
     });
 
@@ -286,6 +317,19 @@ Provide evidence-based fitness guidance using the latest research from 2024-2025
     }
 
     const aiResponse = data.choices[0].message.content;
+
+    // Cache the response
+    responseCache.set(cacheKey, {
+      data: aiResponse,
+      timestamp: Date.now()
+    });
+
+    // Clean up old cache entries
+    if (responseCache.size > 50) {
+      const entries = Array.from(responseCache.entries());
+      const expired = entries.filter(([_, value]) => Date.now() - value.timestamp > CACHE_DURATION);
+      expired.forEach(([key]) => responseCache.delete(key));
+    }
 
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

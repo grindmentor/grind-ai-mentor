@@ -9,6 +9,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple in-memory cache for exercise searches
+const exerciseCache = new Map<string, any>();
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,6 +20,18 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
+    
+    // Check cache first
+    const cacheKey = query.toLowerCase().trim();
+    const cached = exerciseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('Returning cached result for:', query);
+      return new Response(JSON.stringify(cached.data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Making API call for exercise search:', query);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -24,7 +40,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o-mini', // Using lightest available model
         messages: [
           {
             role: 'system',
@@ -46,7 +62,7 @@ Each exercise must have: name, category (Strength/Full Workout), muscle_groups (
           }
         ],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 800, // Reduced token limit for cost optimization
       }),
     });
 
@@ -81,6 +97,19 @@ Each exercise must have: name, category (Strength/Full Workout), muscle_groups (
           }
         ]
       };
+    }
+
+    // Cache the result
+    exerciseCache.set(cacheKey, {
+      data: exerciseData,
+      timestamp: Date.now()
+    });
+
+    // Clean up old cache entries periodically
+    if (exerciseCache.size > 100) {
+      const entries = Array.from(exerciseCache.entries());
+      const expired = entries.filter(([_, value]) => Date.now() - value.timestamp > CACHE_DURATION);
+      expired.forEach(([key]) => exerciseCache.delete(key));
     }
 
     return new Response(JSON.stringify(exerciseData), {

@@ -7,6 +7,36 @@ import { Dumbbell, Star, TrendingUp, Users } from 'lucide-react';
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                <Dumbbell className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white">Myotopia</span>
+            </div>
+            <div className="hidden md:flex items-center space-x-8">
+              <Link to="/about" className="text-gray-300 hover:text-white transition-colors">
+                About
+              </Link>
+              <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
+                Pricing
+              </Link>
+              <Link to="/signin" className="text-gray-300 hover:text-white transition-colors">
+                Sign In
+              </Link>
+              <Link to="/signup">
+                <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -31,9 +61,9 @@ const Index = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/signin">
+              <Link to="/signup">
                 <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-3 text-lg">
-                  Get Started
+                  Get Started Free
                 </Button>
               </Link>
               <Link to="/signin">

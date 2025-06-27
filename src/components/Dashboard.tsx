@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -163,15 +162,9 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Dashboard Content Grid - Mobile-optimized */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <ScientificStudies />
-                <PersonalizedSummary />
-              </div>
-
-              {/* Progress Hub - Mobile-optimized */}
+              {/* Progress Hub - Mobile-optimized - Moved up after favorites */}
               {progressHubModule && (
-                <div className="mb-6 sm:mb-8">
+                <div className="mb-6 sm:mb-8 lg:mb-12">
                   <Button
                     onClick={() => handleModuleClick(progressHubModule)}
                     className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-300 text-white rounded-xl group touch-manipulation"
@@ -198,6 +191,12 @@ const Dashboard = () => {
                   </Button>
                 </div>
               )}
+
+              {/* Dashboard Content Grid - Mobile-optimized */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
+                <ScientificStudies />
+                <PersonalizedSummary />
+              </div>
             </div>
           </div>
         </div>

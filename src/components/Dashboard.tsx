@@ -96,9 +96,9 @@ const Dashboard = () => {
     );
   }
 
-  // Separate Progress Hub from other modules
+  // Filter out Progress Hub from regular modules
+  const regularModules = modules.filter(m => m.id !== 'progress-hub');
   const progressHubModule = modules.find(m => m.id === 'progress-hub');
-  const otherModules = modules.filter(m => m.id !== 'progress-hub');
 
   return (
     <ErrorBoundary>
@@ -117,34 +117,37 @@ const Dashboard = () => {
               </p>
             </div>
 
-            {/* Favorites Section */}
-            {favorites.length > 0 && (
+            {/* Show only favorites if they exist, otherwise show message */}
+            {favorites.length > 0 ? (
               <div className="mb-8 sm:mb-12">
                 <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
                   <Star className="w-6 h-6 mr-2 text-yellow-500 fill-current" />
-                  Favorites
+                  Your Favorites
                 </h2>
                 <ModuleGrid
-                  modules={otherModules.filter(module => favorites.includes(module.id))}
+                  modules={regularModules.filter(module => favorites.includes(module.id))}
                   favorites={favorites}
                   onModuleClick={handleModuleClick}
                   onToggleFavorite={toggleFavorite}
                 />
               </div>
+            ) : (
+              <div className="mb-8 sm:mb-12 text-center">
+                <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-8 backdrop-blur-sm">
+                  <Star className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-white mb-4">No Favorites Yet</h2>
+                  <p className="text-gray-400 mb-6">
+                    Visit the Module Library to explore and favorite modules you'd like to see here.
+                  </p>
+                  <Button
+                    onClick={() => window.location.href = '/modules'}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                  >
+                    Browse Module Library
+                  </Button>
+                </div>
+              </div>
             )}
-
-            {/* All Modules */}
-            <div className="mb-8 sm:mb-12">
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
-                All Modules
-              </h2>
-              <ModuleGrid
-                modules={otherModules}
-                favorites={favorites}
-                onModuleClick={handleModuleClick}
-                onToggleFavorite={toggleFavorite}
-              />
-            </div>
 
             {/* Progress Hub - Long Rectangular Button */}
             {progressHubModule && (

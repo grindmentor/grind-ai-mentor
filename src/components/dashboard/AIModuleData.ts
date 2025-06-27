@@ -6,7 +6,7 @@ import TDEECalculator from "../ai-modules/TDEECalculator";
 import FoodPhotoLogger from "../ai-modules/FoodPhotoLogger";
 import WorkoutTimer from "../ai-modules/WorkoutTimer";
 import SmartTraining from "../ai-modules/SmartTraining";
-import PhysiqueAI from "../ai-modules/ProgressAI"; // Renamed import to match requested "Physique AI"
+import PhysiqueAI from "../ai-modules/ProgressAI";
 import RecoveryCoach from "../ai-modules/RecoveryCoach";
 import WorkoutLibrary from "../ai-modules/WorkoutLibrary";
 import SmartFoodLog from "../ai-modules/SmartFoodLog";
@@ -15,7 +15,6 @@ import CutCalcPro from "../ai-modules/CutCalcPro";
 import WorkoutLoggerAI from "../ai-modules/WorkoutLoggerAI";
 import React from "react";
 
-// Define a flexible component type that can handle different prop structures
 type ModuleComponent = React.ComponentType<any>;
 
 export interface AIModule {
@@ -50,7 +49,7 @@ export const aiModules: AIModule[] = [
     gradient: "from-purple-500 to-purple-700",
     component: SmartTraining,
     isNew: false,
-    isPremium: false, // Changed to false to allow Basic tier access
+    isPremium: false,
     usageKey: "training_programs" as const
   },
   {
@@ -131,14 +130,14 @@ export const aiModules: AIModule[] = [
     usageKey: "workout_timer_sessions" as const
   },
   {
-    id: "physique-ai", // Changed ID to match the naming request
-    title: "Physique AI", // Changed title as requested
+    id: "physique-ai",
+    title: "Physique AI",
     description: "AI-powered physique analysis and progress tracking",
     icon: TrendingUp,
     gradient: "from-indigo-500 to-indigo-700",
     component: PhysiqueAI,
     isNew: false,
-    isPremium: false, // Available to Basic tier but with limits
+    isPremium: false,
     usageKey: "progress_analyses" as const
   },
   {

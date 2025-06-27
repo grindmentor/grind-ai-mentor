@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Star, ArrowLeft, Zap } from "lucide-react";
+import { Crown, Star, ArrowLeft, Zap, BookOpen, TrendingUp, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useModules } from "@/contexts/ModulesContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,12 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { SmoothButton } from "@/components/ui/smooth-button";
 import { PageTransition } from "@/components/ui/page-transition";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const ModuleLibrary = () => {
   const navigate = useNavigate();
   const { modules } = useModules();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { currentTier } = useSubscription();
   const isMobile = useIsMobile();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>("");
@@ -104,6 +106,9 @@ const ModuleLibrary = () => {
     }
   }
 
+  // Filter out Progress Hub from modules list
+  const availableModules = modules.filter(m => m.id !== 'progress-hub');
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white animate-fade-in">
@@ -126,16 +131,96 @@ const ModuleLibrary = () => {
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
-                    Module Library
+                    AI Module Library
                   </h1>
-                  <p className="text-xs sm:text-sm md:text-base text-gray-400">Discover all available fitness modules</p>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-400">Science-backed fitness modules</p>
                 </div>
               </div>
             </div>
 
+            {/* Recent Studies Section */}
+            <div className="mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 flex items-center text-white">
+                <BookOpen className="w-6 h-6 mr-2 text-blue-400" />
+                Recent Scientific Studies
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-blue-500/10 border-blue-500/30 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-white mb-2">Progressive Overload Mechanisms</h3>
+                    <p className="text-gray-300 text-sm mb-2">
+                      Recent meta-analysis shows optimal progression rates for strength gains across different training levels.
+                    </p>
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                      Journal of Strength Research 2024
+                    </Badge>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-500/10 border-green-500/30 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-white mb-2">Protein Timing & Muscle Synthesis</h3>
+                    <p className="text-gray-300 text-sm mb-2">
+                      New findings on optimal protein distribution throughout the day for maximum muscle protein synthesis.
+                    </p>
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                      International Journal of Sport Nutrition 2024
+                    </Badge>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* User Data Summary */}
+            <div className="mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 flex items-center text-white">
+                <TrendingUp className="w-6 h-6 mr-2 text-green-400" />
+                Your Progress Summary
+              </h2>
+              <Card className="bg-gray-900/40 border-gray-700/50 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">{favorites.length}</div>
+                      <div className="text-sm text-gray-400">Favorite Modules</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</div>
+                      <div className="text-sm text-gray-400">Current Plan</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white">{availableModules.length}</div>
+                      <div className="text-sm text-gray-400">Available Modules</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Premium Subscription Ad */}
+            {currentTier === 'free' && (
+              <div className="mb-8">
+                <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30 backdrop-blur-sm">
+                  <CardContent className="p-6 text-center">
+                    <Crown className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">Unlock Premium Features</h3>
+                    <p className="text-gray-300 mb-4">
+                      Get unlimited access to all AI modules, advanced analytics, and personalized recommendations.
+                    </p>
+                    <SmoothButton
+                      onClick={() => navigate('/pricing')}
+                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      Upgrade Now
+                    </SmoothButton>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {/* Modules Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-              {modules.map((module) => {
+              {availableModules.map((module) => {
                 const isFavorited = favorites.includes(module.id);
                 const moduleBackgroundColor = getModuleBackgroundColor(module.gradient);
                 
@@ -202,20 +287,6 @@ const ModuleLibrary = () => {
                   </Card>
                 );
               })}
-            </div>
-
-            {/* Info Section */}
-            <div className="mt-8 sm:mt-12 text-center">
-              <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">
-                  🔬 Science-Backed Training
-                </h2>
-                <p className="text-sm sm:text-base text-gray-400 max-w-3xl mx-auto leading-relaxed">
-                  Each module uses evidence-based methodologies from exercise science research. 
-                  Our AI provides recommendations backed by peer-reviewed studies and proven training principles. 
-                  Click the star to add modules to your dashboard favorites.
-                </p>
-              </div>
             </div>
           </div>
         </div>

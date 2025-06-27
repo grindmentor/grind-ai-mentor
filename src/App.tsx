@@ -15,9 +15,12 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import ModuleLibrary from "./pages/ModuleLibrary";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ModulesProvider from "@/contexts/ModulesContext";
 import AppPreloader from "@/components/AppPreloader";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -47,10 +50,40 @@ function App() {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/app" element={<AppPage />} />
-                <Route path="/modules" element={<ModuleLibrary />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route
+                  path="/app"
+                  element={
+                    <ProtectedRoute>
+                      <AppPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/modules"
+                  element={
+                    <ProtectedRoute>
+                      <ModuleLibrary />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/terms" element={<Terms />} />

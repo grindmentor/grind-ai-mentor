@@ -41,7 +41,7 @@ export const DashboardHeader: React.FC = () => {
             {!isMobile && (
               <>
                 <Button
-                  onClick={() => navigate('/profile')}
+                  onClick={() => navigate('/settings')}
                   variant="ghost"
                   size="sm"
                   className="text-white hover:bg-gray-800/50"

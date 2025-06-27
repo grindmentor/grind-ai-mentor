@@ -28,11 +28,21 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a fitness exercise expert. When given a search query, return 5-6 relevant exercises in JSON format. Include cardio, strength training, and full workout routines. Each exercise should have: name, category (Cardio/Strength/Full Workout), muscle_groups (array), equipment, difficulty (Beginner/Intermediate/Advanced), description (2-3 sentences), and estimated_duration. Focus on scientifically-backed exercises.`
+            content: `You are a fitness expert specializing in gym-based strength training. When given a search query, return 4-5 relevant GYM EXERCISES ONLY in JSON format. 
+
+STRICT REQUIREMENTS:
+- Only include strength training exercises performed in a gym
+- NO cardio exercises (no running, cycling, swimming, etc.)
+- Focus on compound and isolation movements
+- Equipment must be: barbell, dumbbell, cable machine, weight machine, bench, rack, or bodyweight
+- Popular exercises: bench press, squat, deadlift, overhead press, rows, pull-ups, lateral raises, tricep pushdowns, bicep curls, Romanian deadlifts, etc.
+- Category must be either "Strength" or "Full Workout" (never "Cardio")
+
+Each exercise must have: name, category (Strength/Full Workout), muscle_groups (array), equipment, difficulty (Beginner/Intermediate/Advanced), description (2-3 sentences about form and benefits), and estimated_duration.`
           },
           {
             role: 'user',
-            content: `Search query: "${query}". Return exercises in this exact JSON format: {"exercises": [{"name": "Exercise Name", "category": "Cardio/Strength/Full Workout", "muscle_groups": ["Primary", "Secondary"], "equipment": "Equipment needed", "difficulty": "Beginner/Intermediate/Advanced", "description": "Brief description", "estimated_duration": "X minutes"}]}`
+            content: `Search query: "${query}". Return gym strength exercises in this exact JSON format: {"exercises": [{"name": "Exercise Name", "category": "Strength", "muscle_groups": ["Primary", "Secondary"], "equipment": "Equipment needed", "difficulty": "Beginner/Intermediate/Advanced", "description": "Brief description about form and benefits", "estimated_duration": "X minutes per set"}]}`
           }
         ],
         temperature: 0.7,
@@ -52,13 +62,22 @@ serve(async (req) => {
       exerciseData = {
         exercises: [
           {
-            name: "Custom Exercise",
+            name: "Bench Press",
             category: "Strength",
-            muscle_groups: ["Full Body"],
-            equipment: "Various",
+            muscle_groups: ["Chest", "Triceps", "Shoulders"],
+            equipment: "Barbell, Bench",
             difficulty: "Intermediate",
-            description: "AI-generated exercise based on your search.",
-            estimated_duration: "30 minutes"
+            description: "Classic compound movement for upper body strength. Focus on controlled movement and proper form.",
+            estimated_duration: "3-4 minutes per set"
+          },
+          {
+            name: "Romanian Deadlift",
+            category: "Strength",
+            muscle_groups: ["Hamstrings", "Glutes", "Lower Back"],
+            equipment: "Barbell or Dumbbells",
+            difficulty: "Intermediate",
+            description: "Hip-hinge movement targeting posterior chain. Keep weight close to body.",
+            estimated_duration: "3-4 minutes per set"
           }
         ]
       };

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Dumbbell, Camera, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 
@@ -186,7 +187,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'AI-powered workout recommendations with scientific backing',
       icon: Flame,
       component: (props: any) => <SafeComponent moduleName="smart-training" {...props} />,
-      gradient: 'from-red-500 to-pink-500',
+      gradient: 'bg-gradient-to-br from-red-500 to-pink-500',
       usageKey: 'smart_training',
       isPremium: true,
       isNew: false
@@ -197,7 +198,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Your AI fitness coach with research-based guidance',
       icon: MessageSquare,
       component: (props: any) => <SafeComponent moduleName="coach-gpt" {...props} />,
-      gradient: 'from-green-500 to-emerald-500',
+      gradient: 'bg-gradient-to-br from-green-500 to-emerald-500',
       usageKey: 'coach_gpt',
       isPremium: false,
       isNew: false
@@ -208,7 +209,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Calculate your Total Daily Energy Expenditure scientifically',
       icon: BarChart3,
       component: (props: any) => <SafeComponent moduleName="tdee-calculator" {...props} />,
-      gradient: 'from-blue-500 to-cyan-500',
+      gradient: 'bg-gradient-to-br from-blue-500 to-cyan-500',
       usageKey: 'tdee_calculator',
       isPremium: false,
       isNew: false
@@ -219,7 +220,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Advanced cutting calculator with comprehensive analysis',
       icon: Target,
       component: (props: any) => <SafeComponent moduleName="cut-calc-pro" {...props} />,
-      gradient: 'from-red-500 to-red-700',
+      gradient: 'bg-gradient-to-br from-red-500 to-red-700',
       usageKey: 'cut_calc_pro',
       isPremium: false,
       isNew: false
@@ -230,7 +231,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Generate personalized, science-based meal plans',
       icon: ChefHat,
       component: (props: any) => <SafeComponent moduleName="meal-plan-generator" {...props} />,
-      gradient: 'from-yellow-500 to-orange-500',
+      gradient: 'bg-gradient-to-br from-yellow-500 to-orange-500',
       usageKey: 'meal_plan_generator',
       isPremium: true,
       isNew: false
@@ -241,7 +242,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'AI-powered food logging with photo analysis and nutrition tracking',
       icon: Pizza,
       component: (props: any) => <SafeComponent moduleName="smart-food-log" {...props} />,
-      gradient: 'from-orange-500 to-amber-500',
+      gradient: 'bg-gradient-to-br from-orange-500 to-amber-500',
       usageKey: 'smart_food_log',
       isPremium: false,
       isNew: false
@@ -252,7 +253,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Optimize your recovery with AI guidance and research',
       icon: Activity,
       component: (props: any) => <SafeComponent moduleName="recovery-coach" {...props} />,
-      gradient: 'from-teal-500 to-green-500',
+      gradient: 'bg-gradient-to-br from-teal-500 to-green-500',
       usageKey: 'recovery_coach',
       isPremium: false,
       isNew: false
@@ -263,7 +264,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Log and track your workouts with intelligent insights',
       icon: NotebookPen,
       component: (props: any) => <SafeComponent moduleName="workout-logger" {...props} />,
-      gradient: 'from-indigo-500 to-violet-500',
+      gradient: 'bg-gradient-to-br from-indigo-500 to-violet-500',
       usageKey: 'workout_logger',
       isPremium: false,
       isNew: false
@@ -274,7 +275,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Time your workouts with smart rest period recommendations',
       icon: Timer,
       component: (props: any) => <SafeComponent moduleName="workout-timer" {...props} />,
-      gradient: 'from-cyan-500 to-blue-500',
+      gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500',
       usageKey: 'workout_timer',
       isPremium: false,
       isNew: false
@@ -285,7 +286,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'AI-powered exercise database with personalized recommendations',
       icon: BookOpen,
       component: (props: any) => <SafeComponent moduleName="workout-library" {...props} />,
-      gradient: 'from-slate-500 to-gray-500',
+      gradient: 'bg-gradient-to-br from-slate-500 to-gray-500',
       usageKey: 'workout_library',
       isPremium: false,
       isNew: false
@@ -296,7 +297,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Build lasting fitness habits with behavioral science',
       icon: Zap,
       component: (props: any) => <SafeComponent moduleName="habit-tracker" {...props} />,
-      gradient: 'from-yellow-500 to-yellow-700',
+      gradient: 'bg-gradient-to-br from-yellow-500 to-yellow-700',
       usageKey: 'habit_tracker',
       isPremium: false,
       isNew: false
@@ -307,7 +308,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'AI-powered physique analysis and progress tracking with visual insights',
       icon: Eye,
       component: (props: any) => <SafeComponent moduleName="physique-ai" {...props} />,
-      gradient: 'from-purple-500 to-indigo-500',
+      gradient: 'bg-gradient-to-br from-purple-500 to-indigo-500',
       usageKey: 'progress_analyses',
       isPremium: true,
       isNew: false
@@ -318,7 +319,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       description: 'Track your fitness progress with detailed measurements and analytics',
       icon: TrendingUp,
       component: (props: any) => <SafeComponent moduleName="progress-hub" {...props} />,
-      gradient: 'from-purple-800 to-purple-900',
+      gradient: 'bg-gradient-to-br from-purple-800 to-purple-900',
       usageKey: 'progress_tracking',
       isPremium: false,
       isNew: false

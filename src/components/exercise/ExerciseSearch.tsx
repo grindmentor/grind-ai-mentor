@@ -4,18 +4,19 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Dumbbell } from 'lucide-react';
+import { Search, Plus, Dumbbell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface Exercise {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   primary_muscles: string[];
   secondary_muscles: string[];
   equipment: string;
-  difficulty_level?: string;
+  difficulty_level: string;
   category: string;
   is_custom?: boolean;
 }
@@ -23,161 +24,156 @@ interface Exercise {
 interface ExerciseSearchProps {
   onExerciseSelect: (exercise: Exercise) => void;
   placeholder?: string;
-  maxResults?: number;
+  showAddCustom?: boolean;
 }
 
 export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   onExerciseSelect,
   placeholder = "Search exercises...",
-  maxResults = 20
+  showAddCustom = false
 }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
-  const searchExercises = async (query: string = '') => {
-    if (!user) return;
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      searchExercises();
+    } else {
+      setExercises([]);
+      setShowResults(false);
+    }
+  }, [searchQuery]);
+
+  const searchExercises = async () => {
+    if (!searchQuery.trim()) return;
 
     setLoading(true);
     try {
-      // Use the optimized search function with user context for custom exercises
       const { data, error } = await supabase.rpc('search_exercises_optimized', {
-        search_query: query.trim(),
-        muscle_filter: null,
-        equipment_filter: null,
-        limit_count: maxResults,
-        search_user_id: user.id
+        search_query: searchQuery,
+        limit_count: 20,
+        search_user_id: user?.id || null
       });
 
-      if (error) {
-        console.error('Error searching exercises:', error);
-        
-        // Fallback to basic search if optimized search fails
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('exercises')
-          .select('*')
-          .eq('is_active', true)
-          .or(`name.ilike.%${query}%,equipment.ilike.%${query}%`)
-          .limit(maxResults);
-
-        if (fallbackError) {
-          console.error('Fallback search also failed:', fallbackError);
-          setExercises([]);
-        } else {
-          setExercises(fallbackData || []);
-        }
-      } else {
-        setExercises(data || []);
-      }
-      
-      setHasSearched(true);
+      if (error) throw error;
+      setExercises(data || []);
+      setShowResults(true);
     } catch (error) {
-      console.error('Search error:', error);
-      setExercises([]);
-      setHasSearched(true);
+      console.error('Error searching exercises:', error);
+      toast({
+        title: 'Search Error',
+        description: 'Failed to search exercises. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial load of popular exercises
-  useEffect(() => {
-    searchExercises('');
-  }, [user]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setHasSearched(false);
-    searchExercises(searchQuery);
-  };
-
   const handleExerciseSelect = (exercise: Exercise) => {
     onExerciseSelect(exercise);
     setSearchQuery('');
+    setShowResults(false);
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Beginner': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'Intermediate': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+      case 'Advanced': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSearch} className="flex space-x-2">
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
+          className="pl-10 bg-gray-800 border-gray-600 text-white focus:border-blue-500"
         />
-        <Button 
-          type="submit" 
-          disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {loading ? (
-            <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : (
-            <Search className="w-4 h-4" />
-          )}
-        </Button>
-      </form>
-
-      <div className="max-h-96 overflow-y-auto space-y-2">
-        {loading ? (
-          <div className="text-center py-4">
-            <div className="w-6 h-6 animate-spin rounded-full border-2 border-blue-400 border-t-transparent mx-auto mb-2" />
-            <p className="text-blue-300/70">Searching exercises...</p>
-          </div>
-        ) : exercises.length === 0 && hasSearched ? (
-          <div className="text-center py-4 text-blue-300/70">
-            <Dumbbell className="w-8 h-8 mx-auto mb-2 text-blue-400/50" />
-            <p>No exercises found. Try a different search term.</p>
-          </div>
-        ) : (
-          exercises.map((exercise) => (
-            <Card 
-              key={exercise.id}
-              className="bg-blue-900/40 border-blue-500/40 hover:bg-blue-900/60 cursor-pointer transition-colors"
-              onClick={() => handleExerciseSelect(exercise)}
-            >
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-white truncate">{exercise.name}</h4>
-                    {exercise.description && (
-                      <p className="text-sm text-blue-200/70 mt-1 line-clamp-2">
-                        {exercise.description}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-300">
-                        {exercise.equipment}
-                      </Badge>
-                      {exercise.difficulty_level && (
-                        <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-300">
-                          {exercise.difficulty_level}
-                        </Badge>
-                      )}
-                      {exercise.is_custom && (
-                        <Badge className="text-xs bg-green-600/80 text-white">
-                          Custom
-                        </Badge>
-                      )}
-                    </div>
-                    {exercise.primary_muscles.length > 0 && (
-                      <div className="mt-2">
-                        <p className="text-xs text-blue-300/70">
-                          <span className="font-medium">Muscles: </span>
-                          {exercise.primary_muscles.slice(0, 3).join(', ')}
-                          {exercise.primary_muscles.length > 3 && '...'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
       </div>
+
+      {showResults && (
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 bg-gray-800 border-gray-600 max-h-80 overflow-y-auto">
+          <CardContent className="p-2">
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+              </div>
+            ) : exercises.length === 0 ? (
+              <div className="text-center py-4 text-gray-400">
+                No exercises found for "{searchQuery}"
+                {showAddCustom && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 text-blue-400 hover:text-blue-300"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Custom Exercise
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {exercises.map((exercise) => (
+                  <div
+                    key={exercise.id}
+                    onClick={() => handleExerciseSelect(exercise)}
+                    className="p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="text-white font-medium text-sm">
+                            {exercise.name}
+                          </h4>
+                          {exercise.is_custom && (
+                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                              Custom
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          <Badge className={getDifficultyColor(exercise.difficulty_level)}>
+                            {exercise.difficulty_level}
+                          </Badge>
+                          <Badge variant="outline" className="border-gray-600 text-gray-400 text-xs">
+                            {exercise.equipment}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1">
+                          {exercise.primary_muscles.slice(0, 3).map((muscle, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="border-gray-600 text-gray-300 text-xs"
+                            >
+                              {muscle}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <Dumbbell className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

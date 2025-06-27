@@ -125,7 +125,10 @@ const Dashboard = () => {
                       
                       <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
                         <SheetTrigger asChild>
-                          <TouchButton className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                          <TouchButton 
+                            onClick={() => setShowModuleSelector(true)}
+                            className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                          >
                             <Plus className="w-4 h-4 mr-1" />
                             Add More
                           </TouchButton>
@@ -149,7 +152,7 @@ const Dashboard = () => {
                                       <module.icon className="w-5 h-5 text-orange-400" />
                                     </div>
                                     <div>
-                                      <h3 className="text-white font-medium text-sm">{module.name}</h3>
+                                      <h3 className="text-white font-medium text-sm">{module.title}</h3>
                                       <p className="text-gray-400 text-xs">{module.description}</p>
                                     </div>
                                   </div>
@@ -181,7 +184,10 @@ const Dashboard = () => {
                     <div className="flex justify-center pt-4">
                       <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
                         <SheetTrigger asChild>
-                          <TouchButton className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2">
+                          <TouchButton 
+                            onClick={() => setShowModuleSelector(true)}
+                            className="border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2"
+                          >
                             <Plus className="w-4 h-4" />
                             <span>Add More Favorites</span>
                           </TouchButton>
@@ -199,7 +205,10 @@ const Dashboard = () => {
                       </p>
                       <Sheet open={showModuleSelector} onOpenChange={setShowModuleSelector}>
                         <SheetTrigger asChild>
-                          <TouchButton className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-150 active:scale-95">
+                          <TouchButton
+                            onClick={() => setShowModuleSelector(true)}
+                            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition-all duration-150 active:scale-95"
+                          >
                             Browse Modules
                           </TouchButton>
                         </SheetTrigger>

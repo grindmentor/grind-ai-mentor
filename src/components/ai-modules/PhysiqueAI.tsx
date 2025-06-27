@@ -145,7 +145,7 @@ Keep it science-based and actionable.`;
                       id="height"
                       value={formData.height}
                       onChange={(e) => handleInputChange('height', e.target.value)}
-                      placeholder="5'10&quot;"
+                      placeholder="5'10\""
                       className="bg-purple-900/30 border-purple-500/50 text-white"
                       required
                     />

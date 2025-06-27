@@ -9,6 +9,9 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { Star, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ScientificStudies from '@/components/homepage/ScientificStudies';
+import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
+import NotificationCenter from '@/components/NotificationCenter';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -117,6 +120,17 @@ const Dashboard = () => {
               </p>
             </div>
 
+            {/* Dashboard Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 sm:mb-12">
+              <ScientificStudies />
+              <PersonalizedSummary />
+            </div>
+
+            {/* Notification Center */}
+            <div className="mb-8 sm:mb-12">
+              <NotificationCenter />
+            </div>
+
             {/* Show only favorites if they exist, otherwise show message */}
             {favorites.length > 0 ? (
               <div className="mb-8 sm:mb-12">
@@ -149,20 +163,20 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Progress Hub - Long Rectangular Button */}
+            {/* Progress Hub - Long Rectangular Button - Now Purple */}
             {progressHubModule && (
               <div className="mb-8">
                 <Button
                   onClick={() => handleModuleClick(progressHubModule)}
-                  className="w-full h-20 bg-gradient-to-r from-blue-500/20 to-blue-600/40 backdrop-blur-sm border border-blue-500/30 hover:from-blue-500/30 hover:to-blue-600/50 transition-all duration-300 text-white rounded-xl group"
+                  className="w-full h-20 bg-gradient-to-r from-purple-500/20 to-purple-600/40 backdrop-blur-sm border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/50 transition-all duration-300 text-white rounded-xl group"
                 >
                   <div className="flex items-center justify-between w-full px-6">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
                         <TrendingUp className="w-6 h-6 text-white" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
                           Progress Hub
                         </h3>
                         <p className="text-sm text-gray-300">
@@ -171,8 +185,8 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Sparkles className="w-5 h-5 text-blue-400" />
-                      <span className="text-sm text-blue-300">View Progress</span>
+                      <Sparkles className="w-5 h-5 text-purple-400" />
+                      <span className="text-sm text-purple-300">View Progress</span>
                     </div>
                   </div>
                 </Button>

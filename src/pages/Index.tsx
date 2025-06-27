@@ -10,10 +10,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import Logo from "@/components/ui/logo";
-import NotificationCenter from "@/components/NotificationCenter";
-import ScientificStudies from "@/components/homepage/ScientificStudies";
-import PersonalizedSummary from "@/components/homepage/PersonalizedSummary";
-import PremiumSubscriptionAd from "@/components/homepage/PremiumSubscriptionAd";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -118,8 +114,6 @@ const Index = () => {
                   <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
                 
-                <NotificationCenter />
-                
                 <Button 
                   onClick={() => navigate('/about')}
                   variant="outline"
@@ -132,21 +126,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-
-        {user && (
-          <>
-            {/* User-specific sections */}
-            <div className="py-12 sm:py-16 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-                <ScientificStudies />
-                <PersonalizedSummary />
-              </div>
-              <div className="max-w-2xl mx-auto">
-                <PremiumSubscriptionAd />
-              </div>
-            </div>
-          </>
-        )}
 
         {/* Features Section */}
         <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">

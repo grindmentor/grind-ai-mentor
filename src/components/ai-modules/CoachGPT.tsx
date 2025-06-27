@@ -137,7 +137,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         return;
       }
 
-      // Get AI response for general coaching
+      // Get AI response for general coaching using the correct method
       const systemPrompt = `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
       - Exercise form and technique
       - Training principles and methods  
@@ -149,9 +149,9 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       
       Be encouraging, professional, and cite scientific principles when relevant.`;
 
-      const response = await optimizedAiService(
+      const response = await optimizedAiService.getCoachingAdvice(
         `${systemPrompt}\n\nUser question: ${userMessage.content}`,
-        'gpt-4.1-mini-2025-04-14'
+        { useCache: true, priority: 'normal' }
       );
 
       const assistantMessage: Message = {

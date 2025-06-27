@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MobileModuleWrapper } from '@/components/ui/mobile-module-wrapper';
-import { Search, Filter, Plus, Zap, Heart, Target, Dumbbell, Timer, Star, Flame, Activity } from 'lucide-react';
+import { Search, Filter, Eye, Zap, Heart, Target, Dumbbell, Timer, Star, Flame, Activity } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { workoutTemplates } from '@/data/workoutTemplates';
-import { WorkoutSession } from '@/hooks/useWorkoutData';
+import { expandedWorkoutTemplates } from '@/data/expandedWorkoutTemplates';
+import { WorkoutDetailModal } from '@/components/ai-modules/WorkoutDetailModal';
 import { ExerciseDetailModal } from '@/components/ai-modules/ExerciseDetailModal';
 
 interface Exercise {
@@ -50,6 +50,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
   const [workouts, setWorkouts] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutTemplate | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
 
@@ -77,8 +78,8 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const loadWorkouts = async () => {
     setLoading(true);
     try {
-      // Load workout templates from our curated collection
-      setWorkouts(workoutTemplates);
+      // Load expanded workout templates
+      setWorkouts(expandedWorkoutTemplates);
     } catch (error) {
       console.error('Error loading workouts:', error);
       toast({
@@ -88,48 +89,6 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const addToWorkoutLog = async (workout: WorkoutTemplate) => {
-    if (!user) return;
-
-    try {
-      const workoutSession: Omit<WorkoutSession, 'user_id'> = {
-        workout_name: workout.title,
-        start_time: new Date().toISOString(),
-        session_date: new Date().toISOString().split('T')[0],
-        exercises_data: workout.exercises.map(exercise => ({
-          id: exercise.id,
-          exercise_name: exercise.name,
-          sets: Array.from({ length: exercise.sets }, (_, i) => ({
-            id: `${exercise.id}-set-${i + 1}`,
-            reps: parseInt(exercise.reps.split('-')[0]) || 10,
-            weight: 0
-          })),
-          notes: exercise.notes || ''
-        })),
-        duration_minutes: parseInt(workout.duration.split(' ')[0]) || 60,
-        notes: `Added from Blueprint AI - ${workout.description}`
-      };
-
-      const { error } = await supabase
-        .from('workout_sessions')
-        .insert([{ ...workoutSession, user_id: user.id }]);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Workout Added! 🎯',
-        description: `${workout.title} has been added to your workout log.`,
-      });
-    } catch (error) {
-      console.error('Error adding workout to log:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add workout to your log.',
-        variant: 'destructive'
-      });
     }
   };
 
@@ -275,11 +234,11 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                       </div>
 
                       <Button
-                        onClick={() => addToWorkoutLog(workout)}
+                        onClick={() => setSelectedWorkout(workout)}
                         className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 font-medium"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add to Workout Log
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Full Workout
                       </Button>
                     </CardContent>
                   </Card>
@@ -408,11 +367,11 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                       </div>
 
                       <Button
-                        onClick={() => addToWorkoutLog(workout)}
+                        onClick={() => setSelectedWorkout(workout)}
                         className="w-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-white border border-blue-400/20 hover:border-blue-400/40 font-medium transition-all"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add to Workout Log
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Full Workout
                       </Button>
                     </CardContent>
                   </Card>
@@ -422,6 +381,14 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
           </div>
         </div>
       </div>
+
+      {/* Workout Detail Modal */}
+      {selectedWorkout && (
+        <WorkoutDetailModal
+          workout={selectedWorkout}
+          onClose={() => setSelectedWorkout(null)}
+        />
+      )}
 
       {/* Exercise Detail Modal */}
       {selectedExercise && (

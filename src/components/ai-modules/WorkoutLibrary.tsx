@@ -3,13 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Dumbbell, Calendar, Heart, MessageSquare, Send, X, Filter, Grid, List, Clock, Target, Plus } from 'lucide-react';
+import { ArrowLeft, Search, Dumbbell, Calendar, Heart, MessageSquare, Send, X, Filter, Grid, List, Clock, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useExerciseDatabase } from '@/hooks/useExerciseDatabase';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 
 interface WorkoutLibraryProps {
   onBack: () => void;
@@ -46,6 +44,19 @@ interface ExerciseInWorkout {
   weight?: string;
 }
 
+interface Exercise {
+  id: string;
+  name: string;
+  description?: string;
+  instructions?: string;
+  primary_muscles: string[];
+  secondary_muscles: string[];
+  equipment: string;
+  category: string;
+  difficulty_level: 'Beginner' | 'Intermediate' | 'Advanced';
+  mechanics: string;
+}
+
 interface CardioSession {
   id: string;
   name: string;
@@ -69,8 +80,48 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
   const [selectedSplit, setSelectedSplit] = useState<string | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const { exercises, loading, getRandomExercises, searchExercises } = useExerciseDatabase();
+  // Sample exercises data (fallback)
+  const sampleExercises: Exercise[] = [
+    {
+      id: '1',
+      name: 'Barbell Bench Press',
+      description: 'The king of chest exercises targeting the entire pectoral region',
+      instructions: 'Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up explosively',
+      primary_muscles: ['Chest'],
+      secondary_muscles: ['Triceps', 'Front Deltoids'],
+      equipment: 'Barbell',
+      category: 'Strength',
+      difficulty_level: 'Intermediate',
+      mechanics: 'Compound'
+    },
+    {
+      id: '2',
+      name: 'Pull-ups',
+      description: 'Bodyweight back width builder',
+      instructions: 'Hang from bar, pull body up until chin over bar, lower with control',
+      primary_muscles: ['Lats'],
+      secondary_muscles: ['Rhomboids', 'Biceps', 'Rear Delts'],
+      equipment: 'Pull-up Bar',
+      category: 'Strength',
+      difficulty_level: 'Intermediate',
+      mechanics: 'Compound'
+    },
+    {
+      id: '3',
+      name: 'Back Squat',
+      description: 'The king of leg exercises',
+      instructions: 'Bar on traps, squat down until thighs parallel, drive up through heels',
+      primary_muscles: ['Quadriceps', 'Glutes'],
+      secondary_muscles: ['Hamstrings', 'Calves'],
+      equipment: 'Barbell',
+      category: 'Strength',
+      difficulty_level: 'Intermediate',
+      mechanics: 'Compound'
+    }
+  ];
 
   // Predefined workout splits
   const workoutSplits: WorkoutSplit[] = [
@@ -100,24 +151,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       difficulty: 'Beginner',
       focus: ['Full Body', 'Compound Movements', 'Efficiency'],
       estimatedDuration: '60-75 min'
-    },
-    {
-      id: 'bro-split',
-      name: 'Bodybuilder Split',
-      description: '5-day split targeting one major muscle group per session for maximum volume',
-      days: 5,
-      difficulty: 'Advanced',
-      focus: ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'],
-      estimatedDuration: '60-90 min'
-    },
-    {
-      id: 'powerlifting',
-      name: 'Powerlifting Split',
-      description: 'Competition-focused training emphasizing squat, bench press, and deadlift',
-      days: 4,
-      difficulty: 'Advanced',
-      focus: ['Squat', 'Bench', 'Deadlift', 'Accessories'],
-      estimatedDuration: '75-90 min'
     }
   ];
 
@@ -133,60 +166,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       exercises: [
         { exerciseId: '1', name: 'Barbell Bench Press', sets: 4, reps: '6-8', rest: '3 min', weight: 'Heavy' },
         { exerciseId: '2', name: 'Overhead Press', sets: 3, reps: '8-10', rest: '2-3 min', weight: 'Moderate' },
-        { exerciseId: '3', name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' },
-        { exerciseId: '4', name: 'Lateral Raises', sets: 3, reps: '12-15', rest: '90 sec', weight: 'Light' },
-        { exerciseId: '5', name: 'Tricep Pushdowns', sets: 3, reps: '12-15', rest: '90 sec', weight: 'Moderate' },
-        { exerciseId: '6', name: 'Overhead Tricep Extension', sets: 3, reps: '10-12', rest: '90 sec', weight: 'Moderate' }
-      ],
-      duration: 60
-    },
-    {
-      id: 'ppl-pull',
-      splitId: 'push-pull-legs',
-      dayNumber: 2,
-      name: 'Pull Day (Back, Biceps)',
-      focus: ['Back', 'Biceps', 'Rear Delts'],
-      difficulty: 'Intermediate',
-      exercises: [
-        { exerciseId: '7', name: 'Deadlift', sets: 4, reps: '5-6', rest: '3-4 min', weight: 'Heavy' },
-        { exerciseId: '8', name: 'Pull-ups', sets: 3, reps: '8-12', rest: '2-3 min', weight: 'Bodyweight' },
-        { exerciseId: '9', name: 'Barbell Rows', sets: 3, reps: '8-10', rest: '2-3 min', weight: 'Heavy' },
-        { exerciseId: '10', name: 'Cable Rows', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' },
-        { exerciseId: '11', name: 'Face Pulls', sets: 3, reps: '15-20', rest: '90 sec', weight: 'Light' },
-        { exerciseId: '12', name: 'Barbell Curls', sets: 3, reps: '10-12', rest: '90 sec', weight: 'Moderate' }
-      ],
-      duration: 65
-    },
-    {
-      id: 'ppl-legs',
-      splitId: 'push-pull-legs',
-      dayNumber: 3,
-      name: 'Leg Day (Quads, Hamstrings, Glutes)',
-      focus: ['Quadriceps', 'Hamstrings', 'Glutes', 'Calves'],
-      difficulty: 'Intermediate',
-      exercises: [
-        { exerciseId: '13', name: 'Back Squat', sets: 4, reps: '6-8', rest: '3-4 min', weight: 'Heavy' },
-        { exerciseId: '14', name: 'Romanian Deadlift', sets: 3, reps: '8-10', rest: '2-3 min', weight: 'Heavy' },
-        { exerciseId: '15', name: 'Bulgarian Split Squats', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' },
-        { exerciseId: '16', name: 'Leg Press', sets: 3, reps: '12-15', rest: '2 min', weight: 'Heavy' },
-        { exerciseId: '17', name: 'Leg Curls', sets: 3, reps: '12-15', rest: '90 sec', weight: 'Moderate' },
-        { exerciseId: '18', name: 'Calf Raises', sets: 4, reps: '15-20', rest: '60 sec', weight: 'Heavy' }
-      ],
-      duration: 70
-    },
-    {
-      id: 'ul-upper',
-      splitId: 'upper-lower',
-      dayNumber: 1,
-      name: 'Upper Body Power',
-      focus: ['Chest', 'Back', 'Shoulders', 'Arms'],
-      difficulty: 'Beginner',
-      exercises: [
-        { exerciseId: '19', name: 'Bench Press', sets: 4, reps: '5-6', rest: '3 min', weight: 'Heavy' },
-        { exerciseId: '20', name: 'Barbell Rows', sets: 4, reps: '5-6', rest: '3 min', weight: 'Heavy' },
-        { exerciseId: '21', name: 'Overhead Press', sets: 3, reps: '6-8', rest: '2-3 min', weight: 'Moderate' },
-        { exerciseId: '22', name: 'Weighted Chin-ups', sets: 3, reps: '6-8', rest: '2-3 min', weight: 'Heavy' },
-        { exerciseId: '23', name: 'Close-Grip Bench Press', sets: 3, reps: '8-10', rest: '2 min', weight: 'Moderate' }
+        { exerciseId: '3', name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', rest: '2 min', weight: 'Moderate' }
       ],
       duration: 60
     }
@@ -221,57 +201,21 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
       instructions: [
         'Maintain 65-75% max heart rate throughout',
         'Consistent, comfortable pace you can maintain',
-        'Focus on breathing rhythm and form',
-        'Monitor heart rate every 5 minutes',
-        'Should be able to hold conversation'
-      ]
-    },
-    {
-      id: 'tabata-blast',
-      name: 'Tabata Protocol',
-      type: 'Tabata',
-      duration: 16,
-      intensity: 'High',
-      description: 'Ultra-high intensity 4-minute protocol for maximum anaerobic adaptation',
-      equipment: 'Bodyweight/Equipment',
-      instructions: [
-        'Warm up thoroughly for 5 minutes',
-        '20 seconds maximum effort (100% intensity)',
-        '10 seconds complete rest',
-        'Repeat for exactly 8 rounds (4 minutes total)',
-        'Cool down for 5 minutes',
-        'Track performance each round'
-      ]
-    },
-    {
-      id: 'circuit-strength',
-      name: 'Strength Circuit',
-      type: 'Circuit',
-      duration: 30,
-      intensity: 'High',
-      description: 'Full-body circuit combining strength and cardio for total fitness',
-      equipment: 'Various gym equipment',
-      instructions: [
-        'Perform each exercise for 45 seconds',
-        '15 seconds transition between exercises',
-        '2 minutes rest between complete rounds',
-        'Complete 3-4 total rounds',
-        'Exercises: Burpees, Kettlebell Swings, Mountain Climbers, Push-ups, Jump Squats'
+        'Focus on breathing rhythm and form'
       ]
     }
   ];
 
   useEffect(() => {
     if (activeTab === 'exercises') {
-      getRandomExercises(12);
+      setLoading(true);
+      // Use sample exercises as fallback
+      setTimeout(() => {
+        setExercises(sampleExercises);
+        setLoading(false);
+      }, 500);
     }
-  }, [activeTab, getRandomExercises]);
-
-  useEffect(() => {
-    if (searchQuery && searchQuery.length > 2) {
-      searchExercises(searchQuery, muscleFilter.length > 0 ? muscleFilter : undefined, equipmentFilter || undefined);
-    }
-  }, [searchQuery, muscleFilter, equipmentFilter, searchExercises]);
+  }, [activeTab]);
 
   const filteredSplits = workoutSplits.filter(split => {
     const matchesSearch = split.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -286,6 +230,19 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
     const matchesSplit = !selectedSplit || day.splitId === selectedSplit;
     const matchesDifficulty = !difficultyFilter || day.difficulty === difficultyFilter;
     return matchesSearch && matchesSplit && matchesDifficulty;
+  });
+
+  const filteredExercises = exercises.filter(exercise => {
+    const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (exercise.description && exercise.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesMuscle = muscleFilter.length === 0 || 
+                          muscleFilter.some(muscle => 
+                            exercise.primary_muscles.some(pm => pm.toLowerCase().includes(muscle.toLowerCase())) ||
+                            exercise.secondary_muscles.some(sm => sm.toLowerCase().includes(muscle.toLowerCase()))
+                          );
+    const matchesEquipment = !equipmentFilter || exercise.equipment.toLowerCase().includes(equipmentFilter.toLowerCase());
+    const matchesDifficulty = !difficultyFilter || exercise.difficulty_level === difficultyFilter;
+    return matchesSearch && matchesMuscle && matchesEquipment && matchesDifficulty;
   });
 
   const filteredCardio = cardioSessions.filter(session => {
@@ -305,10 +262,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
           "Based on scientific research, progressive overload is the key principle for muscle growth. Gradually increase weight, reps, or sets each week.",
           "Compound movements like squats, deadlifts, and bench press should form the foundation of your training for maximum efficiency.",
           "Recovery is crucial - aim for 7-9 hours of sleep and allow 48-72 hours between training the same muscle groups.",
-          "Proper form always takes priority over heavy weight. Master the movement pattern first, then add load.",
-          "For optimal hypertrophy, research shows 10-20 sets per muscle group per week is most effective for most individuals.",
-          "Protein intake of 0.8-1g per pound of bodyweight supports muscle protein synthesis and recovery.",
-          "Consistency beats perfection - stick to your program for at least 8-12 weeks to see meaningful adaptations."
+          "Proper form always takes priority over heavy weight. Master the movement pattern first, then add load."
         ];
         const randomResponse = workoutResponses[Math.floor(Math.random() * workoutResponses.length)];
         setChatHistory(prev => [...prev, { type: 'ai', message: randomResponse }]);
@@ -396,7 +350,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                       <SelectItem value="Biceps">Biceps</SelectItem>
                       <SelectItem value="Triceps">Triceps</SelectItem>
                       <SelectItem value="Quadriceps">Legs</SelectItem>
-                      <SelectItem value="Core">Core</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -408,43 +361,26 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                     <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
                       <SelectItem value="">All Equipment</SelectItem>
                       <SelectItem value="Barbell">Barbell</SelectItem>
-                      <SelectItem value="Dumbbells">Dumbbell</SelectItem>
-                      <SelectItem value="Cable Machine">Machine</SelectItem>
-                      <SelectItem value="Pull-up Bar">Bodyweight</SelectItem>
+                      <SelectItem value="Dumbbell">Dumbbell</SelectItem>
+                      <SelectItem value="Machine">Machine</SelectItem>
+                      <SelectItem value="Bodyweight">Bodyweight</SelectItem>
                     </SelectContent>
                   </Select>
                 </>
               )}
 
-              {(activeTab === 'splits' || activeTab === 'days' || activeTab === 'cardio') && (
-                <Select onValueChange={setDifficultyFilter}>
-                  <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                    <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                    <SelectValue placeholder="Difficulty" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                    <SelectItem value="">All Levels</SelectItem>
-                    <SelectItem value="Beginner">Beginner</SelectItem>
-                    <SelectItem value="Intermediate">Intermediate</SelectItem>
-                    <SelectItem value="Advanced">Advanced</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-
-              {activeTab === 'days' && (
-                <Select onValueChange={setSelectedSplit}>
-                  <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
-                    <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                    <SelectValue placeholder="Filter by split" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                    <SelectItem value="">All Splits</SelectItem>
-                    {workoutSplits.map(split => (
-                      <SelectItem key={split.id} value={split.id}>{split.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <Select onValueChange={setDifficultyFilter}>
+                <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl">
+                  <Filter className="w-4 h-4 mr-2 text-orange-400" />
+                  <SelectValue placeholder="Difficulty" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
+                  <SelectItem value="">All Levels</SelectItem>
+                  <SelectItem value="Beginner">Beginner</SelectItem>
+                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                  <SelectItem value="Advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
 
               <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
                 <Button
@@ -539,7 +475,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {day.exercises.slice(0, 4).map((exercise, index) => (
+                      {day.exercises.map((exercise, index) => (
                         <div key={index} className="flex items-center justify-between p-2 bg-orange-800/20 rounded-lg">
                           <div className="flex-1">
                             <span className="text-white text-sm font-medium block">{exercise.name}</span>
@@ -548,11 +484,6 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                           <span className="text-orange-300 text-sm font-semibold">{exercise.sets}×{exercise.reps}</span>
                         </div>
                       ))}
-                      {day.exercises.length > 4 && (
-                        <div className="text-center text-orange-400 text-sm pt-2">
-                          +{day.exercises.length - 4} more exercises
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -562,12 +493,10 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
 
           <TabsContent value="exercises" className="mt-6">
             {loading ? (
-              <div className="space-y-4">
-                {[...Array(6)].map((_, i) => (
-                  <LoadingSkeleton key={i} type="exercise" />
-                ))}
+              <div className="text-center py-16">
+                <div className="text-orange-400">Loading exercises...</div>
               </div>
-            ) : exercises.length === 0 ? (
+            ) : filteredExercises.length === 0 ? (
               <div className="text-center py-16">
                 <Search className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
                 <h3 className="text-2xl font-semibold text-white mb-2">No Exercises Found</h3>
@@ -575,7 +504,7 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {exercises.map(exercise => (
+                {filteredExercises.map(exercise => (
                   <Card key={exercise.id} className="bg-orange-900/40 border-orange-600/50 backdrop-blur-sm hover:bg-orange-900/60 transition-all duration-200">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -604,9 +533,9 @@ const WorkoutLibrary: React.FC<WorkoutLibraryProps> = ({ onBack }) => {
                           <span className="text-gray-400">Type</span>
                           <span className="text-orange-300">{exercise.mechanics}</span>
                         </div>
-                        {exercise.instructions && (
+                        {exercise.description && (
                           <p className="text-orange-200/80 text-xs mt-2">
-                            {exercise.instructions.substring(0, 100)}...
+                            {exercise.description.substring(0, 100)}...
                           </p>
                         )}
                       </div>

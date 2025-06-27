@@ -82,16 +82,16 @@ const NotificationSystem = () => {
 
   return (
     <div className="fixed top-4 right-4 z-50">
-      {/* Redesigned minimalistic notification bell */}
+      {/* Improved notification bell - bigger and more visible */}
       <div className="relative">
         <SmoothButton
           onClick={() => setShowNotifications(!showNotifications)}
-          className="relative bg-black/60 backdrop-blur-sm border border-white/10 hover:bg-black/70 hover:border-white/20 shadow-lg transition-all duration-300 w-10 h-10 p-0"
+          className="relative bg-black/70 backdrop-blur-sm border border-orange-500/30 hover:bg-black/80 hover:border-orange-400/50 shadow-xl transition-all duration-300 w-12 h-12 p-0 rounded-full"
           size="sm"
         >
-          <Bell className="w-4 h-4 text-white" />
+          <Bell className="w-5 h-5 text-orange-400" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs min-w-[16px] h-4 flex items-center justify-center p-0 text-[10px]">
+            <Badge className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs min-w-[18px] h-5 flex items-center justify-center p-0 text-[11px] font-semibold animate-pulse">
               {unreadCount}
             </Badge>
           )}
@@ -99,8 +99,8 @@ const NotificationSystem = () => {
 
         {/* Clean notifications panel */}
         {showNotifications && (
-          <div className="absolute top-12 right-0 w-80 max-h-96 overflow-y-auto bg-black/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl animate-fade-in">
-            <div className="p-3 border-b border-white/10">
+          <div className="absolute top-14 right-0 w-80 max-h-96 overflow-y-auto bg-black/95 backdrop-blur-md border border-orange-500/20 rounded-lg shadow-2xl animate-fade-in">
+            <div className="p-3 border-b border-orange-500/20">
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-medium text-sm flex items-center">
                   <Bell className="w-4 h-4 mr-2 text-orange-400" />
@@ -110,7 +110,7 @@ const NotificationSystem = () => {
                   onClick={() => setShowNotifications(false)}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-400 hover:text-white hover:bg-white/10 w-6 h-6 p-0"
+                  className="text-gray-400 hover:text-white hover:bg-orange-500/10 w-6 h-6 p-0"
                 >
                   <X className="w-3 h-3" />
                 </SmoothButton>
@@ -127,8 +127,8 @@ const NotificationSystem = () => {
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${
-                      !notification.read ? 'bg-orange-500/5 border-l-2 border-l-orange-500' : ''
+                    className={`p-3 border-b border-orange-500/10 hover:bg-orange-500/5 transition-colors cursor-pointer ${
+                      !notification.read ? 'bg-orange-500/10 border-l-2 border-l-orange-500' : ''
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >

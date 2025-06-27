@@ -12,6 +12,7 @@ import ScientificStudies from '@/components/homepage/ScientificStudies';
 import PersonalizedSummary from '@/components/homepage/PersonalizedSummary';
 import NotificationsSummary from '@/components/dashboard/NotificationsSummary';
 import { useIsMobile } from '@/hooks/use-mobile';
+import GoalsAchievementsHub from '@/components/GoalsAchievementsHub';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -173,7 +174,7 @@ const Dashboard = () => {
 
               {/* Dashboard Content Grid - Mobile-optimized */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <ScientificStudies />
+                <GoalsAchievementsHub />
                 <PersonalizedSummary />
               </div>
             </div>

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Bell, Trophy, Clock, Lightbulb, Star, Target, Calendar } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Bell, Trophy, Clock, Lightbulb, Star, Target, Calendar, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -12,6 +13,16 @@ const Notifications = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("recommendations");
+  const [notificationSettings, setNotificationSettings] = useState({
+    hydrationReminders: true,
+    workoutReminders: true,
+    achievementAlerts: true,
+    progressUpdates: false,
+    nutritionTips: true,
+    recoveryAlerts: false,
+    goalDeadlines: true,
+    weeklyReports: false
+  });
 
   const recommendations = [
     {
@@ -106,6 +117,64 @@ const Notifications = () => {
     }
   ];
 
+  const notificationOptions = [
+    {
+      id: 'hydrationReminders',
+      title: 'Hydration Reminders',
+      description: 'Get reminded to drink water every 2-4 hours',
+      category: 'Health'
+    },
+    {
+      id: 'workoutReminders',
+      title: 'Workout Reminders',
+      description: 'Scheduled workout notifications and pre-workout alerts',
+      category: 'Training'
+    },
+    {
+      id: 'achievementAlerts',
+      title: 'Achievement Alerts',
+      description: 'Celebrate milestones and streaks with instant notifications',
+      category: 'Motivation'
+    },
+    {
+      id: 'progressUpdates',
+      title: 'Progress Updates',
+      description: 'Weekly and monthly progress summaries',
+      category: 'Progress'
+    },
+    {
+      id: 'nutritionTips',
+      title: 'Nutrition Tips',
+      description: 'Smart meal suggestions based on your goals',
+      category: 'Nutrition'
+    },
+    {
+      id: 'recoveryAlerts',
+      title: 'Recovery Alerts',
+      description: 'Rest day recommendations and sleep reminders',
+      category: 'Recovery'
+    },
+    {
+      id: 'goalDeadlines',
+      title: 'Goal Deadline Alerts',
+      description: 'Reminders when approaching goal deadlines',
+      category: 'Goals'
+    },
+    {
+      id: 'weeklyReports',
+      title: 'Weekly Reports',
+      description: 'Comprehensive weekly fitness reports via notifications',
+      category: 'Reports'
+    }
+  ];
+
+  const handleNotificationToggle = (settingId: string) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [settingId]: !prev[settingId as keyof typeof prev]
+    }));
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'border-red-500/50 bg-red-500/10';
@@ -124,6 +193,10 @@ const Notifications = () => {
       case 'Progress': return 'bg-pink-500/20 text-pink-400';
       case 'Consistency': return 'bg-yellow-500/20 text-yellow-400';
       case 'Strength': return 'bg-red-500/20 text-red-400';
+      case 'Health': return 'bg-blue-500/20 text-blue-400';
+      case 'Motivation': return 'bg-yellow-500/20 text-yellow-400';
+      case 'Goals': return 'bg-purple-500/20 text-purple-400';
+      case 'Reports': return 'bg-gray-500/20 text-gray-400';
       default: return 'bg-gray-500/20 text-gray-400';
     }
   };
@@ -155,20 +228,24 @@ const Notifications = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className={`grid w-full grid-cols-3 bg-gray-900 ${isMobile ? 'text-sm' : ''}`}>
+            <TabsList className={`grid w-full grid-cols-4 bg-gray-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               <TabsTrigger value="recommendations" className="data-[state=active]:bg-orange-500">
                 <Lightbulb className="w-4 h-4 mr-1" />
-                {!isMobile && "Recommendations"}
+                {!isMobile && "Tips"}
                 {isMobile && "Tips"}
               </TabsTrigger>
               <TabsTrigger value="achievements" className="data-[state=active]:bg-orange-500">
                 <Trophy className="w-4 h-4 mr-1" />
-                {!isMobile && "Achievements"}
+                {!isMobile && "Awards"}
                 {isMobile && "Awards"}
               </TabsTrigger>
               <TabsTrigger value="reminders" className="data-[state=active]:bg-orange-500">
                 <Clock className="w-4 h-4 mr-1" />
                 Reminders
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500">
+                <Settings className="w-4 h-4 mr-1" />
+                Settings
               </TabsTrigger>
             </TabsList>
 
@@ -283,6 +360,59 @@ const Notifications = () => {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            {/* Notifications Settings Tab */}
+            <TabsContent value="settings" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Notification Settings</h2>
+                <Badge className="bg-green-500/20 text-green-400">
+                  {Object.values(notificationSettings).filter(Boolean).length}/{Object.keys(notificationSettings).length} Enabled
+                </Badge>
+              </div>
+              
+              <div className="space-y-4">
+                {notificationOptions.map((option) => (
+                  <Card key={option.id} className="bg-gray-900 border-gray-800">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0 mr-4">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className="text-white font-semibold">{option.title}</h3>
+                            <Badge className={getCategoryColor(option.category)}>
+                              {option.category}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-400 text-sm">{option.description}</p>
+                        </div>
+                        <Switch
+                          checked={notificationSettings[option.id as keyof typeof notificationSettings]}
+                          onCheckedChange={() => handleNotificationToggle(option.id)}
+                          className="data-[state=checked]:bg-orange-500"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card className="bg-blue-900/20 border-blue-500/30">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-start space-x-3">
+                    <Bell className="w-5 h-5 text-blue-400 mt-0.5" />
+                    <div>
+                      <h3 className="text-blue-400 font-semibold mb-2">Smart Notifications</h3>
+                      <p className="text-blue-300/80 text-sm mb-3">
+                        Our AI learns from your behavior to send notifications at optimal times. 
+                        Enable notifications above to get personalized reminders that help you achieve your fitness goals.
+                      </p>
+                      <p className="text-blue-400/60 text-xs">
+                        You can always adjust these settings or turn off specific notification types.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

@@ -13,7 +13,6 @@ type ModuleId =
   | 'smart-food-log'
   | 'workout-library'
   | 'progress-hub'
-  | 'progressive-overload-ai'
   | 'workout-timer'
   | 'cut-calc-pro'
   | 'habit-tracker';
@@ -138,14 +137,6 @@ const SafeComponent = ({ moduleName, onBack, onFoodLogged }: {
         );
         return <React.Suspense fallback={<PlaceholderComponent title="Progress Hub" onBack={onBack} />}><ProgressHub onBack={onBack || (() => {})} /></React.Suspense>;
       
-      case 'progressive-overload-ai':
-        const ProgressiveOverloadAI = React.lazy(() => 
-          import('@/components/ai-modules/ProgressiveOverloadAI').catch(() => 
-            ({ default: (props: any) => <PlaceholderComponent title="Progressive Overload AI" {...props} /> })
-          )
-        );
-        return <React.Suspense fallback={<PlaceholderComponent title="Progressive Overload AI" onBack={onBack} />}><ProgressiveOverloadAI onBack={onBack || (() => {})} /></React.Suspense>;
-      
       case 'workout-timer':
         const WorkoutTimer = React.lazy(() => 
           import('@/components/ai-modules/WorkoutTimer').catch(() => 
@@ -202,17 +193,6 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       usageKey: 'coach_gpt',
       isPremium: false,
       isNew: false
-    },
-    {
-      id: 'progressive-overload-ai',
-      title: 'Progressive Overload AI',
-      description: 'Scientific progressive overload planning and tracking',
-      icon: TrendingUp,
-      component: (props: any) => <SafeComponent moduleName="progressive-overload-ai" {...props} />,
-      gradient: 'from-purple-500 to-indigo-500',
-      usageKey: 'progressive_overload',
-      isPremium: false,
-      isNew: true
     },
     {
       id: 'tdee-calculator',

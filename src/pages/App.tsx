@@ -6,10 +6,14 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 const Dashboard = React.lazy(() => import('@/components/Dashboard'));
 
 export default function App() {
+  // Check if notifications should be opened via URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const isNotificationsOpen = urlParams.get('notifications') === 'true';
+
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20">
       <Suspense fallback={<LoadingScreen message="Loading Myotopia..." />}>
-        <Dashboard />
+        <Dashboard isNotificationsOpen={isNotificationsOpen} />
       </Suspense>
     </div>
   );

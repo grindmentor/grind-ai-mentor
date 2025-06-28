@@ -142,7 +142,9 @@ export const useSubscription = () => {
       setIsLoading(true);
 
       // Special handling for premium users
-      if (user.email === 'emilbelq@gmail.com' || user.email === 'lucasblandquist@gmail.com') {
+      if (user.email === 'emilbelq@gmail.com' || 
+          user.email === 'lucasblandquist@gmail.com' || 
+          user.email === 'sindre@limaway.no') {
         const newStatus = { tier: 'premium', end: null, billing: null };
         setCurrentTier('premium');
         setSubscriptionEnd(null);

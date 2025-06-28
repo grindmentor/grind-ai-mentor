@@ -124,6 +124,11 @@ export const RealGoalsAchievements: React.FC = () => {
     }
   };
 
+  const handleAddGoalClick = () => {
+    // Navigate to the dashboard with notification center open
+    navigate('/', { state: { openNotifications: true } });
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'bg-red-500/20 text-red-400 border-red-500/30';
@@ -178,12 +183,12 @@ export const RealGoalsAchievements: React.FC = () => {
             <div>
               <CardTitle className="text-white text-xl">Your Goals</CardTitle>
               <CardDescription className="text-blue-200/80">
-                {goals.length === 0 ? 'Set your first goal' : `${goals.length} active goals`}
+                {goals.length === 0 ? 'No goals yet' : `${goals.length} active goals`}
               </CardDescription>
             </div>
           </div>
           <Button
-            onClick={() => navigate('/notifications')}
+            onClick={handleAddGoalClick}
             size="sm"
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
@@ -202,7 +207,7 @@ export const RealGoalsAchievements: React.FC = () => {
               Create your first fitness goal to start tracking progress
             </p>
             <Button
-              onClick={() => navigate('/notifications')}
+              onClick={handleAddGoalClick}
               className="bg-gradient-to-r from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -210,105 +215,107 @@ export const RealGoalsAchievements: React.FC = () => {
             </Button>
           </div>
         ) : (
-          goals.slice(0, 4).map((goal) => {
-            const progress = calculateProgress(goal.current_value || 0, goal.target_value || 0);
-            
-            return (
-              <div
-                key={goal.id}
-                className="p-4 bg-gray-900/40 rounded-lg border border-gray-700/50 backdrop-blur-sm hover:border-blue-500/30 transition-colors cursor-pointer group"
-                onClick={() => handleGoalClick(goal)}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="text-white font-semibold text-sm group-hover:text-blue-300 transition-colors">
-                        {goal.title}
-                      </h3>
-                      <Badge className={getCategoryColor(goal.category)}>
-                        {goal.category}
-                      </Badge>
-                      <Badge className={getPriorityColor(goal.priority)}>
-                        <Flag className="w-3 h-3 mr-1" />
-                        {goal.priority}
-                      </Badge>
+          <>
+            {goals.slice(0, 4).map((goal) => {
+              const progress = calculateProgress(goal.current_value || 0, goal.target_value || 0);
+              
+              return (
+                <div
+                  key={goal.id}
+                  className="p-4 bg-gray-900/40 rounded-lg border border-gray-700/50 backdrop-blur-sm hover:border-blue-500/30 transition-colors cursor-pointer group"
+                  onClick={() => handleGoalClick(goal)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h3 className="text-white font-semibold text-sm group-hover:text-blue-300 transition-colors">
+                          {goal.title}
+                        </h3>
+                        <Badge className={getCategoryColor(goal.category)}>
+                          {goal.category}
+                        </Badge>
+                        <Badge className={getPriorityColor(goal.priority)}>
+                          <Flag className="w-3 h-3 mr-1" />
+                          {goal.priority}
+                        </Badge>
+                      </div>
+                      
+                      {goal.description && (
+                        <p className="text-gray-400 text-xs mb-2">{goal.description}</p>
+                      )}
+                      
+                      <div className="flex items-center space-x-4 text-xs">
+                        <span className="text-gray-300">
+                          Progress: {goal.current_value || 0}
+                          {goal.target_value && `/${goal.target_value}`}
+                          {goal.unit && ` ${goal.unit}`}
+                        </span>
+                        {goal.deadline && (
+                          <span className="text-blue-400 flex items-center">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            {new Date(goal.deadline).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
-                    {goal.description && (
-                      <p className="text-gray-400 text-xs mb-2">{goal.description}</p>
-                    )}
-                    
-                    <div className="flex items-center space-x-4 text-xs">
-                      <span className="text-gray-300">
-                        Progress: {goal.current_value || 0}
-                        {goal.target_value && `/${goal.target_value}`}
-                        {goal.unit && ` ${goal.unit}`}
-                      </span>
-                      {goal.deadline && (
-                        <span className="text-blue-400 flex items-center">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {new Date(goal.deadline).toLocaleDateString()}
-                        </span>
-                      )}
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-blue-400 hover:bg-blue-500/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newValue = prompt(`Update progress for "${goal.title}":`, goal.current_value?.toString() || '0');
+                          if (newValue !== null && !isNaN(Number(newValue))) {
+                            updateGoalProgress(goal.id, Number(newValue));
+                          }
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-red-400 hover:bg-red-500/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete goal "${goal.title}"?`)) {
+                            deleteGoal(goal.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-blue-400 hover:bg-blue-500/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newValue = prompt(`Update progress for "${goal.title}":`, goal.current_value?.toString() || '0');
-                        if (newValue !== null && !isNaN(Number(newValue))) {
-                          updateGoalProgress(goal.id, Number(newValue));
-                        }
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-red-400 hover:bg-red-500/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete goal "${goal.title}"?`)) {
-                          deleteGoal(goal.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {goal.target_value && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">{Math.round(progress)}% Complete</span>
-                      <span className="text-blue-400">{Math.round(progress)}%</span>
+                  {goal.target_value && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">{Math.round(progress)}% Complete</span>
+                        <span className="text-blue-400">{Math.round(progress)}%</span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
                     </div>
-                    <Progress value={progress} className="h-2" />
-                  </div>
-                )}
+                  )}
+                </div>
+              );
+            })}
+            
+            {goals.length > 4 && (
+              <div className="text-center pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                  onClick={handleAddGoalClick}
+                >
+                  View All Goals ({goals.length})
+                </Button>
               </div>
-            );
-          })
-        )}
-        
-        {goals.length > 4 && (
-          <div className="text-center pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-              onClick={() => navigate('/notifications')}
-            >
-              View All Goals ({goals.length})
-            </Button>
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

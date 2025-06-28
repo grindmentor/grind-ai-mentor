@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -12,6 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useLocation } from 'react-router-dom';
 import NotificationCenter from '@/components/NotificationCenter';
 
 // Lazy load heavy components
@@ -23,6 +23,7 @@ const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -30,6 +31,15 @@ const Dashboard = () => {
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
   const { currentTier, currentTierData } = useSubscription();
+
+  // Check if we should open notifications from navigation state
+  useEffect(() => {
+    if (location.state?.openNotifications) {
+      setShowNotifications(true);
+      // Clear the state to prevent reopening on subsequent renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Optimized module click handler with debouncing
   const handleModuleClick = useMemo(() => {

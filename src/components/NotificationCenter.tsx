@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Trophy, Target, Calendar, Zap, CheckCircle, TrendingUp, Award, Plus, ArrowLeft } from 'lucide-react';
+import { Bell, Trophy, Target, Calendar, Zap, CheckCircle, TrendingUp, Award, Plus, ArrowLeft, Clock, Sparkles, Gift, Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -102,7 +101,7 @@ const stockGoals = [
   }
 ];
 
-// Enhanced achievements with better rewards and descriptions
+// Enhanced achievements with more variety and better tracking
 const stockAchievements = [
   {
     id: 'achievement-1',
@@ -111,7 +110,8 @@ const stockAchievements = [
     category: 'Consistency',
     points: 50,
     icon: <Trophy className="w-4 h-4" />,
-    requirement: '7 consecutive training days'
+    requirement: '7 consecutive training days',
+    unlocked: false
   },
   {
     id: 'achievement-2',
@@ -120,7 +120,8 @@ const stockAchievements = [
     category: 'Nutrition',
     points: 75,
     icon: <Target className="w-4 h-4" />,
-    requirement: '7 days of protein goals'
+    requirement: '7 days of protein goals',
+    unlocked: false
   },
   {
     id: 'achievement-3',
@@ -129,7 +130,8 @@ const stockAchievements = [
     category: 'Discipline',
     points: 100,
     icon: <Award className="w-4 h-4" />,
-    requirement: '5 morning workouts'
+    requirement: '5 morning workouts',
+    unlocked: false
   },
   {
     id: 'achievement-4',
@@ -138,7 +140,8 @@ const stockAchievements = [
     category: 'Strength',
     points: 125,
     icon: <Zap className="w-4 h-4" />,
-    requirement: '10% strength increase'
+    requirement: '10% strength increase',
+    unlocked: false
   },
   {
     id: 'achievement-5',
@@ -147,7 +150,8 @@ const stockAchievements = [
     category: 'Dedication',
     points: 200,
     icon: <Calendar className="w-4 h-4" />,
-    requirement: '30 day streak'
+    requirement: '30 day streak',
+    unlocked: false
   },
   {
     id: 'achievement-6',
@@ -156,7 +160,77 @@ const stockAchievements = [
     category: 'Recovery',
     points: 90,
     icon: <CheckCircle className="w-4 h-4" />,
-    requirement: '14 days quality sleep'
+    requirement: '14 days quality sleep',
+    unlocked: false
+  },
+  {
+    id: 'achievement-7',
+    title: 'Hydration Hero',
+    description: 'Drank optimal water for 10 consecutive days - your body is well-hydrated',
+    category: 'Health',
+    points: 60,
+    icon: <Sparkles className="w-4 h-4" />,
+    requirement: '10 days optimal hydration',
+    unlocked: false
+  },
+  {
+    id: 'achievement-8',
+    title: 'Goal Crusher',
+    description: 'Completed your first major fitness goal - you are unstoppable!',
+    category: 'Achievement',
+    points: 300,
+    icon: <Star className="w-4 h-4" />,
+    requirement: 'Complete any major goal',
+    unlocked: false
+  }
+];
+
+// New reminders data
+const appReminders = [
+  {
+    id: 'reminder-1',
+    title: 'New Module: Recovery Coach AI',
+    description: 'A new AI module is available to help optimize your recovery and sleep',
+    type: 'new-feature',
+    time: '2 days ago',
+    icon: <Sparkles className="w-4 h-4" />,
+    category: 'Update'
+  },
+  {
+    id: 'reminder-2',
+    title: 'Goal Check-in Time',
+    description: 'Review your progress on "8 hours of sleep every night" - you\'re 70% there!',
+    type: 'goal-reminder',
+    time: '1 day ago',
+    icon: <Target className="w-4 h-4" />,
+    category: 'Goal'
+  },
+  {
+    id: 'reminder-3',
+    title: 'Weekly Progress Report',
+    description: 'Your weekly fitness summary is ready - check your improvements',
+    type: 'progress-update',
+    time: '3 hours ago',
+    icon: <TrendingUp className="w-4 h-4" />,
+    category: 'Progress'
+  },
+  {
+    id: 'reminder-4',
+    title: 'Achievement Unlocked!',
+    description: 'You\'ve earned "Hydration Hero" - 60 points added to your score',
+    type: 'achievement',
+    time: '5 hours ago',
+    icon: <Gift className="w-4 h-4" />,
+    category: 'Reward'
+  },
+  {
+    id: 'reminder-5',
+    title: 'Training Consistency Reminder',
+    description: 'You haven\'t trained in 2 days - your "Consistency King" goal needs attention',
+    type: 'goal-reminder',
+    time: '6 hours ago',
+    icon: <Clock className="w-4 h-4" />,
+    category: 'Goal'
   }
 ];
 
@@ -334,7 +408,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onBack }) => {
                 <div>
                   <CardTitle className="text-white text-xl">Notification Center</CardTitle>
                   <CardDescription className="text-blue-200/80">
-                    Track your goals and celebrate achievements
+                    Track your goals, celebrate achievements, and stay updated
                   </CardDescription>
                 </div>
               </div>
@@ -342,7 +416,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onBack }) => {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 bg-blue-900/30 backdrop-blur-sm">
+              <TabsList className="grid w-full grid-cols-3 bg-blue-900/30 backdrop-blur-sm">
                 <TabsTrigger 
                   value="goals" 
                   className="data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200 flex items-center space-x-2"
@@ -355,7 +429,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onBack }) => {
                   className="data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200 flex items-center space-x-2"
                 >
                   <Trophy className="w-4 h-4" />
-                  <span>Available Rewards</span>
+                  <span>Rewards</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reminders" 
+                  className="data-[state=active]:bg-blue-500/30 data-[state=active]:text-blue-200 flex items-center space-x-2"
+                >
+                  <Bell className="w-4 h-4" />
+                  <span>Updates</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -523,6 +604,84 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onBack }) => {
                     </div>
                   ))}
                 </div>
+              </TabsContent>
+
+              {/* New Reminders Tab */}
+              <TabsContent value="reminders" className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-white">App Updates & Reminders</h2>
+                  <Badge className="bg-blue-500/20 text-blue-400">
+                    {appReminders.length} Updates
+                  </Badge>
+                </div>
+                
+                <div className="space-y-4">
+                  {appReminders.map((reminder) => (
+                    <div
+                      key={reminder.id}
+                      className="p-4 bg-gray-900/40 rounded-lg border border-gray-700/50 backdrop-blur-sm"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className={`w-10 h-10 ${getCategoryColor(reminder.category)} rounded-lg flex items-center justify-center border`}>
+                          {reminder.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className="text-white font-semibold text-sm">{reminder.title}</h3>
+                            <Badge className={getCategoryColor(reminder.category)}>
+                              {reminder.category}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-400 text-xs mb-2 leading-relaxed">{reminder.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-500 text-xs">{reminder.time}</span>
+                            {reminder.type === 'goal-reminder' && (
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white border-0 text-xs h-7"
+                                onClick={() => {
+                                  setActiveTab('goals');
+                                  toast({
+                                    title: 'Switched to Goals',
+                                    description: 'Review and update your fitness goals.'
+                                  });
+                                }}
+                              >
+                                View Goal
+                              </Button>
+                            )}
+                            {reminder.type === 'new-feature' && (
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-purple-500/80 to-pink-500/80 hover:from-purple-500 hover:to-pink-500 text-white border-0 text-xs h-7"
+                              >
+                                Try Now
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Card className="bg-green-900/20 border-green-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <Bell className="w-5 h-5 text-green-400 mt-0.5" />
+                      <div>
+                        <h3 className="text-green-400 font-semibold mb-2">Smart Reminders</h3>
+                        <p className="text-green-300/80 text-sm mb-3">
+                          Get personalized reminders about your goals, new features, and progress updates. 
+                          The AI learns your patterns to send reminders at the perfect time.
+                        </p>
+                        <p className="text-green-400/60 text-xs">
+                          Enable notifications in your device settings to never miss important updates.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </CardContent>

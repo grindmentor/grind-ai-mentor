@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -32,12 +33,15 @@ const Dashboard = () => {
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
   const { currentTier, currentTierData } = useSubscription();
 
-  // Check if we should open notifications from navigation state
+  // Check if we should open notifications from navigation state or URL params
   useEffect(() => {
-    if (location.state?.openNotifications) {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (location.state?.openNotifications || urlParams.get('notifications') === 'true') {
       setShowNotifications(true);
       // Clear the state to prevent reopening on subsequent renders
-      window.history.replaceState({}, document.title);
+      if (location.state?.openNotifications) {
+        window.history.replaceState({}, document.title);
+      }
     }
   }, [location.state]);
 

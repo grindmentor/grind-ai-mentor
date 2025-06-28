@@ -150,8 +150,8 @@ export const RealGoalsAchievements: React.FC = () => {
   };
 
   const handleAddGoalClick = () => {
-    // Navigate to notifications center for goal creation
-    window.location.href = '/?notifications=true';
+    // Navigate to dashboard with notifications center open
+    window.location.href = '/app?notifications=true';
   };
 
   const startEditing = (goal: Goal) => {

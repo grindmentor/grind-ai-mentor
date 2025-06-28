@@ -80,7 +80,7 @@ export const useCustomerMemory = () => {
         .from('customer_profiles')
         .insert({
           user_id: user.id,
-          display_name: user.user_metadata?.full_name || null,
+          display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || null,
           interaction_count: 1,
           last_active: new Date().toISOString(),
           favorite_features: [],

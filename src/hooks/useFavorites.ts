@@ -9,13 +9,11 @@ export const useFavorites = () => {
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadFavorites();
     } else {
-      setFavorites([]);
       setLoading(false);
     }
   }, [user]);
@@ -24,30 +22,20 @@ export const useFavorites = () => {
     if (!user) return;
 
     try {
-      setLoading(true);
-      
-      const { data: profile, error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('favorite_modules')
         .eq('id', user.id)
-        .maybeSingle();
+        .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error loading favorites:', error);
-        setFavorites([]);
         return;
       }
 
-      // If no profile exists, we'll create it when they first favorite something
-      if (!profile) {
-        setFavorites([]);
-        return;
-      }
-
-      setFavorites(profile.favorite_modules || []);
+      setFavorites(data?.favorite_modules || []);
     } catch (error) {
-      console.error('Unexpected error loading favorites:', error);
-      setFavorites([]);
+      console.error('Error loading favorites:', error);
     } finally {
       setLoading(false);
     }
@@ -63,80 +51,43 @@ export const useFavorites = () => {
       return;
     }
 
-    if (updating) {
-      return; // Prevent multiple simultaneous updates
-    }
+    const newFavorites = favorites.includes(moduleId)
+      ? favorites.filter(id => id !== moduleId)
+      : [...favorites, moduleId];
 
-    setUpdating(true);
+    setFavorites(newFavorites);
 
     try {
-      const isCurrentlyFavorited = favorites.includes(moduleId);
-      const newFavorites = isCurrentlyFavorited
-        ? favorites.filter(id => id !== moduleId)
-        : [...favorites, moduleId];
-
-      // Optimistic update
-      setFavorites(newFavorites);
-
-      // Update in database
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email || '',
-          favorite_modules: newFavorites
-        }, {
-          onConflict: 'id'
-        });
+        .update({ favorite_modules: newFavorites })
+        .eq('id', user.id);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // Show success message
+      // Removed sync warning - just show success message
       toast({
-        title: isCurrentlyFavorited ? 'Removed from favorites' : 'Added to favorites',
-        description: `Module has been ${isCurrentlyFavorited ? 'removed from' : 'added to'} your favorites.`,
+        title: favorites.includes(moduleId) ? 'Removed from favorites' : 'Added to favorites',
+        description: `${moduleId} has been ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your favorites.`,
       });
-
     } catch (error) {
       console.error('Error updating favorites:', error);
-      
-      // Revert optimistic update on error
-      await loadFavorites();
-      
+      // Revert the local state change
+      setFavorites(favorites);
       toast({
-        title: 'Failed to update favorites',
-        description: 'Please try again. If the problem persists, refresh the page.',
+        title: 'Error',
+        description: 'Failed to update favorites. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      setUpdating(false);
     }
   };
 
   const isFavorite = (moduleId: string) => favorites.includes(moduleId);
 
-  const addToFavorites = async (moduleId: string) => {
-    if (!isFavorite(moduleId)) {
-      await toggleFavorite(moduleId);
-    }
-  };
-
-  const removeFromFavorites = async (moduleId: string) => {
-    if (isFavorite(moduleId)) {
-      await toggleFavorite(moduleId);
-    }
-  };
-
   return {
     favorites,
     loading,
-    updating,
     toggleFavorite,
     isFavorite,
-    addToFavorites,
-    removeFromFavorites,
-    refreshFavorites: loadFavorites,
   };
 };

@@ -51,7 +51,8 @@ export const useFavorites = () => {
       return;
     }
 
-    const newFavorites = favorites.includes(moduleId)
+    const isCurrentlyFavorited = favorites.includes(moduleId);
+    const newFavorites = isCurrentlyFavorited
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
 
@@ -65,10 +66,9 @@ export const useFavorites = () => {
 
       if (error) throw error;
 
-      // Removed sync warning - just show success message
       toast({
-        title: favorites.includes(moduleId) ? 'Removed from favorites' : 'Added to favorites',
-        description: `${moduleId} has been ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your favorites.`,
+        title: isCurrentlyFavorited ? 'Removed from favorites' : 'Added to favorites',
+        description: `${moduleId} has been ${isCurrentlyFavorited ? 'removed from' : 'added to'} your favorites.`,
       });
     } catch (error) {
       console.error('Error updating favorites:', error);

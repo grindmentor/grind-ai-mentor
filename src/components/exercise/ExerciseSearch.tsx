@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -114,14 +115,16 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
               const exerciseNameLower = exercise.name.toLowerCase();
               const equipmentLower = exercise.equipment.toLowerCase();
               
-              // For muscle group searches, prioritize primary muscle matches
+              // For muscle group searches, be more strict and only return exercises that primarily target the muscle
               if (isMuscleGroupSearch) {
                 // Check if primary muscles contain the target muscle group
                 const primaryMuscleMatch = muscleVariations.some(variation => 
-                  exercise.primary_muscles.some(muscle => 
-                    muscle.toLowerCase().includes(variation.toLowerCase()) ||
-                    variation.toLowerCase().includes(muscle.toLowerCase())
-                  )
+                  exercise.primary_muscles.some(muscle => {
+                    const muscleLower = muscle.toLowerCase();
+                    const variationLower = variation.toLowerCase();
+                    // More precise matching - muscle must contain the variation or vice versa
+                    return muscleLower.includes(variationLower) || variationLower.includes(muscleLower);
+                  })
                 );
                 
                 // Only return exercises that primarily target this muscle group
@@ -144,14 +147,16 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
           searchResults = optimizedData || [];
           
           // If we got results from optimized search but it's a muscle group search,
-          // filter to prioritize primary muscle matches
+          // filter to prioritize primary muscle matches and be more strict
           if (isMuscleGroupSearch && searchResults.length > 0) {
             const primaryMatches = searchResults.filter(exercise => 
               muscleVariations.some(variation => 
-                exercise.primary_muscles.some(muscle => 
-                  muscle.toLowerCase().includes(variation.toLowerCase()) ||
-                  variation.toLowerCase().includes(muscle.toLowerCase())
-                )
+                exercise.primary_muscles.some(muscle => {
+                  const muscleLower = muscle.toLowerCase();
+                  const variationLower = variation.toLowerCase();
+                  // More precise matching - muscle must contain the variation or vice versa
+                  return muscleLower.includes(variationLower) || variationLower.includes(muscleLower);
+                })
               )
             );
             
@@ -264,7 +269,7 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
                     Add "{searchQuery}" as custom exercise
                   </button>
                 </div>
-              ))}
+              )}
             </>
           )}
 

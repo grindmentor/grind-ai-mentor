@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Flame, User2, HeartHandshake, Activity } from 'lucide-react';
+import { Flame, User2, HeartHandshake, Activity, TrendingUp, TrendingDown, Target } from 'lucide-react';
 import { useUnitsPreference } from '@/hooks/useUnitsPreference';
 
 interface ActivityLevel {
@@ -37,6 +38,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     multiplier: 1.2
   });
   const [tdee, setTDEE] = useState<number | null>(null);
+  const [bmr, setBMR] = useState<number | null>(null);
 
   const genders: Gender[] = [
     { value: 'male', label: 'Male' },
@@ -74,15 +76,16 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
       parsedHeight = parsedHeight * 2.54; // Convert to cm
     }
 
-    let bmr: number;
+    let bmrValue: number;
     if (gender.value === 'male') {
-      bmr = 88.362 + (13.397 * parsedWeight) + (4.799 * parsedHeight) - (5.677 * parsedAge);
+      bmrValue = 88.362 + (13.397 * parsedWeight) + (4.799 * parsedHeight) - (5.677 * parsedAge);
     } else {
-      bmr = 447.593 + (9.247 * parsedWeight) + (3.098 * parsedHeight) - (4.330 * parsedAge);
+      bmrValue = 447.593 + (9.247 * parsedWeight) + (3.098 * parsedHeight) - (4.330 * parsedAge);
     }
 
-    const calculatedTDEE = bmr * activityLevel.multiplier;
+    const calculatedTDEE = bmrValue * activityLevel.multiplier;
     setTDEE(calculatedTDEE);
+    setBMR(bmrValue);
   };
 
   const handleBack = () => {
@@ -110,7 +113,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
               <div>
                 <CardTitle className="text-white text-xl">TDEE Calculator</CardTitle>
                 <CardDescription className="text-purple-200/80">
-                  Calculate your Total Daily Energy Expenditure
+                  Calculate your Total Daily Energy Expenditure with science-based insights
                 </CardDescription>
               </div>
             </div>
@@ -200,15 +203,81 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
               onClick={calculateTDEE}
               className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 py-3"
             >
+              <Flame className="w-4 h-4 mr-2" />
               Calculate TDEE
             </Button>
 
-            {tdee !== null && (
-              <div className="mt-4 p-4 rounded-md bg-purple-900/20 border border-purple-500/30">
-                <h3 className="text-lg font-semibold text-purple-300">Results</h3>
-                <p className="text-white">
-                  Your estimated TDEE is: <span className="font-bold text-purple-200">{tdee.toFixed(2)} calories/day</span>
-                </p>
+            {tdee !== null && bmr !== null && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/30">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Activity className="w-5 h-5 text-purple-400" />
+                      <h3 className="text-lg font-semibold text-purple-300">BMR (Base Metabolic Rate)</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{bmr.toFixed(0)} calories/day</p>
+                    <p className="text-purple-200/80 text-sm">Calories burned at complete rest</p>
+                  </div>
+                  
+                  <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/30">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Flame className="w-5 h-5 text-purple-400" />
+                      <h3 className="text-lg font-semibold text-purple-300">TDEE</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{tdee.toFixed(0)} calories/day</p>
+                    <p className="text-purple-200/80 text-sm">Total daily energy expenditure</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-900/20 to-indigo-900/20 border border-purple-500/30">
+                  <h3 className="text-lg font-semibold text-purple-300 mb-3 flex items-center">
+                    <Target className="w-5 h-5 mr-2" />
+                    Goal-Based Recommendations
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <TrendingDown className="w-6 h-6 text-red-400 mx-auto mb-2" />
+                      <h4 className="font-medium text-red-300">Fat Loss (Cutting)</h4>
+                      <p className="text-white font-bold">{(tdee * 0.8).toFixed(0)} - {(tdee * 0.85).toFixed(0)}</p>
+                      <p className="text-red-200/80 text-xs">15-20% deficit</p>
+                    </div>
+                    
+                    <div className="text-center p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <Target className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                      <h4 className="font-medium text-green-300">Maintenance</h4>
+                      <p className="text-white font-bold">{(tdee * 0.95).toFixed(0)} - {(tdee * 1.05).toFixed(0)}</p>
+                      <p className="text-green-200/80 text-xs">±5% of TDEE</p>
+                    </div>
+                    
+                    <div className="text-center p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                      <TrendingUp className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                      <h4 className="font-medium text-blue-300">Muscle Gain (Bulking)</h4>
+                      <p className="text-white font-bold">{(tdee * 1.1).toFixed(0)} - {(tdee * 1.15).toFixed(0)}</p>
+                      <p className="text-blue-200/80 text-xs">10-15% surplus</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20">
+                  <h4 className="text-purple-300 font-medium mb-2">💡 Science-Based Tips</h4>
+                  <ul className="text-sm text-purple-200 space-y-1">
+                    <li>• Track weight daily, look at weekly averages for accurate progress</li>
+                    <li>• TDEE can vary ±200-300 calories day-to-day based on activity and metabolism</li>
+                    <li>• Adjust calories every 2-3 weeks based on progress and hunger levels</li>
+                    <li>• Focus on whole foods and adequate protein (0.8-1g per lb bodyweight)</li>
+                    <li>• Include resistance training to preserve muscle during cuts</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/30">
+                  <h4 className="text-purple-300 font-medium mb-2">📊 Fat Loss Projection Example</h4>
+                  <div className="text-sm text-purple-200 space-y-1">
+                    <p><strong>20% deficit:</strong> {((tdee - (tdee * 0.8)) * 7 / 3500).toFixed(1)} lbs fat loss per week</p>
+                    <p><strong>15% deficit:</strong> {((tdee - (tdee * 0.85)) * 7 / 3500).toFixed(1)} lbs fat loss per week</p>
+                    <p className="text-purple-300/80 text-xs mt-2">*Based on 3500 calories = 1 lb fat. Actual results may vary.</p>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>

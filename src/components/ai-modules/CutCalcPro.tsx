@@ -1,8 +1,10 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, ArrowLeft, TrendingDown, Target, Calendar, Zap } from "lucide-react";
 import { useState } from "react";
@@ -14,15 +16,19 @@ interface CutCalcProProps {
 
 const CutCalcPro = ({ onBack }: CutCalcProProps) => {
   const { units } = useUnitsPreference();
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [height, setHeight] = useState("");
   const [currentWeight, setCurrentWeight] = useState("");
   const [targetWeight, setTargetWeight] = useState("");
   const [weeklyDeficit, setWeeklyDeficit] = useState("1");
   const [activityLevel, setActivityLevel] = useState("");
+  const [goals, setGoals] = useState("");
   const [results, setResults] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
   const calculateCut = async () => {
-    if (!currentWeight || !targetWeight || !activityLevel) {
+    if (!age || !gender || !height || !currentWeight || !activityLevel) {
       return;
     }
 
@@ -32,19 +38,32 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     let current = parseFloat(currentWeight);
-    let target = parseFloat(targetWeight);
+    let target = targetWeight ? parseFloat(targetWeight) : current * 0.9; // Default to 10% loss if no target
     const deficitPerWeek = parseFloat(weeklyDeficit);
+    let parsedAge = parseFloat(age);
+    let parsedHeight = parseFloat(height);
     
     // Convert to lbs for calculation if using kg
     if (units.weightUnit === 'kg') {
       current = current * 2.20462;
       target = target * 2.20462;
     }
+    if (units.heightUnit === 'cm') {
+      parsedHeight = parsedHeight / 2.54; // Convert to inches for calculation
+    }
     
     const totalWeightLoss = current - target;
     const weeksToGoal = Math.ceil(totalWeightLoss / deficitPerWeek);
     
-    // Basic TDEE estimation based on activity level
+    // Enhanced BMR calculation using Mifflin-St Jeor equation
+    let bmr: number;
+    if (gender === 'male') {
+      bmr = (10 * (current / 2.20462)) + (6.25 * (parsedHeight * 2.54)) - (5 * parsedAge) + 5;
+    } else {
+      bmr = (10 * (current / 2.20462)) + (6.25 * (parsedHeight * 2.54)) - (5 * parsedAge) - 161;
+    }
+    
+    // Activity multipliers
     const activityMultipliers: { [key: string]: number } = {
       "sedentary": 1.2,
       "light": 1.375,
@@ -53,9 +72,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       "very_active": 1.9
     };
     
-    // Basic BMR calculation (simplified Harris-Benedict for average person)
-    const estimatedBMR = 1500; // Simplified base
-    const estimatedTDEE = estimatedBMR * activityMultipliers[activityLevel];
+    const estimatedTDEE = bmr * activityMultipliers[activityLevel];
     
     // Calculate daily deficit needed (3500 calories = 1 lb fat)
     const dailyDeficit = (deficitPerWeek * 3500) / 7;
@@ -63,7 +80,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     
     // Convert weights back to display units for results
     let displayCurrent = parseFloat(currentWeight);
-    let displayTarget = parseFloat(targetWeight);
+    let displayTarget = targetWeight ? parseFloat(targetWeight) : displayCurrent * 0.9;
     let displayLoss = displayCurrent - displayTarget;
     
     const calculatedResults = {
@@ -76,7 +93,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       dailyDeficit: Math.round(dailyDeficit),
       weeklyDeficit: deficitPerWeek,
       targetDate: new Date(Date.now() + weeksToGoal * 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      weightUnit: units.weightUnit
+      weightUnit: units.weightUnit,
+      bmr: Math.round(bmr)
     };
     
     setResults(calculatedResults);
@@ -109,50 +127,86 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
         <div className="flex justify-center">
           <Badge className="bg-red-500/20 text-red-400 border-red-500/30 px-4 py-2 text-sm">
             <TrendingDown className="w-4 h-4 mr-2" />
-            Science-based fat loss calculations
+            Science-based cutting calculations
           </Badge>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Input Panel */}
-          <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+          <Card className="bg-gradient-to-br from-red-900/20 to-orange-900/30 backdrop-blur-sm border-red-500/30">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <Target className="w-5 h-5 mr-2 text-red-400" />
-                Cutting Goals
+                Cutting Calculator
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-red-200/80">
                 Enter your details for personalized cutting plan
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Current Weight ({units.weightUnit})</Label>
+                  <Label className="text-red-200">Age</Label>
+                  <Input
+                    type="number"
+                    placeholder="25"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    className="bg-red-900/30 border-red-500/50 text-white focus:border-red-400 placeholder:text-red-300/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-red-200">Gender</Label>
+                  <Select value={gender} onValueChange={setGender}>
+                    <SelectTrigger className="bg-red-900/30 border-red-500/50 text-white">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-red-200">Height ({units.heightUnit})</Label>
+                  <Input
+                    type="number"
+                    placeholder={units.heightUnit === 'cm' ? "175" : "69"}
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    className="bg-red-900/30 border-red-500/50 text-white focus:border-red-400 placeholder:text-red-300/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-red-200">Current Weight ({units.weightUnit})</Label>
                   <Input
                     type="number"
                     placeholder={units.weightUnit === 'kg' ? "80" : "180"}
                     value={currentWeight}
                     onChange={(e) => setCurrentWeight(e.target.value)}
-                    className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Target Weight ({units.weightUnit})</Label>
-                  <Input
-                    type="number"
-                    placeholder={units.weightUnit === 'kg' ? "75" : "165"}
-                    value={targetWeight}
-                    onChange={(e) => setTargetWeight(e.target.value)}
-                    className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
+                    className="bg-red-900/30 border-red-500/50 text-white focus:border-red-400 placeholder:text-red-300/50"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Weekly Weight Loss Goal</Label>
+                <Label className="text-red-200">Target Weight ({units.weightUnit}) - Optional</Label>
+                <Input
+                  type="number"
+                  placeholder={units.weightUnit === 'kg' ? "75" : "165"}
+                  value={targetWeight}
+                  onChange={(e) => setTargetWeight(e.target.value)}
+                  className="bg-red-900/30 border-red-500/50 text-white focus:border-red-400 placeholder:text-red-300/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-red-200">Weekly Weight Loss Goal</Label>
                 <Select value={weeklyDeficit} onValueChange={setWeeklyDeficit}>
-                  <SelectTrigger className="bg-slate-800/50 border-slate-600/50 text-white">
+                  <SelectTrigger className="bg-red-900/30 border-red-500/50 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,9 +219,9 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Activity Level</Label>
+                <Label className="text-red-200">Activity Level</Label>
                 <Select value={activityLevel} onValueChange={setActivityLevel}>
-                  <SelectTrigger className="bg-slate-800/50 border-slate-600/50 text-white">
+                  <SelectTrigger className="bg-red-900/30 border-red-500/50 text-white">
                     <SelectValue placeholder="Select activity level" />
                   </SelectTrigger>
                   <SelectContent>
@@ -180,9 +234,19 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-red-200">Goals & Notes (Optional)</Label>
+                <Textarea
+                  placeholder="e.g., Get lean for summer, maintain strength, specific timeline..."
+                  value={goals}
+                  onChange={(e) => setGoals(e.target.value)}
+                  className="bg-red-900/30 border-red-500/50 text-white focus:border-red-400 placeholder:text-red-300/50"
+                />
+              </div>
+
               <Button 
                 onClick={calculateCut}
-                disabled={!currentWeight || !targetWeight || !activityLevel || isCalculating}
+                disabled={!age || !gender || !height || !currentWeight || !activityLevel || isCalculating}
                 className="w-full bg-gradient-to-r from-red-500/80 to-orange-600/80 hover:from-red-600/80 hover:to-orange-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-red-500/25"
               >
                 {isCalculating ? (
@@ -201,13 +265,13 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
           </Card>
 
           {/* Results Panel */}
-          <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+          <Card className="bg-gradient-to-br from-red-900/20 to-orange-900/30 backdrop-blur-sm border-red-500/30">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <Zap className="w-5 h-5 mr-2 text-red-400" />
                 Your Cutting Plan
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-red-200/80">
                 Personalized timeline and calorie targets
               </CardDescription>
             </CardHeader>
@@ -216,50 +280,50 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                 <div className="space-y-6">
                   {/* Quick Stats */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
+                    <div className="bg-red-800/30 rounded-xl p-4 text-center border border-red-500/30">
                       <div className="text-2xl font-bold text-red-400">{results.weeksToGoal}</div>
-                      <div className="text-slate-400 text-sm">Weeks to Goal</div>
+                      <div className="text-red-200/80 text-sm">Weeks to Goal</div>
                     </div>
-                    <div className="bg-slate-800/30 rounded-xl p-4 text-center">
+                    <div className="bg-red-800/30 rounded-xl p-4 text-center border border-red-500/30">
                       <div className="text-2xl font-bold text-orange-400">{results.totalLoss.toFixed(1)} {results.weightUnit}</div>
-                      <div className="text-slate-400 text-sm">Total Loss</div>
+                      <div className="text-red-200/80 text-sm">Total Loss</div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-slate-800/20 rounded-xl p-4">
+                    <div className="bg-red-800/20 rounded-xl p-4 border border-red-500/30">
                       <h4 className="text-white font-medium mb-3 flex items-center">
                         <Target className="w-4 h-4 mr-2 text-red-400" />
                         Daily Targets
                       </h4>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-slate-400">Target Calories:</span>
+                          <span className="text-red-200/80">Target Calories:</span>
                           <span className="text-white ml-2 font-medium">{results.targetCalories}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400">Daily Deficit:</span>
+                          <span className="text-red-200/80">Daily Deficit:</span>
                           <span className="text-red-400 ml-2 font-medium">-{results.dailyDeficit}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400">Estimated TDEE:</span>
-                          <span className="text-white ml-2 font-medium">{results.estimatedTDEE}</span>
+                          <span className="text-red-200/80">BMR:</span>
+                          <span className="text-white ml-2 font-medium">{results.bmr}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400">Weekly Loss:</span>
-                          <span className="text-orange-400 ml-2 font-medium">{results.weeklyDeficit} {units.weightUnit === 'kg' ? 'kg' : 'lbs'}</span>
+                          <span className="text-red-200/80">TDEE:</span>
+                          <span className="text-white ml-2 font-medium">{results.estimatedTDEE}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-slate-800/20 rounded-xl p-4">
+                    <div className="bg-red-800/20 rounded-xl p-4 border border-red-500/30">
                       <h4 className="text-white font-medium mb-3 flex items-center">
                         <Calendar className="w-4 h-4 mr-2 text-red-400" />
                         Timeline
                       </h4>
                       <div className="text-center">
                         <div className="text-lg text-white">Target Date: <span className="text-red-400 font-medium">{results.targetDate}</span></div>
-                        <div className="text-sm text-slate-400 mt-1">
+                        <div className="text-sm text-red-200/80 mt-1">
                           From {results.currentWeight} {results.weightUnit} → {results.targetWeight} {results.weightUnit}
                         </div>
                       </div>
@@ -267,23 +331,24 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
 
                     <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-xl p-4 border border-red-500/20">
                       <h4 className="text-red-300 font-medium mb-2">💡 Pro Tips</h4>
-                      <ul className="text-sm text-slate-300 space-y-1">
+                      <ul className="text-sm text-red-200/90 space-y-1">
                         <li>• Track weight daily, look at weekly averages</li>
                         <li>• Prioritize protein (0.8-1g per lb bodyweight)</li>
                         <li>• Include resistance training to preserve muscle</li>
                         <li>• Adjust calories if progress stalls for 2+ weeks</li>
+                        <li>• Stay hydrated and prioritize sleep quality</li>
                       </ul>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Calculator className="w-8 h-8 text-slate-500" />
+                  <div className="w-16 h-16 bg-red-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-500/30">
+                    <Calculator className="w-8 h-8 text-red-400" />
                   </div>
                   <h3 className="text-white font-medium mb-2">Ready to Calculate</h3>
-                  <p className="text-slate-400 text-sm">
-                    Enter your details to get your personalized cutting plan
+                  <p className="text-red-200/80 text-sm">
+                    Fill in your details to get your personalized cutting plan
                   </p>
                 </div>
               )}

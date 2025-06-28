@@ -105,13 +105,13 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         console.error('Error saving user message:', saveError);
       }
 
-      // Check for meal plan or training program requests
+      // Check for restricted requests and redirect appropriately
       const lowerInput = input.toLowerCase();
-      if (lowerInput.includes('meal plan') || lowerInput.includes('diet plan') || lowerInput.includes('nutrition plan')) {
+      if (lowerInput.includes('meal plan') || lowerInput.includes('diet plan') || lowerInput.includes('nutrition plan') || lowerInput.includes('calories') || lowerInput.includes('tdee')) {
         const redirectMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: "I see you're interested in meal planning! For personalized meal plans, I recommend using our dedicated **Meal Plan AI** module. It's specifically designed to create detailed meal plans based on your goals, dietary preferences, and restrictions.\n\nYou can find it in your dashboard. I'm here to help with general fitness coaching, motivation, and answering questions about training techniques! 💪",
+          content: "### 🍽️ Nutrition & Meal Planning\n\nI see you're interested in nutrition planning! For personalized meal plans and calorie calculations, I recommend using our dedicated modules:\n\n**• Meal Plan AI** - Creates detailed meal plans based on your goals and preferences\n**• TDEE Calculator** - Calculates your daily calorie needs\n**• CutCalc Pro** - Advanced cutting calculations\n\nI'm here to help with **coaching, motivation, and training techniques**! What specific fitness coaching question can I help you with today? 💪",
           timestamp: new Date()
         };
         
@@ -130,11 +130,11 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         return;
       }
 
-      if (lowerInput.includes('training program') || lowerInput.includes('workout program') || lowerInput.includes('training plan')) {
+      if (lowerInput.includes('training program') || lowerInput.includes('workout program') || lowerInput.includes('training plan') || lowerInput.includes('workout plan')) {
         const redirectMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: "For comprehensive training programs, check out our **Smart Training** module! It creates personalized workout programs based on your experience level, goals, and available equipment.\n\nI'm here to help with form tips, exercise selection advice, and general fitness coaching. What specific training question can I help you with today? 🏋️‍♂️",
+          content: "### 🏋️‍♂️ Training Programs\n\nFor comprehensive training programs, check out our **Smart Training** module! It creates personalized workout programs based on your experience level, goals, and available equipment.\n\n**I'm here to help with:**\n• Form tips and technique advice\n• Exercise selection guidance\n• Training principles and methods\n• Motivation and mindset coaching\n\nWhat specific training question can I help you with today?",
           timestamp: new Date()
         };
         
@@ -156,20 +156,32 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
       // Get AI response for general coaching
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
-          prompt: `You are CoachGPT, an expert fitness coach for Myotopia. Provide helpful, motivational, and science-backed fitness advice. Keep responses concise but informative. Focus on:
-          - Exercise form and technique
-          - Training principles and methods  
-          - Motivation and mindset
-          - General fitness questions
-          - Recovery and injury prevention
-          
-          Do NOT create meal plans or detailed training programs - redirect users to the appropriate modules for those requests.
-          
-          Be encouraging, professional, and cite scientific principles when relevant.
-          
-          User question: ${userMessage.content}`,
+          prompt: `You are CoachGPT, an expert fitness coach for Myotopia. You provide structured, motivational, and science-backed fitness coaching advice.
+
+IMPORTANT FORMATTING RULES:
+- Use markdown formatting with ### for main headings, ** for bold text
+- Structure responses with clear sections and bullet points
+- Keep responses conversational but professional
+- Always include practical, actionable advice
+
+COACHING FOCUS AREAS:
+• Exercise form and technique
+• Training principles and methods  
+• Motivation and mindset
+• Recovery and injury prevention
+• General fitness questions
+
+STRICT RESTRICTIONS - DO NOT:
+- Create meal plans or detailed nutrition advice
+- Calculate TDEE or calories
+- Generate training programs
+- Provide medical advice
+
+User question: ${userMessage.content}
+
+Format your response with clear headings and structure. Be encouraging and cite scientific principles when relevant.`,
           type: 'coaching',
-          maxTokens: 300
+          maxTokens: 400
         }
       });
 
@@ -206,6 +218,9 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         description: 'Failed to send message. Please try again.',
         variant: 'destructive'
       });
+      
+      // Remove the user message if there was an error
+      setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
     } finally {
       setIsLoading(false);
     }
@@ -217,7 +232,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
 
   return (
     <UsageLimitGuard featureKey="coach_gpt_queries" featureName="CoachGPT">
-      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-emerald-900/30">
+      <div className="min-h-screen bg-gradient-to-br from-black via-green-900/10 to-emerald-800/20">
         <MobileHeader 
           title="CoachGPT" 
           onBack={onBack}
@@ -257,7 +272,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                         Ask about form
                       </Button>
                       <Button
-                        onClick={() => handleQuickPrompt("How do I stay motivated to work out?")}
+                        onClick={() => handleQuickPrompt("How do I stay motivated to work out consistently?")}
                         variant="outline"
                         className="text-green-300 border-green-500/30 hover:bg-green-500/10 bg-green-900/20"
                       >

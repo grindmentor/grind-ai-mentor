@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
+import FormattedAIResponse from '@/components/FormattedAIResponse';
 
 interface SmartTrainingProps {
   onBack: () => void;
@@ -70,46 +71,68 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
 
     setIsGenerating(true);
     try {
-      // Simulate AI generation for now - in production this would call an AI service
-      const mockProgram = {
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `Create a comprehensive ${programData.daysPerWeek || 4} day per week training program for ${programData.duration || 8} weeks.
+
+PROGRAM DETAILS:
+- Name: ${programData.name}
+- Goal: ${programData.goal}
+- Experience Level: ${programData.experienceLevel}
+- Available Equipment: ${programData.equipment || 'Full gym access'}
+- Additional Notes: ${programData.notes}
+
+REQUIREMENTS:
+1. Generate a COMPLETE program structure with specific workouts for each day
+2. Include exercise selection, sets, reps, and rest periods
+3. Structure with clear phases or progression
+4. Format using markdown with clear headings and sections
+5. Include warm-up and cool-down recommendations
+6. Provide progression guidelines
+
+FORMAT:
+### Program Overview
+- Duration: X weeks
+- Frequency: X days per week
+- Primary Goal: [goal]
+
+### Week 1-2: Foundation Phase
+#### Day 1: [Workout Name]
+**Warm-up (10 minutes)**
+- [warm-up exercises]
+
+**Main Workout**
+1. Exercise Name - Sets x Reps (Rest: Xmin)
+2. Exercise Name - Sets x Reps (Rest: Xmin)
+
+**Cool-down (5 minutes)**
+- [cool-down exercises]
+
+[Continue for all days and weeks]
+
+### Progression Guidelines
+- How to progress each week
+- When to increase weight/intensity
+
+### Notes & Tips
+- Important form cues
+- Recovery recommendations`,
+          type: 'training',
+          maxTokens: 1500
+        }
+      });
+
+      if (error) throw error;
+
+      const response = data?.response || "Failed to generate program. Please try again.";
+      
+      setGeneratedProgram({
         name: programData.name,
         goal: programData.goal,
         duration: parseInt(programData.duration) || 8,
-        workouts: [
-          {
-            day: 'Monday',
-            name: 'Upper Body Strength',
-            exercises: [
-              { name: 'Bench Press', sets: 4, reps: '6-8', weight: 'Progressive' },
-              { name: 'Bent-Over Row', sets: 4, reps: '6-8', weight: 'Progressive' },
-              { name: 'Overhead Press', sets: 3, reps: '8-10', weight: 'Progressive' },
-              { name: 'Pull-ups', sets: 3, reps: 'To failure', weight: 'Bodyweight' }
-            ]
-          },
-          {
-            day: 'Wednesday',
-            name: 'Lower Body Power',
-            exercises: [
-              { name: 'Squats', sets: 4, reps: '6-8', weight: 'Progressive' },
-              { name: 'Romanian Deadlift', sets: 3, reps: '8-10', weight: 'Progressive' },
-              { name: 'Bulgarian Split Squats', sets: 3, reps: '10-12 each leg', weight: 'Bodyweight' },
-              { name: 'Calf Raises', sets: 4, reps: '15-20', weight: 'Progressive' }
-            ]
-          },
-          {
-            day: 'Friday',
-            name: 'Full Body Circuit',
-            exercises: [
-              { name: 'Deadlift', sets: 3, reps: '6-8', weight: 'Progressive' },
-              { name: 'Push-ups', sets: 3, reps: 'To failure', weight: 'Bodyweight' },
-              { name: 'Lunges', sets: 3, reps: '12-15 each leg', weight: 'Bodyweight' },
-              { name: 'Plank', sets: 3, reps: '60 seconds', weight: 'Bodyweight' }
-            ]
-          }
-        ]
-      };
-
-      setGeneratedProgram(mockProgram);
+        daysPerWeek: parseInt(programData.daysPerWeek) || 4,
+        content: response
+      });
       
       toast({
         title: 'Program Generated! 🎯',
@@ -162,7 +185,7 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
 
   return (
     <UsageLimitGuard featureKey="training_programs" featureName="Smart Training">
-      <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/50 to-blue-900/30">
+      <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/10 to-blue-800/20">
         <MobileHeader 
           title="Smart Training" 
           onBack={onBack}
@@ -194,7 +217,7 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
                         value={programData.name}
                         onChange={(e) => setProgramData({...programData, name: e.target.value})}
                         placeholder="e.g., Strength Building Program"
-                        className="bg-blue-900/30 border-blue-500/50 text-white"
+                        className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
                       />
                     </div>
                     
@@ -206,10 +229,13 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
                         </SelectTrigger>
                         <SelectContent className="bg-blue-900 border-blue-500">
                           <SelectItem value="strength">Build Strength</SelectItem>
-                          <SelectItem value="muscle">Muscle Growth</SelectItem>
+                          <SelectItem value="cut">Cut (Lose Weight)</SelectItem>
+                          <SelectItem value="bulk">Bulk (Gain Muscle)</SelectItem>
+                          <SelectItem value="maintenance">Maintenance</SelectItem>
+                          <SelectItem value="hybrid">Hybrid Athlete</SelectItem>
+                          <SelectItem value="recomp">Body Recomposition</SelectItem>
+                          <SelectItem value="general">General Health</SelectItem>
                           <SelectItem value="endurance">Endurance</SelectItem>
-                          <SelectItem value="fat-loss">Fat Loss</SelectItem>
-                          <SelectItem value="general">General Fitness</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -252,7 +278,7 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
                         value={programData.duration}
                         onChange={(e) => setProgramData({...programData, duration: e.target.value})}
                         placeholder="8"
-                        className="bg-blue-900/30 border-blue-500/50 text-white"
+                        className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
                       />
                     </div>
                   </div>
@@ -262,8 +288,18 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
                     <Textarea
                       value={programData.equipment}
                       onChange={(e) => setProgramData({...programData, equipment: e.target.value})}
-                      placeholder="e.g., Full gym, dumbbells only, bodyweight only"
-                      className="bg-blue-900/30 border-blue-500/50 text-white"
+                      placeholder="Describe your available equipment in detail (e.g., Full commercial gym with barbells, dumbbells, machines, cables, etc. OR Home gym with adjustable dumbbells, resistance bands, pull-up bar OR Bodyweight only)"
+                      className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50 min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-blue-200">Additional Notes (Optional)</Label>
+                    <Textarea
+                      value={programData.notes}
+                      onChange={(e) => setProgramData({...programData, notes: e.target.value})}
+                      placeholder="Any specific preferences, limitations, or goals..."
+                      className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
                     />
                   </div>
 
@@ -290,48 +326,23 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-2xl font-bold text-white">{generatedProgram.name}</h2>
-                      <p className="text-blue-200">{generatedProgram.goal} • {generatedProgram.duration} weeks</p>
+                      <p className="text-blue-200">{generatedProgram.goal} • {generatedProgram.duration} weeks • {generatedProgram.daysPerWeek} days/week</p>
                     </div>
                     <div className="space-x-2">
                       <Button onClick={saveProgram} className="bg-green-600 hover:bg-green-700">
                         Save Program
                       </Button>
-                      <Button onClick={() => setGeneratedProgram(null)} variant="outline">
+                      <Button onClick={() => setGeneratedProgram(null)} variant="outline" className="border-blue-500/50 text-blue-200 hover:bg-blue-500/10">
                         Generate New
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    {generatedProgram.workouts.map((workout: any, index: number) => (
-                      <Card key={index} className="bg-blue-900/40 border-blue-500/40">
-                        <CardHeader>
-                          <CardTitle className="text-blue-200 flex items-center">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            {workout.day} - {workout.name}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {workout.exercises.map((exercise: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between p-3 bg-blue-800/30 rounded-lg">
-                                <div className="flex items-center space-x-3">
-                                  <Dumbbell className="w-4 h-4 text-blue-400" />
-                                  <span className="text-white font-medium">{exercise.name}</span>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-blue-200 text-sm">
-                                    {exercise.sets} sets × {exercise.reps}
-                                  </div>
-                                  <div className="text-blue-300 text-xs">{exercise.weight}</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  <Card className="bg-blue-900/40 border-blue-500/40">
+                    <CardContent className="p-6">
+                      <FormattedAIResponse content={generatedProgram.content} moduleType="training" />
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 

@@ -22,20 +22,41 @@ export const useFavorites = () => {
     if (!user) return;
 
     try {
+      console.log('Loading favorites for user:', user.id);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('favorite_modules')
         .eq('id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading favorites:', error);
+        // If profile doesn't exist, create it
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating one...');
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              email: user.email || '',
+              favorite_modules: []
+            });
+          
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+          } else {
+            console.log('Profile created successfully');
+            setFavorites([]);
+          }
+        }
         return;
       }
 
+      console.log('Loaded favorites:', data?.favorite_modules);
       setFavorites(data?.favorite_modules || []);
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      console.error('Error in loadFavorites:', error);
     } finally {
       setLoading(false);
     }
@@ -51,28 +72,43 @@ export const useFavorites = () => {
       return;
     }
 
+    console.log('Toggling favorite for module:', moduleId);
+    console.log('Current favorites:', favorites);
+
     const isCurrentlyFavorited = favorites.includes(moduleId);
     const newFavorites = isCurrentlyFavorited
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
 
+    console.log('New favorites will be:', newFavorites);
+
+    // Optimistic update
     setFavorites(newFavorites);
 
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ favorite_modules: newFavorites })
-        .eq('id', user.id);
+        .upsert({ 
+          id: user.id,
+          email: user.email || '',
+          favorite_modules: newFavorites 
+        }, {
+          onConflict: 'id'
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating favorites:', error);
+        throw error;
+      }
 
+      console.log('Successfully updated favorites');
       toast({
         title: isCurrentlyFavorited ? 'Removed from favorites' : 'Added to favorites',
         description: `${moduleId} has been ${isCurrentlyFavorited ? 'removed from' : 'added to'} your favorites.`,
       });
     } catch (error) {
-      console.error('Error updating favorites:', error);
-      // Revert the local state change
+      console.error('Error in toggleFavorite:', error);
+      // Revert the optimistic update
       setFavorites(favorites);
       toast({
         title: 'Error',

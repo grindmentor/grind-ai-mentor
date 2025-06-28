@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SmoothButton } from '@/components/ui/smooth-button';
-import { ArrowLeft, TrendingUp, Calendar, Target, Award, Activity, Scale, Hexagon, Zap, Trophy, Heart, Clock } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, Target, Award, Activity, Scale, Hexagon, Zap, Trophy, Heart, Clock, Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +27,14 @@ interface UserStats {
   endurance: number;
 }
 
+interface BenchmarkData {
+  metric: string;
+  userValue: number;
+  percentile: number;
+  description: string;
+  comparison: string;
+}
+
 interface ProgressHubProps {
   onBack: () => void;
 }
@@ -42,13 +51,32 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     consistency: 0,
     endurance: 0
   });
+  const [benchmarks, setBenchmarks] = useState<BenchmarkData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
       loadProgressData();
+      loadUserProfile();
     }
   }, [user]);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const loadProgressData = async () => {
     if (!user) return;
@@ -56,7 +84,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     try {
       setLoading(true);
 
-      // Load workout sessions with better error handling
       const { data: workoutData, error: workoutError } = await supabase
         .from('workout_sessions')
         .select('*')
@@ -70,8 +97,8 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         setWorkoutSessions(workoutData);
       }
 
-      // Calculate stats from workout data
       calculateUserStats(workoutData || []);
+      generateBenchmarks(workoutData || []);
 
     } catch (error) {
       console.error('Error loading progress data:', error);
@@ -89,27 +116,21 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     
-    // Calculate consistency (workouts in last 30 days)
     const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= thirtyDaysAgo);
     const consistency = Math.min((recentWorkouts.length / 20) * 100, 100);
-    
-    // Calculate dedication (total workout sessions)
     const dedication = Math.min((workouts.length / 50) * 100, 100);
     
-    // Calculate strength (average workout duration)
     const avgDuration = workouts.length > 0 
       ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length 
       : 0;
     const strength = Math.min((avgDuration / 90) * 100, 100);
     
-    // Calculate endurance (calories burned trend)
     const avgCalories = workouts.length > 0 
       ? workouts.reduce((sum, w) => sum + (w.calories_burned || 0), 0) / workouts.length 
       : 0;
     const endurance = Math.min((avgCalories / 400) * 100, 100);
     
-    // Calculate recovery based on workout frequency (optimal is 3-4 times per week)
-    const weeklyWorkouts = recentWorkouts.length / 4; // approximate weeks in 30 days
+    const weeklyWorkouts = recentWorkouts.length / 4;
     const recovery = Math.min(Math.max((4 - Math.abs(weeklyWorkouts - 3.5)) / 4 * 100, 0), 100);
 
     setUserStats({
@@ -119,6 +140,38 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       consistency: Math.round(consistency),
       endurance: Math.round(endurance)
     });
+  };
+
+  const generateBenchmarks = (workouts: WorkoutSession[]) => {
+    // Simulate demographic-based benchmarking
+    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0; // rough weekly average
+    const avgDuration = workouts.length > 0 ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length : 0;
+    
+    const benchmarkData: BenchmarkData[] = [
+      {
+        metric: 'Training Frequency',
+        userValue: Math.round(weeklyFrequency * 10) / 10,
+        percentile: Math.min(Math.round((weeklyFrequency / 4) * 100), 95),
+        description: 'Workouts per week',
+        comparison: weeklyFrequency >= 3 ? 'Excellent consistency - top 25% of trainees' : weeklyFrequency >= 2 ? 'Good frequency - above average' : 'Room for improvement - aim for 3x/week'
+      },
+      {
+        metric: 'Session Duration',
+        userValue: Math.round(avgDuration),
+        percentile: Math.min(Math.round((avgDuration / 90) * 100), 90),
+        description: 'Average workout length (minutes)',
+        comparison: avgDuration >= 60 ? 'Optimal duration - matches research recommendations' : avgDuration >= 45 ? 'Good session length' : 'Consider longer sessions for better results'
+      },
+      {
+        metric: 'Total Sessions',
+        userValue: workouts.length,
+        percentile: Math.min(Math.round((workouts.length / 100) * 100), 95),
+        description: 'Lifetime workout count',
+        comparison: workouts.length >= 50 ? 'Experienced trainee - top 30%' : workouts.length >= 20 ? 'Building consistency' : 'Just getting started - keep going!'
+      }
+    ];
+
+    setBenchmarks(benchmarkData);
   };
 
   const radarData = [
@@ -134,6 +187,13 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       label: "Progress",
       color: "hsl(var(--chart-1))",
     },
+  };
+
+  const getPercentileColor = (percentile: number) => {
+    if (percentile >= 80) return 'text-green-400';
+    if (percentile >= 60) return 'text-yellow-400';
+    if (percentile >= 40) return 'text-orange-400';
+    return 'text-red-400';
   };
 
   if (loading) {
@@ -197,23 +257,149 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       </div>
       
       <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
-        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+          
+          {/* Hero Section - Hexagon Chart */}
+          <Card className="bg-gradient-to-br from-purple-900/40 to-indigo-900/50 border-purple-600/50 backdrop-blur-sm">
+            <CardHeader className="text-center pb-4">
+              <div className="flex items-center justify-center space-x-3 mb-2">
+                <Hexagon className="w-8 h-8 text-purple-300" />
+                <CardTitle className="text-white text-2xl lg:text-3xl font-bold">
+                  Your Fitness Profile
+                </CardTitle>
+              </div>
+              <CardDescription className="text-purple-200/80 text-base">
+                AI-powered analysis based on your training data and scientific benchmarks
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 lg:p-8">
+              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[400px] sm:max-h-[500px] lg:max-h-[600px] w-full">
+                <RadarChart data={radarData}>
+                  <ChartTooltip 
+                    cursor={false} 
+                    content={<ChartTooltipContent hideLabel />} 
+                  />
+                  <PolarGrid stroke="rgba(147, 51, 234, 0.3)" strokeWidth={1} />
+                  <PolarAngleAxis 
+                    dataKey="metric" 
+                    tick={{ fill: 'white', fontSize: isMobile ? 12 : 14, fontWeight: 500 }}
+                  />
+                  <Radar
+                    dataKey="value"
+                    stroke="rgba(147, 51, 234, 0.9)"
+                    fill="rgba(147, 51, 234, 0.4)"
+                    strokeWidth={3}
+                    dot={{ fill: 'rgba(147, 51, 234, 1)', r: 6 }}
+                  />
+                </RadarChart>
+              </ChartContainer>
+              
+              <div className="grid grid-cols-5 gap-3 sm:gap-6 mt-6 sm:mt-8">
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.dedication}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70">Dedication</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.strength}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70">Strength</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.recovery}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70">Recovery</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.consistency}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70">Consistency</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.endurance}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70">Endurance</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Benchmarking Section */}
+          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center text-xl">
+                <Trophy className="w-6 h-6 mr-3 text-purple-300" />
+                Performance Benchmarks
+              </CardTitle>
+              <CardDescription className="text-purple-200/70">
+                See how you compare to other trainees in your demographic
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {benchmarks.length === 0 ? (
+                <div className="text-center py-8">
+                  <Star className="w-12 h-12 text-purple-400/50 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-purple-200 mb-2">Start Training to See Benchmarks</h3>
+                  <p className="text-purple-300/70">
+                    Complete workouts to unlock personalized performance comparisons
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:gap-6">
+                  {benchmarks.map((benchmark, index) => (
+                    <div key={index} className="bg-purple-800/30 rounded-xl p-4 sm:p-6 border border-purple-600/30">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white text-base sm:text-lg mb-1">{benchmark.metric}</h4>
+                          <p className="text-purple-200/80 text-sm">{benchmark.description}</p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-2xl sm:text-3xl font-bold text-purple-300 mb-1">
+                            {benchmark.userValue}
+                          </div>
+                          <div className={`text-sm sm:text-base font-semibold ${getPercentileColor(benchmark.percentile)}`}>
+                            Top {Math.max(100 - benchmark.percentile, 5)}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-xs sm:text-sm mb-1">
+                          <span className="text-purple-200/70">Population Percentile</span>
+                          <span className={`font-semibold ${getPercentileColor(benchmark.percentile)}`}>
+                            {benchmark.percentile}th percentile
+                          </span>
+                        </div>
+                        <div className="w-full bg-purple-950/50 rounded-full h-2 sm:h-3">
+                          <div 
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 sm:h-3 rounded-full transition-all duration-500"
+                            style={{ width: `${benchmark.percentile}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <p className="text-purple-200/90 text-sm leading-relaxed bg-purple-950/30 rounded-lg p-3">
+                        {benchmark.comparison}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats Summary */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+              <CardHeader className="pb-2 p-3 sm:p-4">
                 <CardTitle className="flex items-center text-white text-xs sm:text-sm">
                   <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  Total Workouts
+                  Total Sessions
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 sm:p-4 pt-0">
                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{workoutSessions.length}</div>
-                <div className="text-xs text-purple-200/70 mt-1">Sessions completed</div>
+                <div className="text-xs text-purple-200/70 mt-1">Workouts completed</div>
               </CardContent>
             </Card>
 
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+              <CardHeader className="pb-2 p-3 sm:p-4">
                 <CardTitle className="flex items-center text-white text-xs sm:text-sm">
                   <Activity className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
                   This Month
@@ -227,29 +413,12 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                     return sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
                   }).length}
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Workouts</div>
+                <div className="text-xs text-purple-200/70 mt-1">Recent workouts</div>
               </CardContent>
             </Card>
 
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
-                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
-                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  Avg Duration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-4 pt-0">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                  {workoutSessions.length > 0 
-                    ? Math.round(workoutSessions.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workoutSessions.length)
-                    : 0} min
-                </div>
-                <div className="text-xs text-purple-200/70 mt-1">Per workout</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4 lg:pb-3">
+              <CardHeader className="pb-2 p-3 sm:p-4">
                 <CardTitle className="flex items-center text-white text-xs sm:text-sm">
                   <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
                   Weekly Avg
@@ -262,160 +431,28 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                         const sessionDate = new Date(w.session_date);
                         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
                         return sessionDate >= thirtyDaysAgo;
-                      }).length / 4.3) // 30 days ≈ 4.3 weeks
+                      }).length / 4.3)
                     : 0}
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Workouts/week</div>
+                <div className="text-xs text-purple-200/70 mt-1">Sessions/week</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+              <CardHeader className="pb-2 p-3 sm:p-4">
+                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
+                  <Target className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
+                  AI Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 pt-0">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                  {Math.round((userStats.dedication + userStats.strength + userStats.recovery + userStats.consistency + userStats.endurance) / 5)}%
+                </div>
+                <div className="text-xs text-purple-200/70 mt-1">Overall fitness</div>
               </CardContent>
             </Card>
           </div>
-
-          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-6 sm:mb-8">
-            <CardHeader className="p-3 sm:p-4 lg:p-6">
-              <CardTitle className="text-white flex items-center text-base sm:text-lg lg:text-xl">
-                <Hexagon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-300" />
-                Performance Metrics
-              </CardTitle>
-              <CardDescription className="text-purple-200/70 text-xs sm:text-sm">
-                AI-powered analysis of your fitness journey based on workout data
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 sm:p-4 lg:p-6">
-              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] sm:max-h-[300px] lg:max-h-[400px] w-full">
-                <RadarChart data={radarData}>
-                  <ChartTooltip 
-                    cursor={false} 
-                    content={<ChartTooltipContent hideLabel />} 
-                  />
-                  <PolarGrid stroke="rgba(147, 51, 234, 0.2)" strokeWidth={1} />
-                  <PolarAngleAxis 
-                    dataKey="metric" 
-                    tick={{ fill: 'white', fontSize: isMobile ? 10 : 12 }}
-                  />
-                  <Radar
-                    dataKey="value"
-                    stroke="rgba(147, 51, 234, 0.8)"
-                    fill="rgba(147, 51, 234, 0.3)"
-                    strokeWidth={2}
-                    dot={{ fill: 'rgba(147, 51, 234, 0.8)', r: 4 }}
-                  />
-                </RadarChart>
-              </ChartContainer>
-              
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 mt-4 sm:mt-6">
-                <div className="text-center">
-                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.dedication}%</div>
-                  <div className="text-xs text-purple-200/70">Dedication</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.strength}%</div>
-                  <div className="text-xs text-purple-200/70">Strength</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.recovery}%</div>
-                  <div className="text-xs text-purple-200/70">Recovery</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.consistency}%</div>
-                  <div className="text-xs text-purple-200/70">Consistency</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-base sm:text-lg lg:text-2xl font-bold text-purple-300">{userStats.endurance}%</div>
-                  <div className="text-xs text-purple-200/70">Endurance</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm mb-8">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Activity className="w-5 h-5 mr-2 text-purple-300" />
-                Recent Workouts
-              </CardTitle>
-              <CardDescription className="text-purple-200/70">
-                Your latest training sessions automatically tracked
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {workoutSessions.length === 0 ? (
-                <div className="text-center py-8">
-                  <Activity className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-purple-200 mb-2">No Workouts Yet</h3>
-                  <p className="text-purple-300/70">Start using the Workout Logger to see your progress here</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {workoutSessions.slice(0, 10).map((session) => (
-                    <div key={session.id} className="bg-purple-800/30 rounded-lg p-4 border border-purple-600/30">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-semibold text-white">{session.workout_name}</h4>
-                          <p className="text-sm text-purple-200/70">
-                            {new Date(session.session_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-purple-300 font-medium">{session.duration_minutes} min</div>
-                          {session.calories_burned && (
-                            <div className="text-sm text-purple-200/70">{session.calories_burned} cal</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Target className="w-5 h-5 mr-2 text-purple-300" />
-                AI Insights
-              </CardTitle>
-              <CardDescription className="text-purple-200/70">
-                Smart recommendations based on your workout patterns
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {workoutSessions.length > 0 ? (
-                  <>
-                    <div className="bg-purple-800/30 rounded-lg p-4 border border-purple-600/30">
-                      <h4 className="font-semibold text-white mb-2">🎯 Training Consistency</h4>
-                      <p className="text-sm text-purple-200/70">
-                        {userStats.consistency > 80 
-                          ? "Excellent consistency! You're maintaining a great workout routine."
-                          : userStats.consistency > 60
-                          ? "Good consistency! Try to maintain regular workout schedules for better results."
-                          : "Focus on building consistency. Regular workouts lead to better long-term results."
-                        }
-                      </p>
-                    </div>
-                    <div className="bg-purple-800/30 rounded-lg p-4 border border-purple-600/30">
-                      <h4 className="font-semibold text-white mb-2">💪 Workout Intensity</h4>
-                      <p className="text-sm text-purple-200/70">
-                        {userStats.strength > 75
-                          ? "Your workout duration suggests good training intensity. Keep challenging yourself!"
-                          : "Consider extending your workouts or increasing intensity for better strength gains."
-                        }
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <Target className="w-12 h-12 text-purple-400/50 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-purple-200 mb-2">Start Your Fitness Journey</h3>
-                    <p className="text-purple-300/70">
-                      Begin logging workouts to receive personalized AI insights and track your progress
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

@@ -22,38 +22,42 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   isPremium,
   onClick
 }) => {
-  // Map card gradients to match actual module interior colors
+  // Map card gradients to match actual module interior colors with proper opacity
   const getModuleGradient = (originalGradient: string, title: string) => {
-    // Map by module title to ensure exact color matching
     const moduleColorMap: { [key: string]: string } = {
-      // CoachGPT - Cyan theme (matches interior cyan-900/20 to blue-900/30)
-      'CoachGPT': 'from-cyan-900/20 to-blue-900/30',
-      // Habit Tracker - Yellow theme (matches interior yellow-900/20 to-orange-900/30)
-      'Habit Tracker': 'from-yellow-900/20 to-orange-900/30',
-      // CutCalc Pro - Red theme (matches interior red-900/20 to-orange-900/30)
-      'CutCalc Pro': 'from-red-900/20 to-orange-900/30',
-      // TDEE Calculator - Purple theme (matches interior purple-900/20 to-indigo-900/30)
-      'TDEE Calculator': 'from-purple-900/20 to-indigo-900/30',
-      // Smart Training - Blue theme (matches interior blue-900/20 to-indigo-900/30)
-      'Smart Training': 'from-blue-900/20 to-indigo-900/30',
-      // Workout Timer - Cyan theme (matches interior cyan-900/20 to-blue-900/30)
-      'Workout Timer': 'from-cyan-900/20 to-blue-900/30',
-      // Meal Plan Generator - Green theme (matches interior green-900/20 to-teal-900/30)
-      'Meal Plan Generator': 'from-green-900/20 to-teal-900/30',
-      'Meal Plan AI': 'from-green-900/20 to-teal-900/30',
+      // CoachGPT - Cyan theme with 50% opacity
+      'CoachGPT': 'from-cyan-900/50 to-blue-900/50',
+      // Habit Tracker - Yellow theme with 50% opacity  
+      'Habit Tracker': 'from-yellow-900/50 to-orange-900/50',
+      // CutCalc Pro - Red theme with 50% opacity
+      'CutCalc Pro': 'from-red-900/50 to-orange-900/50',
+      // TDEE Calculator - Purple theme with 50% opacity
+      'TDEE Calculator': 'from-purple-900/50 to-indigo-900/50',
+      // Smart Training - Blue theme with 50% opacity
+      'Smart Training': 'from-blue-900/50 to-indigo-900/50',
+      // Blueprint AI - Blue theme with 50% opacity
+      'Blueprint AI': 'from-blue-900/50 to-cyan-900/50',
+      // Workout Timer - Cyan theme with 50% opacity
+      'Workout Timer': 'from-cyan-900/50 to-blue-900/50',
+      // Meal Plan Generator - Green theme with 50% opacity
+      'Meal Plan Generator': 'from-green-900/50 to-teal-900/50',
+      'Meal Plan AI': 'from-green-900/50 to-teal-900/50',
+      // Progress Hub - Purple theme with 50% opacity
+      'Progress Hub': 'from-purple-900/50 to-indigo-900/50',
     };
     
-    return moduleColorMap[title] || originalGradient;
+    return moduleColorMap[title] || originalGradient.replace(/\/\d+/g, '/50');
   };
 
   const getBorderColor = (gradient: string) => {
     const borderMap: { [key: string]: string } = {
-      'from-cyan-900/20 to-blue-900/30': 'border-cyan-500/30',
-      'from-yellow-900/20 to-orange-900/30': 'border-yellow-500/30',
-      'from-red-900/20 to-orange-900/30': 'border-red-500/30',
-      'from-purple-900/20 to-indigo-900/30': 'border-purple-500/30',
-      'from-blue-900/20 to-indigo-900/30': 'border-blue-500/30',
-      'from-green-900/20 to-teal-900/30': 'border-green-500/30',
+      'from-cyan-900/50 to-blue-900/50': 'border-cyan-500/30',
+      'from-yellow-900/50 to-orange-900/50': 'border-yellow-500/30',
+      'from-red-900/50 to-orange-900/50': 'border-red-500/30',
+      'from-purple-900/50 to-indigo-900/50': 'border-purple-500/30',
+      'from-blue-900/50 to-indigo-900/50': 'border-blue-500/30',
+      'from-blue-900/50 to-cyan-900/50': 'border-blue-500/30',
+      'from-green-900/50 to-teal-900/50': 'border-green-500/30',
     };
     
     return borderMap[gradient] || 'border-white/20';
@@ -61,12 +65,13 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
 
   const getIconBgColor = (gradient: string) => {
     const iconBgMap: { [key: string]: string } = {
-      'from-cyan-900/20 to-blue-900/30': 'bg-gradient-to-r from-cyan-500/30 to-blue-500/40 border-cyan-500/30',
-      'from-yellow-900/20 to-orange-900/30': 'bg-gradient-to-r from-yellow-500/30 to-orange-500/40 border-yellow-500/30',
-      'from-red-900/20 to-orange-900/30': 'bg-gradient-to-r from-red-500/30 to-orange-500/40 border-red-500/30',
-      'from-purple-900/20 to-indigo-900/30': 'bg-gradient-to-r from-purple-500/30 to-indigo-500/40 border-purple-500/30',
-      'from-blue-900/20 to-indigo-900/30': 'bg-gradient-to-r from-blue-500/30 to-indigo-500/40 border-blue-500/30',
-      'from-green-900/20 to-teal-900/30': 'bg-gradient-to-r from-green-500/30 to-teal-500/40 border-green-500/30',
+      'from-cyan-900/50 to-blue-900/50': 'bg-gradient-to-r from-cyan-500/30 to-blue-500/40 border-cyan-500/30',
+      'from-yellow-900/50 to-orange-900/50': 'bg-gradient-to-r from-yellow-500/30 to-orange-500/40 border-yellow-500/30',
+      'from-red-900/50 to-orange-900/50': 'bg-gradient-to-r from-red-500/30 to-orange-500/40 border-red-500/30',
+      'from-purple-900/50 to-indigo-900/50': 'bg-gradient-to-r from-purple-500/30 to-indigo-500/40 border-purple-500/30',
+      'from-blue-900/50 to-indigo-900/50': 'bg-gradient-to-r from-blue-500/30 to-indigo-500/40 border-blue-500/30',
+      'from-blue-900/50 to-cyan-900/50': 'bg-gradient-to-r from-blue-500/30 to-cyan-500/40 border-blue-500/30',
+      'from-green-900/50 to-teal-900/50': 'bg-gradient-to-r from-green-500/30 to-teal-500/40 border-green-500/30',
     };
     
     return iconBgMap[gradient] || 'bg-black/20 border-white/20';
@@ -81,8 +86,8 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
       className={`bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`}
       onClick={onClick}
     >
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
+      {/* Background pattern with reduced opacity */}
+      <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
       </div>
       

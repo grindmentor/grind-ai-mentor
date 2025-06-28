@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -65,6 +64,18 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
     return Object.keys(muscleGroupMappings).includes(term);
   };
 
+  // More precise muscle matching function
+  const isExactMuscleMatch = (muscle: string, searchVariations: string[]): boolean => {
+    const muscleLower = muscle.toLowerCase();
+    return searchVariations.some(variation => {
+      const variationLower = variation.toLowerCase();
+      // Exact match or muscle starts with variation (e.g., "Hamstrings" matches "hamstring")
+      return muscleLower === variationLower || 
+             muscleLower.startsWith(variationLower) ||
+             variationLower.startsWith(muscleLower);
+    });
+  };
+
   useEffect(() => {
     const searchExercises = async () => {
       if (!searchQuery.trim()) {
@@ -115,20 +126,12 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
               const exerciseNameLower = exercise.name.toLowerCase();
               const equipmentLower = exercise.equipment.toLowerCase();
               
-              // For muscle group searches, be more strict and only return exercises that primarily target the muscle
+              // For muscle group searches, be very strict - only primary muscle matches
               if (isMuscleGroupSearch) {
-                // Check if primary muscles contain the target muscle group
-                const primaryMuscleMatch = muscleVariations.some(variation => 
-                  exercise.primary_muscles.some(muscle => {
-                    const muscleLower = muscle.toLowerCase();
-                    const variationLower = variation.toLowerCase();
-                    // More precise matching - muscle must contain the variation or vice versa
-                    return muscleLower.includes(variationLower) || variationLower.includes(muscleLower);
-                  })
+                // Only return exercises where the primary muscles exactly match the search
+                return exercise.primary_muscles.some(muscle => 
+                  isExactMuscleMatch(muscle, muscleVariations)
                 );
-                
-                // Only return exercises that primarily target this muscle group
-                return primaryMuscleMatch;
               }
               
               // For non-muscle group searches (exercise names, equipment, etc.)
@@ -147,22 +150,17 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
           searchResults = optimizedData || [];
           
           // If we got results from optimized search but it's a muscle group search,
-          // filter to prioritize primary muscle matches and be more strict
+          // filter to only include exercises that primarily target the searched muscle
           if (isMuscleGroupSearch && searchResults.length > 0) {
-            const primaryMatches = searchResults.filter(exercise => 
-              muscleVariations.some(variation => 
-                exercise.primary_muscles.some(muscle => {
-                  const muscleLower = muscle.toLowerCase();
-                  const variationLower = variation.toLowerCase();
-                  // More precise matching - muscle must contain the variation or vice versa
-                  return muscleLower.includes(variationLower) || variationLower.includes(muscleLower);
-                })
+            const exactMatches = searchResults.filter(exercise => 
+              exercise.primary_muscles.some(muscle => 
+                isExactMuscleMatch(muscle, muscleVariations)
               )
             );
             
-            // Use primary matches if we have them, otherwise keep all results
-            if (primaryMatches.length > 0) {
-              searchResults = primaryMatches;
+            // Use exact matches if we have them, otherwise keep all results
+            if (exactMatches.length > 0) {
+              searchResults = exactMatches;
             }
           }
         }
@@ -191,12 +189,12 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
 
         console.log('Search results:', searchResults.length, 'exercises found');
         setExercises(searchResults);
-        setShowDropdown(searchResults.length > 0);
+        setShowDropdown(true); // Always show dropdown when there's a search query
       } catch (err) {
         console.error('Exercise search error:', err);
         setError('Failed to search exercises. Please try again.');
         setExercises([]);
-        setShowDropdown(false);
+        setShowDropdown(true); // Still show dropdown for custom exercise option
       } finally {
         setIsLoading(false);
       }
@@ -241,7 +239,7 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
         </div>
       )}
 
-      {showDropdown && !isLoading && (
+      {showDropdown && !isLoading && searchQuery.trim() && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-md shadow-lg max-h-60 overflow-y-auto z-50">
           {exercises.length > 0 && (
             <>
@@ -259,21 +257,19 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
                 </button>
               ))}
               
-              {searchQuery.trim() && (
-                <div className="border-t border-gray-600/30">
-                  <button
-                    onClick={handleAddCustomExercise}
-                    className="w-full text-left px-4 py-3 hover:bg-gray-700/50 flex items-center text-blue-400"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add "{searchQuery}" as custom exercise
-                  </button>
-                </div>
-              )}
+              <div className="border-t border-gray-600/30">
+                <button
+                  onClick={handleAddCustomExercise}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-700/50 flex items-center text-blue-400"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add "{searchQuery}" as custom exercise
+                </button>
+              </div>
             </>
           )}
 
-          {exercises.length === 0 && searchQuery.trim() && (
+          {exercises.length === 0 && (
             <div className="px-4 py-3 text-center">
               <div className="text-gray-400 text-sm mb-2">
                 No exercises found for "{searchQuery}"

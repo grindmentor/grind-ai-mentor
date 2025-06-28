@@ -5,7 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import { PerformanceProvider } from '@/components/ui/performance-provider'
 
-// Enhanced PWA registration with iOS optimizations
+// Optimized PWA registration with iOS and Android enhancements
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
@@ -14,16 +14,15 @@ if ('serviceWorker' in navigator) {
         updateViaCache: 'none'
       });
       
-      console.log('SW registered successfully:', registration);
+      console.log('SW registered:', registration);
       
-      // Handle service worker updates
+      // Optimized update handling
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New content is available, prompt user to update
-              if (confirm('New version available! Reload to update?')) {
+              if (confirm('New version available! Update now?')) {
                 newWorker.postMessage({ type: 'SKIP_WAITING' });
                 window.location.reload();
               }
@@ -32,7 +31,6 @@ if ('serviceWorker' in navigator) {
         }
       });
       
-      // Listen for controlling service worker changes
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         window.location.reload();
       });
@@ -43,110 +41,86 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Enhanced iOS PWA install prompt
+// Enhanced install prompts with better UX
 let deferredPrompt: any;
-let installButton: HTMLButtonElement | null = null;
-
-// iOS-specific install detection
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
 
+// Optimized iOS install prompt
 function createIOSInstallPrompt() {
   if (isIOS && !isInStandaloneMode) {
     const iosPrompt = document.createElement('div');
-    iosPrompt.className = 'fixed bottom-6 left-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between transform transition-all duration-300';
+    iosPrompt.className = 'fixed bottom-4 left-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-3 rounded-xl shadow-2xl flex items-center justify-between transform transition-all duration-300 animate-slide-up';
     iosPrompt.innerHTML = `
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-          📱
-        </div>
-        <div>
+        <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm">📱</div>
+        <div class="min-w-0 flex-1">
           <div class="font-semibold text-sm">Install Myotopia</div>
-          <div class="text-xs opacity-90">Tap Share → Add to Home Screen</div>
+          <div class="text-xs opacity-90 truncate">Tap Share → Add to Home Screen</div>
         </div>
       </div>
-      <button class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200" onclick="this.parentElement.remove()">
-        ✕
-      </button>
+      <button class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs font-medium transition-colors shrink-0" onclick="this.parentElement.remove()">✕</button>
     `;
     
     document.body.appendChild(iosPrompt);
     
-    // Auto-hide after 12 seconds (reduced from 15)
+    // Auto-hide after 10 seconds
     setTimeout(() => {
       if (iosPrompt.parentNode) {
         iosPrompt.style.opacity = '0';
         iosPrompt.style.transform = 'translateY(100%)';
         setTimeout(() => iosPrompt.remove(), 300);
       }
-    }, 12000);
+    }, 10000);
     
     return iosPrompt;
   }
   return null;
 }
 
-// Standard PWA install prompt with performance optimizations
+// Standard PWA install prompt
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   
-  // Don't show standard prompt on iOS devices
   if (isIOS) return;
   
-  // Create optimized install button for non-iOS devices
-  installButton = document.createElement('button');
-  installButton.className = 'fixed bottom-6 right-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 touch-manipulation';
-  installButton.innerHTML = '📱 Install Myotopia';
+  const installButton = document.createElement('button');
+  installButton.className = 'fixed bottom-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-3 py-2 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 touch-manipulation animate-slide-up';
+  installButton.innerHTML = '📱 Install App';
   
   installButton.onclick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(`Install prompt outcome: ${outcome}`);
+      console.log(`Install outcome: ${outcome}`);
       deferredPrompt = null;
-      if (installButton) {
-        installButton.remove();
-        installButton = null;
-      }
+      installButton.remove();
     }
   };
   
   document.body.appendChild(installButton);
   
-  // Auto-hide after 12 seconds (reduced from 15)
+  // Auto-hide after 10 seconds
   setTimeout(() => {
     if (installButton && installButton.parentNode) {
       installButton.style.opacity = '0';
       installButton.style.transform = 'translateY(100%)';
-      setTimeout(() => {
-        if (installButton) {
-          installButton.remove();
-          installButton = null;
-        }
-      }, 300);
+      setTimeout(() => installButton.remove(), 300);
     }
-  }, 12000);
+  }, 10000);
 });
 
-// Handle successful app installation
 window.addEventListener('appinstalled', () => {
   console.log('Myotopia PWA installed successfully');
   deferredPrompt = null;
-  if (installButton) {
-    installButton.remove();
-    installButton = null;
-  }
 });
 
-// iOS-specific optimizations with performance improvements
+// iOS optimizations
 if (isIOS) {
-  // Show iOS install prompt after optimized delay
-  setTimeout(() => {
-    createIOSInstallPrompt();
-  }, 2000); // Reduced from 3000ms
+  setTimeout(createIOSInstallPrompt, 1500);
   
-  // Optimized double-tap zoom prevention
+  // Prevent double-tap zoom
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (event) => {
     const now = Date.now();
@@ -156,7 +130,7 @@ if (isIOS) {
     lastTouchEnd = now;
   }, { passive: false });
   
-  // Handle iOS safe areas with performance optimization
+  // Safe area handling
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.getElementById('root');
     if (root) {
@@ -168,37 +142,49 @@ if (isIOS) {
   });
 }
 
-// Optimized resource preloading for iOS
-if (isIOS) {
-  const criticalResources = ['/src/index.css'];
-  
-  criticalResources.forEach(resource => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.href = resource;
-    link.as = 'style';
-    document.head.appendChild(link);
-  });
-}
-
-// Enhanced network status monitoring
+// Network status monitoring with optimizations
 function updateOnlineStatus() {
   const isOnline = navigator.onLine;
-  const event = new CustomEvent('networkstatus', { 
+  window.dispatchEvent(new CustomEvent('networkstatus', { 
     detail: { online: isOnline } 
-  });
-  window.dispatchEvent(event);
+  }));
   
   if (!isOnline) {
-    console.log('App is offline - using cached content');
+    console.log('App offline - using cached content');
   } else {
-    console.log('App is online - syncing data');
+    console.log('App online - syncing data');
   }
 }
 
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
+
+// Optimized font preloading
+const criticalFonts = [
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+  'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap'
+];
+
+criticalFonts.forEach(fontUrl => {
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.as = 'style';
+  link.href = fontUrl;
+  link.onload = () => {
+    link.rel = 'stylesheet';
+  };
+  document.head.appendChild(link);
+});
+
+// Performance monitoring
+if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+  window.requestIdleCallback(() => {
+    // Preload critical components in idle time
+    import('./components/Dashboard').catch(() => {});
+    import('./components/ui/loading-screen').catch(() => {});
+  });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

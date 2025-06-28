@@ -14,13 +14,31 @@
   "icons": [
     {
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-      "sizes": "16x16",
+      "sizes": "72x72",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-      "sizes": "32x32",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
+      "sizes": "152x152",
       "type": "image/png",
       "purpose": "any"
     },
@@ -34,23 +52,17 @@
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-      "sizes": "256x256",
+      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any maskable"
     }
@@ -58,25 +70,25 @@
   "screenshots": [
     {
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-      "sizes": "512x512",
+      "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Myotopia AI Fitness Coach"
+      "label": "Myotopia Mobile Dashboard"
     },
     {
       "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-      "sizes": "1024x1024",
+      "sizes": "1024x768",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Myotopia Dashboard"
+      "label": "Myotopia Desktop Dashboard"
     }
   ],
-  "categories": ["fitness", "health", "lifestyle", "productivity"],
+  "categories": ["fitness", "health", "lifestyle", "productivity", "sports"],
   "shortcuts": [
     {
       "name": "CoachGPT",
-      "short_name": "CoachGPT",
-      "description": "AI-powered fitness coaching",
+      "short_name": "Coach",
+      "description": "AI fitness coaching",
       "url": "/app?module=coachgpt",
       "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     },
@@ -86,10 +98,20 @@
       "description": "Smart workout timing",
       "url": "/app?module=timer",
       "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Progress Hub",
+      "short_name": "Progress",
+      "description": "Track your fitness journey",
+      "url": "/app?module=progress-hub",
+      "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     }
   ],
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "edge_side_panel": {
     "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
   }
 }

@@ -217,7 +217,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
 
   return (
     <UsageLimitGuard featureKey="coach_gpt_queries" featureName="CoachGPT">
-      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
+      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-emerald-900/30">
         <MobileHeader 
           title="CoachGPT" 
           onBack={onBack}
@@ -233,7 +233,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                 <div>
                   <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
                   <CardDescription className="text-green-200/80">
-                    Your AI fitness coach and training companion
+                    Your AI fitness coach with research-based guidance
                   </CardDescription>
                 </div>
               </div>
@@ -252,14 +252,14 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
                       <Button
                         onClick={() => handleQuickPrompt("What's the best way to improve my squat form?")}
                         variant="outline"
-                        className="text-green-300 border-green-500/30 hover:bg-green-500/10"
+                        className="text-green-300 border-green-500/30 hover:bg-green-500/10 bg-green-900/20"
                       >
                         Ask about form
                       </Button>
                       <Button
                         onClick={() => handleQuickPrompt("How do I stay motivated to work out?")}
                         variant="outline"
-                        className="text-green-300 border-green-500/30 hover:bg-green-500/10"
+                        className="text-green-300 border-green-500/30 hover:bg-green-500/10 bg-green-900/20"
                       >
                         Get motivation tips
                       </Button>

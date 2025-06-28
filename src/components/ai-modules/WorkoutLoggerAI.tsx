@@ -62,6 +62,8 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   }, [sharedExercises, clearExercises, toast]);
 
   const addExercise = (exerciseData: any) => {
+    console.log('Adding exercise:', exerciseData);
+    
     // Handle both string and object exercise data
     const newExercise: Exercise = {
       id: Date.now().toString() + Math.random().toString(),
@@ -72,8 +74,14 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
       rpe: 7,
       notes: ''
     };
+    
     setExercises(prev => [...prev, newExercise]);
     setShowExerciseSearch(false);
+    
+    toast({
+      title: 'Exercise Added! 💪',
+      description: `${newExercise.name} has been added to your workout.`
+    });
   };
 
   const updateExercise = (id: string, field: keyof Exercise, value: any) => {
@@ -184,7 +192,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                 <h3 className="text-lg font-semibold text-blue-200">Exercises</h3>
                 <Button
                   onClick={() => setShowExerciseSearch(!showExerciseSearch)}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Exercise
@@ -194,10 +202,14 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
               {showExerciseSearch && (
                 <Card className="bg-blue-900/40 border-blue-500/40">
                   <CardContent className="p-4">
-                    <ExerciseSearch
-                      onExerciseSelect={addExercise}
-                      placeholder="Search for exercises..."
-                    />
+                    <div className="space-y-2">
+                      <Label className="text-blue-200">Search Exercises</Label>
+                      <ExerciseSearch
+                        onExerciseSelect={addExercise}
+                        placeholder="Search for exercises..."
+                        className="w-full"
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -224,7 +236,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                             onClick={() => removeExercise(exercise.id)}
                             variant="ghost"
                             size="sm"
-                            className="text-red-400 hover:text-red-300"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                           >
                             Remove
                           </Button>

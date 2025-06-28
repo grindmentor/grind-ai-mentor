@@ -22,26 +22,28 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   isPremium,
   onClick
 }) => {
-  // Updated gradient mapping to match module interiors exactly
-  const getEnhancedGradient = (originalGradient: string) => {
-    const gradientMap: { [key: string]: string } = {
-      // CoachGPT - Cyan theme (matches interior)
-      'from-green-900/20 to-emerald-900/30': 'from-cyan-900/20 to-blue-900/30',
-      // Habit Tracker - Yellow theme (matches interior)
-      'from-yellow-900/20 to-orange-900/30': 'from-yellow-900/20 to-orange-900/30',
-      // CutCalc Pro - Red theme (matches interior)
-      'from-red-900/20 to-orange-900/30': 'from-red-900/20 to-orange-900/30',
-      // TDEE Calculator - Purple theme (matches interior)
-      'from-purple-900/20 to-indigo-900/30': 'from-purple-900/20 to-indigo-900/30',
-      // Smart Training - Blue theme (matches interior)
-      'from-blue-900/20 to-indigo-900/30': 'from-blue-900/20 to-indigo-900/30',
-      // Workout Timer - Cyan theme (matches interior)
-      'from-cyan-900/20 to-blue-900/30': 'from-cyan-900/20 to-blue-900/30',
-      // Meal Plan - Green theme (matches interior)
-      'from-green-900/20 to-teal-900/30': 'from-green-900/20 to-teal-900/30',
+  // Map card gradients to match actual module interior colors
+  const getModuleGradient = (originalGradient: string, title: string) => {
+    // Map by module title to ensure exact color matching
+    const moduleColorMap: { [key: string]: string } = {
+      // CoachGPT - Cyan theme (matches interior cyan-900/20 to blue-900/30)
+      'CoachGPT': 'from-cyan-900/20 to-blue-900/30',
+      // Habit Tracker - Yellow theme (matches interior yellow-900/20 to-orange-900/30)
+      'Habit Tracker': 'from-yellow-900/20 to-orange-900/30',
+      // CutCalc Pro - Red theme (matches interior red-900/20 to-orange-900/30)
+      'CutCalc Pro': 'from-red-900/20 to-orange-900/30',
+      // TDEE Calculator - Purple theme (matches interior purple-900/20 to-indigo-900/30)
+      'TDEE Calculator': 'from-purple-900/20 to-indigo-900/30',
+      // Smart Training - Blue theme (matches interior blue-900/20 to-indigo-900/30)
+      'Smart Training': 'from-blue-900/20 to-indigo-900/30',
+      // Workout Timer - Cyan theme (matches interior cyan-900/20 to-blue-900/30)
+      'Workout Timer': 'from-cyan-900/20 to-blue-900/30',
+      // Meal Plan Generator - Green theme (matches interior green-900/20 to-teal-900/30)
+      'Meal Plan Generator': 'from-green-900/20 to-teal-900/30',
+      'Meal Plan AI': 'from-green-900/20 to-teal-900/30',
     };
     
-    return gradientMap[originalGradient] || originalGradient;
+    return moduleColorMap[title] || originalGradient;
   };
 
   const getBorderColor = (gradient: string) => {
@@ -70,13 +72,13 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
     return iconBgMap[gradient] || 'bg-black/20 border-white/20';
   };
 
-  const enhancedGradient = getEnhancedGradient(gradient);
-  const borderColor = getBorderColor(enhancedGradient);
-  const iconBgColor = getIconBgColor(enhancedGradient);
+  const moduleGradient = getModuleGradient(gradient, title);
+  const borderColor = getBorderColor(moduleGradient);
+  const iconBgColor = getIconBgColor(moduleGradient);
 
   return (
     <Card 
-      className={`bg-gradient-to-br ${enhancedGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`}
+      className={`bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`}
       onClick={onClick}
     >
       {/* Background pattern */}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -8,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useCustomerMemory } from '@/hooks/useCustomerMemory';
 import { MobileHeader } from './MobileHeader';
-import { ModuleCard } from './ModuleCard';
-import { NotificationSystem } from './NotificationSystem';
+import { ModuleCard } from './dashboard/AIModuleCard';
+import NotificationSystem from './NotificationSystem';
 import PersonalizedSummary from './homepage/PersonalizedSummary';
 import NotificationsSummary from './dashboard/NotificationsSummary';
 import { RealGoalsAchievements } from './goals/RealGoalsAchievements';
@@ -108,7 +109,11 @@ const Dashboard: React.FC<DashboardProps> = ({ isNotificationsOpen = false }) =>
         <NotificationCenter onBack={handleNotificationsClose} />
       ) : (
         <>
-          <MobileHeader />
+          <MobileHeader 
+            title="Welcome to Myotopia"
+            showNotifications={true}
+            onNotificationsClick={handleNotificationsOpen}
+          />
           
           <div className="p-4 sm:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -127,7 +132,11 @@ const Dashboard: React.FC<DashboardProps> = ({ isNotificationsOpen = false }) =>
                 <PersonalizedSummary />
                 <NotificationsSummary />
                 <RealGoalsAchievements onNotificationsOpen={handleNotificationsOpen} />
-                <UsageIndicator />
+                <UsageIndicator 
+                  featureKey="coach_gpt_queries"
+                  featureName="CoachGPT"
+                  compact={true}
+                />
               </div>
 
               {/* AI Modules Grid */}

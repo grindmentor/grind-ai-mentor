@@ -6,7 +6,7 @@ import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { Star, TrendingUp, Sparkles, Bell, User, Settings } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -171,6 +171,17 @@ const Dashboard = () => {
                 </div>
                 
                 <div className="flex items-center space-x-1 sm:space-x-2">
+                  {/* Module Library */}
+                  <Button
+                    onClick={() => window.location.href = '/modules'}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 hidden sm:flex"
+                    title="Module Library"
+                  >
+                    <span className="text-xs sm:text-sm">Library</span>
+                  </Button>
+
                   {/* Notifications */}
                   <Button
                     onClick={handleNotificationsClick}
@@ -224,10 +235,21 @@ const Dashboard = () => {
               {/* Favorites Section with performance optimization */}
               {!favoritesLoading && favoriteModules.length > 0 ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-4 sm:mb-6 flex items-center">
-                    <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
-                    Your Favorites
-                  </h2>
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
+                      <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
+                      Your Favorites
+                    </h2>
+                    <Button
+                      onClick={() => window.location.href = '/modules'}
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add More
+                    </Button>
+                  </div>
                   <Suspense fallback={<div className="h-32 bg-gray-900/40 rounded-xl animate-pulse" />}>
                     <ModuleGrid
                       modules={favoriteModules}

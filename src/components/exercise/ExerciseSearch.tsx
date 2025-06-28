@@ -66,18 +66,63 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
     return Object.keys(muscleGroupMappings).includes(term);
   };
 
-  // Very strict muscle matching - must be primary muscle and exact match
-  const isPrimaryMuscleMatch = (primaryMuscles: string[], searchVariations: string[]): boolean => {
+  // EXTREMELY strict muscle matching - exact match only for muscle group searches
+  const isExactMuscleMatch = (primaryMuscles: string[], searchVariations: string[]): boolean => {
+    console.log('Checking muscle match:', { primaryMuscles, searchVariations });
+    
     return primaryMuscles.some(muscle => {
-      const muscleLower = muscle.toLowerCase();
-      return searchVariations.some(variation => {
-        const variationLower = variation.toLowerCase();
-        // Must be exact match or very close match
-        return muscleLower === variationLower || 
-               muscleLower.includes(variationLower) ||
-               variationLower.includes(muscleLower);
+      // For muscle group searches, we need EXACT matches only
+      const exactMatch = searchVariations.some(variation => {
+        const muscleLower = muscle.toLowerCase().trim();
+        const variationLower = variation.toLowerCase().trim();
+        
+        // Only exact matches or very specific muscle names
+        const isExact = muscleLower === variationLower;
+        
+        console.log('Muscle comparison:', { 
+          muscle: muscleLower, 
+          variation: variationLower, 
+          isExact 
+        });
+        
+        return isExact;
       });
+      
+      return exactMatch;
     });
+  };
+
+  // Additional filtering to exclude common false positives
+  const shouldExcludeExercise = (exercise: Exercise, searchQuery: string): boolean => {
+    const searchLower = searchQuery.toLowerCase().trim();
+    const exerciseLower = exercise.name.toLowerCase();
+    
+    // Specific exclusions for hamstring searches
+    if (searchLower === 'hamstring' || searchLower === 'hamstrings') {
+      const excludePatterns = [
+        'curl', // This will exclude bicep curls, hammer curls, etc.
+        'chinup',
+        'chin-up',
+        'chin up',
+        'pullup',
+        'pull-up',
+        'pull up',
+        'row', // Exclude rowing exercises that might have biceps involvement
+        'press' // Exclude pressing movements
+      ];
+      
+      const shouldExclude = excludePatterns.some(pattern => 
+        exerciseLower.includes(pattern)
+      );
+      
+      if (shouldExclude) {
+        console.log(`Excluding ${exercise.name} from hamstring search due to pattern match`);
+      }
+      
+      return shouldExclude;
+    }
+    
+    return false;
   };
 
   useEffect(() => {
@@ -104,19 +149,29 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
         const { data: optimizedData, error: optimizedError } = await supabase
           .rpc('search_exercises_optimized', {
             search_query: searchQuery,
-            limit_count: 50, // Get more results for better filtering
+            limit_count: 100, // Get more results for better filtering
             search_user_id: user?.id || null
           });
 
         if (optimizedError) {
-          console.warn('Optimized search failed, falling back to enhanced search:', optimizedError);
+          console.warn('Optimized search failed, falling back to basic search:', optimizedError);
           
-          // Enhanced fallback search
-          const { data: basicData, error: basicError } = await supabase
+          // Enhanced fallback search with strict filtering
+          let query = supabase
             .from('exercises')
             .select('id, name, description, primary_muscles, secondary_muscles, equipment, difficulty_level, category')
-            .eq('is_active', true)
-            .limit(100); // Get more results for better filtering
+            .eq('is_active', true);
+
+          // For muscle group searches, be very specific about muscle filtering
+          if (isMuscleGroupSearch) {
+            // Don't use text search for muscle group queries, rely on array matching
+            console.log('Using strict muscle-only search');
+          } else {
+            // For non-muscle searches, use text matching
+            query = query.or(`name.ilike.%${searchQuery}%,equipment.ilike.%${searchQuery}%`);
+          }
+
+          const { data: basicData, error: basicError } = await query.limit(100);
 
           if (basicError) {
             console.error('Basic search failed:', basicError);
@@ -128,18 +183,38 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
           searchResults = optimizedData || [];
         }
 
-        // Apply very strict filtering for muscle group searches
+        console.log('Raw search results before filtering:', searchResults.length);
+
+        // Apply EXTREMELY strict filtering for muscle group searches
         if (isMuscleGroupSearch) {
-          console.log('Applying strict muscle group filtering for:', searchQuery);
+          console.log('Applying ultra-strict muscle group filtering for:', searchQuery);
+          
           searchResults = searchResults.filter(exercise => {
-            // For muscle group searches, ONLY return exercises where the primary muscles match
-            const isMatch = isPrimaryMuscleMatch(exercise.primary_muscles, muscleVariations);
-            if (!isMatch) {
-              console.log(`Filtering out ${exercise.name} - primary muscles:`, exercise.primary_muscles);
+            // First check if it should be excluded based on exercise name patterns
+            if (shouldExcludeExercise(exercise, searchQuery)) {
+              return false;
             }
+            
+            // Then check for exact muscle matches in PRIMARY muscles only
+            const isMatch = isExactMuscleMatch(exercise.primary_muscles, muscleVariations);
+            
+            if (!isMatch) {
+              console.log(`Filtering out ${exercise.name}:`, {
+                primaryMuscles: exercise.primary_muscles,
+                searchVariations: muscleVariations,
+                reason: 'No exact primary muscle match'
+              });
+            } else {
+              console.log(`Keeping ${exercise.name}:`, {
+                primaryMuscles: exercise.primary_muscles,
+                reason: 'Exact primary muscle match found'
+              });
+            }
+            
             return isMatch;
           });
-          console.log('After strict filtering:', searchResults.length, 'exercises remain');
+          
+          console.log('After ultra-strict filtering:', searchResults.length, 'exercises remain');
         } else {
           // For non-muscle group searches (exercise names, equipment, etc.)
           const searchLower = searchQuery.toLowerCase();
@@ -178,7 +253,11 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
         // Limit results
         searchResults = searchResults.slice(0, 20);
 
-        console.log('Final search results:', searchResults.length, 'exercises found');
+        console.log('Final search results:', {
+          count: searchResults.length,
+          exercises: searchResults.map(ex => ({ name: ex.name, primaryMuscles: ex.primary_muscles }))
+        });
+        
         setExercises(searchResults);
         setShowDropdown(true);
       } catch (err) {

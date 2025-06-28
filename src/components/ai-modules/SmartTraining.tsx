@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Zap, Target, Calendar, Dumbbell, Clock } from 'lucide-react';
+import { Target, Calendar, Dumbbell, Clock, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -77,7 +77,7 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
 
 PROGRAM DETAILS:
 - Name: ${programData.name}
-- Goal: ${programData.goal}
+- Primary Goal: ${programData.goal}
 - Experience Level: ${programData.experienceLevel}
 - Available Equipment: ${programData.equipment || 'Full gym access'}
 - Additional Notes: ${programData.notes}
@@ -85,40 +85,58 @@ PROGRAM DETAILS:
 REQUIREMENTS:
 1. Generate a COMPLETE program structure with specific workouts for each day
 2. Include exercise selection, sets, reps, and rest periods
-3. Structure with clear phases or progression
+3. Structure with clear phases or progression over the ${programData.duration || 8} weeks
 4. Format using markdown with clear headings and sections
 5. Include warm-up and cool-down recommendations
-6. Provide progression guidelines
+6. Provide weekly progression guidelines
 
-FORMAT:
+FORMAT STRUCTURE:
 ### Program Overview
-- Duration: X weeks
-- Frequency: X days per week
-- Primary Goal: [goal]
+- **Duration:** ${programData.duration || 8} weeks
+- **Frequency:** ${programData.daysPerWeek || 4} days per week
+- **Primary Goal:** ${programData.goal}
+- **Experience Level:** ${programData.experienceLevel}
 
-### Week 1-2: Foundation Phase
-#### Day 1: [Workout Name]
+### Phase 1: Foundation (Weeks 1-2)
+#### Day 1: Upper Body Push
 **Warm-up (10 minutes)**
-- [warm-up exercises]
+- Dynamic stretching and activation
 
 **Main Workout**
-1. Exercise Name - Sets x Reps (Rest: Xmin)
-2. Exercise Name - Sets x Reps (Rest: Xmin)
+1. Exercise Name - 3 x 8-10 (Rest: 90s)
+2. Exercise Name - 3 x 10-12 (Rest: 60s)
+[Continue with 6-8 exercises]
 
 **Cool-down (5 minutes)**
-- [cool-down exercises]
+- Static stretching
 
-[Continue for all days and weeks]
+#### Day 2: Lower Body
+[Similar detailed format]
 
-### Progression Guidelines
-- How to progress each week
-- When to increase weight/intensity
+#### Day 3: Upper Body Pull
+[Similar detailed format]
 
-### Notes & Tips
-- Important form cues
-- Recovery recommendations`,
+#### Day 4: Full Body/Conditioning
+[Similar detailed format]
+
+### Phase 2: Development (Weeks 3-5)
+[Detailed progression for each day]
+
+### Phase 3: Peak (Weeks 6-8)
+[Advanced progression for each day]
+
+### Weekly Progression Guidelines
+- **Week 1-2:** Focus on form and movement patterns
+- **Week 3-4:** Increase intensity by 10-15%
+- **Week 5-6:** Peak intensity, advanced techniques
+- **Week 7-8:** Deload and reassess
+
+### Important Notes & Tips
+- Proper form guidelines
+- Recovery recommendations
+- Nutrition timing suggestions`,
           type: 'training',
-          maxTokens: 1500
+          maxTokens: 2000
         }
       });
 
@@ -233,9 +251,11 @@ FORMAT:
                           <SelectItem value="bulk">Bulk (Gain Muscle)</SelectItem>
                           <SelectItem value="maintenance">Maintenance</SelectItem>
                           <SelectItem value="hybrid">Hybrid Athlete</SelectItem>
-                          <SelectItem value="recomp">Body Recomposition</SelectItem>
+                          <SelectItem value="recomp">Body Recomp</SelectItem>
                           <SelectItem value="general">General Health</SelectItem>
                           <SelectItem value="endurance">Endurance</SelectItem>
+                          <SelectItem value="powerlifting">Powerlifting</SelectItem>
+                          <SelectItem value="bodybuilding">Bodybuilding</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -288,9 +308,12 @@ FORMAT:
                     <Textarea
                       value={programData.equipment}
                       onChange={(e) => setProgramData({...programData, equipment: e.target.value})}
-                      placeholder="Describe your available equipment in detail (e.g., Full commercial gym with barbells, dumbbells, machines, cables, etc. OR Home gym with adjustable dumbbells, resistance bands, pull-up bar OR Bodyweight only)"
-                      className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50 min-h-[100px]"
+                      placeholder="Describe your available equipment in detail (e.g., Full commercial gym with barbells, dumbbells, machines, cables, squat rack, bench press, leg press, etc. OR Home gym with adjustable dumbbells, resistance bands, pull-up bar, kettlebells OR Bodyweight only - no equipment available)"
+                      className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50 min-h-[120px]"
                     />
+                    <p className="text-blue-300/60 text-xs">
+                      💡 Be specific about your equipment for better program customization
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -298,7 +321,7 @@ FORMAT:
                     <Textarea
                       value={programData.notes}
                       onChange={(e) => setProgramData({...programData, notes: e.target.value})}
-                      placeholder="Any specific preferences, limitations, or goals..."
+                      placeholder="Any specific preferences, limitations, injuries, or goals (e.g., focus on compound movements, avoid certain exercises, time constraints, etc.)"
                       className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
                     />
                   </div>

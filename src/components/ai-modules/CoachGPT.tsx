@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Send, Bot, User } from 'lucide-react';
+import { MessageSquare, Send, Bot, User, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -181,7 +181,7 @@ User question: ${userMessage.content}
 
 Format your response with clear headings and structure. Be encouraging and cite scientific principles when relevant.`,
           type: 'coaching',
-          maxTokens: 400
+          maxTokens: 500
         }
       });
 
@@ -232,22 +232,22 @@ Format your response with clear headings and structure. Be encouraging and cite 
 
   return (
     <UsageLimitGuard featureKey="coach_gpt_queries" featureName="CoachGPT">
-      <div className="min-h-screen bg-gradient-to-br from-black via-green-900/10 to-emerald-800/20">
+      <div className="min-h-screen bg-gradient-to-br from-black via-cyan-900/10 to-cyan-800/20">
         <MobileHeader 
           title="CoachGPT" 
           onBack={onBack}
         />
         
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30 h-[calc(100vh-120px)] flex flex-col">
+          <Card className="bg-gradient-to-br from-cyan-900/20 to-blue-900/30 backdrop-blur-sm border-cyan-500/30 h-[calc(100vh-120px)] flex flex-col">
             <CardHeader className="flex-shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
-                  <MessageSquare className="w-5 h-5 text-green-400" />
+                <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/30 to-blue-500/40 rounded-xl flex items-center justify-center border border-cyan-500/30">
+                  <MessageSquare className="w-5 h-5 text-cyan-400" />
                 </div>
                 <div>
                   <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
-                  <CardDescription className="text-green-200/80">
+                  <CardDescription className="text-cyan-200/80">
                     Your AI fitness coach with research-based guidance
                   </CardDescription>
                 </div>
@@ -258,25 +258,41 @@ Format your response with clear headings and structure. Be encouraging and cite 
               <div className="flex-1 overflow-y-auto space-y-4 mb-4">
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
-                    <Bot className="w-16 h-16 text-green-400/50 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-green-200 mb-2">Hello! I'm CoachGPT 💪</h3>
-                    <p className="text-green-300/70 mb-6 max-w-md mx-auto">
+                    <div className="w-20 h-20 bg-gradient-to-r from-cyan-500/20 to-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/30">
+                      <Sparkles className="w-10 h-10 text-cyan-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-cyan-200 mb-2">Hello! I'm CoachGPT 💪</h3>
+                    <p className="text-cyan-300/70 mb-6 max-w-md mx-auto leading-relaxed">
                       I'm your personal fitness coach, here to help with training advice, form tips, motivation, and answering your fitness questions!
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
                       <Button
                         onClick={() => handleQuickPrompt("What's the best way to improve my squat form?")}
                         variant="outline"
-                        className="text-green-300 border-green-500/30 hover:bg-green-500/10 bg-green-900/20"
+                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
                       >
-                        Ask about form
+                        <span className="text-sm">💪 Ask about form</span>
                       </Button>
                       <Button
                         onClick={() => handleQuickPrompt("How do I stay motivated to work out consistently?")}
                         variant="outline"
-                        className="text-green-300 border-green-500/30 hover:bg-green-500/10 bg-green-900/20"
+                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
                       >
-                        Get motivation tips
+                        <span className="text-sm">🎯 Get motivation tips</span>
+                      </Button>
+                      <Button
+                        onClick={() => handleQuickPrompt("What are the key principles for muscle growth?")}
+                        variant="outline"
+                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
+                      >
+                        <span className="text-sm">📚 Training principles</span>
+                      </Button>
+                      <Button
+                        onClick={() => handleQuickPrompt("How can I prevent workout injuries?")}
+                        variant="outline"
+                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
+                      >
+                        <span className="text-sm">🛡️ Injury prevention</span>
                       </Button>
                     </div>
                   </div>
@@ -287,18 +303,22 @@ Format your response with clear headings and structure. Be encouraging and cite 
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-lg p-4 ${
+                        className={`max-w-[85%] rounded-2xl p-4 ${
                           message.role === 'user'
-                            ? 'bg-green-600/80 text-white ml-4 shadow-lg'
-                            : 'bg-green-900/40 text-green-100 mr-4 border border-green-500/30 shadow-lg'
+                            ? 'bg-gradient-to-r from-cyan-600/80 to-blue-600/80 text-white ml-4 shadow-lg border border-cyan-500/30'
+                            : 'bg-gradient-to-r from-cyan-900/40 to-blue-900/40 text-cyan-100 mr-4 border border-cyan-500/30 shadow-lg backdrop-blur-sm'
                         }`}
                       >
                         <div className="flex items-start space-x-3">
                           {message.role === 'assistant' && (
-                            <Bot className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
+                            <div className="w-6 h-6 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                              <Bot className="w-4 h-4 text-cyan-400" />
+                            </div>
                           )}
                           {message.role === 'user' && (
-                            <User className="w-5 h-5 text-white mt-1 flex-shrink-0" />
+                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                              <User className="w-4 h-4 text-white" />
+                            </div>
                           )}
                           <div className="flex-1">
                             {message.role === 'assistant' ? (
@@ -314,13 +334,15 @@ Format your response with clear headings and structure. Be encouraging and cite 
                 )}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="max-w-[85%] bg-green-900/40 text-green-100 mr-4 border border-green-500/30 rounded-lg p-4 shadow-lg">
+                    <div className="max-w-[85%] bg-gradient-to-r from-cyan-900/40 to-blue-900/40 text-cyan-100 mr-4 border border-cyan-500/30 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
                       <div className="flex items-center space-x-3">
-                        <Bot className="w-5 h-5 text-green-400" />
+                        <div className="w-6 h-6 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                          <Bot className="w-4 h-4 text-cyan-400" />
+                        </div>
                         <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
                       </div>
                     </div>
@@ -334,13 +356,13 @@ Format your response with clear headings and structure. Be encouraging and cite 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me about fitness, training, or motivation..."
-                  className="flex-1 bg-green-900/30 border-green-500/50 text-white placeholder:text-green-300/50"
+                  className="flex-1 bg-cyan-900/30 border-cyan-500/50 text-white placeholder:text-cyan-300/50 rounded-xl"
                   disabled={isLoading}
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:opacity-50 rounded-xl px-6"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

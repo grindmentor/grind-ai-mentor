@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -36,22 +35,20 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Muscle group mappings for better search
+  // Muscle group mappings for better search - only include primary target muscles
   const muscleGroupMappings: { [key: string]: string[] } = {
     'chest': ['Chest', 'Pectorals', 'Pecs'],
     'back': ['Back', 'Lats', 'Latissimus Dorsi', 'Rhomboids', 'Middle Trapezius', 'Lower Trapezius'],
     'shoulders': ['Shoulders', 'Deltoids', 'Anterior Deltoid', 'Posterior Deltoid', 'Lateral Deltoid'],
-    'arms': ['Arms', 'Biceps', 'Triceps', 'Forearms'],
     'biceps': ['Biceps', 'Biceps Brachii'],
     'triceps': ['Triceps', 'Triceps Brachii'],
-    'legs': ['Legs', 'Quadriceps', 'Hamstrings', 'Glutes', 'Calves'],
     'quadriceps': ['Quadriceps', 'Quads', 'Rectus Femoris', 'Vastus Lateralis', 'Vastus Medialis'],
     'hamstrings': ['Hamstrings', 'Biceps Femoris', 'Semitendinosus', 'Semimembranosus'],
     'hamstring': ['Hamstrings', 'Biceps Femoris', 'Semitendinosus', 'Semimembranosus'],
     'glutes': ['Glutes', 'Gluteus Maximus', 'Gluteus Medius', 'Gluteus Minimus'],
     'calves': ['Calves', 'Gastrocnemius', 'Soleus'],
-    'core': ['Core', 'Abs', 'Abdominals', 'Obliques'],
     'abs': ['Abs', 'Abdominals', 'Rectus Abdominis'],
+    'core': ['Core', 'Abs', 'Abdominals', 'Obliques'],
     'forearms': ['Forearms', 'Wrist Flexors', 'Wrist Extensors'],
     'lats': ['Lats', 'Latissimus Dorsi'],
     'traps': ['Traps', 'Trapezius', 'Upper Trapezius', 'Middle Trapezius', 'Lower Trapezius']
@@ -60,6 +57,11 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   const getMuscleVariations = (searchTerm: string): string[] => {
     const term = searchTerm.toLowerCase();
     return muscleGroupMappings[term] || [searchTerm];
+  };
+
+  const isLikelyMuscleGroupSearch = (query: string): boolean => {
+    const term = query.toLowerCase().trim();
+    return Object.keys(muscleGroupMappings).includes(term);
   };
 
   useEffect(() => {
@@ -76,9 +78,9 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
       try {
         console.log('Searching for exercises with query:', searchQuery);
         
-        // Get muscle variations for better matching
+        const isMuscleGroupSearch = isLikelyMuscleGroupSearch(searchQuery);
         const muscleVariations = getMuscleVariations(searchQuery.trim());
-        console.log('Muscle variations:', muscleVariations);
+        console.log('Is muscle group search:', isMuscleGroupSearch, 'Variations:', muscleVariations);
 
         let searchResults: Exercise[] = [];
         
@@ -98,67 +100,89 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
             .from('exercises')
             .select('id, name, description, primary_muscles, secondary_muscles, equipment, difficulty_level, category')
             .eq('is_active', true)
-            .limit(20);
+            .limit(50); // Get more results for better filtering
 
           if (basicError) {
             console.error('Basic search failed:', basicError);
             throw basicError;
           }
 
-          // Filter results manually for better muscle group matching
+          // Filter results with improved logic for muscle group searches
           searchResults = (basicData || [])
             .filter(exercise => {
               const searchLower = searchQuery.toLowerCase();
               const exerciseNameLower = exercise.name.toLowerCase();
               const equipmentLower = exercise.equipment.toLowerCase();
               
-              // Check name match
+              // For muscle group searches, prioritize primary muscle matches
+              if (isMuscleGroupSearch) {
+                // Check if primary muscles contain the target muscle group
+                const primaryMuscleMatch = muscleVariations.some(variation => 
+                  exercise.primary_muscles.some(muscle => 
+                    muscle.toLowerCase().includes(variation.toLowerCase()) ||
+                    variation.toLowerCase().includes(muscle.toLowerCase())
+                  )
+                );
+                
+                // Only return exercises that primarily target this muscle group
+                return primaryMuscleMatch;
+              }
+              
+              // For non-muscle group searches (exercise names, equipment, etc.)
+              // Check name match first (highest priority)
               if (exerciseNameLower.includes(searchLower)) return true;
               
               // Check equipment match
               if (equipmentLower.includes(searchLower)) return true;
               
-              // Check muscle group matches (both primary and secondary)
+              // Check muscle matches (both primary and secondary for general searches)
               const allMuscles = [...exercise.primary_muscles, ...exercise.secondary_muscles];
-              
-              // Direct muscle match
-              if (allMuscles.some(muscle => muscle.toLowerCase().includes(searchLower))) return true;
-              
-              // Enhanced muscle group matching
-              return muscleVariations.some(variation => 
-                allMuscles.some(muscle => 
-                  muscle.toLowerCase().includes(variation.toLowerCase()) ||
-                  variation.toLowerCase().includes(muscle.toLowerCase())
-                )
-              );
+              return allMuscles.some(muscle => muscle.toLowerCase().includes(searchLower));
             })
             .map(ex => ({ ...ex, is_custom: false }));
         } else {
           searchResults = optimizedData || [];
-        }
-
-        // Sort results to prioritize muscle group matches when searching for muscle groups
-        const isLikelyMuscleGroup = muscleGroupMappings[searchQuery.toLowerCase()];
-        
-        if (isLikelyMuscleGroup) {
-          searchResults.sort((a, b) => {
-            const aMatchesPrimary = a.primary_muscles.some(muscle => 
+          
+          // If we got results from optimized search but it's a muscle group search,
+          // filter to prioritize primary muscle matches
+          if (isMuscleGroupSearch && searchResults.length > 0) {
+            const primaryMatches = searchResults.filter(exercise => 
               muscleVariations.some(variation => 
-                muscle.toLowerCase().includes(variation.toLowerCase())
-              )
-            );
-            const bMatchesPrimary = b.primary_muscles.some(muscle => 
-              muscleVariations.some(variation => 
-                muscle.toLowerCase().includes(variation.toLowerCase())
+                exercise.primary_muscles.some(muscle => 
+                  muscle.toLowerCase().includes(variation.toLowerCase()) ||
+                  variation.toLowerCase().includes(muscle.toLowerCase())
+                )
               )
             );
             
-            if (aMatchesPrimary && !bMatchesPrimary) return -1;
-            if (!aMatchesPrimary && bMatchesPrimary) return 1;
+            // Use primary matches if we have them, otherwise keep all results
+            if (primaryMatches.length > 0) {
+              searchResults = primaryMatches;
+            }
+          }
+        }
+
+        // Sort results for muscle group searches
+        if (isMuscleGroupSearch) {
+          searchResults.sort((a, b) => {
+            // First sort by name alphabetically
+            return a.name.localeCompare(b.name);
+          });
+        } else {
+          // For general searches, sort by relevance
+          searchResults.sort((a, b) => {
+            const aNameMatch = a.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const bNameMatch = b.name.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            if (aNameMatch && !bNameMatch) return -1;
+            if (!aNameMatch && bNameMatch) return 1;
             
             return a.name.localeCompare(b.name);
           });
         }
+
+        // Limit results
+        searchResults = searchResults.slice(0, 20);
 
         console.log('Search results:', searchResults.length, 'exercises found');
         setExercises(searchResults);
@@ -240,7 +264,7 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
                     Add "{searchQuery}" as custom exercise
                   </button>
                 </div>
-              )}
+              ))}
             </>
           )}
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,11 @@ interface Gender {
   label: string;
 }
 
-const TDEECalculator = () => {
+interface TDEECalculatorProps {
+  onBack?: () => void;
+}
+
+const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   const isMobile = useIsMobile();
   const { units, formatWeight, formatHeight } = useUnitsPreference();
   const [gender, setGender] = useState<Gender>({ value: 'male', label: 'Male' });
@@ -55,12 +58,20 @@ const TDEECalculator = () => {
     }
 
     const parsedAge = parseFloat(age);
-    const parsedWeight = parseFloat(weight);
-    const parsedHeight = parseFloat(height);
+    let parsedWeight = parseFloat(weight);
+    let parsedHeight = parseFloat(height);
 
     if (isNaN(parsedAge) || isNaN(parsedWeight) || isNaN(parsedHeight)) {
       alert('Please enter valid numbers for age, weight, and height.');
       return;
+    }
+
+    // Convert to metric for calculation if needed
+    if (units.weightUnit === 'lbs') {
+      parsedWeight = parsedWeight / 2.20462; // Convert to kg
+    }
+    if (units.heightUnit === 'in') {
+      parsedHeight = parsedHeight * 2.54; // Convert to cm
     }
 
     let bmr: number;
@@ -74,11 +85,19 @@ const TDEECalculator = () => {
     setTDEE(calculatedTDEE);
   };
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      window.history.back();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-purple-800/20">
       <MobileHeader
         title="TDEE Calculator"
-        onBack={() => { }}
+        onBack={handleBack}
       />
       
       <div className="p-4 sm:p-6 max-w-4xl mx-auto">

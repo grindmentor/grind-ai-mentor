@@ -6,12 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Calculator, ArrowLeft, TrendingDown, Target, Calendar, Zap } from "lucide-react";
 import { useState } from "react";
+import { useUnitsPreference } from "@/hooks/useUnitsPreference";
 
 interface CutCalcProProps {
   onBack: () => void;
 }
 
 const CutCalcPro = ({ onBack }: CutCalcProProps) => {
+  const { units } = useUnitsPreference();
   const [currentWeight, setCurrentWeight] = useState("");
   const [targetWeight, setTargetWeight] = useState("");
   const [weeklyDeficit, setWeeklyDeficit] = useState("1");
@@ -29,9 +31,15 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     // Simulate calculation time for better UX
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const current = parseFloat(currentWeight);
-    const target = parseFloat(targetWeight);
+    let current = parseFloat(currentWeight);
+    let target = parseFloat(targetWeight);
     const deficitPerWeek = parseFloat(weeklyDeficit);
+    
+    // Convert to lbs for calculation if using kg
+    if (units.weightUnit === 'kg') {
+      current = current * 2.20462;
+      target = target * 2.20462;
+    }
     
     const totalWeightLoss = current - target;
     const weeksToGoal = Math.ceil(totalWeightLoss / deficitPerWeek);
@@ -53,16 +61,22 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     const dailyDeficit = (deficitPerWeek * 3500) / 7;
     const targetCalories = Math.round(estimatedTDEE - dailyDeficit);
     
+    // Convert weights back to display units for results
+    let displayCurrent = parseFloat(currentWeight);
+    let displayTarget = parseFloat(targetWeight);
+    let displayLoss = displayCurrent - displayTarget;
+    
     const calculatedResults = {
-      currentWeight: current,
-      targetWeight: target,
-      totalLoss: totalWeightLoss,
+      currentWeight: displayCurrent,
+      targetWeight: displayTarget,
+      totalLoss: displayLoss,
       weeksToGoal,
       estimatedTDEE: Math.round(estimatedTDEE),
       targetCalories,
       dailyDeficit: Math.round(dailyDeficit),
       weeklyDeficit: deficitPerWeek,
-      targetDate: new Date(Date.now() + weeksToGoal * 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+      targetDate: new Date(Date.now() + weeksToGoal * 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      weightUnit: units.weightUnit
     };
     
     setResults(calculatedResults);
@@ -114,20 +128,20 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Current Weight (lbs)</Label>
+                  <Label className="text-slate-300">Current Weight ({units.weightUnit})</Label>
                   <Input
                     type="number"
-                    placeholder="180"
+                    placeholder={units.weightUnit === 'kg' ? "80" : "180"}
                     value={currentWeight}
                     onChange={(e) => setCurrentWeight(e.target.value)}
                     className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Target Weight (lbs)</Label>
+                  <Label className="text-slate-300">Target Weight ({units.weightUnit})</Label>
                   <Input
                     type="number"
-                    placeholder="165"
+                    placeholder={units.weightUnit === 'kg' ? "75" : "165"}
                     value={targetWeight}
                     onChange={(e) => setTargetWeight(e.target.value)}
                     className="bg-slate-800/50 border-slate-600/50 text-white focus:border-red-500"
@@ -142,10 +156,10 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0.5">0.5 lbs/week (Conservative)</SelectItem>
-                    <SelectItem value="1">1 lb/week (Moderate)</SelectItem>
-                    <SelectItem value="1.5">1.5 lbs/week (Aggressive)</SelectItem>
-                    <SelectItem value="2">2 lbs/week (Very Aggressive)</SelectItem>
+                    <SelectItem value="0.5">{units.weightUnit === 'kg' ? '0.25 kg/week' : '0.5 lbs/week'} (Conservative)</SelectItem>
+                    <SelectItem value="1">{units.weightUnit === 'kg' ? '0.5 kg/week' : '1 lb/week'} (Moderate)</SelectItem>
+                    <SelectItem value="1.5">{units.weightUnit === 'kg' ? '0.75 kg/week' : '1.5 lbs/week'} (Aggressive)</SelectItem>
+                    <SelectItem value="2">{units.weightUnit === 'kg' ? '1 kg/week' : '2 lbs/week'} (Very Aggressive)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -207,12 +221,11 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                       <div className="text-slate-400 text-sm">Weeks to Goal</div>
                     </div>
                     <div className="bg-slate-800/30 rounded-xl p-4 text-center">
-                      <div className="text-2xl font-bold text-orange-400">{results.totalLoss} lbs</div>
+                      <div className="text-2xl font-bold text-orange-400">{results.totalLoss.toFixed(1)} {results.weightUnit}</div>
                       <div className="text-slate-400 text-sm">Total Loss</div>
                     </div>
                   </div>
 
-                  {/* Detailed Results */}
                   <div className="space-y-4">
                     <div className="bg-slate-800/20 rounded-xl p-4">
                       <h4 className="text-white font-medium mb-3 flex items-center">
@@ -234,7 +247,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                         </div>
                         <div>
                           <span className="text-slate-400">Weekly Loss:</span>
-                          <span className="text-orange-400 ml-2 font-medium">{results.weeklyDeficit} lbs</span>
+                          <span className="text-orange-400 ml-2 font-medium">{results.weeklyDeficit} {units.weightUnit === 'kg' ? 'kg' : 'lbs'}</span>
                         </div>
                       </div>
                     </div>
@@ -247,7 +260,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
                       <div className="text-center">
                         <div className="text-lg text-white">Target Date: <span className="text-red-400 font-medium">{results.targetDate}</span></div>
                         <div className="text-sm text-slate-400 mt-1">
-                          From {results.currentWeight} lbs → {results.targetWeight} lbs
+                          From {results.currentWeight} {results.weightUnit} → {results.targetWeight} {results.weightUnit}
                         </div>
                       </div>
                     </div>

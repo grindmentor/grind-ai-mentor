@@ -76,9 +76,6 @@ export const useCustomerMemory = () => {
     if (!user) return;
 
     try {
-      // Check if sindre@limaway.no gets premium
-      const isPremiumUser = user.email === 'sindre@limaway.no';
-      
       const { data, error } = await supabase
         .from('customer_profiles')
         .insert({
@@ -87,7 +84,7 @@ export const useCustomerMemory = () => {
           interaction_count: 1,
           last_active: new Date().toISOString(),
           favorite_features: [],
-          subscription_tier: isPremiumUser ? 'premium' : 'free'
+          subscription_tier: 'free'
         })
         .select()
         .single();

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,7 @@ interface Goal {
   is_completed: boolean;
 }
 
-interface RealGoalsAchievementsProps {
-  onNotificationsOpen?: () => void;
-}
-
-export const RealGoalsAchievements: React.FC<RealGoalsAchievementsProps> = ({ onNotificationsOpen }) => {
+export const RealGoalsAchievements: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -131,13 +128,6 @@ export const RealGoalsAchievements: React.FC<RealGoalsAchievementsProps> = ({ on
     }
   };
 
-  const handleAddGoalClick = () => {
-    // Open notifications center in the dashboard
-    if (onNotificationsOpen) {
-      onNotificationsOpen();
-    }
-  };
-
   const handleGoalClick = (goal: Goal) => {
     // Redirect to appropriate AI module based on category
     const moduleMap: { [key: string]: string } = {
@@ -157,6 +147,11 @@ export const RealGoalsAchievements: React.FC<RealGoalsAchievementsProps> = ({ on
         description: `Tell the AI about your goal: "${goal.title}" and it will help track your progress.`
       });
     }
+  };
+
+  const handleAddGoalClick = () => {
+    // Navigate to notifications center for goal creation
+    window.location.href = '/?notifications=true';
   };
 
   const startEditing = (goal: Goal) => {

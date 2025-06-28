@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -9,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useCustomerMemory } from '@/hooks/useCustomerMemory';
 import { MobileHeader } from './MobileHeader';
-import { ModuleCard } from './dashboard/AIModuleCard';
+import AIModuleCard from './dashboard/AIModuleCard';
 import NotificationSystem from './NotificationSystem';
 import PersonalizedSummary from './homepage/PersonalizedSummary';
 import NotificationsSummary from './dashboard/NotificationsSummary';
-import { RealGoalsAchievements } from './goals/RealGoalsAchievements';
-import UsageIndicator from './UsageIndicator';
-import NotificationCenter from './NotificationCenter';
+import { RealGoalsAchievements } from '@/goals/RealGoalsAchievements';
+import UsageIndicator from '@/UsageIndicator';
+import NotificationCenter from '@/NotificationCenter';
 
 interface DashboardProps {
   isNotificationsOpen?: boolean;
@@ -150,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isNotificationsOpen = false }) =>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {aiModules.map((module) => (
-                    <ModuleCard
+                    <AIModuleCard
                       key={module.id}
                       module={module}
                       isLocked={isModuleLocked(module)}

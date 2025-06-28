@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SmoothButton } from '@/components/ui/smooth-button';
@@ -20,11 +19,11 @@ interface WorkoutSession {
 }
 
 interface UserStats {
-  dedication: number;
-  strength: number;
-  recovery: number;
+  frequency: number;
+  intensity: number;
+  volume: number;
   consistency: number;
-  endurance: number;
+  progression: number;
 }
 
 interface BenchmarkData {
@@ -45,11 +44,11 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   const isMobile = useIsMobile();
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [userStats, setUserStats] = useState<UserStats>({
-    dedication: 0,
-    strength: 0,
-    recovery: 0,
+    frequency: 0,
+    intensity: 0,
+    volume: 0,
     consistency: 0,
-    endurance: 0
+    progression: 0
   });
   const [benchmarks, setBenchmarks] = useState<BenchmarkData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,59 +114,106 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   const calculateUserStats = (workouts: WorkoutSession[]) => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     
     const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= thirtyDaysAgo);
-    const consistency = Math.min((recentWorkouts.length / 20) * 100, 100);
-    const dedication = Math.min((workouts.length / 50) * 100, 100);
+    const last90Days = workouts.filter(w => new Date(w.session_date) >= ninetyDaysAgo);
     
-    const avgDuration = workouts.length > 0 
-      ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length 
+    // Frequency: Workouts per week in last 30 days (optimal: 3-4 per week)
+    const weeksInMonth = 4.3;
+    const workoutsPerWeek = recentWorkouts.length / weeksInMonth;
+    const frequency = Math.min((workoutsPerWeek / 3.5) * 100, 100);
+    
+    // Intensity: Average workout duration (optimal: 45-75 minutes)
+    const avgDuration = recentWorkouts.length > 0 
+      ? recentWorkouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / recentWorkouts.length 
       : 0;
-    const strength = Math.min((avgDuration / 90) * 100, 100);
-    
-    const avgCalories = workouts.length > 0 
-      ? workouts.reduce((sum, w) => sum + (w.calories_burned || 0), 0) / workouts.length 
+    const optimalDuration = 60; // 60 minutes is ideal
+    const intensity = avgDuration > 0 
+      ? Math.min(100 - Math.abs(avgDuration - optimalDuration) * 2, 100) 
       : 0;
-    const endurance = Math.min((avgCalories / 400) * 100, 100);
     
-    const weeklyWorkouts = recentWorkouts.length / 4;
-    const recovery = Math.min(Math.max((4 - Math.abs(weeklyWorkouts - 3.5)) / 4 * 100, 0), 100);
+    // Volume: Total workouts completed (shows dedication over time)
+    const totalWorkouts = workouts.length;
+    const volume = Math.min((totalWorkouts / 50) * 100, 100); // 50 workouts = 100%
+    
+    // Consistency: Regularity of training (variance in weekly frequency)
+    const consistency = recentWorkouts.length >= 8 
+      ? Math.max(85 - (Math.abs(workoutsPerWeek - 3) * 10), 20) 
+      : Math.min(recentWorkouts.length * 12.5, 100);
+    
+    // Progression: Improvement over time (comparing recent vs older sessions)
+    const recent2Weeks = workouts.filter(w => {
+      const date = new Date(w.session_date);
+      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      return date >= twoWeeksAgo;
+    });
+    
+    const older2Weeks = workouts.filter(w => {
+      const date = new Date(w.session_date);
+      const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      return date >= fourWeeksAgo && date < twoWeeksAgo;
+    });
+    
+    let progression = 50; // Default baseline
+    if (recent2Weeks.length > 0 && older2Weeks.length > 0) {
+      const recentAvgDuration = recent2Weeks.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / recent2Weeks.length;
+      const olderAvgDuration = older2Weeks.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / older2Weeks.length;
+      
+      if (recentAvgDuration > olderAvgDuration) {
+        progression = Math.min(75 + ((recentAvgDuration - olderAvgDuration) / olderAvgDuration) * 100, 100);
+      } else if (recentAvgDuration < olderAvgDuration) {
+        progression = Math.max(40 - ((olderAvgDuration - recentAvgDuration) / olderAvgDuration) * 50, 10);
+      }
+    } else if (workouts.length > 0) {
+      // If we don't have enough data for comparison, base on recent activity
+      progression = Math.min(30 + (recentWorkouts.length * 8), 85);
+    }
 
     setUserStats({
-      dedication: Math.round(dedication),
-      strength: Math.round(strength),
-      recovery: Math.round(recovery),
-      consistency: Math.round(consistency),
-      endurance: Math.round(endurance)
+      frequency: Math.round(Math.max(frequency, 0)),
+      intensity: Math.round(Math.max(intensity, 0)),
+      volume: Math.round(Math.max(volume, 0)),
+      consistency: Math.round(Math.max(consistency, 0)),
+      progression: Math.round(Math.max(progression, 0))
     });
   };
 
   const generateBenchmarks = (workouts: WorkoutSession[]) => {
-    // Simulate demographic-based benchmarking
-    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0; // rough weekly average
+    // More meaningful benchmark calculations
+    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0; // rough weekly average over 3 months
     const avgDuration = workouts.length > 0 ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length : 0;
+    const totalHours = workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / 60;
     
     const benchmarkData: BenchmarkData[] = [
       {
         metric: 'Training Frequency',
         userValue: Math.round(weeklyFrequency * 10) / 10,
         percentile: Math.min(Math.round((weeklyFrequency / 4) * 100), 95),
-        description: 'Workouts per week',
-        comparison: weeklyFrequency >= 3 ? 'Excellent consistency - top 25% of trainees' : weeklyFrequency >= 2 ? 'Good frequency - above average' : 'Room for improvement - aim for 3x/week'
+        description: 'Sessions per week',
+        comparison: weeklyFrequency >= 3.5 ? 'Excellent - matches optimal frequency research' : weeklyFrequency >= 2.5 ? 'Good - within effective range' : weeklyFrequency >= 1.5 ? 'Moderate - consider increasing frequency' : 'Low - aim for 3+ sessions weekly'
       },
       {
-        metric: 'Session Duration',
+        metric: 'Session Quality',
         userValue: Math.round(avgDuration),
-        percentile: Math.min(Math.round((avgDuration / 90) * 100), 90),
-        description: 'Average workout length (minutes)',
-        comparison: avgDuration >= 60 ? 'Optimal duration - matches research recommendations' : avgDuration >= 45 ? 'Good session length' : 'Consider longer sessions for better results'
+        percentile: avgDuration >= 45 && avgDuration <= 75 ? 85 : avgDuration >= 30 ? 60 : 25,
+        description: 'Average duration (minutes)',
+        comparison: avgDuration >= 45 && avgDuration <= 75 ? 'Optimal - matches research-backed duration' : avgDuration > 75 ? 'Long sessions - consider efficiency' : avgDuration >= 30 ? 'Moderate - adequate for results' : 'Short - may need longer sessions'
       },
       {
-        metric: 'Total Sessions',
+        metric: 'Training Volume',
         userValue: workouts.length,
         percentile: Math.min(Math.round((workouts.length / 100) * 100), 95),
-        description: 'Lifetime workout count',
-        comparison: workouts.length >= 50 ? 'Experienced trainee - top 30%' : workouts.length >= 20 ? 'Building consistency' : 'Just getting started - keep going!'
+        description: 'Total sessions completed',
+        comparison: workouts.length >= 50 ? 'Experienced - consistent long-term training' : workouts.length >= 25 ? 'Developing - building good habits' : workouts.length >= 10 ? 'Beginner - great start!' : 'New - keep building momentum'
+      },
+      {
+        metric: 'Training Hours',
+        userValue: Math.round(totalHours),
+        percentile: Math.min(Math.round((totalHours / 200) * 100), 90),
+        description: 'Total hours trained',
+        comparison: totalHours >= 100 ? 'Dedicated - significant time investment' : totalHours >= 50 ? 'Committed - solid foundation' : totalHours >= 20 ? 'Progressing - building consistency' : 'Starting - every hour counts'
       }
     ];
 
@@ -175,16 +221,16 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   };
 
   const radarData = [
-    { metric: 'Dedication', value: userStats.dedication, fullMark: 100 },
-    { metric: 'Strength', value: userStats.strength, fullMark: 100 },
-    { metric: 'Recovery', value: userStats.recovery, fullMark: 100 },
+    { metric: 'Frequency', value: userStats.frequency, fullMark: 100 },
+    { metric: 'Intensity', value: userStats.intensity, fullMark: 100 },
+    { metric: 'Volume', value: userStats.volume, fullMark: 100 },
     { metric: 'Consistency', value: userStats.consistency, fullMark: 100 },
-    { metric: 'Endurance', value: userStats.endurance, fullMark: 100 }
+    { metric: 'Progression', value: userStats.progression, fullMark: 100 }
   ];
 
   const chartConfig = {
     value: {
-      label: "Progress",
+      label: "Score",
       color: "hsl(var(--chart-1))",
     },
   };
@@ -194,6 +240,24 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     if (percentile >= 60) return 'text-yellow-400';
     if (percentile >= 40) return 'text-orange-400';
     return 'text-red-400';
+  };
+
+  const getStatColor = (value: number) => {
+    if (value >= 80) return 'text-green-300';
+    if (value >= 60) return 'text-yellow-300';
+    if (value >= 40) return 'text-orange-300';
+    return 'text-red-300';
+  };
+
+  const getStatDescription = (stat: string, value: number) => {
+    const descriptions = {
+      frequency: value >= 80 ? 'Optimal' : value >= 60 ? 'Good' : value >= 40 ? 'Moderate' : 'Low',
+      intensity: value >= 80 ? 'Excellent' : value >= 60 ? 'Good' : value >= 40 ? 'Fair' : 'Needs Work',
+      volume: value >= 80 ? 'High' : value >= 60 ? 'Moderate' : value >= 40 ? 'Building' : 'Starting',
+      consistency: value >= 80 ? 'Very Stable' : value >= 60 ? 'Stable' : value >= 40 ? 'Variable' : 'Irregular',
+      progression: value >= 80 ? 'Improving' : value >= 60 ? 'Steady' : value >= 40 ? 'Plateauing' : 'Declining'
+    };
+    return descriptions[stat as keyof typeof descriptions] || 'Unknown';
   };
 
   if (loading) {
@@ -265,11 +329,11 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               <div className="flex items-center justify-center space-x-3 mb-2">
                 <Hexagon className="w-8 h-8 text-purple-300" />
                 <CardTitle className="text-white text-2xl lg:text-3xl font-bold">
-                  Your Fitness Profile
+                  Training Analysis
                 </CardTitle>
               </div>
               <CardDescription className="text-purple-200/80 text-base">
-                AI-powered analysis based on your training data and scientific benchmarks
+                Five key metrics that define effective training based on exercise science
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 lg:p-8">
@@ -296,24 +360,53 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               
               <div className="grid grid-cols-5 gap-3 sm:gap-6 mt-6 sm:mt-8">
                 <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.dedication}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Dedication</div>
+                  <div className={`text-lg sm:text-xl lg:text-3xl font-bold mb-1 ${getStatColor(userStats.frequency)}`}>{userStats.frequency}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70 font-medium">Frequency</div>
+                  <div className="text-xs text-purple-300/60 mt-1">{getStatDescription('frequency', userStats.frequency)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.strength}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Strength</div>
+                  <div className={`text-lg sm:text-xl lg:text-3xl font-bold mb-1 ${getStatColor(userStats.intensity)}`}>{userStats.intensity}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70 font-medium">Intensity</div>
+                  <div className="text-xs text-purple-300/60 mt-1">{getStatDescription('intensity', userStats.intensity)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.recovery}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Recovery</div>
+                  <div className={`text-lg sm:text-xl lg:text-3xl font-bold mb-1 ${getStatColor(userStats.volume)}`}>{userStats.volume}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70 font-medium">Volume</div>
+                  <div className="text-xs text-purple-300/60 mt-1">{getStatDescription('volume', userStats.volume)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.consistency}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Consistency</div>
+                  <div className={`text-lg sm:text-xl lg:text-3xl font-bold mb-1 ${getStatColor(userStats.consistency)}`}>{userStats.consistency}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70 font-medium">Consistency</div>
+                  <div className="text-xs text-purple-300/60 mt-1">{getStatDescription('consistency', userStats.consistency)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.endurance}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Endurance</div>
+                  <div className={`text-lg sm:text-xl lg:text-3xl font-bold mb-1 ${getStatColor(userStats.progression)}`}>{userStats.progression}%</div>
+                  <div className="text-xs sm:text-sm text-purple-200/70 font-medium">Progression</div>
+                  <div className="text-xs text-purple-300/60 mt-1">{getStatDescription('progression', userStats.progression)}</div>
+                </div>
+              </div>
+              
+              {/* Metric Explanations */}
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
+                <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
+                  <div className="font-semibold text-purple-200 mb-1">Frequency</div>
+                  <div className="text-purple-300/80">Sessions per week - optimal is 3-4x</div>
+                </div>
+                <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
+                  <div className="font-semibold text-purple-200 mb-1">Intensity</div>
+                  <div className="text-purple-300/80">Session quality - 45-75 min optimal</div>
+                </div>
+                <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
+                  <div className="font-semibold text-purple-200 mb-1">Volume</div>
+                  <div className="text-purple-300/80">Total sessions - shows dedication</div>
+                </div>
+                <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
+                  <div className="font-semibold text-purple-200 mb-1">Consistency</div>
+                  <div className="text-purple-300/80">Training regularity over time</div>
+                </div>
+                <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20 sm:col-span-2 lg:col-span-1">
+                  <div className="font-semibold text-purple-200 mb-1">Progression</div>
+                  <div className="text-purple-300/80">Improvement trend analysis</div>
                 </div>
               </div>
             </CardContent>
@@ -327,7 +420,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 Performance Benchmarks
               </CardTitle>
               <CardDescription className="text-purple-200/70">
-                See how you compare to other trainees in your demographic
+                See how your training compares to evidence-based recommendations
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -353,16 +446,16 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                             {benchmark.userValue}
                           </div>
                           <div className={`text-sm sm:text-base font-semibold ${getPercentileColor(benchmark.percentile)}`}>
-                            Top {Math.max(100 - benchmark.percentile, 5)}%
+                            {benchmark.percentile}th percentile
                           </div>
                         </div>
                       </div>
                       
                       <div className="mb-3">
                         <div className="flex items-center justify-between text-xs sm:text-sm mb-1">
-                          <span className="text-purple-200/70">Population Percentile</span>
+                          <span className="text-purple-200/70">Performance Level</span>
                           <span className={`font-semibold ${getPercentileColor(benchmark.percentile)}`}>
-                            {benchmark.percentile}th percentile
+                            {benchmark.percentile >= 80 ? 'Excellent' : benchmark.percentile >= 60 ? 'Good' : benchmark.percentile >= 40 ? 'Average' : 'Developing'}
                           </span>
                         </div>
                         <div className="w-full bg-purple-950/50 rounded-full h-2 sm:h-3">
@@ -421,20 +514,14 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               <CardHeader className="pb-2 p-3 sm:p-4">
                 <CardTitle className="flex items-center text-white text-xs sm:text-sm">
                   <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  Weekly Avg
+                  Training Score
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 sm:p-4 pt-0">
                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                  {workoutSessions.length > 0 
-                    ? Math.round(workoutSessions.filter(w => {
-                        const sessionDate = new Date(w.session_date);
-                        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-                        return sessionDate >= thirtyDaysAgo;
-                      }).length / 4.3)
-                    : 0}
+                  {Math.round((userStats.frequency + userStats.intensity + userStats.volume + userStats.consistency + userStats.progression) / 5)}%
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Sessions/week</div>
+                <div className="text-xs text-purple-200/70 mt-1">Overall score</div>
               </CardContent>
             </Card>
 
@@ -442,14 +529,14 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               <CardHeader className="pb-2 p-3 sm:p-4">
                 <CardTitle className="flex items-center text-white text-xs sm:text-sm">
                   <Target className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  AI Score
+                  Training Hours
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 sm:p-4 pt-0">
                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                  {Math.round((userStats.dedication + userStats.strength + userStats.recovery + userStats.consistency + userStats.endurance) / 5)}%
+                  {Math.round(workoutSessions.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / 60)}
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Overall fitness</div>
+                <div className="text-xs text-purple-200/70 mt-1">Total hours</div>
               </CardContent>
             </Card>
           </div>

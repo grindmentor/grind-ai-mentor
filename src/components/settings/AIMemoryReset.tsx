@@ -29,29 +29,17 @@ const AIMemoryReset = () => {
         supabase.from('user_custom_exercises').delete().eq('user_id', user.id),
         
         // Clear saved exercises (AI-imported exercises)
-        supabase.from('user_saved_exercises').delete().eq('user_id', user.id)
+        supabase.from('user_saved_exercises').delete().eq('user_id', user.id),
+        
+        // Clear AI conversation history if it exists
+        supabase.from('ai_conversations').delete().eq('user_id', user.id).then(() => {}).catch(() => {}),
+        
+        // Clear AI recommendations if they exist
+        supabase.from('ai_recommendations').delete().eq('user_id', user.id).then(() => {}).catch(() => {}),
+        
+        // Clear AI memory/context data if it exists
+        supabase.from('ai_memory').delete().eq('user_id', user.id).then(() => {}).catch(() => {})
       ];
-
-      // Clear AI conversation history if it exists (ignore errors if table doesn't exist)
-      try {
-        await supabase.from('ai_conversations').delete().eq('user_id', user.id);
-      } catch (error) {
-        console.log('AI conversations table may not exist:', error);
-      }
-      
-      // Clear AI recommendations if they exist (ignore errors if table doesn't exist)
-      try {
-        await supabase.from('ai_recommendations').delete().eq('user_id', user.id);
-      } catch (error) {
-        console.log('AI recommendations table may not exist:', error);
-      }
-      
-      // Clear AI memory/context data if it exists (ignore errors if table doesn't exist)
-      try {
-        await supabase.from('ai_memory').delete().eq('user_id', user.id);
-      } catch (error) {
-        console.log('AI memory table may not exist:', error);
-      }
 
       // Execute all deletion operations
       await Promise.allSettled(resetOperations);

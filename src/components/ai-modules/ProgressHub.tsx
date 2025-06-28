@@ -1,83 +1,74 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { SmoothButton } from '@/components/ui/smooth-button';
-import { ArrowLeft, TrendingUp, Target, Award, Activity, Hexagon, Trophy, Users, BarChart3 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  TrendingUp, 
+  Calendar, 
+  Trophy, 
+  Target, 
+  Activity, 
+  Zap,
+  Award,
+  Star,
+  Flame
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
-interface WorkoutSession {
-  id: string;
-  workout_name: string;
-  session_date: string;
-  duration_minutes: number;
-  exercises_data?: any;
-  calories_burned?: number;
+interface ProgressData {
+  workoutStreak: number;
+  totalWorkouts: number;
+  weightLifted: number;
+  exercisesCompleted: number;
+  consistencyScore: number;
+  strengthGains: number;
+  enduranceGains: number;
+  recoveryScore: number;
 }
 
-interface UserStats {
-  strength: number;
-  endurance: number;
-  consistency: number;
-  technique: number;
-  recovery: number;
+interface ProgressLevel {
+  level: number;
+  title: string;
+  minPoints: number;
+  maxPoints: number;
+  color: string;
+  icon: React.ComponentType<any>;
 }
 
-interface BenchmarkData {
-  metric: string;
-  userValue: number;
-  percentile: number;
-  description: string;
-  comparison: string;
-  demographic: string;
-}
+const progressLevels: ProgressLevel[] = [
+  { level: 1, title: "Beginner", minPoints: 0, maxPoints: 99, color: "bg-gray-500", icon: Target },
+  { level: 2, title: "Novice", minPoints: 100, maxPoints: 299, color: "bg-blue-500", icon: Activity },
+  { level: 3, title: "Intermediate", minPoints: 300, maxPoints: 699, color: "bg-green-500", icon: Zap },
+  { level: 4, title: "Advanced", minPoints: 700, maxPoints: 1499, color: "bg-purple-500", icon: Award },
+  { level: 5, title: "Expert", minPoints: 1500, maxPoints: 2999, color: "bg-orange-500", icon: Star },
+  { level: 6, title: "Master", minPoints: 3000, maxPoints: 5999, color: "bg-red-500", icon: Trophy },
+  { level: 7, title: "Legend", minPoints: 6000, maxPoints: 99999, color: "bg-gradient-to-r from-yellow-400 to-orange-500", icon: Flame }
+];
 
-interface ProgressHubProps {
-  onBack: () => void;
-}
-
-const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
+const ProgressHub: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
-  const [userStats, setUserStats] = useState<UserStats>({
-    strength: 0,
-    endurance: 0,
-    consistency: 0,
-    technique: 0,
-    recovery: 0
-  });
-  const [benchmarks, setBenchmarks] = useState<BenchmarkData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [progressData, setProgressData] = useState<ProgressData>({
+    workoutStreak: 0,
+    totalWorkouts: 0,
+    weightLifted: 0,
+    exercisesCompleted: 0,
+    consistencyScore: 0,
+    strengthGains: 0,
+    enduranceGains: 0,
+    recoveryScore: 0
+  });
 
   useEffect(() => {
     if (user) {
       loadProgressData();
-      loadUserProfile();
     }
   }, [user]);
-
-  const loadUserProfile = async () => {
-    if (!user) return;
-
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      setUserProfile(profile);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
-  };
 
   const loadProgressData = async () => {
     if (!user) return;
@@ -85,434 +76,384 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     try {
       setLoading(true);
 
-      const { data: workoutData, error: workoutError } = await supabase
+      // Load workout sessions for comprehensive analysis
+      const { data: workoutSessions, error: workoutError } = await supabase
         .from('workout_sessions')
         .select('*')
         .eq('user_id', user.id)
         .order('session_date', { ascending: false })
-        .limit(50);
+        .limit(100);
 
-      if (workoutError) {
-        console.error('Workout sessions error:', workoutError);
-      } else if (workoutData) {
-        setWorkoutSessions(workoutData);
-      }
+      if (workoutError) throw workoutError;
 
-      calculateUserStats(workoutData || []);
-      generateBenchmarks(workoutData || []);
+      // Load recovery data
+      const { data: recoveryData, error: recoveryError } = await supabase
+        .from('recovery_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('recorded_date', { ascending: false })
+        .limit(30);
+
+      if (recoveryError) throw recoveryError;
+
+      // Calculate advanced metrics
+      const calculatedData = calculateAdvancedProgress(workoutSessions || [], recoveryData || []);
+      setProgressData(calculatedData);
 
     } catch (error) {
       console.error('Error loading progress data:', error);
-      toast({
-        title: 'Loading Error',
-        description: 'Some data may not be available. Please try refreshing.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to load progress data');
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateUserStats = (workouts: WorkoutSession[]) => {
-    if (workouts.length === 0) {
-      // No mock data - all start at 0
-      setUserStats({
-        strength: 0,
-        endurance: 0,
-        consistency: 0,
-        technique: 0,
-        recovery: 0
-      });
-      return;
-    }
-
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= thirtyDaysAgo);
-    
-    const weeklyFrequency = recentWorkouts.length / 4.3;
-    const consistency = Math.min((weeklyFrequency / 5) * 100, 85);
-    
+  const calculateAdvancedProgress = (workouts: any[], recovery: any[]): ProgressData => {
     const totalWorkouts = workouts.length;
-    const strength = Math.min((totalWorkouts / 80) * 100, 90);
     
-    const avgDuration = workouts.length > 0 
-      ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length 
-      : 0;
-    const endurance = Math.min((avgDuration / 120) * 100, 85);
+    // Calculate workout streak (much harder to maintain)
+    let workoutStreak = 0;
+    const today = new Date();
+    const workoutDates = workouts.map(w => new Date(w.session_date)).sort((a, b) => b.getTime() - a.getTime());
     
-    const technique = Math.min((totalWorkouts / 100) * 100, 80);
-    const recovery = Math.min(Math.max((4 - Math.abs(weeklyFrequency - 3)) / 4 * 100, 0), 75);
-
-    setUserStats({
-      strength: Math.round(strength),
-      endurance: Math.round(endurance),
-      consistency: Math.round(consistency),
-      technique: Math.round(technique),
-      recovery: Math.round(recovery)
-    });
-  };
-
-  const generateBenchmarks = (workouts: WorkoutSession[]) => {
-    if (workouts.length === 0) {
-      setBenchmarks([]);
-      return;
+    for (let i = 0; i < workoutDates.length; i++) {
+      const daysDiff = Math.floor((today.getTime() - workoutDates[i].getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff <= i + 1) { // Must workout almost every day for streak
+        workoutStreak++;
+      } else {
+        break;
+      }
     }
 
-    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0;
-    const totalSessions = workouts.length;
-    
-    const benchmarkData: BenchmarkData[] = [
-      {
-        metric: 'Training Frequency',
-        userValue: Math.round(weeklyFrequency * 10) / 10,
-        percentile: Math.min(Math.round((weeklyFrequency / 4.5) * 100), 92),
-        description: 'Workouts per week vs general population',
-        demographic: 'Adults 25-40',
-        comparison: weeklyFrequency >= 4 ? 'Elite consistency - top 8% of trainees' : 
-                   weeklyFrequency >= 3 ? 'Excellent - top 25% of gym members' : 
-                   weeklyFrequency >= 2 ? 'Above average - better than 60%' : 
-                   'Building habits - room for improvement'
-      },
-      {
-        metric: 'Total Experience',
-        userValue: totalSessions,
-        percentile: Math.min(Math.round((totalSessions / 120) * 100), 95),
-        description: 'Lifetime training sessions',
-        demographic: 'Fitness enthusiasts',
-        comparison: totalSessions >= 100 ? 'Experienced lifter - top 15%' : 
-                   totalSessions >= 50 ? 'Intermediate - top 40%' : 
-                   totalSessions >= 20 ? 'Beginner+ - better than 70% of starters' : 
-                   'Just beginning your journey!'
+    // Calculate total weight lifted with diminishing returns
+    const weightLifted = workouts.reduce((total, workout) => {
+      if (workout.exercises_data) {
+        const sessionWeight = workout.exercises_data.reduce((sessionTotal: number, exercise: any) => {
+          return sessionTotal + (exercise.sets || []).reduce((setTotal: number, set: any) => {
+            return setTotal + (set.weight || 0) * (set.reps || 0);
+          }, 0);
+        }, 0);
+        return total + sessionWeight;
       }
-    ];
+      return total;
+    }, 0);
 
-    setBenchmarks(benchmarkData);
+    // Count unique exercises (bonus for variety)
+    const uniqueExercises = new Set();
+    workouts.forEach(workout => {
+      if (workout.exercises_data) {
+        workout.exercises_data.forEach((exercise: any) => {
+          uniqueExercises.add(exercise.exercise_name);
+        });
+      }
+    });
+
+    // Calculate consistency score (very strict)
+    const last30Days = new Date();
+    last30Days.setDate(last30Days.getDate() - 30);
+    const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= last30Days);
+    const consistencyScore = Math.min((recentWorkouts.length / 20) * 100, 100); // Need 20 workouts in 30 days for 100%
+
+    // Calculate strength gains (progressive overload tracking)
+    const strengthGains = calculateStrengthGains(workouts);
+    
+    // Calculate endurance gains (volume progression)
+    const enduranceGains = calculateEnduranceGains(workouts);
+
+    // Calculate recovery score from recovery data
+    const recoveryScore = calculateRecoveryScore(recovery);
+
+    return {
+      workoutStreak: Math.min(workoutStreak, 365), // Cap at 1 year
+      totalWorkouts,
+      weightLifted: Math.round(weightLifted),
+      exercisesCompleted: uniqueExercises.size,
+      consistencyScore: Math.round(consistencyScore),
+      strengthGains: Math.round(strengthGains),
+      enduranceGains: Math.round(enduranceGains),
+      recoveryScore: Math.round(recoveryScore)
+    };
   };
 
-  const radarData = [
-    { metric: 'Strength', value: userStats.strength, fullMark: 100 },
-    { metric: 'Endurance', value: userStats.endurance, fullMark: 100 },
-    { metric: 'Consistency', value: userStats.consistency, fullMark: 100 },
-    { metric: 'Technique', value: userStats.technique, fullMark: 100 },
-    { metric: 'Recovery', value: userStats.recovery, fullMark: 100 }
-  ];
+  const calculateStrengthGains = (workouts: any[]): number => {
+    // Track progression over time - very strict requirements
+    const exerciseProgress: { [key: string]: number[] } = {};
+    
+    workouts.reverse().forEach(workout => {
+      if (!workout.exercises_data) return;
+      
+      workout.exercises_data.forEach((exercise: any) => {
+        const exerciseName = exercise.exercise_name;
+        if (!exerciseProgress[exerciseName]) {
+          exerciseProgress[exerciseName] = [];
+        }
+        
+        const maxWeight = Math.max(...(exercise.sets || []).map((set: any) => set.weight || 0));
+        if (maxWeight > 0) {
+          exerciseProgress[exerciseName].push(maxWeight);
+        }
+      });
+    });
 
-  const chartConfig = {
-    value: {
-      label: "Progress",
-      color: "hsl(var(--chart-1))",
-    },
+    let totalGainScore = 0;
+    let exerciseCount = 0;
+
+    Object.values(exerciseProgress).forEach(weights => {
+      if (weights.length >= 3) { // Need at least 3 sessions
+        const firstWeight = weights[0];
+        const lastWeight = weights[weights.length - 1];
+        const improvement = ((lastWeight - firstWeight) / firstWeight) * 100;
+        totalGainScore += Math.min(improvement, 50); // Cap individual exercise gains
+        exerciseCount++;
+      }
+    });
+
+    return exerciseCount > 0 ? Math.min(totalGainScore / exerciseCount, 100) : 0;
   };
 
-  const getPercentileColor = (percentile: number) => {
-    if (percentile >= 85) return 'text-green-400';
-    if (percentile >= 70) return 'text-blue-400';
-    if (percentile >= 50) return 'text-yellow-400';
-    if (percentile >= 30) return 'text-orange-400';
-    return 'text-red-400';
+  const calculateEnduranceGains = (workouts: any[]): number => {
+    if (workouts.length < 5) return 0;
+
+    const first5Workouts = workouts.slice(-5);
+    const last5Workouts = workouts.slice(0, 5);
+
+    const calculateVolume = (workoutSet: any[]) => {
+      return workoutSet.reduce((total, workout) => {
+        if (!workout.exercises_data) return total;
+        return total + workout.exercises_data.reduce((sessionTotal: number, exercise: any) => {
+          return sessionTotal + (exercise.sets || []).reduce((setTotal: number, set: any) => {
+            return setTotal + (set.reps || 0);
+          }, 0);
+        }, 0);
+      }, 0);
+    };
+
+    const firstVolume = calculateVolume(first5Workouts);
+    const lastVolume = calculateVolume(last5Workouts);
+
+    if (firstVolume === 0) return 0;
+    return Math.min(((lastVolume - firstVolume) / firstVolume) * 100, 100);
   };
 
-  const getPercentileBadge = (percentile: number) => {
-    if (percentile >= 90) return { text: 'Elite', color: 'bg-green-600/20 text-green-300 border-green-500/30' };
-    if (percentile >= 75) return { text: 'Advanced', color: 'bg-blue-600/20 text-blue-300 border-blue-500/30' };
-    if (percentile >= 60) return { text: 'Good', color: 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30' };
-    if (percentile >= 40) return { text: 'Average', color: 'bg-orange-600/20 text-orange-300 border-orange-500/30' };
-    return { text: 'Developing', color: 'bg-red-600/20 text-red-300 border-red-500/30' };
+  const calculateRecoveryScore = (recovery: any[]): number => {
+    if (recovery.length === 0) return 0;
+
+    const avgSleep = recovery.reduce((sum, r) => sum + (r.sleep_hours || 0), 0) / recovery.length;
+    const avgStress = recovery.reduce((sum, r) => sum + (r.stress_level || 5), 0) / recovery.length;
+    const avgEnergy = recovery.reduce((sum, r) => sum + (r.energy_level || 5), 0) / recovery.length;
+
+    // Very strict recovery scoring
+    const sleepScore = Math.min((avgSleep / 8) * 35, 35); // Need 8+ hours for full points
+    const stressScore = Math.max(0, 35 - (avgStress - 1) * 7); // Lower stress = higher score
+    const energyScore = ((avgEnergy - 1) / 9) * 30; // Energy scale 1-10
+
+    return Math.min(sleepScore + stressScore + energyScore, 100);
   };
+
+  // Calculate total progress points with exponential difficulty
+  const calculateTotalPoints = (): number => {
+    const weights = {
+      workoutStreak: progressData.workoutStreak * 5, // 5 points per day streak
+      totalWorkouts: progressData.totalWorkouts * 3, // 3 points per workout
+      weightLifted: Math.floor(progressData.weightLifted / 1000) * 2, // 2 points per 1000 lbs
+      exercisesCompleted: progressData.exercisesCompleted * 10, // 10 points per unique exercise
+      consistencyScore: Math.floor(progressData.consistencyScore / 10) * 15, // 15 points per 10% consistency
+      strengthGains: Math.floor(progressData.strengthGains / 10) * 20, // 20 points per 10% strength gain
+      enduranceGains: Math.floor(progressData.enduranceGains / 10) * 15, // 15 points per 10% endurance gain
+      recoveryScore: Math.floor(progressData.recoveryScore / 10) * 10 // 10 points per 10% recovery score
+    };
+
+    return Object.values(weights).reduce((sum, points) => sum + points, 0);
+  };
+
+  const totalPoints = calculateTotalPoints();
+  const currentLevel = progressLevels.find(level => 
+    totalPoints >= level.minPoints && totalPoints <= level.maxPoints
+  ) || progressLevels[0];
+
+  const progressToNextLevel = currentLevel.level < progressLevels.length 
+    ? ((totalPoints - currentLevel.minPoints) / (currentLevel.maxPoints - currentLevel.minPoints)) * 100
+    : 100;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-purple-800/20 text-white overflow-x-hidden">
-        <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <SmoothButton
-                variant="ghost"
-                onClick={onBack}
-                className="text-white hover:bg-purple-500/20 backdrop-blur-sm hover:text-purple-400 transition-colors font-medium flex items-center space-x-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Dashboard</span>
-              </SmoothButton>
-              <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
-                Progress Hub
-              </h1>
-              <div className="w-20"></div>
-            </div>
+      <Card className="bg-gray-900/50 border-gray-700">
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-700 rounded w-1/3"></div>
+            <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+            <div className="h-32 bg-gray-700 rounded"></div>
           </div>
-        </div>
-        
-        <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-6">
-            <div className="animate-pulse">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500/30 to-purple-700/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Hexagon className="w-8 h-8 text-purple-400" />
-              </div>
-            </div>
-            <div className="flex items-center justify-center space-x-3">
-              <div className="w-6 h-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
-              <span className="text-white text-lg font-medium">Analyzing Your Progress...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show empty state if no workout data
-  if (workoutSessions.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-purple-800/20 text-white overflow-x-hidden">
-        <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <SmoothButton
-                variant="ghost"
-                onClick={onBack}
-                className="text-white hover:bg-purple-500/20 backdrop-blur-sm hover:text-purple-400 transition-colors font-medium flex items-center space-x-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Dashboard</span>
-              </SmoothButton>
-              <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
-                Progress Hub
-              </h1>
-              <div className="w-20"></div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-6 max-w-md">
-            <Hexagon className="w-24 h-24 text-purple-400/50 mx-auto" />
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4">No Progress Data Yet</h2>
-              <p className="text-purple-200/80 mb-6">
-                Start logging workouts to see your personalized fitness analytics and progress tracking here.
-              </p>
-              <SmoothButton
-                onClick={() => window.location.href = '/app?module=workout-logger-ai'}
-                className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3"
-              >
-                Log Your First Workout
-              </SmoothButton>
-            </div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-purple-800/20 text-white overflow-x-hidden">
-      <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <SmoothButton
-              variant="ghost"
-              onClick={onBack}
-              className="text-white hover:bg-purple-500/20 backdrop-blur-sm hover:text-purple-400 transition-colors font-medium flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Dashboard</span>
-            </SmoothButton>
-            <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
-              Progress Hub
-            </h1>
-            <div className="w-20"></div>
+    <div className="space-y-6">
+      {/* Level Progress Card */}
+      <Card className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 border-gray-700">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`w-12 h-12 rounded-xl ${currentLevel.color} flex items-center justify-center`}>
+                <currentLevel.icon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-white text-xl">Level {currentLevel.level}: {currentLevel.title}</CardTitle>
+                <p className="text-gray-400">{totalPoints.toLocaleString()} Total Points</p>
+              </div>
+            </div>
+            <Badge variant="secondary" className="text-orange-400 border-orange-400/30">
+              {Math.round(progressToNextLevel)}% to next level
+            </Badge>
           </div>
-        </div>
-      </div>
-      
-      <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
-        <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
-          
-          {/* Hero Section - Enhanced Hexagon Chart */}
-          <Card className="bg-gradient-to-br from-purple-900/40 to-indigo-900/50 border-purple-600/50 backdrop-blur-sm">
-            <CardHeader className="text-center pb-4">
-              <div className="flex items-center justify-center space-x-3 mb-2">
-                <Hexagon className="w-10 h-10 text-purple-300" />
-                <CardTitle className="text-white text-3xl lg:text-4xl font-bold">
-                  Your Fitness DNA
-                </CardTitle>
-              </div>
-              <CardDescription className="text-purple-200/80 text-lg max-w-2xl mx-auto">
-                AI-powered analysis of your training profile based on workout data and performance metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 lg:p-8">
-              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[500px] sm:max-h-[600px] lg:max-h-[700px] w-full">
-                <RadarChart data={radarData}>
-                  <ChartTooltip 
-                    cursor={false} 
-                    content={<ChartTooltipContent hideLabel />} 
-                  />
-                  <PolarGrid 
-                    stroke="rgba(147, 51, 234, 0.3)" 
-                    strokeWidth={2}
-                    radialLines={true}
-                  />
-                  <PolarAngleAxis 
-                    dataKey="metric" 
-                    tick={{ 
-                      fill: 'white', 
-                      fontSize: isMobile ? 14 : 16, 
-                      fontWeight: 600 
-                    }}
-                  />
-                  <Radar
-                    dataKey="value"
-                    stroke="rgba(147, 51, 234, 1)"
-                    fill="rgba(147, 51, 234, 0.3)"
-                    strokeWidth={4}
-                    dot={{ 
-                      fill: 'rgba(147, 51, 234, 1)', 
-                      r: 8,
-                      strokeWidth: 2,
-                      stroke: 'white'
-                    }}
-                  />
-                </RadarChart>
-              </ChartContainer>
-              
-              <div className="grid grid-cols-5 gap-2 sm:gap-4 mt-8">
-                {radarData.map((stat, index) => (
-                  <div key={stat.metric} className="text-center">
-                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-300 mb-1 sm:mb-2">
-                      {stat.value}%
-                    </div>
-                    <div className="text-xs sm:text-sm text-purple-200/70 font-medium">
-                      {stat.metric}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        </CardHeader>
+        <CardContent>
+          <Progress value={progressToNextLevel} className="h-3" />
+          {currentLevel.level < progressLevels.length && (
+            <p className="text-sm text-gray-400 mt-2">
+              {(progressLevels[currentLevel.level].minPoints - totalPoints).toLocaleString()} points to {progressLevels[currentLevel.level].title}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Performance Benchmarks Section */}
-          {benchmarks.length > 0 && (
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+      {/* Detailed Stats */}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="consistency">Consistency</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardContent className="p-4 text-center">
+                <Calendar className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{progressData.workoutStreak}</div>
+                <div className="text-sm text-gray-400">Day Streak</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardContent className="p-4 text-center">
+                <Trophy className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{progressData.totalWorkouts}</div>
+                <div className="text-sm text-gray-400">Total Workouts</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardContent className="p-4 text-center">
+                <Activity className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{progressData.exercisesCompleted}</div>
+                <div className="text-sm text-gray-400">Exercises</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardContent className="p-4 text-center">
+                <TrendingUp className="w-6 h-6 text-purple-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{(progressData.weightLifted / 1000).toFixed(1)}k</div>
+                <div className="text-sm text-gray-400">lbs Lifted</div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-gray-800/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-white flex items-center text-2xl">
-                  <BarChart3 className="w-7 h-7 mr-3 text-purple-300" />
-                  Performance Benchmarks
+                <CardTitle className="text-white flex items-center">
+                  <Zap className="w-5 h-5 mr-2 text-yellow-400" />
+                  Strength Gains
                 </CardTitle>
-                <CardDescription className="text-purple-200/70 text-base">
-                  See how your training measures against demographic standards and research data
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-6">
-                  {benchmarks.map((benchmark, index) => {
-                    const badge = getPercentileBadge(benchmark.percentile);
-                    return (
-                      <div key={index} className="bg-purple-800/30 rounded-xl p-6 border border-purple-600/30 hover:border-purple-500/50 transition-colors">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="font-bold text-white text-lg">{benchmark.metric}</h4>
-                              <div className={`px-3 py-1 rounded-full text-sm font-semibold border ${badge.color}`}>
-                                {badge.text}
-                              </div>
-                            </div>
-                            <p className="text-purple-200/80 text-sm mb-1">{benchmark.description}</p>
-                            <p className="text-purple-300/60 text-xs">Compared to: {benchmark.demographic}</p>
-                          </div>
-                          <div className="text-right ml-6">
-                            <div className="text-3xl lg:text-4xl font-bold text-purple-300 mb-1">
-                              {typeof benchmark.userValue === 'number' && benchmark.userValue < 10 
-                                ? benchmark.userValue.toFixed(1) 
-                                : benchmark.userValue}
-                            </div>
-                            <div className={`text-base font-bold ${getPercentileColor(benchmark.percentile)}`}>
-                              {benchmark.percentile}th percentile
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="text-purple-200/70">Population Ranking</span>
-                            <span className={`font-semibold ${getPercentileColor(benchmark.percentile)}`}>
-                              Better than {benchmark.percentile}% of people
-                            </span>
-                          </div>
-                          <div className="w-full bg-purple-950/50 rounded-full h-3">
-                            <div 
-                              className="bg-gradient-to-r from-purple-500 via-pink-500 to-purple-400 h-3 rounded-full transition-all duration-1000 ease-out"
-                              style={{ width: `${benchmark.percentile}%` }}
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="bg-purple-950/40 rounded-lg p-4">
-                          <div className="flex items-start space-x-2">
-                            <Users className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-                            <p className="text-purple-200/90 text-sm leading-relaxed">
-                              {benchmark.comparison}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Progress</span>
+                    <span className="text-white">{progressData.strengthGains}%</span>
+                  </div>
+                  <Progress value={progressData.strengthGains} className="h-2" />
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Quick Stats Summary */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-4">
-                <CardTitle className="flex items-center text-white text-sm">
-                  <Trophy className="w-4 h-4 mr-2 text-purple-300" />
-                  Total Sessions
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Activity className="w-5 h-5 mr-2 text-green-400" />
+                  Endurance Gains
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="text-2xl lg:text-3xl font-bold text-white">{workoutSessions.length}</div>
-                <div className="text-xs text-purple-200/70 mt-1">Workouts logged</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-4">
-                <CardTitle className="flex items-center text-white text-sm">
-                  <Activity className="w-4 h-4 mr-2 text-purple-300" />
-                  This Month
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="text-2xl lg:text-3xl font-bold text-white">
-                  {workoutSessions.filter(w => {
-                    const sessionDate = new Date(w.session_date);
-                    const now = new Date();
-                    return sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
-                  }).length}
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Progress</span>
+                    <span className="text-white">{progressData.enduranceGains}%</span>
+                  </div>
+                  <Progress value={progressData.enduranceGains} className="h-2" />
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Recent activity</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm col-span-2 lg:col-span-1">
-              <CardHeader className="pb-2 p-4">
-                <CardTitle className="flex items-center text-white text-sm">
-                  <Target className="w-4 h-4 mr-2 text-purple-300" />
-                  Fitness Score
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="text-2xl lg:text-3xl font-bold text-white">
-                  {Math.round((userStats.strength + userStats.endurance + userStats.consistency + userStats.technique + userStats.recovery) / 5)}%
-                </div>
-                <div className="text-xs text-purple-200/70 mt-1">Overall progress</div>
               </CardContent>
             </Card>
           </div>
-        </div>
+        </TabsContent>
+
+        <TabsContent value="consistency" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Target className="w-5 h-5 mr-2 text-blue-400" />
+                  Consistency Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Last 30 Days</span>
+                    <span className="text-white">{progressData.consistencyScore}%</span>
+                  </div>
+                  <Progress value={progressData.consistencyScore} className="h-2" />
+                  <p className="text-xs text-gray-500">Need 20 workouts/month for 100%</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Award className="w-5 h-5 mr-2 text-purple-400" />
+                  Recovery Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Overall</span>
+                    <span className="text-white">{progressData.recoveryScore}%</span>
+                  </div>
+                  <Progress value={progressData.recoveryScore} className="h-2" />
+                  <p className="text-xs text-gray-500">Sleep, stress, and energy levels</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex justify-center">
+        <Button 
+          onClick={loadProgressData}
+          variant="outline"
+          className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+        >
+          Refresh Progress
+        </Button>
       </div>
     </div>
   );

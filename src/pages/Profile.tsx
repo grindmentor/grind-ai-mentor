@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, User, Crown, Star, Calendar, Mail } from 'lucide-react';
@@ -70,10 +69,8 @@ const Profile = () => {
     }
   };
 
-  // Calculate age from birthday
-  const calculatedAge = userData.birthday 
-    ? new Date().getFullYear() - new Date(userData.birthday).getFullYear()
-    : null;
+  // Use the exact age from userData context (already calculated with full birthdate)
+  const calculatedAge = userData.age;
 
   // Profile data for BasicInformation component
   const profileData = {
@@ -148,12 +145,12 @@ const Profile = () => {
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
         <div className="p-2 sm:p-4 md:p-6">
           <div className="max-w-4xl mx-auto">
-            {/* Header */}
+            {/* Header - Mobile optimized */}
             <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4 sm:mb-6 px-2 sm:px-0">
               <Button 
                 variant="ghost" 
                 onClick={() => navigate('/app')}
-                className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors w-fit"
+                className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors w-fit min-h-[44px] min-w-[44px]"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Back to Dashboard
@@ -166,14 +163,14 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Profile Tabs */}
+            {/* Profile Tabs - Mobile optimized */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-              <TabsList className={`grid w-full grid-cols-3 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
+              <TabsList className="grid w-full grid-cols-3 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 min-h-[48px]">
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
                     value={tab.id} 
-                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30 p-2 sm:p-3"
+                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30 p-3 text-sm font-medium min-h-[44px] touch-manipulation"
                   >
                     {tab.label}
                   </TabsTrigger>
@@ -258,7 +255,7 @@ const Profile = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Fitness Stats */}
+                  {/* Fitness Stats with corrected age */}
                   {(userData.weight || userData.height || calculatedAge) && (
                     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
                       <CardHeader>

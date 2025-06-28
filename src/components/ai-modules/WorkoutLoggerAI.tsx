@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,7 +68,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
       saveImportedExercises(sharedExercises);
       clearExercises();
     }
-  }, [sharedExercises, clearExercises, toast]);
+  }, [sharedExercises, clearExercises]);
 
   const loadSavedExercises = async () => {
     if (!user) return;

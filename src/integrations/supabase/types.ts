@@ -896,6 +896,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_saved_exercises: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          difficulty_level: string | null
+          equipment: string
+          id: string
+          name: string
+          primary_muscles: string[]
+          secondary_muscles: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          equipment: string
+          id?: string
+          name: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string | null
+          equipment?: string
+          id?: string
+          name?: string
+          primary_muscles?: string[]
+          secondary_muscles?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_usage: {
         Row: {
           coach_gpt_queries: number | null

@@ -44,26 +44,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
   const [localProfile, setLocalProfile] = useState(profile);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Calculate exact age from birthday
-  const calculateExactAge = (birthday: string): number | null => {
-    if (!birthday) return null;
-    
-    const today = new Date();
-    const birthDate = new Date(birthday);
-    
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    // Adjust age if birthday hasn't occurred this year yet
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    return Math.max(0, age);
-  };
-
-  const currentAge = calculateExactAge(localProfile.birthday);
-
   const handleLocalChange = (field: string, value: string) => {
     setLocalProfile(prev => ({ ...prev, [field]: value }));
   };
@@ -142,7 +122,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             value={localProfile.weight}
             onChange={(e) => handleLocalChange('weight', e.target.value)}
             placeholder={`Enter weight in ${preferences.weight_unit}`}
-            className="bg-gray-800/50 border-gray-600 text-white min-h-[44px]"
+            className="bg-gray-800/50 border-gray-600 text-white"
           />
         </div>
 
@@ -157,18 +137,18 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             value={localProfile.height}
             onChange={(e) => handleLocalChange('height', e.target.value)}
             placeholder={`Enter height in ${preferences.height_unit === 'cm' ? 'cm' : 'inches'}`}
-            className="bg-gray-800/50 border-gray-600 text-white min-h-[44px]"
+            className="bg-gray-800/50 border-gray-600 text-white"
           />
         </div>
 
-        {/* Birthday with exact age display */}
+        {/* Birthday */}
         <div className="space-y-2">
           <Label htmlFor="birthday" className="text-white flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
             Birthday
-            {currentAge !== null && (
-              <span className="ml-2 text-sm text-orange-400 font-medium">
-                (Age: {currentAge} years)
+            {calculatedAge && (
+              <span className="ml-2 text-sm text-gray-400">
+                (Age: {calculatedAge})
               </span>
             )}
           </Label>
@@ -177,20 +157,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             type="date"
             value={localProfile.birthday}
             onChange={(e) => handleLocalChange('birthday', e.target.value)}
-            className="bg-gray-800/50 border-gray-600 text-white min-h-[44px]"
+            className="bg-gray-800/50 border-gray-600 text-white"
           />
-          {currentAge !== null && (
-            <p className="text-xs text-gray-500">
-              Calculated using exact birthdate including month and day
-            </p>
-          )}
         </div>
 
         {/* Experience Level */}
         <div className="space-y-2">
           <Label htmlFor="experience" className="text-white">Experience Level</Label>
           <Select value={localProfile.experience} onValueChange={(value) => handleLocalChange('experience', value)}>
-            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white min-h-[44px]">
+            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select experience level" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
@@ -205,7 +180,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         <div className="space-y-2">
           <Label htmlFor="activity" className="text-white">Activity Level</Label>
           <Select value={localProfile.activity} onValueChange={(value) => handleLocalChange('activity', value)}>
-            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white min-h-[44px]">
+            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select activity level" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
@@ -222,7 +197,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         <div className="space-y-2">
           <Label htmlFor="goal" className="text-white">Primary Goal</Label>
           <Select value={localProfile.goal} onValueChange={(value) => handleLocalChange('goal', value)}>
-            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white min-h-[44px]">
+            <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select primary goal" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
@@ -240,7 +215,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 min-h-[44px]"
+            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
           >
             <Save className="w-4 h-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save Changes'}

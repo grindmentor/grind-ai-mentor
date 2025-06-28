@@ -249,7 +249,7 @@ const SafeComponent = ({ moduleName, onBack }: {
         return (
           <ModuleErrorBoundary moduleName="Progress Hub" onBack={onBack}>
             <React.Suspense fallback={<PlaceholderComponent title="Progress Hub" onBack={onBack} />}>
-              <ProgressHub />
+              <ProgressHub onBack={onBack || (() => {})} />
             </React.Suspense>
           </ModuleErrorBoundary>
         );

@@ -2,6 +2,7 @@
 import React, { Suspense } from 'react';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
+import { AppBackground } from '@/components/ui/app-background';
 
 // Optimized lazy loading with preloading hints
 const Dashboard = React.lazy(() => 
@@ -17,7 +18,7 @@ export default function App() {
   const { lowDataMode, measurePerformance } = usePerformanceContext();
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20">
+    <AppBackground>
       <Suspense 
         fallback={
           <LoadingScreen 
@@ -29,6 +30,6 @@ export default function App() {
           <Dashboard />
         ))}
       </Suspense>
-    </div>
+    </AppBackground>
   );
 }

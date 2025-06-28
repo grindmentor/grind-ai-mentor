@@ -22,11 +22,18 @@
     margin: 0;
     padding: 0;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: linear-gradient(135deg, #000000 0%, rgba(249, 115, 22, 0.1) 50%, rgba(220, 38, 38, 0.2) 100%);
+    background: #000000; /* Pure black base */
     color: white;
     overflow-x: hidden;
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+  
+  /* Root element should also be black */
+  #root {
+    background: #000000;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   
   /* Improved focus handling */

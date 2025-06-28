@@ -519,8 +519,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
             </CardContent>
           </Card>
 
-          {/* Add Exercise */}
-          <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+          {/* Add Exercise - Fixed z-index and positioning */}
+          <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 relative z-10">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-white font-semibold">Add Exercise</h3>
@@ -546,29 +546,12 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               </div>
 
               {showExerciseSearch && (
-                <div className="mb-4">
+                <div className="mb-4 relative z-20">
                   <ExerciseSearch
                     onExerciseSelect={addExercise}
                     placeholder="Search exercises or muscle groups (e.g., 'chest', 'biceps', 'bench press')"
                     className="mb-3"
                   />
-                  
-                  <div className="space-y-2">
-                    <Label className="text-gray-300 text-sm">Quick muscle group search:</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {muscleGroups.map((muscle) => (
-                        <Button
-                          key={muscle}
-                          onClick={() => setExerciseSearch(muscle)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-gray-300 hover:bg-gray-700/50 hover:text-white border border-gray-600/50"
-                        >
-                          {muscle}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -629,22 +612,24 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
             </CardContent>
           </Card>
 
-          {/* Exercises */}
-          {exercises.length === 0 ? (
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-              <CardContent className="p-8 text-center">
-                <Target className="w-12 h-12 mx-auto text-gray-500 mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No Exercises Added</h3>
-                <p className="text-gray-400">Add your first exercise to start logging your workout.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {exercises.map((exercise, index) => (
-                <ExerciseCard key={index} exercise={exercise} exerciseIndex={index} />
-              ))}
-            </div>
-          )}
+          {/* Exercises - Lower z-index so dropdown appears above */}
+          <div className="relative z-0">
+            {exercises.length === 0 ? (
+              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                <CardContent className="p-8 text-center">
+                  <Target className="w-12 h-12 mx-auto text-gray-500 mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">No Exercises Added</h3>
+                  <p className="text-gray-400">Add your first exercise to start logging your workout.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {exercises.map((exercise, index) => (
+                  <ExerciseCard key={index} exercise={exercise} exerciseIndex={index} />
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Log Workout Button */}
           {exercises.length > 0 && (

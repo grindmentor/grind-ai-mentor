@@ -1,44 +1,87 @@
-
-import React, { useState, useMemo, lazy, Suspense } from 'react';
-import { useModules } from '@/contexts/ModulesContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { PageTransition } from '@/components/ui/page-transition';
-import { LoadingScreen } from '@/components/ui/loading-screen';
-import { ErrorBoundary } from '@/components/ui/error-boundary';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Search, Star, Filter, Grid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useFavorites } from '@/hooks/useFavorites';
+import { ArrowLeft, Search, Star, Grid, List, Crown, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useModules } from '@/contexts/ModulesContext';
+import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { PageTransition } from '@/components/ui/page-transition';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+import { useFavorites } from '@/hooks/useFavorites';
 
-const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
-const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
+type ViewMode = 'grid' | 'list';
 
 const ModuleLibrary = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const { modules } = useModules();
   const isMobile = useIsMobile();
-  const [selectedModule, setSelectedModule] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { favorites, toggleFavorite } = useFavorites();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredModules = useMemo(() => {
-    if (!modules) return [];
+  // Load preferences from localStorage
+  useEffect(() => {
+    try {
+      const savedViewMode = localStorage.getItem('module-view-mode');
+      if (savedViewMode && (savedViewMode === 'grid' || savedViewMode === 'list')) {
+        setViewMode(savedViewMode as ViewMode);
+      }
+    } catch (error) {
+      console.error('Error loading view mode:', error);
+      setViewMode('grid');
+    } finally {
+      // Simulate loading delay for smooth transition
+      setTimeout(() => setIsLoading(false), 500);
+    }
+  }, []);
+
+  // Save view mode preference
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('module-view-mode', mode);
+    } catch (error) {
+      console.error('Error saving view mode:', error);
+    }
+  };
+
+  // Filter modules to exclude Progress Hub from the library
+  const libraryModules = modules.filter(module => module.id !== 'progress-hub');
+
+  const filteredModules = libraryModules.filter(module => {
+    const matchesSearch = module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         module.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    let filtered = modules.filter(module => {
-      const matchesSearch = module.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          module.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFavorites = !showFavoritesOnly || favorites.includes(module.id);
-      
-      return matchesSearch && matchesFavorites;
-    });
+    const matchesFilter = filterType === 'all' || 
+                         (filterType === 'free' && !module.isPremium) ||
+                         (filterType === 'premium' && module.isPremium) ||
+                         (filterType === 'favorites' && favorites.includes(module.id));
+    
+    return matchesSearch && matchesFilter;
+  });
 
-    return filtered;
-  }, [modules, searchTerm, showFavoritesOnly, favorites]);
+  const sortedModules = [...filteredModules].sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.title.localeCompare(b.title);
+      case 'newest':
+        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
+      case 'premium':
+        return (b.isPremium ? 1 : 0) - (a.isPremium ? 1 : 0);
+      default:
+        return 0;
+    }
+  });
 
-  const handleModuleClick = (module: any) => {
+  const handleModuleClick = (module) => {
     setSelectedModule(module);
   };
 
@@ -46,162 +89,176 @@ const ModuleLibrary = () => {
     setSelectedModule(null);
   };
 
-  const handleBackToDashboard = () => {
-    window.location.href = '/dashboard';
-  };
-
-  if (!modules || modules.length === 0) {
-    return <LoadingScreen message="Loading module library..." />;
+  if (selectedModule) {
+    const ModuleComponent = selectedModule.component;
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+          <ModuleComponent 
+            onBack={handleBackToLibrary}
+            navigationSource="library"
+          />
+        </div>
+      </PageTransition>
+    );
   }
 
-  if (selectedModule) {
-    try {
-      const ModuleComponent = selectedModule.component;
-      return (
-        <ErrorBoundary>
-          <PageTransition>
-            <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-              <Suspense fallback={<LoadingScreen message="Loading module..." />}>
-                <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToLibrary}>
-                  <ModuleComponent 
-                    onBack={handleBackToLibrary}
-                    navigationSource="library"
-                  />
-                </ModuleErrorBoundary>
-              </Suspense>
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+          <div className="p-4 sm:p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 bg-orange-500/20 rounded animate-pulse" />
+                <div className="h-8 w-48 bg-orange-500/20 rounded animate-pulse" />
+              </div>
+              <LoadingSkeleton type="card" count={6} />
             </div>
-          </PageTransition>
-        </ErrorBoundary>
-      );
-    } catch (error) {
-      console.error('Error rendering selected module:', error);
-      setSelectedModule(null);
-    }
+          </div>
+        </div>
+      </PageTransition>
+    );
   }
 
   return (
-    <ErrorBoundary>
-      <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-          {/* Header */}
-          <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
-            <div className="px-4 py-3 sm:px-6 sm:py-4">
+    <PageTransition>
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+        <div className="p-4 sm:p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Mobile-optimized Header */}
+            <div className="flex flex-col space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Button
-                    onClick={handleBackToDashboard}
-                    variant="ghost"
+                <div className="flex items-center space-x-3">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => navigate('/app')}
+                    className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors p-2"
                     size="sm"
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/50"
                   >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back
+                    <ArrowLeft className="w-5 h-5" />
                   </Button>
-                  <h1 className="text-xl sm:text-2xl font-bold text-white">
-                    Module Library
-                  </h1>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                      Module Library
+                    </h1>
+                    <p className="text-gray-400 text-sm">Discover AI fitness tools</p>
+                  </div>
                 </div>
-
-                {/* View mode toggle */}
-                <div className="flex items-center space-x-2">
+                
+                {/* View Mode Toggle */}
+                <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
                   <Button
-                    onClick={() => setViewMode('grid')}
                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="sm"
-                    className="p-2"
+                    onClick={() => handleViewModeChange('grid')}
+                    className={`p-2 transition-all duration-200 ${
+                      viewMode === 'grid' 
+                        ? 'bg-orange-500/30 text-orange-300' 
+                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
+                    }`}
                   >
                     <Grid className="w-4 h-4" />
                   </Button>
                   <Button
-                    onClick={() => setViewMode('list')}
                     variant={viewMode === 'list' ? 'default' : 'ghost'}
                     size="sm"
-                    className="p-2"
+                    onClick={() => handleViewModeChange('list')}
+                    className={`p-2 transition-all duration-200 ${
+                      viewMode === 'list' 
+                        ? 'bg-orange-500/30 text-orange-300' 
+                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
+                    }`}
                   >
                     <List className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Main Content */}
-          <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
-            {/* Search and Filters */}
-            <div className="mb-8 space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            {/* Enhanced Search and Filters */}
+            <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4 sm:p-6">
+              <div className="space-y-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
                   <Input
                     placeholder="Search modules..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-gray-900/50 border-gray-700/50 text-white placeholder-gray-400"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl transition-all duration-200"
                   />
                 </div>
                 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                    variant={showFavoritesOnly ? 'default' : 'outline'}
-                    size="sm"
-                    className="flex items-center space-x-2"
-                  >
-                    <Star className={`w-4 h-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-                    <span className="hidden sm:inline">Favorites</span>
-                  </Button>
+                {/* Filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
+                      <Filter className="w-4 h-4 mr-2 text-orange-400" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
+                      <SelectItem value="all">All Modules</SelectItem>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="favorites">Favorites</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
+                      <SelectItem value="name">Name</SelectItem>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="premium">Premium First</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-
-              {/* Results count */}
-              <div className="text-sm text-gray-400">
-                {filteredModules.length} {filteredModules.length === 1 ? 'module' : 'modules'} found
-                {showFavoritesOnly && ' in favorites'}
               </div>
             </div>
 
-            {/* Modules Grid/List */}
-            {filteredModules.length > 0 ? (
-              <Suspense fallback={<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />
-                ))}
-              </div>}>
-                <ModuleGrid
-                  modules={filteredModules}
-                  favorites={favorites}
-                  onModuleClick={handleModuleClick}
-                  onToggleFavorite={toggleFavorite}
-                  viewMode={viewMode}
-                />
-              </Suspense>
-            ) : (
-              <div className="text-center py-12">
-                <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-8 max-w-md mx-auto">
-                  <Filter className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                  <h2 className="text-xl font-bold text-white mb-2">No modules found</h2>
-                  <p className="text-gray-400 mb-4">
-                    {searchTerm ? `No modules match "${searchTerm}"` : 'No modules available'}
-                    {showFavoritesOnly && ' in your favorites'}
-                  </p>
-                  {(searchTerm || showFavoritesOnly) && (
-                    <Button
-                      onClick={() => {
-                        setSearchTerm('');
-                        setShowFavoritesOnly(false);
-                      }}
-                      variant="outline"
-                    >
-                      Clear filters
-                    </Button>
-                  )}
+            {/* Stats */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="outline" className="border-orange-500/40 text-orange-300 bg-orange-500/10 px-3 py-1">
+                {sortedModules.length} modules
+              </Badge>
+              <Badge variant="outline" className="border-green-500/40 text-green-400 bg-green-500/10 px-3 py-1">
+                {sortedModules.filter(m => !m.isPremium).length} free
+              </Badge>
+              <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 bg-yellow-500/10 px-3 py-1">
+                <Crown className="w-3 h-3 mr-1" />
+                {sortedModules.filter(m => m.isPremium).length} premium
+              </Badge>
+              <Badge variant="outline" className="border-orange-500/40 text-orange-400 bg-orange-500/10 px-3 py-1">
+                <Star className="w-3 h-3 mr-1" />
+                {favorites.length} favorites
+              </Badge>
+            </div>
+
+            {/* Modules Display */}
+            {sortedModules.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Search className="w-10 h-10 text-orange-500/50" />
                 </div>
+                <h3 className="text-2xl font-semibold text-white mb-2">No modules found</h3>
+                <p className="text-orange-300/70 text-lg">Try adjusting your search or filters</p>
               </div>
+            ) : (
+              <ModuleGrid
+                modules={sortedModules}
+                favorites={favorites}
+                onModuleClick={handleModuleClick}
+                onToggleFavorite={toggleFavorite}
+                viewMode={viewMode}
+              />
             )}
           </div>
         </div>
-      </PageTransition>
-    </ErrorBoundary>
+      </div>
+    </PageTransition>
   );
 };
 

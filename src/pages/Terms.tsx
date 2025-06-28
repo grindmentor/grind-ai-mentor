@@ -1,104 +1,110 @@
 
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText, ArrowLeft, Home } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import Logo from "@/components/ui/logo";
 
-export default function Terms() {
+const Terms = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button
-            onClick={() => window.history.back()}
-            variant="ghost"
-            className="text-gray-400 hover:text-white hover:bg-gray-800/50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white ios-safe-area">
+      {/* Fixed Header */}
+      <nav className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800 px-6 py-4" style={{ paddingTop: 'max(env(safe-area-inset-top) + 1rem, 1rem)' }}>
+        <div className="container mx-auto flex items-center justify-between">
+          <Logo size="md" />
+          <div className="flex items-center space-x-2">
+            <Link to="/app">
+              <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px] touch-manipulation">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px] touch-manipulation">
+                <Home className="w-4 h-4 mr-2" />
+                Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="container mx-auto px-6 py-12 max-w-4xl">
+        <div className="text-center mb-12">
+          <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+            <FileText className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
+          <p className="text-xl text-gray-400">
+            The terms and conditions for using Myotopia
+          </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8 text-center">Terms of Service</h1>
-          
-          <div className="space-y-8">
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-orange-400">Acceptance of Terms</h2>
-              <p className="text-gray-300 leading-relaxed">
+        <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-white">Terms and Conditions</CardTitle>
+            <CardDescription className="text-gray-400">
+              Last updated: {new Date().toLocaleDateString()}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 text-gray-300">
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-3">Acceptance of Terms</h3>
+              <p className="leading-relaxed">
                 By accessing and using Myotopia, you accept and agree to be bound by the terms 
-                and provision of this agreement. These Terms of Service constitute a legally 
-                binding agreement between you and Myotopia.
+                and provision of this agreement. If you do not agree to these terms, please do not 
+                use our service.
               </p>
-            </section>
+            </div>
 
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-orange-400">Use of Service</h2>
-              <p className="text-gray-300 leading-relaxed mb-4">
-                Myotopia provides fitness guidance and AI-powered recommendations. You agree to use 
-                our service responsibly and in accordance with these terms:
-              </p>
-              <ul className="list-disc list-inside text-gray-400 space-y-2">
-                <li>You must be at least 16 years old to use our service</li>
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-3">Use of Service</h3>
+              <ul className="list-disc list-inside space-y-2 leading-relaxed">
+                <li>You must be at least 18 years old to use this service</li>
                 <li>You are responsible for maintaining the confidentiality of your account</li>
-                <li>You will not use the service for any unlawful purpose</li>
-                <li>You will not attempt to interfere with or disrupt our service</li>
+                <li>You agree to use the service for lawful purposes only</li>
+                <li>You will not attempt to gain unauthorized access to our systems</li>
               </ul>
-            </section>
+            </div>
 
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-orange-400">Health and Safety Disclaimer</h2>
-              <p className="text-gray-300 leading-relaxed mb-4">
-                <strong>Important:</strong> Myotopia provides fitness guidance for informational purposes only. 
-                Our recommendations are not medical advice and should not replace consultation with healthcare professionals.
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-3">Health and Fitness Disclaimer</h3>
+              <p className="leading-relaxed">
+                Myotopia provides fitness and nutrition information for educational purposes only. 
+                This information is not intended as a substitute for professional medical advice. 
+                Please consult with a healthcare provider before starting any fitness program.
               </p>
-              <ul className="list-disc list-inside text-gray-400 space-y-2">
-                <li>Consult your doctor before starting any new exercise program</li>
-                <li>Stop exercising if you experience pain or discomfort</li>
-                <li>We are not liable for injuries resulting from use of our recommendations</li>
-                <li>Individual results may vary based on personal circumstances</li>
-              </ul>
-            </section>
+            </div>
 
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-orange-400">Intellectual Property</h2>
-              <p className="text-gray-300 leading-relaxed">
-                All content, features, and functionality of Myotopia are owned by us and are 
-                protected by international copyright, trademark, and other intellectual property laws. 
-                You may not reproduce, distribute, or create derivative works without our express permission.
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-3">Subscription and Billing</h3>
+              <p className="leading-relaxed">
+                Premium features require a paid subscription. Subscriptions automatically renew unless 
+                cancelled. You can manage your subscription through your account settings or contact 
+                our support team.
               </p>
-            </section>
+            </div>
 
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-orange-400">Limitation of Liability</h2>
-              <p className="text-gray-300 leading-relaxed">
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-3">Limitation of Liability</h3>
+              <p className="leading-relaxed">
                 Myotopia shall not be liable for any indirect, incidental, special, consequential, 
-                or punitive damages, including but not limited to loss of profits, data, or use, 
-                arising out of or relating to your use of our service.
+                or punitive damages resulting from your use of the service.
               </p>
-            </section>
+            </div>
 
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-orange-400">Changes to Terms</h2>
-              <p className="text-gray-300 leading-relaxed">
-                We reserve the right to modify these terms at any time. We will notify users of 
-                any significant changes. Your continued use of the service after such modifications 
-                constitutes acceptance of the updated terms.
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-3">Contact Information</h3>
+              <p className="leading-relaxed">
+                If you have any questions about these Terms of Service, please contact us through 
+                our support page.
               </p>
-            </section>
-
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8">
-              <h2 className="text-2xl font-semibold mb-4 text-orange-400">Contact Information</h2>
-              <p className="text-gray-300 leading-relaxed">
-                If you have any questions about these Terms of Service, please contact us at 
-                legal@myotopia.com.
-              </p>
-            </section>
-          </div>
-
-          <div className="mt-8 text-center text-gray-500 text-sm">
-            Last updated: {new Date().toLocaleDateString()}
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-}
+};
+
+export default Terms;

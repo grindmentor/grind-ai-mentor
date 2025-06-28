@@ -1,157 +1,424 @@
 
-import { useState } from 'react';
-import { ArrowLeft, Bell, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Bell, Trophy, Clock, Lightbulb, Star, Target, Calendar, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning';
-  timestamp: string;
-  read: boolean;
-}
+const Notifications = () => {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("recommendations");
+  const [notificationSettings, setNotificationSettings] = useState({
+    hydrationReminders: true,
+    workoutReminders: true,
+    achievementAlerts: true,
+    progressUpdates: false,
+    nutritionTips: true,
+    recoveryAlerts: false,
+    goalDeadlines: true,
+    weeklyReports: false
+  });
 
-export default function Notifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const recommendations = [
     {
-      id: '1',
-      title: 'Welcome to Myotopia!',
-      message: 'Your fitness journey begins now. Explore our science-backed modules to achieve your goals.',
-      type: 'info',
-      timestamp: '2 hours ago',
-      read: false
+      id: 1,
+      title: "Increase Protein Intake",
+      description: "Based on your recent logs, consider adding 20g more protein daily",
+      category: "Nutrition",
+      priority: "high",
+      time: "2 hours ago",
+      icon: <Lightbulb className="w-5 h-5" />,
+      action: "View meal suggestions"
     },
     {
-      id: '2',
-      title: 'Workout Complete',
-      message: 'Great job on completing your upper body workout! Your progress has been saved.',
-      type: 'success',
-      timestamp: '1 day ago',
-      read: true
+      id: 2,
+      title: "Progressive Overload Ready",
+      description: "Your bench press has plateaued - time to increase weight by 2.5kg",
+      category: "Training",
+      priority: "medium",
+      time: "1 day ago",
+      icon: <Target className="w-5 h-5" />,
+      action: "Update program"
     },
     {
-      id: '3',
-      title: 'New Research Available',
-      message: 'Check out the latest findings on protein timing and muscle growth.',
-      type: 'info',
-      timestamp: '3 days ago',
-      read: false
+      id: 3,
+      title: "Recovery Day Needed",
+      description: "Your recent workouts show fatigue signs - consider a rest day",
+      category: "Recovery",
+      priority: "medium",
+      time: "3 hours ago",
+      icon: <Clock className="w-5 h-5" />,
+      action: "Plan recovery"
     }
-  ]);
+  ];
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
+  const achievements = [
+    {
+      id: 1,
+      title: "7-Day Streak",
+      description: "Completed workouts for 7 consecutive days",
+      category: "Consistency",
+      points: 100,
+      time: "Today",
+      icon: <Trophy className="w-5 h-5" />,
+      color: "bg-yellow-500"
+    },
+    {
+      id: 2,
+      title: "Protein Goal Master",
+      description: "Hit your protein target 5 days in a row",
+      category: "Nutrition",
+      points: 75,
+      time: "Yesterday",
+      icon: <Star className="w-5 h-5" />,
+      color: "bg-green-500"
+    },
+    {
+      id: 3,
+      title: "Strength Milestone",
+      description: "Deadlifted 2x your bodyweight for the first time",
+      category: "Strength",
+      points: 200,
+      time: "2 days ago",
+      icon: <Target className="w-5 h-5" />,
+      color: "bg-purple-500"
+    }
+  ];
+
+  const reminders = [
+    {
+      id: 1,
+      title: "Leg Day",
+      description: "Your scheduled lower body workout",
+      time: "Tomorrow 6:00 PM",
+      category: "Workout",
+      icon: <Calendar className="w-5 h-5" />
+    },
+    {
+      id: 2,
+      title: "Weekly Weigh-in",
+      description: "Track your progress with this week's measurements",
+      time: "Sunday 8:00 AM",
+      category: "Progress",
+      icon: <Clock className="w-5 h-5" />
+    },
+    {
+      id: 3,
+      title: "Meal Prep",
+      description: "Prepare your meals for the upcoming week",
+      time: "Sunday 12:00 PM",
+      category: "Nutrition",
+      icon: <Lightbulb className="w-5 h-5" />
+    }
+  ];
+
+  const notificationOptions = [
+    {
+      id: 'hydrationReminders',
+      title: 'Hydration Reminders',
+      description: 'Get reminded to drink water every 2-4 hours',
+      category: 'Health'
+    },
+    {
+      id: 'workoutReminders',
+      title: 'Workout Reminders',
+      description: 'Scheduled workout notifications and pre-workout alerts',
+      category: 'Training'
+    },
+    {
+      id: 'achievementAlerts',
+      title: 'Achievement Alerts',
+      description: 'Celebrate milestones and streaks with instant notifications',
+      category: 'Motivation'
+    },
+    {
+      id: 'progressUpdates',
+      title: 'Progress Updates',
+      description: 'Weekly and monthly progress summaries',
+      category: 'Progress'
+    },
+    {
+      id: 'nutritionTips',
+      title: 'Nutrition Tips',
+      description: 'Smart meal suggestions based on your goals',
+      category: 'Nutrition'
+    },
+    {
+      id: 'recoveryAlerts',
+      title: 'Recovery Alerts',
+      description: 'Rest day recommendations and sleep reminders',
+      category: 'Recovery'
+    },
+    {
+      id: 'goalDeadlines',
+      title: 'Goal Deadline Alerts',
+      description: 'Reminders when approaching goal deadlines',
+      category: 'Goals'
+    },
+    {
+      id: 'weeklyReports',
+      title: 'Weekly Reports',
+      description: 'Comprehensive weekly fitness reports via notifications',
+      category: 'Reports'
+    }
+  ];
+
+  const handleNotificationToggle = (settingId: string) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [settingId]: !prev[settingId as keyof typeof prev]
+    }));
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
-  };
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case 'warning':
-        return <AlertCircle className="w-5 h-5 text-yellow-400" />;
-      default:
-        return <Info className="w-5 h-5 text-blue-400" />;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'border-red-500/50 bg-red-500/10';
+      case 'medium': return 'border-orange-500/50 bg-orange-500/10';
+      case 'low': return 'border-green-500/50 bg-green-500/10';
+      default: return 'border-gray-500/50 bg-gray-500/10';
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Nutrition': return 'bg-green-500/20 text-green-400';
+      case 'Training': return 'bg-blue-500/20 text-blue-400';
+      case 'Recovery': return 'bg-purple-500/20 text-purple-400';
+      case 'Workout': return 'bg-orange-500/20 text-orange-400';
+      case 'Progress': return 'bg-pink-500/20 text-pink-400';
+      case 'Consistency': return 'bg-yellow-500/20 text-yellow-400';
+      case 'Strength': return 'bg-red-500/20 text-red-400';
+      case 'Health': return 'bg-blue-500/20 text-blue-400';
+      case 'Motivation': return 'bg-yellow-500/20 text-yellow-400';
+      case 'Goals': return 'bg-purple-500/20 text-purple-400';
+      case 'Reports': return 'bg-gray-500/20 text-gray-400';
+      default: return 'bg-gray-500/20 text-gray-400';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button
-            onClick={() => window.history.back()}
-            variant="ghost"
-            className="text-gray-400 hover:text-white hover:bg-gray-800/50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </div>
-
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-black text-white">
+      <div className="p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/app')}
+              className="text-white hover:bg-gray-800 hover:text-orange-400 transition-colors w-fit"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back to Dashboard
+            </Button>
             <div className="flex items-center space-x-3">
-              <Bell className="w-6 h-6 text-orange-400" />
-              <h1 className="text-3xl font-bold">Notifications</h1>
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="bg-red-500">
-                  {unreadCount}
-                </Badge>
-              )}
+              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                <Bell className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">Notifications</h1>
+                <p className="text-gray-400">Stay updated with your fitness journey</p>
+              </div>
             </div>
-            
-            {unreadCount > 0 && (
-              <Button
-                onClick={markAllAsRead}
-                variant="outline"
-                size="sm"
-                className="border-gray-700 text-gray-300 hover:bg-gray-800/50"
-              >
-                Mark all read
-              </Button>
-            )}
           </div>
 
-          <div className="space-y-4">
-            {notifications.length === 0 ? (
-              <div className="text-center py-12">
-                <Bell className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-400 mb-2">No notifications</h2>
-                <p className="text-gray-500">You're all caught up!</p>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className={`grid w-full grid-cols-4 bg-gray-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              <TabsTrigger value="recommendations" className="data-[state=active]:bg-orange-500">
+                <Lightbulb className="w-4 h-4 mr-1" />
+                {!isMobile && "Tips"}
+                {isMobile && "Tips"}
+              </TabsTrigger>
+              <TabsTrigger value="achievements" className="data-[state=active]:bg-orange-500">
+                <Trophy className="w-4 h-4 mr-1" />
+                {!isMobile && "Awards"}
+                {isMobile && "Awards"}
+              </TabsTrigger>
+              <TabsTrigger value="reminders" className="data-[state=active]:bg-orange-500">
+                <Clock className="w-4 h-4 mr-1" />
+                Reminders
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500">
+                <Settings className="w-4 h-4 mr-1" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Recommendations Tab */}
+            <TabsContent value="recommendations" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">AI Recommendations</h2>
+                <Badge className="bg-orange-500/20 text-orange-400">
+                  {recommendations.length} Active
+                </Badge>
               </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 cursor-pointer transition-all hover:bg-gray-900/60 ${
-                    !notification.read ? 'border-orange-500/30 bg-orange-900/10' : ''
-                  }`}
-                  onClick={() => markAsRead(notification.id)}
-                >
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 mt-1">
-                      {getIcon(notification.type)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className={`font-semibold ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
-                          {notification.title}
-                        </h3>
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />
-                        )}
+              
+              <div className="space-y-4">
+                {recommendations.map((rec) => (
+                  <Card key={rec.id} className={`bg-gray-900 border-gray-800 ${getPriorityColor(rec.priority)}`}>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-3 sm:space-y-0">
+                        <div className="flex items-start space-x-3 flex-1">
+                          <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            {rec.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                              <h3 className="text-white font-semibold">{rec.title}</h3>
+                              <Badge className={getCategoryColor(rec.category)}>
+                                {rec.category}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-400 text-sm mt-1">{rec.description}</p>
+                            <p className="text-gray-500 text-xs mt-2">{rec.time}</p>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
+                        >
+                          {rec.action}
+                        </Button>
                       </div>
-                      
-                      <p className="text-gray-400 text-sm mb-3">
-                        {notification.message}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Achievements Tab */}
+            <TabsContent value="achievements" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Recent Achievements</h2>
+                <Badge className="bg-yellow-500/20 text-yellow-400">
+                  {achievements.reduce((sum, a) => sum + a.points, 0)} Points
+                </Badge>
+              </div>
+              
+              <div className="space-y-4">
+                {achievements.map((achievement) => (
+                  <Card key={achievement.id} className="bg-gray-900 border-gray-800">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-start space-x-3">
+                        <div className={`w-10 h-10 ${achievement.color} rounded-lg flex items-center justify-center`}>
+                          {achievement.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                            <h3 className="text-white font-semibold">{achievement.title}</h3>
+                            <Badge className={getCategoryColor(achievement.category)}>
+                              {achievement.category}
+                            </Badge>
+                            <Badge variant="outline" className="border-yellow-500/50 text-yellow-400">
+                              +{achievement.points} pts
+                            </Badge>
+                          </div>
+                          <p className="text-gray-400 text-sm mt-1">{achievement.description}</p>
+                          <p className="text-gray-500 text-xs mt-2">{achievement.time}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Reminders Tab */}
+            <TabsContent value="reminders" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Upcoming Reminders</h2>
+                <Badge className="bg-blue-500/20 text-blue-400">
+                  {reminders.length} Pending
+                </Badge>
+              </div>
+              
+              <div className="space-y-4">
+                {reminders.map((reminder) => (
+                  <Card key={reminder.id} className="bg-gray-900 border-gray-800">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                          {reminder.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                            <h3 className="text-white font-semibold">{reminder.title}</h3>
+                            <Badge className={getCategoryColor(reminder.category)}>
+                              {reminder.category}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-400 text-sm mt-1">{reminder.description}</p>
+                          <p className="text-blue-400 text-sm font-medium mt-2">{reminder.time}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Notifications Settings Tab */}
+            <TabsContent value="settings" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Notification Settings</h2>
+                <Badge className="bg-green-500/20 text-green-400">
+                  {Object.values(notificationSettings).filter(Boolean).length}/{Object.keys(notificationSettings).length} Enabled
+                </Badge>
+              </div>
+              
+              <div className="space-y-4">
+                {notificationOptions.map((option) => (
+                  <Card key={option.id} className="bg-gray-900 border-gray-800">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0 mr-4">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className="text-white font-semibold">{option.title}</h3>
+                            <Badge className={getCategoryColor(option.category)}>
+                              {option.category}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-400 text-sm">{option.description}</p>
+                        </div>
+                        <Switch
+                          checked={notificationSettings[option.id as keyof typeof notificationSettings]}
+                          onCheckedChange={() => handleNotificationToggle(option.id)}
+                          className="data-[state=checked]:bg-orange-500"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card className="bg-blue-900/20 border-blue-500/30">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-start space-x-3">
+                    <Bell className="w-5 h-5 text-blue-400 mt-0.5" />
+                    <div>
+                      <h3 className="text-blue-400 font-semibold mb-2">Smart Notifications</h3>
+                      <p className="text-blue-300/80 text-sm mb-3">
+                        Our AI learns from your behavior to send notifications at optimal times. 
+                        Enable notifications above to get personalized reminders that help you achieve your fitness goals.
                       </p>
-                      
-                      <p className="text-xs text-gray-500">
-                        {notification.timestamp}
+                      <p className="text-blue-400/60 text-xs">
+                        You can always adjust these settings or turn off specific notification types.
                       </p>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Notifications;

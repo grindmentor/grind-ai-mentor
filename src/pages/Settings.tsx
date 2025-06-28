@@ -1,221 +1,83 @@
 
-import { useState } from 'react';
-import { ArrowLeft, User, Bell, Shield, Palette, Database } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { LowDataToggle } from '@/components/ui/low-data-toggle';
+import { ArrowLeft, Globe, Zap, Brain } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import UnitPreferences from '@/components/settings/UnitPreferences';
+import AppPreferences from '@/components/settings/AppPreferences';
+import AIMemoryReset from '@/components/settings/AIMemoryReset';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { PageTransition } from '@/components/ui/page-transition';
 
-export default function Settings() {
-  const [notifications, setNotifications] = useState({
-    workoutReminders: true,
-    progressUpdates: false,
-    researchUpdates: true,
-    marketingEmails: false,
-  });
+const Settings = () => {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState('units');
 
-  const [privacy, setPrivacy] = useState({
-    shareProgress: false,
-    dataCollection: true,
-    analytics: true,
-  });
+  const tabs = [
+    { id: 'units', label: 'Units', icon: Globe },
+    { id: 'app', label: 'App', icon: Zap },
+    { id: 'ai', label: 'AI Memory', icon: Brain }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button
-            onClick={() => window.history.back()}
-            variant="ghost"
-            className="text-gray-400 hover:text-white hover:bg-gray-800/50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </div>
-
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-center">Settings</h1>
-
-          <div className="space-y-8">
-            {/* Performance Settings */}
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <Palette className="w-5 h-5 text-orange-400" />
-                <h2 className="text-xl font-semibold">Performance</h2>
+    <PageTransition>
+      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+        <div className="p-2 sm:p-4 md:p-6">
+          <div className="max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4 sm:mb-6 px-2 sm:px-0">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/app')}
+                className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors w-fit"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  Settings
+                </h1>
+                <p className="text-gray-400 text-sm sm:text-base">Customize your app preferences</p>
               </div>
-              
-              <div className="space-y-4">
-                <LowDataToggle />
-                <p className="text-sm text-gray-400">
-                  Enable low data mode to reduce bandwidth usage and improve performance on slower connections.
-                </p>
+            </div>
+
+            {/* Settings Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+              <TabsList className={`grid w-full grid-cols-3 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
+                {tabs.map((tab) => (
+                  <TabsTrigger 
+                    key={tab.id}
+                    value={tab.id} 
+                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30 p-2 sm:p-3"
+                  >
+                    <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    {!isMobile && tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6 mx-2 sm:mx-0">
+                <TabsContent value="units" className="mt-0">
+                  <UnitPreferences />
+                </TabsContent>
+
+                <TabsContent value="app" className="mt-0">
+                  <AppPreferences />
+                </TabsContent>
+
+                <TabsContent value="ai" className="mt-0">
+                  <AIMemoryReset />
+                </TabsContent>
               </div>
-            </section>
-
-            {/* Notification Settings */}
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <Bell className="w-5 h-5 text-orange-400" />
-                <h2 className="text-xl font-semibold">Notifications</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="workout-reminders" className="text-gray-300">
-                    Workout Reminders
-                  </Label>
-                  <Switch
-                    id="workout-reminders"
-                    checked={notifications.workoutReminders}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, workoutReminders: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="progress-updates" className="text-gray-300">
-                    Progress Updates
-                  </Label>
-                  <Switch
-                    id="progress-updates"
-                    checked={notifications.progressUpdates}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, progressUpdates: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="research-updates" className="text-gray-300">
-                    Latest Research
-                  </Label>
-                  <Switch
-                    id="research-updates"
-                    checked={notifications.researchUpdates}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, researchUpdates: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="marketing-emails" className="text-gray-300">
-                    Marketing Emails
-                  </Label>
-                  <Switch
-                    id="marketing-emails"
-                    checked={notifications.marketingEmails}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, marketingEmails: checked })
-                    }
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Privacy Settings */}
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <Shield className="w-5 h-5 text-orange-400" />
-                <h2 className="text-xl font-semibold">Privacy & Data</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="share-progress" className="text-gray-300">
-                    Share Progress Publicly
-                  </Label>
-                  <Switch
-                    id="share-progress"
-                    checked={privacy.shareProgress}
-                    onCheckedChange={(checked) =>
-                      setPrivacy({ ...privacy, shareProgress: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="data-collection" className="text-gray-300">
-                    Allow Data Collection for Improvements
-                  </Label>
-                  <Switch
-                    id="data-collection"
-                    checked={privacy.dataCollection}
-                    onCheckedChange={(checked) =>
-                      setPrivacy({ ...privacy, dataCollection: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="analytics" className="text-gray-300">
-                    Usage Analytics
-                  </Label>
-                  <Switch
-                    id="analytics"
-                    checked={privacy.analytics}
-                    onCheckedChange={(checked) =>
-                      setPrivacy({ ...privacy, analytics: checked })
-                    }
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Account Actions */}
-            <section className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <User className="w-5 h-5 text-orange-400" />
-                <h2 className="text-xl font-semibold">Account</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <Button
-                  onClick={() => window.location.href = '/profile'}
-                  variant="outline"
-                  className="w-full border-gray-700 text-gray-300 hover:bg-gray-800/50"
-                >
-                  Edit Profile
-                </Button>
-
-                <Button
-                  onClick={() => window.location.href = '/privacy'}
-                  variant="outline"
-                  className="w-full border-gray-700 text-gray-300 hover:bg-gray-800/50"
-                >
-                  Privacy Policy
-                </Button>
-
-                <Button
-                  onClick={() => window.location.href = '/terms'}
-                  variant="outline"
-                  className="w-full border-gray-700 text-gray-300 hover:bg-gray-800/50"
-                >
-                  Terms of Service
-                </Button>
-
-                <Separator className="bg-gray-700/50" />
-
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={() => {
-                    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                      // Handle account deletion
-                      console.log('Account deletion requested');
-                    }
-                  }}
-                >
-                  Delete Account
-                </Button>
-              </div>
-            </section>
+            </Tabs>
           </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
-}
+};
+
+export default Settings;

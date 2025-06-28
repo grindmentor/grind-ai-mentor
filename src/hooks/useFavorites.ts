@@ -10,92 +10,84 @@ export const useFavorites = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load favorites from Supabase
-  const loadFavorites = async () => {
-    if (!user) {
-      setFavorites([]);
+  useEffect(() => {
+    if (user) {
+      loadFavorites();
+    } else {
       setLoading(false);
-      return;
     }
+  }, [user]);
+
+  const loadFavorites = async () => {
+    if (!user) return;
 
     try {
       const { data, error } = await supabase
-        .from('user_preferences')
+        .from('profiles')
         .select('favorite_modules')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading favorites:', error);
-        // Fallback to localStorage
-        const savedFavorites = localStorage.getItem('module-favorites');
-        if (savedFavorites) {
-          setFavorites(JSON.parse(savedFavorites));
-        }
-      } else if (data) {
-        setFavorites(data.favorite_modules || []);
-        // Sync to localStorage as backup
-        localStorage.setItem('module-favorites', JSON.stringify(data.favorite_modules || []));
+        return;
       }
+
+      setFavorites(data?.favorite_modules || []);
     } catch (error) {
       console.error('Error loading favorites:', error);
-      // Fallback to localStorage
-      const savedFavorites = localStorage.getItem('module-favorites');
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Save favorites to Supabase
-  const saveFavorites = async (newFavorites: string[]) => {
-    if (!user) return;
+  const toggleFavorite = async (moduleId: string) => {
+    if (!user) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to save favorites.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newFavorites = favorites.includes(moduleId)
+      ? favorites.filter(id => id !== moduleId)
+      : [...favorites, moduleId];
+
+    setFavorites(newFavorites);
 
     try {
       const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          favorite_modules: newFavorites
-        });
+        .from('profiles')
+        .update({ favorite_modules: newFavorites })
+        .eq('id', user.id);
 
-      if (error) {
-        console.error('Error saving favorites:', error);
-        toast({
-          title: 'Sync Warning',
-          description: 'Favorites saved locally but may not sync across devices',
-          variant: 'destructive'
-        });
-      }
+      if (error) throw error;
 
-      // Always save to localStorage as backup
-      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+      // Removed sync warning - just show success message
+      toast({
+        title: favorites.includes(moduleId) ? 'Removed from favorites' : 'Added to favorites',
+        description: `${moduleId} has been ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your favorites.`,
+      });
     } catch (error) {
-      console.error('Error saving favorites:', error);
-      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+      console.error('Error updating favorites:', error);
+      // Revert the local state change
+      setFavorites(favorites);
+      toast({
+        title: 'Error',
+        description: 'Failed to update favorites. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
-  // Toggle favorite
-  const toggleFavorite = async (moduleId: string) => {
-    const newFavorites = favorites.includes(moduleId) 
-      ? favorites.filter(id => id !== moduleId)
-      : [...favorites, moduleId];
-    
-    setFavorites(newFavorites);
-    await saveFavorites(newFavorites);
-  };
-
-  useEffect(() => {
-    loadFavorites();
-  }, [user]);
+  const isFavorite = (moduleId: string) => favorites.includes(moduleId);
 
   return {
     favorites,
     loading,
     toggleFavorite,
-    reload: loadFavorites
+    isFavorite,
   };
 };

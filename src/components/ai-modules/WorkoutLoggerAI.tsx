@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Dumbbell, Save, Import, Settings, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Dumbbell, Save, Import, Settings, Trash2, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,13 +16,17 @@ import { useUnitsPreference } from '@/hooks/useUnitsPreference';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+interface WorkoutSet {
+  id: string;
+  reps: number;
+  weight: number;
+  rir?: number;
+}
+
 interface Exercise {
   id: string;
   name: string;
-  sets: number;
-  reps: number;
-  weight: number;
-  rpe?: number;
+  sets: WorkoutSet[];
   notes?: string;
 }
 
@@ -146,10 +150,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
     const newExercise: Exercise = {
       id: Date.now().toString() + Math.random().toString(),
       name: savedExercise.name,
-      sets: 3,
-      reps: 10,
-      weight: 0,
-      rpe: 7,
+      sets: [],
       notes: ''
     };
     
@@ -196,10 +197,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
     const newExercise: Exercise = {
       id: Date.now().toString() + Math.random().toString(),
       name: typeof exerciseData === 'string' ? exerciseData : exerciseData.name,
-      sets: 3,
-      reps: 10,
-      weight: 0,
-      rpe: 7,
+      sets: [],
       notes: ''
     };
     
@@ -218,9 +216,46 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
     setShowCustomExerciseModal(false);
   };
 
-  const updateExercise = (id: string, field: keyof Exercise, value: any) => {
+  const addSet = (exerciseId: string) => {
     setExercises(exercises.map(ex => 
-      ex.id === id ? { ...ex, [field]: value } : ex
+      ex.id === exerciseId 
+        ? { 
+            ...ex, 
+            sets: [...ex.sets, {
+              id: `${exerciseId}-set-${ex.sets.length + 1}`,
+              reps: 10,
+              weight: 0,
+              rir: 2
+            }]
+          } 
+        : ex
+    ));
+  };
+
+  const updateSet = (exerciseId: string, setId: string, field: keyof WorkoutSet, value: any) => {
+    setExercises(exercises.map(ex => 
+      ex.id === exerciseId 
+        ? {
+            ...ex,
+            sets: ex.sets.map(set => 
+              set.id === setId ? { ...set, [field]: value } : set
+            )
+          }
+        : ex
+    ));
+  };
+
+  const removeSet = (exerciseId: string, setId: string) => {
+    setExercises(exercises.map(ex => 
+      ex.id === exerciseId 
+        ? { ...ex, sets: ex.sets.filter(set => set.id !== setId) }
+        : ex
+    ));
+  };
+
+  const updateExerciseNotes = (id: string, notes: string) => {
+    setExercises(exercises.map(ex => 
+      ex.id === id ? { ...ex, notes } : ex
     ));
   };
 
@@ -243,20 +278,30 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
       return;
     }
 
+    const exercisesWithSets = exercises.filter(ex => ex.sets.length > 0);
+    if (exercisesWithSets.length === 0) {
+      toast({
+        title: 'No Sets Added',
+        description: 'Please add at least one set to your exercises.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsLogging(true);
     try {
       const sessionEndTime = new Date();
       const durationMinutes = Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
 
-      const exercisesForDb = exercises.map(ex => ({
+      const exercisesForDb = exercisesWithSets.map(ex => ({
         exercise_name: ex.name,
-        sets: Array.from({ length: ex.sets }, (_, i) => ({
-          id: `${ex.id}-set-${i + 1}`,
-          reps: ex.reps,
-          weight: ex.weight
+        sets: ex.sets.map(set => ({
+          id: set.id,
+          reps: set.reps,
+          weight: set.weight,
+          rir: set.rir
         })),
-        notes: ex.notes || '',
-        rpe: ex.rpe || null
+        notes: ex.notes || ''
       }));
 
       const { error: sessionError } = await supabase
@@ -267,28 +312,30 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
           session_date: new Date().toISOString().split('T')[0],
           duration_minutes: durationMinutes,
           exercises_data: exercisesForDb,
-          notes: `Logged ${exercises.length} exercises`
+          notes: `Logged ${exercisesWithSets.length} exercises`
         });
 
       if (sessionError) throw sessionError;
 
-      for (const exercise of exercises) {
-        await supabase
-          .from('progressive_overload_entries')
-          .insert({
-            user_id: user.id,
-            exercise_name: exercise.name,
-            sets: exercise.sets,
-            reps: exercise.reps,
-            weight: exercise.weight,
-            rpe: exercise.rpe,
-            notes: exercise.notes
-          });
+      for (const exercise of exercisesWithSets) {
+        for (const set of exercise.sets) {
+          await supabase
+            .from('progressive_overload_entries')
+            .insert({
+              user_id: user.id,
+              exercise_name: exercise.name,
+              sets: 1, // Each entry is one set
+              reps: set.reps,
+              weight: set.weight,
+              rpe: set.rir ? (10 - set.rir) : null, // Convert RIR to RPE
+              notes: exercise.notes
+            });
+        }
       }
 
       toast({
         title: 'Workout Logged! 💪',
-        description: `Successfully logged ${exercises.length} exercises. Duration: ${durationMinutes} minutes.`
+        description: `Successfully logged ${exercisesWithSets.length} exercises. Duration: ${durationMinutes} minutes.`
       });
 
       setWorkoutName('');
@@ -303,6 +350,24 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
     } finally {
       setIsLogging(false);
     }
+  };
+
+  const getLateralRaiseCues = (exerciseName: string) => {
+    const lowerName = exerciseName.toLowerCase();
+    if (lowerName.includes('lateral') && lowerName.includes('raise')) {
+      return {
+        cues: [
+          "Start with arms at your sides, slight bend in elbows",
+          "Lead with your pinkies as you raise the weights",
+          "Stop when arms are parallel to the floor",
+          "Control the negative - don't let weights drop",
+          "Keep shoulders down and back throughout the movement",
+          "Use a weight that allows perfect form for all reps"
+        ],
+        tips: "Focus on the mind-muscle connection with your side delts. This exercise responds well to moderate weight and perfect form rather than heavy weight with poor technique."
+      };
+    }
+    return null;
   };
 
   return (
@@ -338,6 +403,27 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                 className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
               />
             </div>
+
+            {/* RIR Explanation */}
+            <Card className="bg-blue-900/40 border-blue-500/40">
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
+                  <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-blue-200 mb-2">What is RIR?</h4>
+                    <p className="text-blue-200/80 text-sm leading-relaxed">
+                      <strong>RIR (Reps in Reserve)</strong> indicates how many more reps you could have performed with perfect form. 
+                      For example, RIR 2 means you could have done 2 more reps. This helps you train at the right intensity while managing fatigue.
+                    </p>
+                    <div className="mt-2 text-xs text-blue-300/70">
+                      • RIR 0-1: Maximum effort, use sparingly
+                      • RIR 2-3: Optimal for most training
+                      • RIR 4+: Light/warm-up sets
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Tabs defaultValue="current" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-blue-900/40 border-blue-500/30">
@@ -399,75 +485,118 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {exercises.map((exercise) => (
-                      <Card key={exercise.id} className="bg-blue-900/40 border-blue-500/40">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-white">{exercise.name}</h4>
-                            <Button
-                              onClick={() => removeExercise(exercise.id)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div>
-                              <Label className="text-blue-200 text-xs">Sets</Label>
+                    {exercises.map((exercise) => {
+                      const cueData = getLateralRaiseCues(exercise.name);
+                      return (
+                        <Card key={exercise.id} className="bg-blue-900/40 border-blue-500/40">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-semibold text-white">{exercise.name}</h4>
+                              <Button
+                                onClick={() => removeExercise(exercise.id)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                            
+                            {/* Sets */}
+                            <div className="space-y-3 mb-4">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-blue-200">Sets ({exercise.sets.length})</Label>
+                                <Button
+                                  onClick={() => addSet(exercise.id)}
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                >
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Add Set
+                                </Button>
+                              </div>
+                              
+                              {exercise.sets.map((set, index) => (
+                                <div key={set.id} className="bg-blue-800/50 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-blue-200 text-sm font-medium">Set {index + 1}</span>
+                                    <Button
+                                      onClick={() => removeSet(exercise.id, set.id)}
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-6 w-6 p-0"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                      <Label className="text-blue-200 text-xs">Reps</Label>
+                                      <Input
+                                        type="number"
+                                        value={set.reps}
+                                        onChange={(e) => updateSet(exercise.id, set.id, 'reps', parseInt(e.target.value) || 0)}
+                                        className="bg-blue-700/50 border-blue-500/30 text-white text-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-blue-200 text-xs">Weight ({units.weightUnit})</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.5"
+                                        value={set.weight}
+                                        onChange={(e) => updateSet(exercise.id, set.id, 'weight', parseFloat(e.target.value) || 0)}
+                                        className="bg-blue-700/50 border-blue-500/30 text-white text-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-blue-200 text-xs">RIR</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        max="5"
+                                        value={set.rir}
+                                        onChange={(e) => updateSet(exercise.id, set.id, 'rir', parseInt(e.target.value) || 0)}
+                                        className="bg-blue-700/50 border-blue-500/30 text-white text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div className="mb-3">
+                              <Label className="text-blue-200 text-xs">Notes (optional)</Label>
                               <Input
-                                type="number"
-                                value={exercise.sets}
-                                onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value) || 0)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                                value={exercise.notes || ''}
+                                onChange={(e) => updateExerciseNotes(exercise.id, e.target.value)}
+                                placeholder="Form notes, how it felt, etc."
+                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm placeholder:text-blue-400/50"
                               />
                             </div>
-                            <div>
-                              <Label className="text-blue-200 text-xs">Reps</Label>
-                              <Input
-                                type="number"
-                                value={exercise.reps}
-                                onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value) || 0)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-blue-200 text-xs">Weight ({units.weightUnit})</Label>
-                              <Input
-                                type="number"
-                                step="0.5"
-                                value={exercise.weight}
-                                onChange={(e) => updateExercise(exercise.id, 'weight', parseFloat(e.target.value) || 0)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-blue-200 text-xs">RPE</Label>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={exercise.rpe}
-                                onChange={(e) => updateExercise(exercise.id, 'rpe', parseInt(e.target.value) || 7)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="mt-3">
-                            <Label className="text-blue-200 text-xs">Notes (optional)</Label>
-                            <Input
-                              value={exercise.notes || ''}
-                              onChange={(e) => updateExercise(exercise.id, 'notes', e.target.value)}
-                              placeholder="Form notes, how it felt, etc."
-                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm placeholder:text-blue-400/50"
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+
+                            {/* Exercise-specific cues */}
+                            {cueData && (
+                              <Card className="bg-blue-800/30 border-blue-600/30">
+                                <CardContent className="p-3">
+                                  <h5 className="font-semibold text-blue-200 text-sm mb-2">Form Cues</h5>
+                                  <ul className="space-y-1 mb-3">
+                                    {cueData.cues.map((cue, index) => (
+                                      <li key={index} className="text-blue-200/80 text-xs flex items-start">
+                                        <span className="text-blue-400 mr-2 mt-0.5">•</span>
+                                        {cue}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <p className="text-blue-300/70 text-xs italic">{cueData.tips}</p>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
 

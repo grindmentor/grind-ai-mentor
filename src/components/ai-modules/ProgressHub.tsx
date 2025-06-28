@@ -119,56 +119,77 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= thirtyDaysAgo);
     const last90Days = workouts.filter(w => new Date(w.session_date) >= ninetyDaysAgo);
     
-    // Frequency: Workouts per week in last 30 days (optimal: 3-4 per week)
+    // Frequency: Much harder - need 5+ workouts per week for high score
     const weeksInMonth = 4.3;
     const workoutsPerWeek = recentWorkouts.length / weeksInMonth;
-    const frequency = Math.min((workoutsPerWeek / 3.5) * 100, 100);
+    // Now requires 5+ sessions per week to get 100%, 4 sessions = 70%
+    const frequency = Math.min((workoutsPerWeek / 5.5) * 100, 100);
     
-    // Intensity: Average workout duration (optimal: 45-75 minutes)
+    // Intensity: Stricter duration requirements (60-90 min optimal, penalize heavily outside range)
     const avgDuration = recentWorkouts.length > 0 
       ? recentWorkouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / recentWorkouts.length 
       : 0;
-    const optimalDuration = 60; // 60 minutes is ideal
-    const intensity = avgDuration > 0 
-      ? Math.min(100 - Math.abs(avgDuration - optimalDuration) * 2, 100) 
-      : 0;
+    const optimalDuration = 75; // Increased from 60 to 75 minutes
+    let intensity = 0;
+    if (avgDuration >= 60 && avgDuration <= 90) {
+      intensity = Math.min(100 - Math.abs(avgDuration - optimalDuration) * 3, 100); // More penalty for deviation
+    } else if (avgDuration >= 45 && avgDuration < 60) {
+      intensity = Math.max(50 - (60 - avgDuration) * 2, 10); // Heavy penalty for short sessions
+    } else if (avgDuration > 90) {
+      intensity = Math.max(60 - (avgDuration - 90) * 1.5, 15); // Penalty for overly long sessions
+    } else {
+      intensity = Math.max(avgDuration * 0.8, 5); // Very low score for very short sessions
+    }
     
-    // Volume: Total workouts completed (shows dedication over time)
+    // Volume: Much higher requirement - need 100+ workouts for max score
     const totalWorkouts = workouts.length;
-    const volume = Math.min((totalWorkouts / 50) * 100, 100); // 50 workouts = 100%
+    const volume = Math.min((totalWorkouts / 120) * 100, 100); // Increased from 50 to 120 workouts
     
-    // Consistency: Regularity of training (variance in weekly frequency)
-    const consistency = recentWorkouts.length >= 8 
-      ? Math.max(85 - (Math.abs(workoutsPerWeek - 3) * 10), 20) 
-      : Math.min(recentWorkouts.length * 12.5, 100);
+    // Consistency: Stricter requirements - need very regular training
+    let consistency = 0;
+    if (recentWorkouts.length >= 16) { // Need 16+ workouts in 30 days (4+ per week)
+      const idealFrequency = 4.5; // Target 4.5 workouts per week
+      const deviation = Math.abs(workoutsPerWeek - idealFrequency);
+      consistency = Math.max(100 - (deviation * 15), 30); // Heavy penalty for deviation
+    } else if (recentWorkouts.length >= 8) {
+      consistency = Math.min(recentWorkouts.length * 4, 70); // Cap at 70% for moderate activity
+    } else {
+      consistency = Math.min(recentWorkouts.length * 3, 40); // Cap at 40% for low activity
+    }
     
-    // Progression: Improvement over time (comparing recent vs older sessions)
+    // Progression: Much stricter - need clear improvement in multiple metrics
     const recent2Weeks = workouts.filter(w => {
       const date = new Date(w.session_date);
       const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
       return date >= twoWeeksAgo;
     });
     
-    const older2Weeks = workouts.filter(w => {
+    const older4Weeks = workouts.filter(w => {
       const date = new Date(w.session_date);
-      const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+      const sixWeeksAgo = new Date(now.getTime() - 42 * 24 * 60 * 60 * 1000);
       const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-      return date >= fourWeeksAgo && date < twoWeeksAgo;
+      return date >= sixWeeksAgo && date < twoWeeksAgo;
     });
     
-    let progression = 50; // Default baseline
-    if (recent2Weeks.length > 0 && older2Weeks.length > 0) {
+    let progression = 20; // Start much lower
+    if (recent2Weeks.length >= 6 && older4Weeks.length >= 6) { // Need substantial data
       const recentAvgDuration = recent2Weeks.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / recent2Weeks.length;
-      const olderAvgDuration = older2Weeks.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / older2Weeks.length;
+      const olderAvgDuration = older4Weeks.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / older4Weeks.length;
       
-      if (recentAvgDuration > olderAvgDuration) {
-        progression = Math.min(75 + ((recentAvgDuration - olderAvgDuration) / olderAvgDuration) * 100, 100);
-      } else if (recentAvgDuration < olderAvgDuration) {
-        progression = Math.max(40 - ((olderAvgDuration - recentAvgDuration) / olderAvgDuration) * 50, 10);
+      const durationImprovement = (recentAvgDuration - olderAvgDuration) / olderAvgDuration;
+      const frequencyImprovement = (recent2Weeks.length / 2) - (older4Weeks.length / 4); // Per week comparison
+      
+      // Need both duration AND frequency improvement for high scores
+      if (durationImprovement > 0.1 && frequencyImprovement > 0) {
+        progression = Math.min(75 + (durationImprovement * 100) + (frequencyImprovement * 20), 100);
+      } else if (durationImprovement > 0.05 || frequencyImprovement > 0) {
+        progression = Math.min(50 + (durationImprovement * 80) + (frequencyImprovement * 15), 75);
+      } else if (durationImprovement < -0.1 || frequencyImprovement < -0.5) {
+        progression = Math.max(20 + (durationImprovement * 50), 5); // Penalty for regression
       }
-    } else if (workouts.length > 0) {
-      // If we don't have enough data for comparison, base on recent activity
-      progression = Math.min(30 + (recentWorkouts.length * 8), 85);
+    } else if (workouts.length >= 10) {
+      // Minimal progression score for having some data
+      progression = Math.min(15 + (recentWorkouts.length * 2), 45);
     }
 
     setUserStats({
@@ -181,8 +202,8 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   };
 
   const generateBenchmarks = (workouts: WorkoutSession[]) => {
-    // More meaningful benchmark calculations
-    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0; // rough weekly average over 3 months
+    // Much stricter benchmark calculations
+    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 16) : 0; // Assume 16 weeks of data for realistic average
     const avgDuration = workouts.length > 0 ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length : 0;
     const totalHours = workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / 60;
     
@@ -190,30 +211,30 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       {
         metric: 'Training Frequency',
         userValue: Math.round(weeklyFrequency * 10) / 10,
-        percentile: Math.min(Math.round((weeklyFrequency / 4) * 100), 95),
+        percentile: Math.min(Math.round((weeklyFrequency / 5) * 100), 95), // Now need 5 sessions/week for 100%
         description: 'Sessions per week',
-        comparison: weeklyFrequency >= 3.5 ? 'Excellent - matches optimal frequency research' : weeklyFrequency >= 2.5 ? 'Good - within effective range' : weeklyFrequency >= 1.5 ? 'Moderate - consider increasing frequency' : 'Low - aim for 3+ sessions weekly'
+        comparison: weeklyFrequency >= 5 ? 'Elite - exceptional training frequency' : weeklyFrequency >= 4 ? 'Advanced - very good frequency' : weeklyFrequency >= 3 ? 'Intermediate - decent frequency' : weeklyFrequency >= 2 ? 'Beginner - building habits' : 'Starting - need more consistency'
       },
       {
         metric: 'Session Quality',
         userValue: Math.round(avgDuration),
-        percentile: avgDuration >= 45 && avgDuration <= 75 ? 85 : avgDuration >= 30 ? 60 : 25,
+        percentile: avgDuration >= 75 && avgDuration <= 90 ? 95 : avgDuration >= 60 && avgDuration <= 75 ? 80 : avgDuration >= 45 ? 50 : 20,
         description: 'Average duration (minutes)',
-        comparison: avgDuration >= 45 && avgDuration <= 75 ? 'Optimal - matches research-backed duration' : avgDuration > 75 ? 'Long sessions - consider efficiency' : avgDuration >= 30 ? 'Moderate - adequate for results' : 'Short - may need longer sessions'
+        comparison: avgDuration >= 75 && avgDuration <= 90 ? 'Elite - optimal session length' : avgDuration >= 60 ? 'Advanced - good session quality' : avgDuration >= 45 ? 'Intermediate - adequate duration' : avgDuration >= 30 ? 'Beginner - short sessions' : 'Very short - need longer sessions'
       },
       {
         metric: 'Training Volume',
         userValue: workouts.length,
-        percentile: Math.min(Math.round((workouts.length / 100) * 100), 95),
+        percentile: Math.min(Math.round((workouts.length / 150) * 100), 95), // Now need 150 total sessions for 100%
         description: 'Total sessions completed',
-        comparison: workouts.length >= 50 ? 'Experienced - consistent long-term training' : workouts.length >= 25 ? 'Developing - building good habits' : workouts.length >= 10 ? 'Beginner - great start!' : 'New - keep building momentum'
+        comparison: workouts.length >= 100 ? 'Elite - exceptional dedication' : workouts.length >= 50 ? 'Advanced - strong commitment' : workouts.length >= 25 ? 'Intermediate - building momentum' : workouts.length >= 10 ? 'Beginner - good start' : 'Just starting - keep going'
       },
       {
         metric: 'Training Hours',
         userValue: Math.round(totalHours),
-        percentile: Math.min(Math.round((totalHours / 200) * 100), 90),
+        percentile: Math.min(Math.round((totalHours / 400) * 100), 90), // Now need 400 hours for 90%
         description: 'Total hours trained',
-        comparison: totalHours >= 100 ? 'Dedicated - significant time investment' : totalHours >= 50 ? 'Committed - solid foundation' : totalHours >= 20 ? 'Progressing - building consistency' : 'Starting - every hour counts'
+        comparison: totalHours >= 300 ? 'Elite - massive time investment' : totalHours >= 150 ? 'Advanced - serious dedication' : totalHours >= 75 ? 'Intermediate - solid foundation' : totalHours >= 25 ? 'Beginner - building habits' : 'Starting - every hour matters'
       }
     ];
 
@@ -236,26 +257,26 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   };
 
   const getPercentileColor = (percentile: number) => {
-    if (percentile >= 80) return 'text-green-400';
-    if (percentile >= 60) return 'text-yellow-400';
-    if (percentile >= 40) return 'text-orange-400';
+    if (percentile >= 90) return 'text-green-400'; // Raised threshold
+    if (percentile >= 75) return 'text-yellow-400'; // Raised threshold
+    if (percentile >= 50) return 'text-orange-400'; // Raised threshold
     return 'text-red-400';
   };
 
   const getStatColor = (value: number) => {
-    if (value >= 80) return 'text-green-300';
-    if (value >= 60) return 'text-yellow-300';
-    if (value >= 40) return 'text-orange-300';
+    if (value >= 90) return 'text-green-300'; // Raised threshold
+    if (value >= 75) return 'text-yellow-300'; // Raised threshold
+    if (value >= 50) return 'text-orange-300'; // Raised threshold
     return 'text-red-300';
   };
 
   const getStatDescription = (stat: string, value: number) => {
     const descriptions = {
-      frequency: value >= 80 ? 'Optimal' : value >= 60 ? 'Good' : value >= 40 ? 'Moderate' : 'Low',
-      intensity: value >= 80 ? 'Excellent' : value >= 60 ? 'Good' : value >= 40 ? 'Fair' : 'Needs Work',
-      volume: value >= 80 ? 'High' : value >= 60 ? 'Moderate' : value >= 40 ? 'Building' : 'Starting',
-      consistency: value >= 80 ? 'Very Stable' : value >= 60 ? 'Stable' : value >= 40 ? 'Variable' : 'Irregular',
-      progression: value >= 80 ? 'Improving' : value >= 60 ? 'Steady' : value >= 40 ? 'Plateauing' : 'Declining'
+      frequency: value >= 90 ? 'Elite' : value >= 75 ? 'Advanced' : value >= 50 ? 'Intermediate' : value >= 25 ? 'Beginner' : 'Starting',
+      intensity: value >= 90 ? 'Elite' : value >= 75 ? 'Advanced' : value >= 50 ? 'Intermediate' : value >= 25 ? 'Developing' : 'Poor',
+      volume: value >= 90 ? 'Elite' : value >= 75 ? 'Advanced' : value >= 50 ? 'Intermediate' : value >= 25 ? 'Building' : 'Starting',
+      consistency: value >= 90 ? 'Rock Solid' : value >= 75 ? 'Very Stable' : value >= 50 ? 'Stable' : value >= 25 ? 'Variable' : 'Irregular',
+      progression: value >= 90 ? 'Excellent' : value >= 75 ? 'Strong' : value >= 50 ? 'Steady' : value >= 25 ? 'Slow' : 'Stagnating'
     };
     return descriptions[stat as keyof typeof descriptions] || 'Unknown';
   };
@@ -329,11 +350,11 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               <div className="flex items-center justify-center space-x-3 mb-2">
                 <Hexagon className="w-8 h-8 text-purple-300" />
                 <CardTitle className="text-white text-2xl lg:text-3xl font-bold">
-                  Training Analysis
+                  Elite Training Analysis
                 </CardTitle>
               </div>
               <CardDescription className="text-purple-200/80 text-base">
-                Five key metrics that define effective training based on exercise science
+                Demanding metrics that separate elite athletes from casual trainers
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 lg:p-8">
@@ -386,27 +407,27 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 </div>
               </div>
               
-              {/* Metric Explanations */}
+              {/* Updated Metric Explanations */}
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
                 <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
                   <div className="font-semibold text-purple-200 mb-1">Frequency</div>
-                  <div className="text-purple-300/80">Sessions per week - optimal is 3-4x</div>
+                  <div className="text-purple-300/80">5+ sessions/week for elite level</div>
                 </div>
                 <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
                   <div className="font-semibold text-purple-200 mb-1">Intensity</div>
-                  <div className="text-purple-300/80">Session quality - 45-75 min optimal</div>
+                  <div className="text-purple-300/80">75-90 min optimal, heavily penalized outside</div>
                 </div>
                 <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
                   <div className="font-semibold text-purple-200 mb-1">Volume</div>
-                  <div className="text-purple-300/80">Total sessions - shows dedication</div>
+                  <div className="text-purple-300/80">120+ total sessions for maximum score</div>
                 </div>
                 <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20">
                   <div className="font-semibold text-purple-200 mb-1">Consistency</div>
-                  <div className="text-purple-300/80">Training regularity over time</div>
+                  <div className="text-purple-300/80">16+ sessions monthly, minimal deviation</div>
                 </div>
                 <div className="bg-purple-800/20 rounded-lg p-3 border border-purple-600/20 sm:col-span-2 lg:col-span-1">
                   <div className="font-semibold text-purple-200 mb-1">Progression</div>
-                  <div className="text-purple-300/80">Improvement trend analysis</div>
+                  <div className="text-purple-300/80">Clear improvement in multiple metrics</div>
                 </div>
               </div>
             </CardContent>
@@ -417,10 +438,10 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             <CardHeader>
               <CardTitle className="text-white flex items-center text-xl">
                 <Trophy className="w-6 h-6 mr-3 text-purple-300" />
-                Performance Benchmarks
+                Elite Performance Benchmarks
               </CardTitle>
               <CardDescription className="text-purple-200/70">
-                See how your training compares to evidence-based recommendations
+                Challenging standards that separate elite performers from the rest
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -429,7 +450,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                   <Star className="w-12 h-12 text-purple-400/50 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-purple-200 mb-2">Start Training to See Benchmarks</h3>
                   <p className="text-purple-300/70">
-                    Complete workouts to unlock personalized performance comparisons
+                    Complete workouts to unlock demanding performance comparisons
                   </p>
                 </div>
               ) : (
@@ -455,7 +476,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                         <div className="flex items-center justify-between text-xs sm:text-sm mb-1">
                           <span className="text-purple-200/70">Performance Level</span>
                           <span className={`font-semibold ${getPercentileColor(benchmark.percentile)}`}>
-                            {benchmark.percentile >= 80 ? 'Excellent' : benchmark.percentile >= 60 ? 'Good' : benchmark.percentile >= 40 ? 'Average' : 'Developing'}
+                            {benchmark.percentile >= 90 ? 'Elite' : benchmark.percentile >= 75 ? 'Advanced' : benchmark.percentile >= 50 ? 'Intermediate' : benchmark.percentile >= 25 ? 'Beginner' : 'Starting'}
                           </span>
                         </div>
                         <div className="w-full bg-purple-950/50 rounded-full h-2 sm:h-3">
@@ -514,14 +535,14 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               <CardHeader className="pb-2 p-3 sm:p-4">
                 <CardTitle className="flex items-center text-white text-xs sm:text-sm">
                   <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  Training Score
+                  Elite Score
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 sm:p-4 pt-0">
                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
                   {Math.round((userStats.frequency + userStats.intensity + userStats.volume + userStats.consistency + userStats.progression) / 5)}%
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Overall score</div>
+                <div className="text-xs text-purple-200/70 mt-1">Overall rating</div>
               </CardContent>
             </Card>
 

@@ -16,6 +16,7 @@ interface Exercise {
 interface ExerciseShareContextType {
   sharedExercises: Exercise[];
   addExercise: (exercise: Exercise) => void;
+  addMultipleExercises: (exercises: Exercise[]) => void;
   clearExercises: () => void;
   removeExercise: (exerciseId: string) => void;
 }
@@ -39,6 +40,15 @@ export const ExerciseShareProvider: React.FC<ExerciseShareProviderProps> = ({ ch
     });
   };
 
+  const addMultipleExercises = (exercises: Exercise[]) => {
+    setSharedExercises(prev => {
+      const newExercises = exercises.filter(ex => 
+        !prev.some(existing => existing.id === ex.id)
+      );
+      return [...prev, ...newExercises];
+    });
+  };
+
   const clearExercises = () => {
     setSharedExercises([]);
   };
@@ -51,6 +61,7 @@ export const ExerciseShareProvider: React.FC<ExerciseShareProviderProps> = ({ ch
     <ExerciseShareContext.Provider value={{
       sharedExercises,
       addExercise,
+      addMultipleExercises,
       clearExercises,
       removeExercise
     }}>

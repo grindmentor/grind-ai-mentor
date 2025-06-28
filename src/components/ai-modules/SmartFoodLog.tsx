@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Plus, Utensils, BarChart3, Save, Search } from 'lucide-react';
+import { Calendar, Plus, Utensils, BarChart3, Save, Search, Camera } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
+import FoodPhotoLogger from './FoodPhotoLogger';
 
 interface FoodEntry {
   id: string;
@@ -43,6 +43,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPhotoLogger, setShowPhotoLogger] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -215,6 +216,18 @@ Keep the response practical and actionable. Use headings and bullet points for c
 
   const totals = getTotalNutrition();
 
+  if (showPhotoLogger) {
+    return (
+      <FoodPhotoLogger 
+        onBack={() => setShowPhotoLogger(false)}
+        onFoodLogged={() => {
+          setShowPhotoLogger(false);
+          loadFoodEntries();
+        }}
+      />
+    );
+  }
+
   return (
     <UsageLimitGuard featureKey="food_log_analyses" featureName="Smart Food Log">
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-amber-900/30">
@@ -255,6 +268,15 @@ Keep the response practical and actionable. Use headings and bullet points for c
                     className="bg-orange-900/30 border-orange-500/50 text-white"
                   />
                 </div>
+
+                {/* Photo Logger Button */}
+                <Button
+                  onClick={() => setShowPhotoLogger(true)}
+                  className="w-full bg-gradient-to-r from-pink-500/30 to-orange-500/40 hover:from-pink-600/40 hover:to-orange-600/50 border border-pink-500/30"
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Log Food by Photo
+                </Button>
 
                 {/* New Entry Form */}
                 <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">

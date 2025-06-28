@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, Dumbbell, Clock, Target, Zap, Save, Import } from 'lucide-react';
+import { ArrowLeft, Plus, Dumbbell, Save, Import, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
+import { CustomExerciseModal } from '@/components/exercise/CustomExerciseModal';
 import { useExerciseShare } from '@/contexts/ExerciseShareContext';
+import { useUserUnits } from '@/hooks/useUserUnits';
+import { convertWeight, formatWeight } from '@/lib/unitConversions';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -32,11 +35,14 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { sharedExercises, clearExercises } = useExerciseShare();
+  const { units, loading: unitsLoading } = useUserUnits();
   const isMobile = useIsMobile();
   const [workoutName, setWorkoutName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLogging, setIsLogging] = useState(false);
   const [showExerciseSearch, setShowExerciseSearch] = useState(false);
+  const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
+  const [sessionStartTime] = useState(new Date());
 
   // Import shared exercises on component mount
   useEffect(() => {
@@ -84,6 +90,11 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
     });
   };
 
+  const handleCustomExerciseCreated = (exercise: any) => {
+    addExercise(exercise);
+    setShowCustomExerciseModal(false);
+  };
+
   const updateExercise = (id: string, field: keyof Exercise, value: any) => {
     setExercises(exercises.map(ex => 
       ex.id === id ? { ...ex, [field]: value } : ex
@@ -92,6 +103,11 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
 
   const removeExercise = (id: string) => {
     setExercises(exercises.filter(ex => ex.id !== id));
+  };
+
+  const formatWeightDisplay = (weight: number) => {
+    if (unitsLoading) return `${weight} lbs`;
+    return formatWeight(weight, units.weightUnit);
   };
 
   const logWorkout = async () => {
@@ -106,17 +122,33 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
 
     setIsLogging(true);
     try {
-      const { error } = await supabase
+      const sessionEndTime = new Date();
+      const durationMinutes = Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60));
+
+      // Prepare exercises data for database
+      const exercisesForDb = exercises.map(ex => ({
+        exercise_name: ex.name,
+        sets: Array.from({ length: ex.sets }, (_, i) => ({
+          id: `${ex.id}-set-${i + 1}`,
+          reps: ex.reps,
+          weight: ex.weight
+        })),
+        notes: ex.notes || '',
+        rpe: ex.rpe || null
+      }));
+
+      const { error: sessionError } = await supabase
         .from('workout_sessions')
         .insert({
           user_id: user.id,
           workout_name: workoutName,
-          duration_minutes: 60, // Default duration
-          exercises_data: exercises,
+          session_date: new Date().toISOString().split('T')[0],
+          duration_minutes: durationMinutes,
+          exercises_data: exercisesForDb,
           notes: `Logged ${exercises.length} exercises`
         });
 
-      if (error) throw error;
+      if (sessionError) throw sessionError;
 
       // Log individual exercise entries for progressive overload tracking
       for (const exercise of exercises) {
@@ -135,7 +167,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
 
       toast({
         title: 'Workout Logged! 💪',
-        description: `Successfully logged ${exercises.length} exercises.`
+        description: `Successfully logged ${exercises.length} exercises. Duration: ${durationMinutes} minutes.`
       });
 
       // Reset form
@@ -190,13 +222,23 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-blue-200">Exercises</h3>
-                <Button
-                  onClick={() => setShowExerciseSearch(!showExerciseSearch)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Exercise
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowCustomExerciseModal(true)}
+                    variant="outline"
+                    className="border-blue-500/50 text-blue-300 hover:bg-blue-700/30"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Custom
+                  </Button>
+                  <Button
+                    onClick={() => setShowExerciseSearch(!showExerciseSearch)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Exercise
+                  </Button>
+                </div>
               </div>
 
               {showExerciseSearch && (
@@ -262,7 +304,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                             />
                           </div>
                           <div>
-                            <Label className="text-blue-200 text-xs">Weight (lbs)</Label>
+                            <Label className="text-blue-200 text-xs">Weight ({units.weightUnit})</Label>
                             <Input
                               type="number"
                               step="0.5"
@@ -322,6 +364,12 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
           </CardContent>
         </Card>
       </div>
+
+      <CustomExerciseModal
+        isOpen={showCustomExerciseModal}
+        onClose={() => setShowCustomExerciseModal(false)}
+        onExerciseCreated={handleCustomExerciseCreated}
+      />
     </div>
   );
 };

@@ -1,9 +1,8 @@
+@import './styles/mobile-optimizations.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import './styles/mobile-optimizations.css';
 
 /* Enhanced base styles for performance */
 @layer base {

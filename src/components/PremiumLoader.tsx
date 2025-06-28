@@ -56,7 +56,7 @@ const PremiumLoader: React.FC<PremiumLoaderProps> = ({
   if (variant === 'minimal') {
     return (
       <div className="flex items-center space-x-3">
-        <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg animate-pulse">
+        <div className="w-6 h-6 bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-lg animate-pulse">
           <Dumbbell className="w-4 h-4 text-white m-1 animate-bounce" />
         </div>
         <span className="text-sm text-gray-400">{currentMessage}</span>
@@ -67,9 +67,13 @@ const PremiumLoader: React.FC<PremiumLoaderProps> = ({
   if (variant === 'splash') {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-        <div className="text-center space-y-8 max-w-md mx-auto px-6">
+        {/* Black background with subtle orange fade */}
+        <div className="fixed inset-0 bg-black z-0" />
+        <div className="fixed inset-0 bg-gradient-to-br from-black via-orange-900/20 to-orange-800/30 z-0" />
+        
+        <div className="text-center space-y-8 max-w-md mx-auto px-6 relative z-10">
           <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
+            <div className="w-24 h-24 bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
               <Dumbbell className="w-12 h-12 text-white animate-bounce" />
             </div>
             {particlesVisible && (
@@ -78,8 +82,7 @@ const PremiumLoader: React.FC<PremiumLoaderProps> = ({
                   <div
                     key={i}
                     className={cn(
-                      "absolute w-2 h-2 bg-orange-400 rounded-full animate-ping",
-                      `top-${Math.random() * 100}% left-${Math.random() * 100}%`
+                      "absolute w-2 h-2 bg-orange-400/60 rounded-full animate-ping"
                     )}
                     style={{
                       top: `${Math.random() * 100}%`,
@@ -96,9 +99,9 @@ const PremiumLoader: React.FC<PremiumLoaderProps> = ({
             <h2 className="text-2xl font-bold text-white">GrindMentor</h2>
             <p className="text-gray-400 animate-fade-in">{currentMessage}</p>
             
-            <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-gray-800/50 rounded-full h-2 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-orange-500 to-red-600 rounded-full transition-all duration-500 ease-out"
+                className="h-full bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${animatedProgress}%` }}
               />
             </div>
@@ -111,18 +114,18 @@ const PremiumLoader: React.FC<PremiumLoaderProps> = ({
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center space-x-4">
-        <div className="relative w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+        <div className="relative w-16 h-16 bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-xl flex items-center justify-center">
           <Dumbbell className="w-8 h-8 text-white animate-bounce" />
           <div className="absolute -top-1 -right-1">
-            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse" />
+            <div className="w-4 h-4 bg-green-500/80 rounded-full animate-pulse" />
           </div>
         </div>
         
         <div className="flex-1 space-y-2">
           <h3 className="text-lg font-semibold text-white">{currentMessage}</h3>
-          <div className="w-full bg-gray-800 rounded-full h-2">
+          <div className="w-full bg-gray-800/50 rounded-full h-2">
             <div 
-              className="h-full bg-gradient-to-r from-orange-500 to-red-600 rounded-full transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${animatedProgress}%` }}
             />
           </div>

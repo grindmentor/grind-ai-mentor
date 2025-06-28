@@ -1,11 +1,14 @@
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const DashboardSkeleton = () => {
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+      {/* Black background with subtle orange fade */}
+      <div className="fixed inset-0 bg-black z-0" />
+      <div className="fixed inset-0 bg-gradient-to-br from-black via-orange-900/20 to-orange-800/30 z-0" />
+      
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
         {/* Header Skeleton */}
         <div className="text-center md:text-left">
           <Skeleton className="h-10 w-96 bg-gray-800 mb-2 mx-auto md:mx-0" />

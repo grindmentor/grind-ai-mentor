@@ -13,12 +13,16 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   fullScreen = true 
 }) => {
   const containerClasses = fullScreen 
-    ? "fixed inset-0 bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 flex items-center justify-center z-50"
+    ? "fixed inset-0 bg-black flex items-center justify-center z-50"
     : "flex items-center justify-center p-8";
 
   return (
     <div className={containerClasses}>
-      <div className="text-center space-y-6">
+      {/* Black background with subtle orange fade */}
+      <div className="fixed inset-0 bg-black z-0" />
+      <div className="fixed inset-0 bg-gradient-to-br from-black via-orange-900/20 to-orange-800/30 z-0" />
+      
+      <div className="text-center space-y-6 relative z-10">
         <div className="animate-pulse">
           <Logo size="xl" />
         </div>

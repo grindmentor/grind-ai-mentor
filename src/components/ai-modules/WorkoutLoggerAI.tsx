@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
 
 interface WorkoutSet {
   weight: string | number;
@@ -52,12 +53,17 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [showExerciseSearch, setShowExerciseSearch] = useState(false);
-  const [availableExercises, setAvailableExercises] = useState<string[]>([
-    'Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Barbell Row',
-    'Pull-ups', 'Dips', 'Incline Bench Press', 'Romanian Deadlift', 'Hip Thrust',
-    'Lat Pulldown', 'Leg Press', 'Shoulder Press', 'Bicep Curls', 'Tricep Extensions',
-    'Leg Curls', 'Leg Extensions', 'Calf Raises', 'Face Pulls', 'Lateral Raises'
-  ]);
+  const [showCustomExerciseForm, setShowCustomExerciseForm] = useState(false);
+  const [customExerciseName, setCustomExerciseName] = useState('');
+  const [customExerciseMuscles, setCustomExerciseMuscles] = useState('');
+  const [customExerciseEquipment, setCustomExerciseEquipment] = useState('');
+
+  // Common muscle groups for search suggestions
+  const muscleGroups = [
+    'Chest', 'Back', 'Shoulders', 'Arms', 'Biceps', 'Triceps', 
+    'Legs', 'Quadriceps', 'Hamstrings', 'Glutes', 'Calves', 
+    'Core', 'Abs', 'Forearms', 'Lats', 'Traps'
+  ];
 
   useEffect(() => {
     if (user) {
@@ -126,7 +132,17 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
   };
 
-  const addExercise = (exerciseName: string) => {
+  const addExercise = (exerciseData: any) => {
+    let exerciseName = '';
+    
+    if (typeof exerciseData === 'string') {
+      // Custom exercise name
+      exerciseName = exerciseData;
+    } else {
+      // Exercise object from database
+      exerciseName = exerciseData.name;
+    }
+
     const newExercise: WorkoutExercise = {
       name: exerciseName,
       sets: [{ weight: '', reps: '', rpe: 7 }] // Default to RPE 7 (RIR 3)
@@ -134,6 +150,47 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     setExercises([...exercises, newExercise]);
     setExerciseSearch('');
     setShowExerciseSearch(false);
+    setShowCustomExerciseForm(false);
+    setCustomExerciseName('');
+    setCustomExerciseMuscles('');
+    setCustomExerciseEquipment('');
+  };
+
+  const createCustomExercise = async () => {
+    if (!customExerciseName.trim()) {
+      toast.error('Please enter an exercise name');
+      return;
+    }
+
+    try {
+      // Save custom exercise to database if user is logged in
+      if (user?.id) {
+        const muscles = customExerciseMuscles.split(',').map(m => m.trim()).filter(m => m);
+        
+        const { error } = await supabase
+          .from('user_custom_exercises')
+          .insert({
+            user_id: user.id,
+            name: customExerciseName,
+            primary_muscles: muscles.length > 0 ? muscles : ['Other'],
+            secondary_muscles: [],
+            equipment: customExerciseEquipment || 'Unknown',
+            category: 'Custom',
+            difficulty_level: 'Beginner'
+          });
+
+        if (error) throw error;
+        toast.success('Custom exercise created!');
+      }
+
+      // Add to current workout
+      addExercise(customExerciseName);
+    } catch (error) {
+      console.error('Error creating custom exercise:', error);
+      // Still add to workout even if database save fails
+      addExercise(customExerciseName);
+      toast.error('Exercise added to workout, but failed to save for future use');
+    }
   };
 
   const updateSet = (exerciseIndex: number, setIndex: number, field: keyof WorkoutSet, value: string | number) => {
@@ -238,10 +295,6 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       setIsLogging(false);
     }
   };
-
-  const filteredExercises = availableExercises.filter(exercise =>
-    exercise.toLowerCase().includes(exerciseSearch.toLowerCase())
-  );
 
   const ExerciseCard = ({ exercise, exerciseIndex }: { exercise: WorkoutExercise; exerciseIndex: number }) => (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
@@ -471,53 +524,105 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-white font-semibold">Add Exercise</h3>
-                <Button
-                  onClick={() => setShowExerciseSearch(!showExerciseSearch)}
-                  size="sm"
-                  className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border-orange-500/40"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  Browse
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => setShowExerciseSearch(!showExerciseSearch)}
+                    size="sm"
+                    className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border-orange-500/40"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Browse
+                  </Button>
+                  <Button
+                    onClick={() => setShowCustomExerciseForm(!showCustomExerciseForm)}
+                    size="sm"
+                    variant="outline"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Custom
+                  </Button>
+                </div>
               </div>
 
               {showExerciseSearch && (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <div className="mb-4">
+                  <ExerciseSearch
+                    onExerciseSelect={addExercise}
+                    placeholder="Search exercises or muscle groups (e.g., 'chest', 'biceps', 'bench press')"
+                    className="mb-3"
+                  />
+                  
+                  <div className="space-y-2">
+                    <Label className="text-gray-300 text-sm">Quick muscle group search:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {muscleGroups.map((muscle) => (
+                        <Button
+                          key={muscle}
+                          onClick={() => setExerciseSearch(muscle)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-gray-300 hover:bg-gray-700/50 hover:text-white border border-gray-600/50"
+                        >
+                          {muscle}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showCustomExerciseForm && (
+                <div className="space-y-3 p-4 bg-gray-800/30 rounded-lg">
+                  <h4 className="text-white font-medium">Create Custom Exercise</h4>
+                  
+                  <div>
+                    <Label className="text-gray-300 text-sm">Exercise Name *</Label>
                     <Input
-                      placeholder="Search exercises..."
-                      value={exerciseSearch}
-                      onChange={(e) => setExerciseSearch(e.target.value)}
-                      className="bg-gray-800/50 border-gray-600 text-white pl-10"
+                      placeholder="e.g., Cable Lateral Raises"
+                      value={customExerciseName}
+                      onChange={(e) => setCustomExerciseName(e.target.value)}
+                      className="bg-gray-700/50 border-gray-600 text-white"
                     />
                   </div>
                   
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {filteredExercises.map((exercise) => (
-                      <Button
-                        key={exercise}
-                        onClick={() => addExercise(exercise)}
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start text-gray-300 hover:bg-gray-700/50 hover:text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {exercise}
-                      </Button>
-                    ))}
-                    
-                    {exerciseSearch && filteredExercises.length === 0 && (
-                      <Button
-                        onClick={() => addExercise(exerciseSearch)}
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start text-orange-400 hover:bg-orange-500/10"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create "{exerciseSearch}"
-                      </Button>
-                    )}
+                  <div>
+                    <Label className="text-gray-300 text-sm">Primary Muscles (optional)</Label>
+                    <Input
+                      placeholder="e.g., Shoulders, Chest (comma separated)"
+                      value={customExerciseMuscles}
+                      onChange={(e) => setCustomExerciseMuscles(e.target.value)}
+                      className="bg-gray-700/50 border-gray-600 text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-gray-300 text-sm">Equipment (optional)</Label>
+                    <Input
+                      placeholder="e.g., Cable Machine, Dumbbells"
+                      value={customExerciseEquipment}
+                      onChange={(e) => setCustomExerciseEquipment(e.target.value)}
+                      className="bg-gray-700/50 border-gray-600 text-white"
+                    />
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={createCustomExercise}
+                      size="sm"
+                      className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/40"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create & Add
+                    </Button>
+                    <Button
+                      onClick={() => setShowCustomExerciseForm(false)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-gray-400 hover:text-white"
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
               )}

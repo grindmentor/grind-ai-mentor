@@ -50,38 +50,70 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
       try {
         console.log('Searching for exercises with query:', searchQuery);
         
+        // Enhanced search that handles muscle groups better
+        let searchResults: Exercise[] = [];
+        
         // First try the optimized search function
         const { data: optimizedData, error: optimizedError } = await supabase
           .rpc('search_exercises_optimized', {
             search_query: searchQuery,
-            limit_count: 10,
+            limit_count: 15,
             search_user_id: user?.id || null
           });
 
         if (optimizedError) {
           console.warn('Optimized search failed, falling back to basic search:', optimizedError);
           
-          // Fallback to basic search
+          // Enhanced fallback search for muscle groups
           const { data: basicData, error: basicError } = await supabase
             .from('exercises')
             .select('id, name, description, primary_muscles, secondary_muscles, equipment, difficulty_level, category')
-            .ilike('name', `%${searchQuery}%`)
+            .or(`name.ilike.%${searchQuery}%,primary_muscles.cs.{${searchQuery}},secondary_muscles.cs.{${searchQuery}}`)
             .eq('is_active', true)
-            .limit(10);
+            .limit(15);
 
           if (basicError) {
             console.error('Basic search also failed:', basicError);
             throw basicError;
           }
 
-          const basicExercises = basicData?.map(ex => ({ ...ex, is_custom: false })) || [];
-          setExercises(basicExercises);
-          setShowDropdown(basicExercises.length > 0);
+          searchResults = basicData?.map(ex => ({ ...ex, is_custom: false })) || [];
         } else {
-          console.log('Search results:', optimizedData);
-          setExercises(optimizedData || []);
-          setShowDropdown((optimizedData || []).length > 0);
+          searchResults = optimizedData || [];
         }
+
+        // Filter and sort results to prioritize muscle group matches
+        const isLikelyMuscleGroup = searchQuery.toLowerCase().match(/^(chest|back|shoulders|arms|biceps|triceps|legs|quadriceps|hamstrings|glutes|calves|core|abs|forearms|lats|traps)$/);
+        
+        if (isLikelyMuscleGroup) {
+          // Sort muscle group matches to the top
+          searchResults.sort((a, b) => {
+            const aMatchesPrimary = a.primary_muscles.some(muscle => 
+              muscle.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            const bMatchesPrimary = b.primary_muscles.some(muscle => 
+              muscle.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            
+            if (aMatchesPrimary && !bMatchesPrimary) return -1;
+            if (!aMatchesPrimary && bMatchesPrimary) return 1;
+            
+            const aMatchesSecondary = a.secondary_muscles.some(muscle => 
+              muscle.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            const bMatchesSecondary = b.secondary_muscles.some(muscle => 
+              muscle.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            
+            if (aMatchesSecondary && !bMatchesSecondary) return -1;
+            if (!aMatchesSecondary && bMatchesSecondary) return 1;
+            
+            return a.name.localeCompare(b.name);
+          });
+        }
+
+        setExercises(searchResults);
+        setShowDropdown(searchResults.length > 0);
       } catch (err) {
         console.error('Exercise search error:', err);
         setError('Failed to search exercises. Please try again.');
@@ -133,33 +165,48 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
 
       {showDropdown && !isLoading && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-md shadow-lg max-h-60 overflow-y-auto z-50">
-          {exercises.map((exercise) => (
-            <button
-              key={exercise.id}
-              onClick={() => handleExerciseSelect(exercise)}
-              className="w-full text-left px-4 py-3 hover:bg-gray-700/50 border-b border-gray-600/30 last:border-b-0 transition-colors"
-            >
-              <div className="font-medium text-white">{exercise.name}</div>
-              <div className="text-sm text-gray-400 mt-1">
-                {exercise.primary_muscles.join(', ')} • {exercise.equipment}
-                {exercise.is_custom && <span className=" • Custom"></span>}
-              </div>
-            </button>
-          ))}
-          
-          {searchQuery.trim() && (
-            <button
-              onClick={handleAddCustomExercise}
-              className="w-full text-left px-4 py-3 hover:bg-gray-700/50 border-t border-gray-600/30 flex items-center text-blue-400"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add "{searchQuery}" as custom exercise
-            </button>
+          {exercises.length > 0 && (
+            <>
+              {exercises.map((exercise) => (
+                <button
+                  key={exercise.id}
+                  onClick={() => handleExerciseSelect(exercise)}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-700/50 border-b border-gray-600/30 last:border-b-0 transition-colors"
+                >
+                  <div className="font-medium text-white">{exercise.name}</div>
+                  <div className="text-sm text-gray-400 mt-1">
+                    {exercise.primary_muscles.join(', ')} • {exercise.equipment}
+                    {exercise.is_custom && <span className="text-blue-400"> • Custom</span>}
+                  </div>
+                </button>
+              ))}
+              
+              {searchQuery.trim() && (
+                <div className="border-t border-gray-600/30">
+                  <button
+                    onClick={handleAddCustomExercise}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-700/50 flex items-center text-blue-400"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add "{searchQuery}" as custom exercise
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {exercises.length === 0 && searchQuery.trim() && (
-            <div className="px-4 py-3 text-gray-400 text-center">
-              No exercises found. You can add "{searchQuery}" as a custom exercise.
+            <div className="px-4 py-3 text-center">
+              <div className="text-gray-400 text-sm mb-2">
+                No exercises found for "{searchQuery}"
+              </div>
+              <button
+                onClick={handleAddCustomExercise}
+                className="w-full px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded flex items-center justify-center"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create "{searchQuery}" as custom exercise
+              </button>
             </div>
           )}
         </div>

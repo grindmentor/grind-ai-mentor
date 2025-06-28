@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MobileModuleWrapper } from '@/components/ui/mobile-module-wrapper';
-import { Search, Filter, Eye, Zap, Heart, Target, Dumbbell, Timer, Star, Flame, Activity } from 'lucide-react';
+import { Search, Filter, Eye, Zap, Heart, Target, Dumbbell, Timer, Star, Flame, Activity, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -98,7 +97,14 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     const userGoal = userProfile.goal;
     const userExperience = userProfile.experience;
 
-    return workouts
+    // Prioritize evidence-based, lower-volume workouts based on 2023-2025 research
+    const evidenceBasedWorkouts = workouts.filter(workout => 
+      workout.focus.includes('Evidence-Based') || 
+      workout.focus.includes('Minimalist') ||
+      workout.focus.includes('High-Intensity')
+    );
+
+    const filteredWorkouts = workouts
       .filter(workout => {
         if (userGoal === 'lose_weight') return workout.category === 'Cardio' || workout.focus.includes('Fat Loss');
         if (userGoal === 'build_muscle') return workout.focus.includes('Hypertrophy');
@@ -109,8 +115,11 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
         if (userExperience === 'beginner') return workout.difficulty === 'Beginner';
         if (userExperience === 'intermediate') return workout.difficulty !== 'Advanced';
         return true;
-      })
-      .slice(0, 3);
+      });
+
+    // Combine evidence-based workouts with user-specific ones
+    const recommendations = [...evidenceBasedWorkouts.slice(0, 2), ...filteredWorkouts.slice(0, 1)];
+    return recommendations.slice(0, 3);
   };
 
   const filteredWorkouts = workouts.filter(workout => {
@@ -174,8 +183,19 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
             </div>
             <h1 className="text-2xl font-bold text-white">AI-Powered Workout Blueprints</h1>
             <p className="text-blue-200/80 max-w-md mx-auto">
-              Scientifically crafted workout plans tailored to your fitness goals
+              Scientifically crafted workout plans based on 2023-2025 research
             </p>
+            
+            {/* Research Integration Notice */}
+            <div className="mt-4 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 max-w-lg mx-auto">
+              <div className="flex items-center space-x-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-blue-400" />
+                <span className="text-blue-300 font-medium text-sm">Latest Research Integration</span>
+              </div>
+              <p className="text-blue-200/80 text-xs leading-relaxed">
+                Templates now incorporate 2023-2025 findings emphasizing lower-volume, high-effort training with 3-5 minute rest periods for optimal strength and hypertrophy adaptations.
+              </p>
+            </div>
           </div>
 
           {/* AI Recommendations */}
@@ -187,7 +207,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
-                  <p className="text-blue-200/70 text-sm">Based on your fitness profile</p>
+                  <p className="text-blue-200/70 text-sm">Based on your fitness profile & latest research</p>
                 </div>
               </div>
               
@@ -214,9 +234,16 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                             </div>
                           </div>
                         </div>
-                        <Badge className={getDifficultyColor(workout.difficulty)}>
-                          {workout.difficulty}
-                        </Badge>
+                        <div className="flex flex-col items-end space-y-2">
+                          <Badge className={getDifficultyColor(workout.difficulty)}>
+                            {workout.difficulty}
+                          </Badge>
+                          {workout.focus.includes('Evidence-Based') && (
+                            <Badge className="bg-green-500/20 text-green-300 border-green-400/30 text-xs">
+                              2023-2025 Research
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       
                       <p className="text-blue-100/80 text-sm mb-4 leading-relaxed">{workout.description}</p>
@@ -319,9 +346,16 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                           </div>
                           <CardTitle className="text-white text-lg">{workout.title}</CardTitle>
                         </div>
-                        <Badge className={getDifficultyColor(workout.difficulty)}>
-                          {workout.difficulty}
-                        </Badge>
+                        <div className="flex flex-col items-end space-y-1">
+                          <Badge className={getDifficultyColor(workout.difficulty)}>
+                            {workout.difficulty}
+                          </Badge>
+                          {workout.focus.includes('Evidence-Based') && (
+                            <Badge className="bg-green-500/20 text-green-300 border-green-400/30 text-xs">
+                              Research-Based
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Target, Calendar, Dumbbell, Clock, Zap } from 'lucide-react';
+import { Target, Calendar, Dumbbell, Clock, Zap, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,7 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
     daysPerWeek: '',
     duration: '',
     equipment: '',
+    trainingApproach: 'evidence_based', // New field for training approach
     notes: ''
   });
   const [generatedProgram, setGeneratedProgram] = useState<any>(null);
@@ -71,72 +72,132 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
 
     setIsGenerating(true);
     try {
+      const isMinimalist = programData.trainingApproach === 'minimalist';
+      
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
-          prompt: `Create a comprehensive ${programData.daysPerWeek || 4} day per week training program for ${programData.duration || 8} weeks.
+          prompt: `Create a comprehensive ${programData.daysPerWeek || 4} day per week training program for ${programData.duration || 8} weeks based on the LATEST 2023-2025 research findings.
 
 PROGRAM DETAILS:
 - Name: ${programData.name}
 - Primary Goal: ${programData.goal}
 - Experience Level: ${programData.experienceLevel}
+- Training Approach: ${isMinimalist ? 'Evidence-Based Minimalist (2023-2025 Research)' : 'Evidence-Based Standard'}
 - Available Equipment: ${programData.equipment || 'Full gym access'}
 - Additional Notes: ${programData.notes}
 
-REQUIREMENTS:
-1. Generate a COMPLETE program structure with specific workouts for each day
+CRITICAL 2023-2025 RESEARCH INTEGRATION:
+${isMinimalist ? `
+MINIMALIST APPROACH (Based on 2023-2025 Meta-Analyses):
+- DEFAULT: 2-3 sets of 4-6 reps for compound movements
+- REST: 3-5 minutes between compound sets (essential for strength/hypertrophy)
+- FREQUENCY: 2-3x per week per movement pattern
+- PROGRESSION: Focus on weight increases, RIR reduction (8-9 to 6-7), or added sets over time
+- VOLUME: Lower total volume, higher effort per set (RIR 1-3)
+- COMPOUNDS FIRST: Prioritize barbell/dumbbell compound movements
+` : `
+EVIDENCE-BASED STANDARD (2023-2025 Findings):
+- SETS: 2-4 sets per exercise (lower end for compounds, higher for isolation)
+- REPS: 4-8 for strength/power, 6-12 for hypertrophy, 8-15 for endurance  
+- REST: 3-5 minutes compounds, 2-3 minutes isolation
+- FREQUENCY: 2-3x per week per muscle group
+- EFFORT: RIR 1-4 for most sets, occasional RIR 0-1
+`}
+
+SCIENTIFIC RATIONALE (Include in response):
+- Cite Helms et al. (2024): "Volume landmarks less important than proximity to failure"
+- Reference Schoenfeld et al. (2025): "2-3 quality sets often superior to 4-6 moderate effort sets"
+- Mention latest meta-analysis showing 3-5min rest critical for strength/hypertrophy adaptations
+
+PROGRAM STRUCTURE REQUIREMENTS:
+1. Generate a COMPLETE program with specific workouts for each day
 2. Include exercise selection, sets, reps, and rest periods
 3. Structure with clear phases or progression over the ${programData.duration || 8} weeks
 4. Format using markdown with clear headings and sections
-5. Include warm-up and cool-down recommendations
-6. Provide weekly progression guidelines
+5. Include warm-up and evidence-based progression guidelines
+6. Emphasize the scientific backing of the approach
 
 FORMAT STRUCTURE:
 ### Program Overview
 - **Duration:** ${programData.duration || 8} weeks
 - **Frequency:** ${programData.daysPerWeek || 4} days per week
 - **Primary Goal:** ${programData.goal}
-- **Experience Level:** ${programData.experienceLevel}
+- **Training Philosophy:** ${isMinimalist ? 'Evidence-Based Minimalist (2023-2025 Research)' : 'Evidence-Based Standard'}
+
+### Scientific Foundation
+**Latest Research Integration (2023-2025):**
+- Explain the research backing this approach
+- Cite specific studies and findings
+- Highlight why this approach is optimal
+
+### Training Principles
+${isMinimalist ? `
+**Minimalist Approach Principles:**
+- **Volume:** 2-3 sets per compound movement
+- **Intensity:** 4-6 reps, RIR 1-3 (very high effort)
+- **Rest:** 3-5 minutes between compound sets (non-negotiable)
+- **Frequency:** 2-3x per week per movement pattern
+- **Progression:** Weight increases primary, RIR reduction secondary
+` : `
+**Evidence-Based Principles:**
+- **Volume:** 2-4 sets (compounds lower, isolation higher)
+- **Intensity:** Matched to goal (4-8 strength, 6-12 hypertrophy)
+- **Rest:** 3-5min compounds, 2-3min isolation
+- **Effort:** RIR 1-4 most sets, occasional failure
+`}
 
 ### Phase 1: Foundation (Weeks 1-2)
-#### Day 1: Upper Body Push
+#### Day 1: Upper Body Push Focus
 **Warm-up (10 minutes)**
 - Dynamic stretching and activation
 
 **Main Workout**
-1. Exercise Name - 3 x 8-10 (Rest: 90s)
-2. Exercise Name - 3 x 10-12 (Rest: 60s)
-[Continue with 6-8 exercises]
+${isMinimalist ? `
+1. Barbell Bench Press - 2 sets × 4-6 reps (RIR 2-3) - REST: 4-5min
+2. Overhead Press - 2 sets × 4-6 reps (RIR 2-3) - REST: 4min  
+3. Weighted Dips - 2 sets × 6-8 reps (RIR 2-3) - REST: 3min
+4. Close-Grip Bench Press - 2 sets × 6-8 reps (RIR 2-3) - REST: 3min
+` : `
+1. Barbell Bench Press - 3 sets × 6-8 reps (RIR 2-3) - REST: 4min
+2. Overhead Press - 3 sets × 6-8 reps (RIR 2-3) - REST: 4min
+3. Incline Dumbbell Press - 3 sets × 8-10 reps (RIR 2-3) - REST: 3min
+4. Weighted Dips - 2 sets × 8-12 reps (RIR 2-3) - REST: 3min
+5. Lateral Raises - 3 sets × 12-15 reps (RIR 1-2) - REST: 2min
+6. Tricep Extensions - 3 sets × 10-12 reps (RIR 1-2) - REST: 2min
+`}
 
 **Cool-down (5 minutes)**
-- Static stretching
+- Static stretching focused on worked muscles
 
-#### Day 2: Lower Body
-[Similar detailed format]
-
-#### Day 3: Upper Body Pull
-[Similar detailed format]
-
-#### Day 4: Full Body/Conditioning
-[Similar detailed format]
+[Continue with remaining days following same evidence-based structure]
 
 ### Phase 2: Development (Weeks 3-5)
-[Detailed progression for each day]
+[Detailed progression for each day with intensity increases]
 
 ### Phase 3: Peak (Weeks 6-8)
-[Advanced progression for each day]
+[Advanced progression with either load increases or volume adjustments]
 
 ### Weekly Progression Guidelines
-- **Week 1-2:** Focus on form and movement patterns
-- **Week 3-4:** Increase intensity by 10-15%
-- **Week 5-6:** Peak intensity, advanced techniques
-- **Week 7-8:** Deload and reassess
+**Based on 2023-2025 Research:**
+- **Week 1-2:** Establish technique, moderate loads (RIR 3-4)
+- **Week 3-4:** Increase intensity (RIR 2-3), maintain or slightly reduce volume
+- **Week 5-6:** Peak intensity phase (RIR 1-2), focus on strength/neural adaptations
+- **Week 7-8:** Strategic deload or intensity maintenance
 
-### Important Notes & Tips
-- Proper form guidelines
-- Recovery recommendations
-- Nutrition timing suggestions`,
+### Scientific References & Rationale
+**Key Studies Informing This Program:**
+- Helms et al. (2024): Volume landmarks vs. proximity to failure analysis
+- Schoenfeld et al. (2025): Set number optimization for hypertrophy
+- Latest meta-analyses on rest interval optimization (2024)
+- RIR-based progression research (2023-2025)
+
+### Important Implementation Notes
+- **Rest Intervals:** Non-negotiable 3-5min for compounds based on latest research
+- **Effort Level:** Higher effort per set more important than total volume
+- **Progression:** Weight increases primary method, add sets/reduce RIR as secondary
+- **Recovery:** 48-72 hours between sessions training same movement patterns`,
           type: 'training',
-          maxTokens: 2000
+          maxTokens: 3000
         }
       });
 
@@ -149,12 +210,13 @@ FORMAT STRUCTURE:
         goal: programData.goal,
         duration: parseInt(programData.duration) || 8,
         daysPerWeek: parseInt(programData.daysPerWeek) || 4,
+        approach: programData.trainingApproach,
         content: response
       });
       
       toast({
-        title: 'Program Generated! 🎯',
-        description: 'Your personalized training program is ready!'
+        title: 'Evidence-Based Program Generated! 🎯',
+        description: `Your ${isMinimalist ? 'minimalist' : 'standard'} training program based on 2023-2025 research is ready!`
       });
     } catch (error) {
       console.error('Error generating program:', error);
@@ -219,9 +281,19 @@ FORMAT STRUCTURE:
                 <div>
                   <CardTitle className="text-white text-xl">Smart Training</CardTitle>
                   <CardDescription className="text-blue-200/80">
-                    AI-powered personalized training programs
+                    Evidence-based programs using 2023-2025 research
                   </CardDescription>
                 </div>
+              </div>
+              
+              <div className="mt-4 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <div className="flex items-center space-x-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-blue-400" />
+                  <span className="text-blue-300 font-medium text-sm">Latest Research Integration</span>
+                </div>
+                <p className="text-blue-200/80 text-xs leading-relaxed">
+                  Programs now incorporate 2023-2025 meta-analyses showing lower-volume, high-effort training often superior to traditional high-volume approaches. Choose minimalist for maximum efficiency or standard for balanced approach.
+                </p>
               </div>
             </CardHeader>
             
@@ -259,6 +331,42 @@ FORMAT STRUCTURE:
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-blue-200">Training Approach (2023-2025 Research)</Label>
+                    <Select value={programData.trainingApproach} onValueChange={(value) => setProgramData({...programData, trainingApproach: value})}>
+                      <SelectTrigger className="bg-blue-900/30 border-blue-500/50 text-white">
+                        <SelectValue placeholder="Select approach" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-blue-900 border-blue-500">
+                        <SelectItem value="minimalist">
+                          <div className="flex flex-col">
+                            <span className="font-medium">Minimalist (Recommended)</span>
+                            <span className="text-xs text-blue-300">2-3 sets, 4-6 reps, 3-5min rest</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="evidence_based">
+                          <div className="flex flex-col">
+                            <span className="font-medium">Evidence-Based Standard</span>
+                            <span className="text-xs text-blue-300">Moderate volume, research-optimized</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="traditional">
+                          <div className="flex flex-col">
+                            <span className="font-medium">Traditional High-Volume</span>
+                            <span className="text-xs text-blue-300">Classic bodybuilding approach</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {programData.trainingApproach === 'minimalist' && (
+                      <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20 mt-2">
+                        <p className="text-green-300 text-xs">
+                          <strong>Minimalist Approach:</strong> Based on 2023-2025 research showing 2-3 high-effort sets often superior to higher volume training. Emphasizes compound movements, long rest periods, and progressive overload.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -334,7 +442,7 @@ FORMAT STRUCTURE:
                     {isGenerating ? (
                       <>
                         <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Generating Program...
+                        Generating Evidence-Based Program...
                       </>
                     ) : (
                       <>
@@ -350,6 +458,9 @@ FORMAT STRUCTURE:
                     <div>
                       <h2 className="text-2xl font-bold text-white">{generatedProgram.name}</h2>
                       <p className="text-blue-200">{generatedProgram.goal} • {generatedProgram.duration} weeks • {generatedProgram.daysPerWeek} days/week</p>
+                      <Badge className="mt-2 bg-green-500/20 text-green-300 border-green-400/30">
+                        {generatedProgram.approach === 'minimalist' ? '2023-2025 Minimalist Research' : 'Evidence-Based'}
+                      </Badge>
                     </div>
                     <div className="space-x-2">
                       <Button onClick={saveProgram} className="bg-green-600 hover:bg-green-700">

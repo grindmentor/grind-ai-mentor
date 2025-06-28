@@ -25,114 +25,114 @@ interface ModuleGridProps {
   viewMode?: 'grid' | 'list';
 }
 
-// Enhanced function to get module-specific background colors that exactly match interior gradients
+// Enhanced function to get module-specific background colors that exactly match interior gradients with 50% opacity
 const getModuleTheme = (moduleId: string, gradient: string) => {
   const moduleThemes: { [key: string]: { bg: string; border: string; iconColor: string; accent: string } } = {
     'cut-calc-pro': {
-      bg: 'bg-gradient-to-br from-red-900/50 to-pink-900/60',
-      border: 'border-red-500/50',
+      bg: 'bg-gradient-to-br from-red-900/50 to-pink-900/50',
+      border: 'border-red-500/30',
       iconColor: 'text-red-400',
       accent: 'text-red-200'
     },
     'blueprint-ai': {
-      bg: 'bg-gradient-to-br from-blue-900/50 to-indigo-900/60',
-      border: 'border-blue-500/50',
+      bg: 'bg-gradient-to-br from-blue-900/50 to-cyan-900/50',
+      border: 'border-blue-500/30',
       iconColor: 'text-blue-400',
       accent: 'text-blue-200'
     },
     'smart-training': {
-      bg: 'bg-gradient-to-br from-blue-900/50 to-indigo-900/60',
-      border: 'border-blue-500/50',
-      iconColor: 'text-blue-400',
-      accent: 'text-blue-200'
+      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
+      border: 'border-green-500/30',
+      iconColor: 'text-green-400',
+      accent: 'text-green-200'
     },
     'meal-plan-ai': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/60',
-      border: 'border-green-500/50',
+      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
+      border: 'border-green-500/30',
       iconColor: 'text-green-400',
       accent: 'text-green-200'
     },
     'recovery-coach': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-violet-900/60',
-      border: 'border-purple-500/50',
+      bg: 'bg-gradient-to-br from-purple-900/50 to-violet-900/50',
+      border: 'border-purple-500/30',
       iconColor: 'text-purple-400',
       accent: 'text-purple-200'
     },
     'progress-hub': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-violet-900/60',
-      border: 'border-purple-500/50',
+      bg: 'bg-gradient-to-br from-purple-900/50 to-violet-900/50',
+      border: 'border-purple-500/30',
       iconColor: 'text-purple-400',
       accent: 'text-purple-200'
     },
     'tdee-calculator': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/60',
-      border: 'border-green-500/50',
+      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
+      border: 'border-green-500/30',
       iconColor: 'text-green-400',
       accent: 'text-green-200'
     },
     'smart-food-log': {
-      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/60',
-      border: 'border-teal-500/50',
+      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/50',
+      border: 'border-teal-500/30',
       iconColor: 'text-teal-400',
       accent: 'text-teal-200'
     },
     'habit-tracker': {
-      bg: 'bg-gradient-to-br from-pink-900/50 to-rose-900/60',
-      border: 'border-pink-500/50',
-      iconColor: 'text-pink-400',
-      accent: 'text-pink-200'
+      bg: 'bg-gradient-to-br from-yellow-900/50 to-orange-900/50',
+      border: 'border-yellow-500/30',
+      iconColor: 'text-yellow-400',
+      accent: 'text-yellow-200'
     },
     'cardio-ai': {
-      bg: 'bg-gradient-to-br from-indigo-900/50 to-blue-900/60',
-      border: 'border-indigo-500/50',
+      bg: 'bg-gradient-to-br from-indigo-900/50 to-blue-900/50',
+      border: 'border-indigo-500/30',
       iconColor: 'text-indigo-400',
       accent: 'text-indigo-200'
     },
     'workout-timer': {
-      bg: 'bg-gradient-to-br from-yellow-900/50 to-orange-900/60',
-      border: 'border-yellow-500/50',
-      iconColor: 'text-yellow-400',
-      accent: 'text-yellow-200'
+      bg: 'bg-gradient-to-br from-orange-900/50 to-yellow-900/50',
+      border: 'border-orange-500/30',
+      iconColor: 'text-orange-400',
+      accent: 'text-orange-200'
     },
     'coach-gpt': {
-      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/60',
-      border: 'border-cyan-500/50',
+      bg: 'bg-gradient-to-br from-cyan-900/50 to-blue-900/50',
+      border: 'border-cyan-500/30',
       iconColor: 'text-cyan-400',
       accent: 'text-cyan-200'
     },
     'workout-logger-ai': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/60',
-      border: 'border-emerald-500/50',
-      iconColor: 'text-emerald-400',
-      accent: 'text-emerald-200'
+      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
+      border: 'border-green-500/30',
+      iconColor: 'text-green-400',
+      accent: 'text-green-200'
     }
   };
 
   // Return specific theme or fallback to gradient-based theme
   return moduleThemes[moduleId] || {
     bg: getModuleBackgroundColor(gradient),
-    border: 'border-gray-700/50',
+    border: 'border-gray-700/30',
     iconColor: getIconColor(gradient),
     accent: 'text-gray-300'
   };
 };
 
-// Function to convert gradient classes to background colors with exact matching
+// Function to convert gradient classes to background colors with exact matching at 50% opacity
 const getModuleBackgroundColor = (gradient: string) => {
   const gradientMap: { [key: string]: string } = {
-    'from-blue-900/60 to-indigo-900/80': 'bg-gradient-to-br from-blue-900/50 to-indigo-900/60',
-    'from-green-900/60 to-emerald-900/80': 'bg-gradient-to-br from-green-900/50 to-emerald-900/60',
-    'from-orange-900/60 to-red-900/80': 'bg-gradient-to-br from-orange-900/50 to-red-900/60',
-    'from-purple-900/60 to-violet-900/80': 'bg-gradient-to-br from-purple-900/50 to-violet-900/60',
-    'from-red-900/60 to-pink-900/80': 'bg-gradient-to-br from-red-900/50 to-pink-900/60',
-    'from-teal-900/60 to-cyan-900/80': 'bg-gradient-to-br from-teal-900/50 to-cyan-900/60',
-    'from-yellow-900/60 to-orange-900/80': 'bg-gradient-to-br from-yellow-900/50 to-orange-900/60',
-    'from-pink-900/60 to-rose-900/80': 'bg-gradient-to-br from-pink-900/50 to-rose-900/60',
-    'from-indigo-900/60 to-blue-900/80': 'bg-gradient-to-br from-indigo-900/50 to-blue-900/60',
-    'from-gray-900/60 to-slate-900/80': 'bg-gradient-to-br from-gray-900/50 to-slate-900/60',
+    'from-blue-900/60 to-indigo-900/80': 'bg-gradient-to-br from-blue-900/50 to-indigo-900/50',
+    'from-green-900/60 to-emerald-900/80': 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
+    'from-orange-900/60 to-red-900/80': 'bg-gradient-to-br from-orange-900/50 to-red-900/50',
+    'from-purple-900/60 to-violet-900/80': 'bg-gradient-to-br from-purple-900/50 to-violet-900/50',
+    'from-red-900/60 to-pink-900/80': 'bg-gradient-to-br from-red-900/50 to-pink-900/50',
+    'from-teal-900/60 to-cyan-900/80': 'bg-gradient-to-br from-teal-900/50 to-cyan-900/50',
+    'from-yellow-900/60 to-orange-900/80': 'bg-gradient-to-br from-yellow-900/50 to-orange-900/50',
+    'from-pink-900/60 to-rose-900/80': 'bg-gradient-to-br from-pink-900/50 to-rose-900/50',
+    'from-indigo-900/60 to-blue-900/80': 'bg-gradient-to-br from-indigo-900/50 to-blue-900/50',
+    'from-gray-900/60 to-slate-900/80': 'bg-gradient-to-br from-gray-900/50 to-slate-900/50',
   };
   
-  return gradientMap[gradient] || 'bg-gradient-to-br from-gray-900/50 to-gray-900/60';
+  return gradientMap[gradient] || 'bg-gradient-to-br from-gray-900/50 to-gray-900/50';
 };
 
 // Function to get icon color based on module theme with exact matching
@@ -279,14 +279,12 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                   <div className="flex flex-col space-y-1 flex-shrink-0">
                     {module.isNew && (
                       <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs animate-pulse">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        New
+                        <Sparkles className="w-3 h-3 mr-1" />New
                       </Badge>
                     )}
                     {module.isPremium && (
                       <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
-                        <Crown className="w-3 h-3 mr-1" />
-                        Pro
+                        <Crown className="w-3 h-3 mr-1" />Pro
                       </Badge>
                     )}
                   </div>
@@ -301,7 +299,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
             </CardContent>
             
             {/* Module-specific colored hover indicator */}
-            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${theme.iconColor.replace('text-', 'from-').replace('-300', '-500')} to-${theme.iconColor.replace('text-', '').replace('-300', '-600')} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
+            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${theme.iconColor.replace('text-', 'from-').replace('-400', '-500')} to-${theme.iconColor.replace('text-', '').replace('-400', '-600')} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`} />
           </Card>
         );
       })}

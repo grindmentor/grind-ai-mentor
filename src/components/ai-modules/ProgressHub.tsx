@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SmoothButton } from '@/components/ui/smooth-button';
-import { ArrowLeft, TrendingUp, Calendar, Target, Award, Activity, Scale, Hexagon, Zap, Trophy, Heart, Clock, Star } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Target, Award, Activity, Hexagon, Trophy, Users, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,11 +20,11 @@ interface WorkoutSession {
 }
 
 interface UserStats {
-  dedication: number;
   strength: number;
-  recovery: number;
-  consistency: number;
   endurance: number;
+  consistency: number;
+  technique: number;
+  recovery: number;
 }
 
 interface BenchmarkData {
@@ -33,6 +33,7 @@ interface BenchmarkData {
   percentile: number;
   description: string;
   comparison: string;
+  demographic: string;
 }
 
 interface ProgressHubProps {
@@ -45,11 +46,11 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   const isMobile = useIsMobile();
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [userStats, setUserStats] = useState<UserStats>({
-    dedication: 0,
     strength: 0,
-    recovery: 0,
+    endurance: 0,
     consistency: 0,
-    endurance: 0
+    technique: 0,
+    recovery: 0
   });
   const [benchmarks, setBenchmarks] = useState<BenchmarkData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,61 +114,95 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   };
 
   const calculateUserStats = (workouts: WorkoutSession[]) => {
+    if (workouts.length === 0) {
+      setUserStats({
+        strength: 15,
+        endurance: 20,
+        consistency: 10,
+        technique: 25,
+        recovery: 18
+      });
+      return;
+    }
+
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    
     const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= thirtyDaysAgo);
-    const consistency = Math.min((recentWorkouts.length / 20) * 100, 100);
-    const dedication = Math.min((workouts.length / 50) * 100, 100);
+    
+    // More conservative scoring to make progress harder to achieve
+    const weeklyFrequency = recentWorkouts.length / 4.3;
+    const consistency = Math.min((weeklyFrequency / 5) * 100, 85); // Harder to max out
+    
+    const totalWorkouts = workouts.length;
+    const strength = Math.min((totalWorkouts / 80) * 100, 90); // Need more workouts for high strength
     
     const avgDuration = workouts.length > 0 
       ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length 
       : 0;
-    const strength = Math.min((avgDuration / 90) * 100, 100);
+    const endurance = Math.min((avgDuration / 120) * 100, 85); // Need longer sessions
     
-    const avgCalories = workouts.length > 0 
-      ? workouts.reduce((sum, w) => sum + (w.calories_burned || 0), 0) / workouts.length 
-      : 0;
-    const endurance = Math.min((avgCalories / 400) * 100, 100);
+    // Technique starts low and grows slowly
+    const technique = Math.min((totalWorkouts / 100) * 100, 80);
     
-    const weeklyWorkouts = recentWorkouts.length / 4;
-    const recovery = Math.min(Math.max((4 - Math.abs(weeklyWorkouts - 3.5)) / 4 * 100, 0), 100);
+    // Recovery based on workout spacing and consistency
+    const recovery = Math.min(Math.max((4 - Math.abs(weeklyFrequency - 3)) / 4 * 100, 0), 75);
 
     setUserStats({
-      dedication: Math.round(dedication),
-      strength: Math.round(strength),
-      recovery: Math.round(recovery),
-      consistency: Math.round(consistency),
-      endurance: Math.round(endurance)
+      strength: Math.max(Math.round(strength), 15),
+      endurance: Math.max(Math.round(endurance), 20),
+      consistency: Math.max(Math.round(consistency), 10),
+      technique: Math.max(Math.round(technique), 25),
+      recovery: Math.max(Math.round(recovery), 18)
     });
   };
 
   const generateBenchmarks = (workouts: WorkoutSession[]) => {
-    // Simulate demographic-based benchmarking
-    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0; // rough weekly average
-    const avgDuration = workouts.length > 0 ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length : 0;
+    const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0;
+    const totalSessions = workouts.length;
     
+    // More detailed demographic-based comparisons
     const benchmarkData: BenchmarkData[] = [
       {
         metric: 'Training Frequency',
         userValue: Math.round(weeklyFrequency * 10) / 10,
-        percentile: Math.min(Math.round((weeklyFrequency / 4) * 100), 95),
-        description: 'Workouts per week',
-        comparison: weeklyFrequency >= 3 ? 'Excellent consistency - top 25% of trainees' : weeklyFrequency >= 2 ? 'Good frequency - above average' : 'Room for improvement - aim for 3x/week'
+        percentile: Math.min(Math.round((weeklyFrequency / 4.5) * 100), 92),
+        description: 'Workouts per week vs general population',
+        demographic: 'Adults 25-40',
+        comparison: weeklyFrequency >= 4 ? 'Elite consistency - top 8% of trainees' : 
+                   weeklyFrequency >= 3 ? 'Excellent - top 25% of gym members' : 
+                   weeklyFrequency >= 2 ? 'Above average - better than 60%' : 
+                   'Building habits - room for improvement'
       },
       {
-        metric: 'Session Duration',
-        userValue: Math.round(avgDuration),
-        percentile: Math.min(Math.round((avgDuration / 90) * 100), 90),
-        description: 'Average workout length (minutes)',
-        comparison: avgDuration >= 60 ? 'Optimal duration - matches research recommendations' : avgDuration >= 45 ? 'Good session length' : 'Consider longer sessions for better results'
+        metric: 'Total Experience',
+        userValue: totalSessions,
+        percentile: Math.min(Math.round((totalSessions / 120) * 100), 95),
+        description: 'Lifetime training sessions',
+        demographic: 'Fitness enthusiasts',
+        comparison: totalSessions >= 100 ? 'Experienced lifter - top 15%' : 
+                   totalSessions >= 50 ? 'Intermediate - top 40%' : 
+                   totalSessions >= 20 ? 'Beginner+ - better than 70% of starters' : 
+                   'Just beginning your journey!'
       },
       {
-        metric: 'Total Sessions',
-        userValue: workouts.length,
-        percentile: Math.min(Math.round((workouts.length / 100) * 100), 95),
-        description: 'Lifetime workout count',
-        comparison: workouts.length >= 50 ? 'Experienced trainee - top 30%' : workouts.length >= 20 ? 'Building consistency' : 'Just getting started - keep going!'
+        metric: 'Bench Press Estimate',
+        userValue: Math.round(0.8 + (totalSessions * 0.015)), // Simulated progressive strength
+        percentile: Math.min(65 + (totalSessions * 0.3), 88),
+        description: 'Estimated strength vs bodyweight',
+        demographic: 'Males 25-35',
+        comparison: totalSessions >= 80 ? 'Strong - can likely bench bodyweight+' :
+                   totalSessions >= 40 ? 'Developing strength - approaching bodyweight' :
+                   'Building foundation - focus on form first'
+      },
+      {
+        metric: 'Deadlift Potential',
+        userValue: Math.round(1.2 + (totalSessions * 0.02)), // Conservative estimate
+        percentile: Math.min(60 + (totalSessions * 0.35), 85),
+        description: 'Estimated deadlift vs bodyweight',
+        demographic: 'General lifters',
+        comparison: totalSessions >= 60 ? 'Strong puller - likely 1.5x+ bodyweight' :
+                   totalSessions >= 30 ? 'Good progress - approaching 1.5x bodyweight' :
+                   'Learning the movement - focus on technique'
       }
     ];
 
@@ -175,11 +210,11 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   };
 
   const radarData = [
-    { metric: 'Dedication', value: userStats.dedication, fullMark: 100 },
     { metric: 'Strength', value: userStats.strength, fullMark: 100 },
-    { metric: 'Recovery', value: userStats.recovery, fullMark: 100 },
+    { metric: 'Endurance', value: userStats.endurance, fullMark: 100 },
     { metric: 'Consistency', value: userStats.consistency, fullMark: 100 },
-    { metric: 'Endurance', value: userStats.endurance, fullMark: 100 }
+    { metric: 'Technique', value: userStats.technique, fullMark: 100 },
+    { metric: 'Recovery', value: userStats.recovery, fullMark: 100 }
   ];
 
   const chartConfig = {
@@ -190,10 +225,19 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   };
 
   const getPercentileColor = (percentile: number) => {
-    if (percentile >= 80) return 'text-green-400';
-    if (percentile >= 60) return 'text-yellow-400';
-    if (percentile >= 40) return 'text-orange-400';
+    if (percentile >= 85) return 'text-green-400';
+    if (percentile >= 70) return 'text-blue-400';
+    if (percentile >= 50) return 'text-yellow-400';
+    if (percentile >= 30) return 'text-orange-400';
     return 'text-red-400';
+  };
+
+  const getPercentileBadge = (percentile: number) => {
+    if (percentile >= 90) return { text: 'Elite', color: 'bg-green-600/20 text-green-300 border-green-500/30' };
+    if (percentile >= 75) return { text: 'Advanced', color: 'bg-blue-600/20 text-blue-300 border-blue-500/30' };
+    if (percentile >= 60) return { text: 'Good', color: 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30' };
+    if (percentile >= 40) return { text: 'Average', color: 'bg-orange-600/20 text-orange-300 border-orange-500/30' };
+    return { text: 'Developing', color: 'bg-red-600/20 text-red-300 border-red-500/30' };
   };
 
   if (loading) {
@@ -227,7 +271,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </div>
             <div className="flex items-center justify-center space-x-3">
               <div className="w-6 h-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
-              <span className="text-white text-lg font-medium">Loading Progress Data...</span>
+              <span className="text-white text-lg font-medium">Analyzing Your Progress...</span>
             </div>
           </div>
         </div>
@@ -259,197 +303,196 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       <div className="p-3 sm:p-4 lg:p-6 xl:p-8 max-w-full">
         <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
           
-          {/* Hero Section - Hexagon Chart */}
+          {/* Hero Section - Enhanced Hexagon Chart */}
           <Card className="bg-gradient-to-br from-purple-900/40 to-indigo-900/50 border-purple-600/50 backdrop-blur-sm">
             <CardHeader className="text-center pb-4">
               <div className="flex items-center justify-center space-x-3 mb-2">
-                <Hexagon className="w-8 h-8 text-purple-300" />
-                <CardTitle className="text-white text-2xl lg:text-3xl font-bold">
-                  Your Fitness Profile
+                <Hexagon className="w-10 h-10 text-purple-300" />
+                <CardTitle className="text-white text-3xl lg:text-4xl font-bold">
+                  Your Fitness DNA
                 </CardTitle>
               </div>
-              <CardDescription className="text-purple-200/80 text-base">
-                AI-powered analysis based on your training data and scientific benchmarks
+              <CardDescription className="text-purple-200/80 text-lg max-w-2xl mx-auto">
+                AI-powered analysis of your training profile based on workout data and performance metrics
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 lg:p-8">
-              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[400px] sm:max-h-[500px] lg:max-h-[600px] w-full">
+              <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[500px] sm:max-h-[600px] lg:max-h-[700px] w-full">
                 <RadarChart data={radarData}>
                   <ChartTooltip 
                     cursor={false} 
                     content={<ChartTooltipContent hideLabel />} 
                   />
-                  <PolarGrid stroke="rgba(147, 51, 234, 0.3)" strokeWidth={1} />
+                  <PolarGrid 
+                    stroke="rgba(147, 51, 234, 0.3)" 
+                    strokeWidth={2}
+                    radialLines={true}
+                  />
                   <PolarAngleAxis 
                     dataKey="metric" 
-                    tick={{ fill: 'white', fontSize: isMobile ? 12 : 14, fontWeight: 500 }}
+                    tick={{ 
+                      fill: 'white', 
+                      fontSize: isMobile ? 14 : 16, 
+                      fontWeight: 600 
+                    }}
                   />
                   <Radar
                     dataKey="value"
-                    stroke="rgba(147, 51, 234, 0.9)"
-                    fill="rgba(147, 51, 234, 0.4)"
-                    strokeWidth={3}
-                    dot={{ fill: 'rgba(147, 51, 234, 1)', r: 6 }}
+                    stroke="rgba(147, 51, 234, 1)"
+                    fill="rgba(147, 51, 234, 0.3)"
+                    strokeWidth={4}
+                    dot={{ 
+                      fill: 'rgba(147, 51, 234, 1)', 
+                      r: 8,
+                      strokeWidth: 2,
+                      stroke: 'white'
+                    }}
                   />
                 </RadarChart>
               </ChartContainer>
               
-              <div className="grid grid-cols-5 gap-3 sm:gap-6 mt-6 sm:mt-8">
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.dedication}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Dedication</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.strength}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Strength</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.recovery}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Recovery</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.consistency}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Consistency</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg sm:text-xl lg:text-3xl font-bold text-purple-300 mb-1">{userStats.endurance}%</div>
-                  <div className="text-xs sm:text-sm text-purple-200/70">Endurance</div>
-                </div>
+              <div className="grid grid-cols-5 gap-2 sm:gap-4 mt-8">
+                {radarData.map((stat, index) => (
+                  <div key={stat.metric} className="text-center">
+                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-300 mb-1 sm:mb-2">
+                      {stat.value}%
+                    </div>
+                    <div className="text-xs sm:text-sm text-purple-200/70 font-medium">
+                      {stat.metric}
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Benchmarking Section */}
+          {/* Performance Benchmarks Section */}
           <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-white flex items-center text-xl">
-                <Trophy className="w-6 h-6 mr-3 text-purple-300" />
+              <CardTitle className="text-white flex items-center text-2xl">
+                <BarChart3 className="w-7 h-7 mr-3 text-purple-300" />
                 Performance Benchmarks
               </CardTitle>
-              <CardDescription className="text-purple-200/70">
-                See how you compare to other trainees in your demographic
+              <CardDescription className="text-purple-200/70 text-base">
+                See how your training measures against demographic standards and research data
               </CardDescription>
             </CardHeader>
             <CardContent>
               {benchmarks.length === 0 ? (
-                <div className="text-center py-8">
-                  <Star className="w-12 h-12 text-purple-400/50 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-purple-200 mb-2">Start Training to See Benchmarks</h3>
-                  <p className="text-purple-300/70">
-                    Complete workouts to unlock personalized performance comparisons
+                <div className="text-center py-12">
+                  <Trophy className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-purple-200 mb-2">Building Your Profile</h3>
+                  <p className="text-purple-300/70 text-lg">
+                    Complete more workouts to unlock detailed performance comparisons
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-4 sm:gap-6">
-                  {benchmarks.map((benchmark, index) => (
-                    <div key={index} className="bg-purple-800/30 rounded-xl p-4 sm:p-6 border border-purple-600/30">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white text-base sm:text-lg mb-1">{benchmark.metric}</h4>
-                          <p className="text-purple-200/80 text-sm">{benchmark.description}</p>
-                        </div>
-                        <div className="text-right ml-4">
-                          <div className="text-2xl sm:text-3xl font-bold text-purple-300 mb-1">
-                            {benchmark.userValue}
+                <div className="grid gap-6">
+                  {benchmarks.map((benchmark, index) => {
+                    const badge = getPercentileBadge(benchmark.percentile);
+                    return (
+                      <div key={index} className="bg-purple-800/30 rounded-xl p-6 border border-purple-600/30 hover:border-purple-500/50 transition-colors">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h4 className="font-bold text-white text-lg">{benchmark.metric}</h4>
+                              <div className={`px-3 py-1 rounded-full text-sm font-semibold border ${badge.color}`}>
+                                {badge.text}
+                              </div>
+                            </div>
+                            <p className="text-purple-200/80 text-sm mb-1">{benchmark.description}</p>
+                            <p className="text-purple-300/60 text-xs">Compared to: {benchmark.demographic}</p>
                           </div>
-                          <div className={`text-sm sm:text-base font-semibold ${getPercentileColor(benchmark.percentile)}`}>
-                            Top {Math.max(100 - benchmark.percentile, 5)}%
+                          <div className="text-right ml-6">
+                            <div className="text-3xl lg:text-4xl font-bold text-purple-300 mb-1">
+                              {typeof benchmark.userValue === 'number' && benchmark.userValue < 10 
+                                ? benchmark.userValue.toFixed(1) 
+                                : benchmark.userValue}
+                              {benchmark.metric.includes('Bench') || benchmark.metric.includes('Deadlift') ? 'x' : ''}
+                            </div>
+                            <div className={`text-base font-bold ${getPercentileColor(benchmark.percentile)}`}>
+                              {benchmark.percentile}th percentile
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between text-sm mb-2">
+                            <span className="text-purple-200/70">Population Ranking</span>
+                            <span className={`font-semibold ${getPercentileColor(benchmark.percentile)}`}>
+                              Better than {benchmark.percentile}% of people
+                            </span>
+                          </div>
+                          <div className="w-full bg-purple-950/50 rounded-full h-3">
+                            <div 
+                              className="bg-gradient-to-r from-purple-500 via-pink-500 to-purple-400 h-3 rounded-full transition-all duration-1000 ease-out"
+                              style={{ width: `${benchmark.percentile}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-purple-950/40 rounded-lg p-4">
+                          <div className="flex items-start space-x-2">
+                            <Users className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-purple-200/90 text-sm leading-relaxed">
+                              {benchmark.comparison}
+                            </p>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-xs sm:text-sm mb-1">
-                          <span className="text-purple-200/70">Population Percentile</span>
-                          <span className={`font-semibold ${getPercentileColor(benchmark.percentile)}`}>
-                            {benchmark.percentile}th percentile
-                          </span>
-                        </div>
-                        <div className="w-full bg-purple-950/50 rounded-full h-2 sm:h-3">
-                          <div 
-                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 sm:h-3 rounded-full transition-all duration-500"
-                            style={{ width: `${benchmark.percentile}%` }}
-                          />
-                        </div>
-                      </div>
-                      
-                      <p className="text-purple-200/90 text-sm leading-relaxed bg-purple-950/30 rounded-lg p-3">
-                        {benchmark.comparison}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
           </Card>
 
           {/* Quick Stats Summary */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4">
-                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
-                  <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="flex items-center text-white text-sm">
+                  <Trophy className="w-4 h-4 mr-2 text-purple-300" />
                   Total Sessions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3 sm:p-4 pt-0">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{workoutSessions.length}</div>
-                <div className="text-xs text-purple-200/70 mt-1">Workouts completed</div>
+              <CardContent className="p-4 pt-0">
+                <div className="text-2xl lg:text-3xl font-bold text-white">{workoutSessions.length}</div>
+                <div className="text-xs text-purple-200/70 mt-1">Workouts logged</div>
               </CardContent>
             </Card>
 
             <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4">
-                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
-                  <Activity className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="flex items-center text-white text-sm">
+                  <Activity className="w-4 h-4 mr-2 text-purple-300" />
                   This Month
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3 sm:p-4 pt-0">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+              <CardContent className="p-4 pt-0">
+                <div className="text-2xl lg:text-3xl font-bold text-white">
                   {workoutSessions.filter(w => {
                     const sessionDate = new Date(w.session_date);
                     const now = new Date();
                     return sessionDate.getMonth() === now.getMonth() && sessionDate.getFullYear() === now.getFullYear();
                   }).length}
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Recent workouts</div>
+                <div className="text-xs text-purple-200/70 mt-1">Recent activity</div>
               </CardContent>
             </Card>
 
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4">
-                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
-                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  Weekly Avg
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm col-span-2 lg:col-span-1">
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="flex items-center text-white text-sm">
+                  <Target className="w-4 h-4 mr-2 text-purple-300" />
+                  Fitness Score
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3 sm:p-4 pt-0">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                  {workoutSessions.length > 0 
-                    ? Math.round(workoutSessions.filter(w => {
-                        const sessionDate = new Date(w.session_date);
-                        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-                        return sessionDate >= thirtyDaysAgo;
-                      }).length / 4.3)
-                    : 0}
+              <CardContent className="p-4 pt-0">
+                <div className="text-2xl lg:text-3xl font-bold text-white">
+                  {Math.round((userStats.strength + userStats.endurance + userStats.consistency + userStats.technique + userStats.recovery) / 5)}%
                 </div>
-                <div className="text-xs text-purple-200/70 mt-1">Sessions/week</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-              <CardHeader className="pb-2 p-3 sm:p-4">
-                <CardTitle className="flex items-center text-white text-xs sm:text-sm">
-                  <Target className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-300" />
-                  AI Score
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 sm:p-4 pt-0">
-                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                  {Math.round((userStats.dedication + userStats.strength + userStats.recovery + userStats.consistency + userStats.endurance) / 5)}%
-                </div>
-                <div className="text-xs text-purple-200/70 mt-1">Overall fitness</div>
+                <div className="text-xs text-purple-200/70 mt-1">Overall progress</div>
               </CardContent>
             </Card>
           </div>

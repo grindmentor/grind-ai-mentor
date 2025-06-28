@@ -22,7 +22,7 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   isPremium,
   onClick
 }) => {
-  // Map card gradients to match actual module interior colors with proper opacity
+  // Enhanced module color mapping with proper 50% opacity
   const getModuleGradient = (originalGradient: string, title: string) => {
     const moduleColorMap: { [key: string]: string } = {
       // CoachGPT - Cyan theme with 50% opacity
@@ -30,56 +30,66 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
       // Habit Tracker - Yellow theme with 50% opacity  
       'Habit Tracker': 'from-yellow-900/50 to-orange-900/50',
       // CutCalc Pro - Red theme with 50% opacity
-      'CutCalc Pro': 'from-red-900/50 to-orange-900/50',
+      'CutCalc Pro': 'from-red-900/50 to-pink-900/50',
       // TDEE Calculator - Purple theme with 50% opacity
       'TDEE Calculator': 'from-purple-900/50 to-indigo-900/50',
       // Smart Training - Blue theme with 50% opacity
       'Smart Training': 'from-blue-900/50 to-indigo-900/50',
-      // Blueprint AI - Blue theme with 50% opacity
+      // Blueprint AI - Blue to cyan theme with 50% opacity
       'Blueprint AI': 'from-blue-900/50 to-cyan-900/50',
       // Workout Timer - Cyan theme with 50% opacity
-      'Workout Timer': 'from-cyan-900/50 to-blue-900/50',
+      'Workout Timer': 'from-cyan-900/50 to-teal-900/50',
       // Meal Plan Generator - Green theme with 50% opacity
-      'Meal Plan Generator': 'from-green-900/50 to-teal-900/50',
-      'Meal Plan AI': 'from-green-900/50 to-teal-900/50',
+      'Meal Plan Generator': 'from-green-900/50 to-emerald-900/50',
+      'Meal Plan AI': 'from-green-900/50 to-emerald-900/50',
       // Progress Hub - Purple theme with 50% opacity
-      'Progress Hub': 'from-purple-900/50 to-indigo-900/50',
+      'Progress Hub': 'from-purple-900/50 to-violet-900/50',
+      // Workout Logger AI - Blue theme with 50% opacity
+      'Workout Logger AI': 'from-blue-900/50 to-indigo-900/50',
     };
     
     return moduleColorMap[title] || originalGradient.replace(/\/\d+/g, '/50');
   };
 
-  const getBorderColor = (gradient: string) => {
+  const getBorderColor = (gradient: string, title: string) => {
     const borderMap: { [key: string]: string } = {
-      'from-cyan-900/50 to-blue-900/50': 'border-cyan-500/30',
-      'from-yellow-900/50 to-orange-900/50': 'border-yellow-500/30',
-      'from-red-900/50 to-orange-900/50': 'border-red-500/30',
-      'from-purple-900/50 to-indigo-900/50': 'border-purple-500/30',
-      'from-blue-900/50 to-indigo-900/50': 'border-blue-500/30',
-      'from-blue-900/50 to-cyan-900/50': 'border-blue-500/30',
-      'from-green-900/50 to-teal-900/50': 'border-green-500/30',
+      'CoachGPT': 'border-cyan-500/30',
+      'Habit Tracker': 'border-yellow-500/30',
+      'CutCalc Pro': 'border-red-500/30',
+      'TDEE Calculator': 'border-purple-500/30',
+      'Smart Training': 'border-blue-500/30',
+      'Blueprint AI': 'border-blue-500/30',
+      'Workout Timer': 'border-cyan-500/30',
+      'Meal Plan Generator': 'border-green-500/30',
+      'Meal Plan AI': 'border-green-500/30',
+      'Progress Hub': 'border-purple-500/30',
+      'Workout Logger AI': 'border-blue-500/30',
     };
     
-    return borderMap[gradient] || 'border-white/20';
+    return borderMap[title] || 'border-white/20';
   };
 
-  const getIconBgColor = (gradient: string) => {
+  const getIconBgColor = (title: string) => {
     const iconBgMap: { [key: string]: string } = {
-      'from-cyan-900/50 to-blue-900/50': 'bg-gradient-to-r from-cyan-500/30 to-blue-500/40 border-cyan-500/30',
-      'from-yellow-900/50 to-orange-900/50': 'bg-gradient-to-r from-yellow-500/30 to-orange-500/40 border-yellow-500/30',
-      'from-red-900/50 to-orange-900/50': 'bg-gradient-to-r from-red-500/30 to-orange-500/40 border-red-500/30',
-      'from-purple-900/50 to-indigo-900/50': 'bg-gradient-to-r from-purple-500/30 to-indigo-500/40 border-purple-500/30',
-      'from-blue-900/50 to-indigo-900/50': 'bg-gradient-to-r from-blue-500/30 to-indigo-500/40 border-blue-500/30',
-      'from-blue-900/50 to-cyan-900/50': 'bg-gradient-to-r from-blue-500/30 to-cyan-500/40 border-blue-500/30',
-      'from-green-900/50 to-teal-900/50': 'bg-gradient-to-r from-green-500/30 to-teal-500/40 border-green-500/30',
+      'CoachGPT': 'bg-gradient-to-r from-cyan-500/30 to-blue-500/40 border-cyan-500/30',
+      'Habit Tracker': 'bg-gradient-to-r from-yellow-500/30 to-orange-500/40 border-yellow-500/30',
+      'CutCalc Pro': 'bg-gradient-to-r from-red-500/30 to-pink-500/40 border-red-500/30',
+      'TDEE Calculator': 'bg-gradient-to-r from-purple-500/30 to-indigo-500/40 border-purple-500/30',
+      'Smart Training': 'bg-gradient-to-r from-blue-500/30 to-indigo-500/40 border-blue-500/30',
+      'Blueprint AI': 'bg-gradient-to-r from-blue-500/30 to-cyan-500/40 border-blue-500/30',
+      'Workout Timer': 'bg-gradient-to-r from-cyan-500/30 to-teal-500/40 border-cyan-500/30',
+      'Meal Plan Generator': 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
+      'Meal Plan AI': 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
+      'Progress Hub': 'bg-gradient-to-r from-purple-500/30 to-violet-500/40 border-purple-500/30',
+      'Workout Logger AI': 'bg-gradient-to-r from-blue-500/30 to-indigo-500/40 border-blue-500/30',
     };
     
-    return iconBgMap[gradient] || 'bg-black/20 border-white/20';
+    return iconBgMap[title] || 'bg-black/20 border-white/20';
   };
 
   const moduleGradient = getModuleGradient(gradient, title);
-  const borderColor = getBorderColor(moduleGradient);
-  const iconBgColor = getIconBgColor(moduleGradient);
+  const borderColor = getBorderColor(moduleGradient, title);
+  const iconBgColor = getIconBgColor(title);
 
   return (
     <Card 

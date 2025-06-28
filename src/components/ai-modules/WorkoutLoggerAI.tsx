@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Dumbbell, Save, Import, Settings, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Dumbbell, Save, Import, Settings, Trash2, Info, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,13 +16,17 @@ import { useUnitsPreference } from '@/hooks/useUnitsPreference';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+interface ExerciseSet {
+  id: string;
+  reps: number;
+  weight: number;
+  rpe: number;
+}
+
 interface Exercise {
   id: string;
   name: string;
-  sets: number;
-  reps: number;
-  weight: number;
-  rpe?: number;
+  sets: ExerciseSet[];
   notes?: string;
 }
 
@@ -42,6 +46,30 @@ interface WorkoutLoggerAIProps {
   onBack: () => void;
 }
 
+// Training tips and form cues for common exercises
+const exerciseTips: { [key: string]: { formCues: string[]; tips: string[] } } = {
+  'bench press': {
+    formCues: ['Retract shoulder blades', 'Plant feet firmly', 'Arch back slightly', 'Lower bar to chest'],
+    tips: ['Focus on controlled descent', 'Drive through heels', 'Keep wrists straight']
+  },
+  'squat': {
+    formCues: ['Feet shoulder-width apart', 'Knees track over toes', 'Chest up, core tight', 'Hip hinge first'],
+    tips: ['Go as deep as mobility allows', 'Drive through heels', 'Keep knees aligned']
+  },
+  'deadlift': {
+    formCues: ['Bar close to shins', 'Straight back', 'Shoulders over bar', 'Hip hinge movement'],
+    tips: ['Engage lats to keep bar close', 'Drive hips forward at top', 'Control the descent']
+  },
+  'pull-up': {
+    formCues: ['Full hang at bottom', 'Pull chest to bar', 'Engage core', 'Control descent'],
+    tips: ['Focus on lat engagement', 'Avoid swinging', 'Full range of motion']
+  },
+  'push-up': {
+    formCues: ['Straight line from head to heels', 'Hands under shoulders', 'Core engaged', 'Full range'],
+    tips: ['Lower chest to ground', 'Push through palms', 'Keep body rigid']
+  }
+};
+
 export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -55,6 +83,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   const [showExerciseSearch, setShowExerciseSearch] = useState(false);
   const [showCustomExerciseModal, setShowCustomExerciseModal] = useState(false);
   const [sessionStartTime] = useState(new Date());
+  const [showRpeInfo, setShowRpeInfo] = useState(false);
 
   // Load saved exercises (both custom and imported from Blueprint AI)
   useEffect(() => {
@@ -146,10 +175,12 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
     const newExercise: Exercise = {
       id: Date.now().toString() + Math.random().toString(),
       name: savedExercise.name,
-      sets: 3,
-      reps: 10,
-      weight: 0,
-      rpe: 7,
+      sets: [{
+        id: '1',
+        reps: 10,
+        weight: 0,
+        rpe: 7
+      }],
       notes: ''
     };
     
@@ -196,10 +227,12 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
     const newExercise: Exercise = {
       id: Date.now().toString() + Math.random().toString(),
       name: typeof exerciseData === 'string' ? exerciseData : exerciseData.name,
-      sets: 3,
-      reps: 10,
-      weight: 0,
-      rpe: 7,
+      sets: [{
+        id: '1',
+        reps: 10,
+        weight: 0,
+        rpe: 7
+      }],
       notes: ''
     };
     
@@ -214,18 +247,65 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
 
   const handleCustomExerciseCreated = (exercise: any) => {
     addExercise(exercise);
-    loadSavedExercises(); // Refresh saved exercises list
+    loadSavedExercises();
     setShowCustomExerciseModal(false);
   };
 
-  const updateExercise = (id: string, field: keyof Exercise, value: any) => {
+  const addSet = (exerciseId: string) => {
     setExercises(exercises.map(ex => 
-      ex.id === id ? { ...ex, [field]: value } : ex
+      ex.id === exerciseId 
+        ? { 
+            ...ex, 
+            sets: [...ex.sets, {
+              id: (ex.sets.length + 1).toString(),
+              reps: 10,
+              weight: ex.sets.length > 0 ? ex.sets[ex.sets.length - 1].weight : 0,
+              rpe: 7
+            }]
+          }
+        : ex
+    ));
+  };
+
+  const removeSet = (exerciseId: string, setId: string) => {
+    setExercises(exercises.map(ex => 
+      ex.id === exerciseId 
+        ? { ...ex, sets: ex.sets.filter(set => set.id !== setId) }
+        : ex
+    ));
+  };
+
+  const updateSet = (exerciseId: string, setId: string, field: keyof ExerciseSet, value: any) => {
+    setExercises(exercises.map(ex => 
+      ex.id === exerciseId 
+        ? {
+            ...ex,
+            sets: ex.sets.map(set => 
+              set.id === setId ? { ...set, [field]: value } : set
+            )
+          }
+        : ex
+    ));
+  };
+
+  const updateExerciseNotes = (exerciseId: string, notes: string) => {
+    setExercises(exercises.map(ex => 
+      ex.id === exerciseId ? { ...ex, notes } : ex
     ));
   };
 
   const removeExercise = (id: string) => {
     setExercises(exercises.filter(ex => ex.id !== id));
+  };
+
+  const getExerciseTips = (exerciseName: string) => {
+    const key = exerciseName.toLowerCase();
+    for (const tipKey in exerciseTips) {
+      if (key.includes(tipKey)) {
+        return exerciseTips[tipKey];
+      }
+    }
+    return null;
   };
 
   const formatWeightDisplay = (weight: number) => {
@@ -243,6 +323,17 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
       return;
     }
 
+    // Check if all exercises have at least one set
+    const exercisesWithoutSets = exercises.filter(ex => ex.sets.length === 0);
+    if (exercisesWithoutSets.length > 0) {
+      toast({
+        title: 'Incomplete Exercises',
+        description: 'All exercises must have at least one set.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsLogging(true);
     try {
       const sessionEndTime = new Date();
@@ -250,13 +341,13 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
 
       const exercisesForDb = exercises.map(ex => ({
         exercise_name: ex.name,
-        sets: Array.from({ length: ex.sets }, (_, i) => ({
-          id: `${ex.id}-set-${i + 1}`,
-          reps: ex.reps,
-          weight: ex.weight
+        sets: ex.sets.map((set, index) => ({
+          id: `${ex.id}-set-${index + 1}`,
+          reps: set.reps,
+          weight: set.weight,
+          rpe: set.rpe
         })),
-        notes: ex.notes || '',
-        rpe: ex.rpe || null
+        notes: ex.notes || ''
       }));
 
       const { error: sessionError } = await supabase
@@ -267,28 +358,32 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
           session_date: new Date().toISOString().split('T')[0],
           duration_minutes: durationMinutes,
           exercises_data: exercisesForDb,
-          notes: `Logged ${exercises.length} exercises`
+          notes: `Logged ${exercises.length} exercises with ${exercises.reduce((total, ex) => total + ex.sets.length, 0)} total sets`
         });
 
       if (sessionError) throw sessionError;
 
+      // Log individual sets for progressive overload tracking
       for (const exercise of exercises) {
-        await supabase
-          .from('progressive_overload_entries')
-          .insert({
-            user_id: user.id,
-            exercise_name: exercise.name,
-            sets: exercise.sets,
-            reps: exercise.reps,
-            weight: exercise.weight,
-            rpe: exercise.rpe,
-            notes: exercise.notes
-          });
+        for (const set of exercise.sets) {
+          await supabase
+            .from('progressive_overload_entries')
+            .insert({
+              user_id: user.id,
+              exercise_name: exercise.name,
+              sets: 1, // Each entry represents one set
+              reps: set.reps,
+              weight: set.weight,
+              rpe: set.rpe,
+              notes: exercise.notes
+            });
+        }
       }
 
+      const totalSets = exercises.reduce((total, ex) => total + ex.sets.length, 0);
       toast({
         title: 'Workout Logged! 💪',
-        description: `Successfully logged ${exercises.length} exercises. Duration: ${durationMinutes} minutes.`
+        description: `Successfully logged ${exercises.length} exercises with ${totalSets} sets. Duration: ${durationMinutes} minutes.`
       });
 
       setWorkoutName('');
@@ -322,7 +417,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
               <div>
                 <CardTitle className="text-white text-xl">Workout Logger AI</CardTitle>
                 <CardDescription className="text-blue-200/80">
-                  Log your workouts with intelligent exercise tracking
+                  Advanced set-by-set tracking with RPE and form guidance
                 </CardDescription>
               </div>
             </div>
@@ -338,6 +433,37 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                 className="bg-blue-900/30 border-blue-500/50 text-white placeholder:text-blue-300/50"
               />
             </div>
+
+            {/* RPE Information */}
+            <Card className="bg-blue-900/40 border-blue-500/40">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Target className="w-4 h-4 text-blue-400" />
+                    <Label className="text-blue-200 font-semibold">RPE (Rate of Perceived Exertion)</Label>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowRpeInfo(!showRpeInfo)}
+                    className="text-blue-300 hover:bg-blue-700/30"
+                  >
+                    <Info className="w-4 h-4" />
+                  </Button>
+                </div>
+                {showRpeInfo && (
+                  <div className="space-y-2 text-sm text-blue-200/80">
+                    <p className="mb-2">RPE measures how hard an exercise feels on a scale of 1-10:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div><strong>RPE 6-7:</strong> Could do 3-4 more reps</div>
+                      <div><strong>RPE 8:</strong> Could do 2-3 more reps</div>
+                      <div><strong>RPE 9:</strong> Could do 1 more rep</div>
+                      <div><strong>RPE 10:</strong> Absolute maximum effort</div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <Tabs defaultValue="current" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-blue-900/40 border-blue-500/30">
@@ -398,76 +524,128 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {exercises.map((exercise) => (
-                      <Card key={exercise.id} className="bg-blue-900/40 border-blue-500/40">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-white">{exercise.name}</h4>
-                            <Button
-                              onClick={() => removeExercise(exercise.id)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="space-y-6">
+                    {exercises.map((exercise) => {
+                      const tips = getExerciseTips(exercise.name);
+                      return (
+                        <Card key={exercise.id} className="bg-blue-900/40 border-blue-500/40">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="font-semibold text-white text-lg">{exercise.name}</h4>
+                              <Button
+                                onClick={() => removeExercise(exercise.id)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            
+                            {/* Sets */}
+                            <div className="space-y-3 mb-4">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-blue-200 font-medium">Sets</Label>
+                                <Button
+                                  onClick={() => addSet(exercise.id)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-blue-500/50 text-blue-300 hover:bg-blue-700/30"
+                                >
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Add Set
+                                </Button>
+                              </div>
+                              
+                              {exercise.sets.map((set, index) => (
+                                <div key={set.id} className="bg-blue-800/30 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-blue-200 font-medium text-sm">Set {index + 1}</span>
+                                    {exercise.sets.length > 1 && (
+                                      <Button
+                                        onClick={() => removeSet(exercise.id, set.id)}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-6 w-6 p-0"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                      <Label className="text-blue-200 text-xs">Reps</Label>
+                                      <Input
+                                        type="number"
+                                        value={set.reps}
+                                        onChange={(e) => updateSet(exercise.id, set.id, 'reps', parseInt(e.target.value) || 0)}
+                                        className="bg-blue-700/50 border-blue-500/30 text-white text-sm h-8"
+                                        min="1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-blue-200 text-xs">Weight ({units.weightUnit})</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.5"
+                                        value={set.weight}
+                                        onChange={(e) => updateSet(exercise.id, set.id, 'weight', parseFloat(e.target.value) || 0)}
+                                        className="bg-blue-700/50 border-blue-500/30 text-white text-sm h-8"
+                                        min="0"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-blue-200 text-xs">RPE</Label>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        max="10"
+                                        value={set.rpe}
+                                        onChange={(e) => updateSet(exercise.id, set.id, 'rpe', parseInt(e.target.value) || 7)}
+                                        className="bg-blue-700/50 border-blue-500/30 text-white text-sm h-8"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Form Tips */}
+                            {tips && (
+                              <div className="mb-4 p-3 bg-green-900/20 rounded-lg border border-green-500/30">
+                                <h5 className="text-green-300 font-medium text-sm mb-2">Form Cues & Tips</h5>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                  <div>
+                                    <span className="text-green-400 font-medium">Form Cues:</span>
+                                    <ul className="list-disc list-inside text-green-200/80 mt-1">
+                                      {tips.formCues.map((cue, i) => <li key={i}>{cue}</li>)}
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <span className="text-green-400 font-medium">Tips:</span>
+                                    <ul className="list-disc list-inside text-green-200/80 mt-1">
+                                      {tips.tips.map((tip, i) => <li key={i}>{tip}</li>)}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Notes */}
                             <div>
-                              <Label className="text-blue-200 text-xs">Sets</Label>
+                              <Label className="text-blue-200 text-xs">Exercise Notes (optional)</Label>
                               <Input
-                                type="number"
-                                value={exercise.sets}
-                                onChange={(e) => updateExercise(exercise.id, 'sets', parseInt(e.target.value) || 0)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
+                                value={exercise.notes || ''}
+                                onChange={(e) => updateExerciseNotes(exercise.id, e.target.value)}
+                                placeholder="How did it feel? Form adjustments, etc."
+                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm placeholder:text-blue-400/50 mt-1"
                               />
                             </div>
-                            <div>
-                              <Label className="text-blue-200 text-xs">Reps</Label>
-                              <Input
-                                type="number"
-                                value={exercise.reps}
-                                onChange={(e) => updateExercise(exercise.id, 'reps', parseInt(e.target.value) || 0)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-blue-200 text-xs">Weight ({units.weightUnit})</Label>
-                              <Input
-                                type="number"
-                                step="0.5"
-                                value={exercise.weight}
-                                onChange={(e) => updateExercise(exercise.id, 'weight', parseFloat(e.target.value) || 0)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-blue-200 text-xs">RPE</Label>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={exercise.rpe}
-                                onChange={(e) => updateExercise(exercise.id, 'rpe', parseInt(e.target.value) || 7)}
-                                className="bg-blue-800/50 border-blue-500/30 text-white text-sm"
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="mt-3">
-                            <Label className="text-blue-200 text-xs">Notes (optional)</Label>
-                            <Input
-                              value={exercise.notes || ''}
-                              onChange={(e) => updateExercise(exercise.id, 'notes', e.target.value)}
-                              placeholder="Form notes, how it felt, etc."
-                              className="bg-blue-800/50 border-blue-500/30 text-white text-sm placeholder:text-blue-400/50"
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -485,7 +663,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
                     ) : (
                       <>
                         <Save className="w-4 h-4 mr-2" />
-                        Log Workout
+                        Log Workout ({exercises.reduce((total, ex) => total + ex.sets.length, 0)} sets)
                       </>
                     )}
                   </Button>
@@ -493,6 +671,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
               </TabsContent>
 
               <TabsContent value="saved" className="space-y-4 mt-6">
+                
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-blue-200">
                     Saved Exercises ({savedExercises.length})

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Trash2, Shield } from "lucide-react";
@@ -25,8 +24,9 @@ const AIMemoryReset = () => {
 
     setIsResetting(true);
     try {
-      // Clear AI-generated context while preserving essential user data
+      // Clear AI conversation history and related data
       const tablesToClear = [
+        'coach_conversations', // Clear all AI chats
         'ai_conversation_history',
         'ai_recommendations', 
         'ai_analysis_cache',
@@ -60,7 +60,19 @@ const AIMemoryReset = () => {
 
       if (profileError) {
         console.error('Profile update error:', profileError);
-        // Don't throw here since the main clearing likely worked
+      }
+
+      // Also clear from customer_profiles if it exists
+      try {
+        await supabase
+          .from('customer_profiles')
+          .update({
+            notes: null,
+            // Keep fitness_goals, display_name, and other essential data
+          })
+          .eq('user_id', user.id);
+      } catch (error) {
+        console.log('Customer profiles update (optional):', error);
       }
 
       // Simulate processing time for better UX
@@ -68,7 +80,7 @@ const AIMemoryReset = () => {
       
       toast({
         title: "AI Memory Reset Complete! 🧠",
-        description: "Your AI coach's memory has been cleared. Essential profile data like height, weight, and age have been preserved.",
+        description: "All AI conversations and context have been cleared. Your profile data like height, weight, and age remain intact.",
       });
 
       setShowWarningOnce(false); // Reset the warning flag for next session
@@ -77,7 +89,6 @@ const AIMemoryReset = () => {
       toast({
         title: "Reset Successful",
         description: "AI memory has been cleared. Your profile data remains intact.",
-        // Still show success since core functionality worked
       });
     } finally {
       setIsResetting(false);
@@ -89,7 +100,7 @@ const AIMemoryReset = () => {
       setShowWarningOnce(true);
       toast({
         title: "Important: Data Preservation",
-        description: "This will only clear AI conversation history. Your height, weight, age, and other essential data will be preserved.",
+        description: "This will clear all AI conversations and context. Your height, weight, age, and other essential data will be preserved.",
       });
     }
   };
@@ -102,7 +113,7 @@ const AIMemoryReset = () => {
           AI Memory Reset
         </CardTitle>
         <CardDescription>
-          Clear your AI coach's conversation memory and recommendations
+          Clear all AI conversations, memory, and recommendations
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -114,7 +125,8 @@ const AIMemoryReset = () => {
               Will be deleted:
             </h4>
             <ul className="text-red-200/80 text-xs space-y-1">
-              <li>• AI conversation history</li>
+              <li>• All AI chat conversations</li>
+              <li>• AI conversation history and context</li>
               <li>• Personalized recommendations</li>
               <li>• Workout and meal suggestions</li>
               <li>• Training analysis cache</li>
@@ -133,11 +145,12 @@ const AIMemoryReset = () => {
               <li>• Goals and achievements</li>
               <li>• Profile settings and preferences</li>
               <li>• Custom exercises and saved data</li>
+              <li>• Food logs and nutrition data</li>
             </ul>
           </div>
 
           <p className="text-gray-300 text-sm">
-            This reset gives your AI coach a fresh start while keeping all your important fitness data intact. 
+            This reset gives your AI coaches a completely fresh start while keeping all your important fitness data intact. 
             Perfect for when you want to change training focus or resolve any AI confusion.
           </p>
 
@@ -153,12 +166,12 @@ const AIMemoryReset = () => {
             {isResetting ? (
               <>
                 <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Clearing AI Memory...
+                Clearing AI Memory & Conversations...
               </>
             ) : (
               <>
                 <Brain className="w-4 h-4 mr-2" />
-                Reset AI Memory (Keep Profile Data)
+                Reset All AI Memory & Chats
               </>
             )}
           </Button>

@@ -8,7 +8,6 @@ import { Target, Plus, Trophy, Calendar, Flag, Edit, Trash2 } from 'lucide-react
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface Goal {
   id: string;
@@ -26,9 +25,10 @@ interface Goal {
 export const RealGoalsAchievements: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
 
   useEffect(() => {
     if (user) {
@@ -79,6 +79,31 @@ export const RealGoalsAchievements: React.FC = () => {
     }
   };
 
+  const updateGoalTitle = async (goalId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_goals')
+        .update({ title: newTitle })
+        .eq('id', goalId);
+
+      if (error) throw error;
+      loadGoals();
+      setEditingGoal(null);
+      
+      toast({
+        title: 'Goal Updated! ✏️',
+        description: 'Your goal has been updated successfully.'
+      });
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update goal.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const deleteGoal = async (goalId: string) => {
     try {
       const { error } = await supabase
@@ -116,7 +141,7 @@ export const RealGoalsAchievements: React.FC = () => {
 
     const moduleUrl = moduleMap[goal.category];
     if (moduleUrl) {
-      navigate(moduleUrl);
+      window.location.href = moduleUrl;
       toast({
         title: `Opening ${goal.category} Module`,
         description: `Tell the AI about your goal: "${goal.title}" and it will help track your progress.`
@@ -125,8 +150,24 @@ export const RealGoalsAchievements: React.FC = () => {
   };
 
   const handleAddGoalClick = () => {
-    // Navigate to the dashboard with notification center open
-    navigate('/', { state: { openNotifications: true } });
+    // Navigate to notifications center for goal creation
+    window.location.href = '/?notifications=true';
+  };
+
+  const startEditing = (goal: Goal) => {
+    setEditingGoal(goal.id);
+    setEditValue(goal.title);
+  };
+
+  const saveEdit = () => {
+    if (editingGoal && editValue.trim()) {
+      updateGoalTitle(editingGoal, editValue.trim());
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingGoal(null);
+    setEditValue('');
   };
 
   const getPriorityColor = (priority: string) => {
@@ -223,74 +264,109 @@ export const RealGoalsAchievements: React.FC = () => {
                 <div
                   key={goal.id}
                   className="p-4 bg-gray-900/40 rounded-lg border border-gray-700/50 backdrop-blur-sm hover:border-blue-500/30 transition-colors cursor-pointer group"
-                  onClick={() => handleGoalClick(goal)}
+                  onClick={() => !editingGoal && handleGoalClick(goal)}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-white font-semibold text-sm group-hover:text-blue-300 transition-colors">
-                          {goal.title}
-                        </h3>
-                        <Badge className={getCategoryColor(goal.category)}>
-                          {goal.category}
-                        </Badge>
-                        <Badge className={getPriorityColor(goal.priority)}>
-                          <Flag className="w-3 h-3 mr-1" />
-                          {goal.priority}
-                        </Badge>
+                        {editingGoal === goal.id ? (
+                          <div className="flex items-center space-x-2 flex-1">
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="bg-gray-800 text-white px-2 py-1 rounded text-sm flex-1"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveEdit();
+                                if (e.key === 'Escape') cancelEdit();
+                              }}
+                              autoFocus
+                            />
+                            <Button size="sm" onClick={saveEdit} className="h-6 w-6 p-0">✓</Button>
+                            <Button size="sm" onClick={cancelEdit} variant="ghost" className="h-6 w-6 p-0">✕</Button>
+                          </div>
+                        ) : (
+                          <>
+                            <h3 className="text-white font-semibold text-sm group-hover:text-blue-300 transition-colors">
+                              {goal.title}
+                            </h3>
+                            <Badge className={getCategoryColor(goal.category)}>
+                              {goal.category}
+                            </Badge>
+                            <Badge className={getPriorityColor(goal.priority)}>
+                              <Flag className="w-3 h-3 mr-1" />
+                              {goal.priority}
+                            </Badge>
+                          </>
+                        )}
                       </div>
                       
-                      {goal.description && (
+                      {goal.description && !editingGoal && (
                         <p className="text-gray-400 text-xs mb-2">{goal.description}</p>
                       )}
                       
-                      <div className="flex items-center space-x-4 text-xs">
-                        <span className="text-gray-300">
-                          Progress: {goal.current_value || 0}
-                          {goal.target_value && `/${goal.target_value}`}
-                          {goal.unit && ` ${goal.unit}`}
-                        </span>
-                        {goal.deadline && (
-                          <span className="text-blue-400 flex items-center">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {new Date(goal.deadline).toLocaleDateString()}
+                      {!editingGoal && (
+                        <div className="flex items-center space-x-4 text-xs">
+                          <span className="text-gray-300">
+                            Progress: {goal.current_value || 0}
+                            {goal.target_value && `/${goal.target_value}`}
+                            {goal.unit && ` ${goal.unit}`}
                           </span>
-                        )}
-                      </div>
+                          {goal.deadline && (
+                            <span className="text-blue-400 flex items-center">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {new Date(goal.deadline).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-blue-400 hover:bg-blue-500/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newValue = prompt(`Update progress for "${goal.title}":`, goal.current_value?.toString() || '0');
-                          if (newValue !== null && !isNaN(Number(newValue))) {
-                            updateGoalProgress(goal.id, Number(newValue));
-                          }
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-red-400 hover:bg-red-500/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Delete goal "${goal.title}"?`)) {
-                            deleteGoal(goal.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {!editingGoal && (
+                      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-blue-400 hover:bg-blue-500/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditing(goal);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-blue-400 hover:bg-blue-500/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newValue = prompt(`Update progress for "${goal.title}":`, goal.current_value?.toString() || '0');
+                            if (newValue !== null && !isNaN(Number(newValue))) {
+                              updateGoalProgress(goal.id, Number(newValue));
+                            }
+                          }}
+                        >
+                          📊
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-red-400 hover:bg-red-500/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete goal "${goal.title}"?`)) {
+                              deleteGoal(goal.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   
-                  {goal.target_value && (
+                  {!editingGoal && goal.target_value && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-400">{Math.round(progress)}% Complete</span>

@@ -115,12 +115,13 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
   const calculateUserStats = (workouts: WorkoutSession[]) => {
     if (workouts.length === 0) {
+      // No mock data - all start at 0
       setUserStats({
-        strength: 15,
-        endurance: 20,
-        consistency: 10,
-        technique: 25,
-        recovery: 18
+        strength: 0,
+        endurance: 0,
+        consistency: 0,
+        technique: 0,
+        recovery: 0
       });
       return;
     }
@@ -129,38 +130,38 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const recentWorkouts = workouts.filter(w => new Date(w.session_date) >= thirtyDaysAgo);
     
-    // More conservative scoring to make progress harder to achieve
     const weeklyFrequency = recentWorkouts.length / 4.3;
-    const consistency = Math.min((weeklyFrequency / 5) * 100, 85); // Harder to max out
+    const consistency = Math.min((weeklyFrequency / 5) * 100, 85);
     
     const totalWorkouts = workouts.length;
-    const strength = Math.min((totalWorkouts / 80) * 100, 90); // Need more workouts for high strength
+    const strength = Math.min((totalWorkouts / 80) * 100, 90);
     
     const avgDuration = workouts.length > 0 
       ? workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workouts.length 
       : 0;
-    const endurance = Math.min((avgDuration / 120) * 100, 85); // Need longer sessions
+    const endurance = Math.min((avgDuration / 120) * 100, 85);
     
-    // Technique starts low and grows slowly
     const technique = Math.min((totalWorkouts / 100) * 100, 80);
-    
-    // Recovery based on workout spacing and consistency
     const recovery = Math.min(Math.max((4 - Math.abs(weeklyFrequency - 3)) / 4 * 100, 0), 75);
 
     setUserStats({
-      strength: Math.max(Math.round(strength), 15),
-      endurance: Math.max(Math.round(endurance), 20),
-      consistency: Math.max(Math.round(consistency), 10),
-      technique: Math.max(Math.round(technique), 25),
-      recovery: Math.max(Math.round(recovery), 18)
+      strength: Math.round(strength),
+      endurance: Math.round(endurance),
+      consistency: Math.round(consistency),
+      technique: Math.round(technique),
+      recovery: Math.round(recovery)
     });
   };
 
   const generateBenchmarks = (workouts: WorkoutSession[]) => {
+    if (workouts.length === 0) {
+      setBenchmarks([]);
+      return;
+    }
+
     const weeklyFrequency = workouts.length > 0 ? (workouts.length / 12) : 0;
     const totalSessions = workouts.length;
     
-    // More detailed demographic-based comparisons
     const benchmarkData: BenchmarkData[] = [
       {
         metric: 'Training Frequency',
@@ -183,26 +184,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                    totalSessions >= 50 ? 'Intermediate - top 40%' : 
                    totalSessions >= 20 ? 'Beginner+ - better than 70% of starters' : 
                    'Just beginning your journey!'
-      },
-      {
-        metric: 'Bench Press Estimate',
-        userValue: Math.round(0.8 + (totalSessions * 0.015)), // Simulated progressive strength
-        percentile: Math.min(65 + (totalSessions * 0.3), 88),
-        description: 'Estimated strength vs bodyweight',
-        demographic: 'Males 25-35',
-        comparison: totalSessions >= 80 ? 'Strong - can likely bench bodyweight+' :
-                   totalSessions >= 40 ? 'Developing strength - approaching bodyweight' :
-                   'Building foundation - focus on form first'
-      },
-      {
-        metric: 'Deadlift Potential',
-        userValue: Math.round(1.2 + (totalSessions * 0.02)), // Conservative estimate
-        percentile: Math.min(60 + (totalSessions * 0.35), 85),
-        description: 'Estimated deadlift vs bodyweight',
-        demographic: 'General lifters',
-        comparison: totalSessions >= 60 ? 'Strong puller - likely 1.5x+ bodyweight' :
-                   totalSessions >= 30 ? 'Good progress - approaching 1.5x bodyweight' :
-                   'Learning the movement - focus on technique'
       }
     ];
 
@@ -272,6 +253,50 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             <div className="flex items-center justify-center space-x-3">
               <div className="w-6 h-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
               <span className="text-white text-lg font-medium">Analyzing Your Progress...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no workout data
+  if (workoutSessions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900/10 to-purple-800/20 text-white overflow-x-hidden">
+        <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-gray-800/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <SmoothButton
+                variant="ghost"
+                onClick={onBack}
+                className="text-white hover:bg-purple-500/20 backdrop-blur-sm hover:text-purple-400 transition-colors font-medium flex items-center space-x-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Dashboard</span>
+              </SmoothButton>
+              <h1 className="text-lg font-semibold text-center flex-1 px-4 truncate">
+                Progress Hub
+              </h1>
+              <div className="w-20"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-6 max-w-md">
+            <Hexagon className="w-24 h-24 text-purple-400/50 mx-auto" />
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-4">No Progress Data Yet</h2>
+              <p className="text-purple-200/80 mb-6">
+                Start logging workouts to see your personalized fitness analytics and progress tracking here.
+              </p>
+              <SmoothButton
+                onClick={() => window.location.href = '/app?module=workout-logger-ai'}
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3"
+              >
+                Log Your First Workout
+              </SmoothButton>
             </div>
           </div>
         </div>
@@ -367,26 +392,18 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
           </Card>
 
           {/* Performance Benchmarks Section */}
-          <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center text-2xl">
-                <BarChart3 className="w-7 h-7 mr-3 text-purple-300" />
-                Performance Benchmarks
-              </CardTitle>
-              <CardDescription className="text-purple-200/70 text-base">
-                See how your training measures against demographic standards and research data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {benchmarks.length === 0 ? (
-                <div className="text-center py-12">
-                  <Trophy className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-purple-200 mb-2">Building Your Profile</h3>
-                  <p className="text-purple-300/70 text-lg">
-                    Complete more workouts to unlock detailed performance comparisons
-                  </p>
-                </div>
-              ) : (
+          {benchmarks.length > 0 && (
+            <Card className="bg-purple-900/40 border-purple-600/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center text-2xl">
+                  <BarChart3 className="w-7 h-7 mr-3 text-purple-300" />
+                  Performance Benchmarks
+                </CardTitle>
+                <CardDescription className="text-purple-200/70 text-base">
+                  See how your training measures against demographic standards and research data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="grid gap-6">
                   {benchmarks.map((benchmark, index) => {
                     const badge = getPercentileBadge(benchmark.percentile);
@@ -408,7 +425,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                               {typeof benchmark.userValue === 'number' && benchmark.userValue < 10 
                                 ? benchmark.userValue.toFixed(1) 
                                 : benchmark.userValue}
-                              {benchmark.metric.includes('Bench') || benchmark.metric.includes('Deadlift') ? 'x' : ''}
                             </div>
                             <div className={`text-base font-bold ${getPercentileColor(benchmark.percentile)}`}>
                               {benchmark.percentile}th percentile
@@ -443,9 +459,9 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                     );
                   })}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Stats Summary */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">

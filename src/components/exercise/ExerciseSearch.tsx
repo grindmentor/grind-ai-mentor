@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -92,28 +91,45 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
     });
   };
 
-  // Additional filtering to exclude common false positives
+  // More targeted filtering to exclude specific false positives for hamstring searches
   const shouldExcludeExercise = (exercise: Exercise, searchQuery: string): boolean => {
     const searchLower = searchQuery.toLowerCase().trim();
     const exerciseLower = exercise.name.toLowerCase();
     
     // Specific exclusions for hamstring searches
     if (searchLower === 'hamstring' || searchLower === 'hamstrings') {
-      const excludePatterns = [
-        'curl', // This will exclude bicep curls, hammer curls, etc.
+      // Only exclude exercises that are clearly NOT hamstring exercises
+      const armExercisePatterns = [
         'chinup',
-        'chin-up',
+        'chin-up', 
         'chin up',
         'pullup',
         'pull-up',
         'pull up',
-        'row', // Exclude rowing exercises that might have biceps involvement
-        'press' // Exclude pressing movements
+        'dumbbell curl', // Specific to arm curls, not leg curls
+        'barbell curl', // Specific to arm curls, not leg curls
+        'hammer curl',
+        'bicep curl',
+        'concentration curl',
+        'preacher curl',
+        'tricep',
+        'triceps',
+        'overhead press',
+        'bench press',
+        'shoulder press'
       ];
       
-      const shouldExclude = excludePatterns.some(pattern => 
-        exerciseLower.includes(pattern)
-      );
+      const shouldExclude = armExercisePatterns.some(pattern => {
+        // More precise matching - look for exact phrases or whole words
+        if (pattern.includes(' ')) {
+          // For multi-word patterns, check if the exercise name contains the exact phrase
+          return exerciseLower.includes(pattern);
+        } else {
+          // For single words, check as whole word boundaries where possible
+          const regex = new RegExp(`\\b${pattern}\\b`, 'i');
+          return regex.test(exerciseLower);
+        }
+      });
       
       if (shouldExclude) {
         console.log(`Excluding ${exercise.name} from hamstring search due to pattern match`);

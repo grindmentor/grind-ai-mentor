@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Flame, User2, HeartHandshake, Barbell } from 'lucide-react';
+import { Flame, User2, HeartHandshake, Activity } from 'lucide-react';
 import { useUnitsPreference } from '@/hooks/useUnitsPreference';
 
 interface ActivityLevel {

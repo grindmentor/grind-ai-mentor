@@ -12,8 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
 import { CustomExerciseModal } from '@/components/exercise/CustomExerciseModal';
 import { useExerciseShare } from '@/contexts/ExerciseShareContext';
-import { useUserUnits } from '@/hooks/useUserUnits';
-import { convertWeight, formatWeight } from '@/lib/unitConversions';
+import { useUnitsPreference } from '@/hooks/useUnitsPreference';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -47,7 +46,7 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { sharedExercises, clearExercises } = useExerciseShare();
-  const { units, loading: unitsLoading } = useUserUnits();
+  const { units, loading: unitsLoading, formatWeight } = useUnitsPreference();
   const isMobile = useIsMobile();
   const [workoutName, setWorkoutName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -230,8 +229,8 @@ export const WorkoutLoggerAI: React.FC<WorkoutLoggerAIProps> = ({ onBack }) => {
   };
 
   const formatWeightDisplay = (weight: number) => {
-    if (unitsLoading) return `${weight} lbs`;
-    return formatWeight(weight, units.weightUnit);
+    if (unitsLoading) return `${weight} kg`;
+    return formatWeight(weight);
   };
 
   const logWorkout = async () => {

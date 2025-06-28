@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -44,40 +43,38 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const addExerciseToLog = async (exercise: Exercise) => {
+  const addExerciseToSavedList = async (exercise: Exercise) => {
     if (!user) return;
 
     try {
+      // Save exercise to user_saved_exercises table
       const { error } = await supabase
-        .from('workout_sessions')
-        .insert({
+        .from('user_saved_exercises')
+        .upsert({
           user_id: user.id,
-          workout_name: `${workout.title} - ${exercise.name}`,
-          duration_minutes: 30,
-          exercises_data: [{
-            id: exercise.id,
-            exercise_name: exercise.name,
-            sets: Array.from({ length: exercise.sets }, (_, i) => ({
-              id: `${exercise.id}-set-${i + 1}`,
-              reps: parseInt(exercise.reps.split('-')[0]) || 10,
-              weight: 0
-            })),
-            notes: exercise.notes || ''
-          }],
-          notes: `Added from Blueprint AI - ${exercise.name}`
+          name: exercise.name,
+          description: `${exercise.sets} sets × ${exercise.reps} reps with ${exercise.rest} rest`,
+          primary_muscles: exercise.primary_muscles,
+          secondary_muscles: [],
+          equipment: exercise.equipment,
+          difficulty_level: exercise.difficulty_level,
+          category: 'Strength'
+        }, {
+          onConflict: 'user_id,name',
+          ignoreDuplicates: false
         });
 
       if (error) throw error;
 
       toast({
-        title: 'Exercise Added! 💪',
-        description: `${exercise.name} has been added to your workout log.`,
+        title: 'Exercise Saved! 💪',
+        description: `${exercise.name} has been added to your saved exercises. You can now find it in the Workout Logger.`,
       });
     } catch (error) {
-      console.error('Error adding exercise:', error);
+      console.error('Error saving exercise:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add exercise to your log.',
+        description: 'Failed to save exercise to your list.',
         variant: 'destructive'
       });
     }
@@ -172,12 +169,12 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
                       </div>
                     </div>
                     <Button
-                      onClick={() => addExerciseToLog(exercise)}
+                      onClick={() => addExerciseToSavedList(exercise)}
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Plus className="w-3 h-3 mr-1" />
-                      Add to Log
+                      Save Exercise
                     </Button>
                   </div>
                   

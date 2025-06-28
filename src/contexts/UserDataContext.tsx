@@ -95,6 +95,22 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [preferences]);
 
+  // Enhanced age calculation function
+  const calculateExactAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    // Subtract 1 if birthday hasn't occurred this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   const loadUserData = async () => {
     if (!user) {
       setIsLoading(false);
@@ -118,17 +134,11 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (profile) {
         console.log("UserDataContext - Profile data loaded:", profile);
         
-        // Fixed age calculation
+        // Calculate exact age using full birthdate
         let age = null;
         if (profile.birthday) {
-          const today = new Date();
-          const birthDate = new Date(profile.birthday);
-          age = today.getFullYear() - birthDate.getFullYear();
-          const monthDiff = today.getMonth() - birthDate.getMonth();
-          // More precise age calculation
-          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-          }
+          age = calculateExactAge(profile.birthday);
+          console.log("UserDataContext - Calculated exact age:", age, "from birthday:", profile.birthday);
         }
 
         // Convert weight and height from stored values (kg/cm) to display values based on preferences

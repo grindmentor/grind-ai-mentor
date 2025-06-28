@@ -12,10 +12,41 @@
     max-width: 100vw;
   }
   
-  /* Optimize touch targets */
-  button, a, input, textarea, select {
+  /* Enhanced touch targets - minimum 44px for accessibility */
+  button, a, input, textarea, select, [role="button"] {
     min-height: 44px;
     min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Top navigation buttons specific enhancements */
+  .mobile-nav-button {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    padding: 12px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Tab buttons scaling */
+  .mobile-tab-button {
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    white-space: nowrap;
+  }
+  
+  /* Notification center mobile improvements */
+  .mobile-notification-panel {
+    width: calc(100vw - 16px) !important;
+    max-width: 380px !important;
+    right: 8px !important;
+    top: 60px !important;
+  }
+  
+  .mobile-notification-item {
+    padding: 16px !important;
+    min-height: 60px !important;
   }
   
   /* Improve text readability */
@@ -37,31 +68,46 @@
     max-width: 100%;
   }
   
-  /* Performance mode styles */
+  /* Enhanced performance mode */
   .performance-mode * {
     animation-duration: 0.1s !important;
     transition-duration: 0.1s !important;
+    will-change: auto !important;
   }
   
   .performance-mode img {
     image-rendering: optimizeSpeed;
   }
+  
+  /* Better spacing for mobile */
+  .mobile-spacing {
+    padding: 12px !important;
+    margin: 8px 0 !important;
+  }
 }
 
-/* iOS-specific optimizations */
+/* iOS-specific optimizations with safe areas */
 @supports (-webkit-touch-callout: none) {
-  /* iOS Safari safe area */
+  /* iOS Safari safe area integration */
   .ios-safe-top {
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(env(safe-area-inset-top), 16px);
   }
   
   .ios-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
+  }
+  
+  .ios-safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .ios-safe-right {
+    padding-right: env(safe-area-inset-right);
   }
   
   /* Prevent zoom on inputs */
   input, textarea, select {
-    font-size: 16px;
+    font-size: 16px !important;
   }
   
   /* Optimize tap highlighting */
@@ -69,8 +115,13 @@
     -webkit-tap-highlight-color: transparent;
   }
   
-  button, a {
+  button, a, [role="button"] {
     -webkit-tap-highlight-color: rgba(249, 115, 22, 0.2);
+  }
+  
+  /* Better notification positioning for iOS */
+  .ios-notification-position {
+    top: max(env(safe-area-inset-top), 44px) !important;
   }
 }
 
@@ -81,6 +132,12 @@
     transform: translateZ(0);
     backface-visibility: hidden;
     perspective: 1000px;
+  }
+  
+  /* Better touch response on Android */
+  button, a, [role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 
@@ -93,6 +150,13 @@
   .border-gray-700 {
     border-color: #ffffff !important;
   }
+  
+  /* Enhance notification visibility in high contrast */
+  .high-contrast-notification {
+    background-color: #000000 !important;
+    border: 2px solid #ffffff !important;
+    color: #ffffff !important;
+  }
 }
 
 /* Reduced motion support */
@@ -103,14 +167,25 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  
+  /* Keep essential feedback animations */
+  .keep-animation {
+    animation-duration: 0.3s !important;
+    transition-duration: 0.3s !important;
+  }
 }
 
-/* Dark mode optimizations */
+/* Dark mode optimizations for mobile */
 @media (prefers-color-scheme: dark) {
-  /* Ensure proper contrast in dark mode */
   body {
     background-color: #000000;
     color: #ffffff;
+  }
+  
+  /* Ensure notifications are visible in dark mode */
+  .dark-mode-notification {
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    border-color: rgba(249, 115, 22, 0.3) !important;
   }
 }
 
@@ -123,7 +198,7 @@
 /* GPU acceleration for smooth animations */
 .gpu-accelerated {
   transform: translateZ(0);
-  will-change: transform;
+  will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
@@ -138,4 +213,37 @@
 .optimized-text {
   text-rendering: optimizeSpeed;
   font-display: swap;
+}
+
+/* Enhanced mobile button styles */
+@media screen and (max-width: 768px) {
+  .mobile-button-enhanced {
+    min-height: 48px !important;
+    padding: 12px 16px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+  
+  /* Tab navigation improvements */
+  .mobile-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  .mobile-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  .mobile-tab-item {
+    flex-shrink: 0 !important;
+    min-width: max-content !important;
+    padding: 12px 20px !important;
+  }
 }

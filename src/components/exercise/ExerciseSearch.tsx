@@ -36,6 +36,32 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Muscle group mappings for better search
+  const muscleGroupMappings: { [key: string]: string[] } = {
+    'chest': ['Chest', 'Pectorals', 'Pecs'],
+    'back': ['Back', 'Lats', 'Latissimus Dorsi', 'Rhomboids', 'Middle Trapezius', 'Lower Trapezius'],
+    'shoulders': ['Shoulders', 'Deltoids', 'Anterior Deltoid', 'Posterior Deltoid', 'Lateral Deltoid'],
+    'arms': ['Arms', 'Biceps', 'Triceps', 'Forearms'],
+    'biceps': ['Biceps', 'Biceps Brachii'],
+    'triceps': ['Triceps', 'Triceps Brachii'],
+    'legs': ['Legs', 'Quadriceps', 'Hamstrings', 'Glutes', 'Calves'],
+    'quadriceps': ['Quadriceps', 'Quads', 'Rectus Femoris', 'Vastus Lateralis', 'Vastus Medialis'],
+    'hamstrings': ['Hamstrings', 'Biceps Femoris', 'Semitendinosus', 'Semimembranosus'],
+    'hamstring': ['Hamstrings', 'Biceps Femoris', 'Semitendinosus', 'Semimembranosus'],
+    'glutes': ['Glutes', 'Gluteus Maximus', 'Gluteus Medius', 'Gluteus Minimus'],
+    'calves': ['Calves', 'Gastrocnemius', 'Soleus'],
+    'core': ['Core', 'Abs', 'Abdominals', 'Obliques'],
+    'abs': ['Abs', 'Abdominals', 'Rectus Abdominis'],
+    'forearms': ['Forearms', 'Wrist Flexors', 'Wrist Extensors'],
+    'lats': ['Lats', 'Latissimus Dorsi'],
+    'traps': ['Traps', 'Trapezius', 'Upper Trapezius', 'Middle Trapezius', 'Lower Trapezius']
+  };
+
+  const getMuscleVariations = (searchTerm: string): string[] => {
+    const term = searchTerm.toLowerCase();
+    return muscleGroupMappings[term] || [searchTerm];
+  };
+
   useEffect(() => {
     const searchExercises = async () => {
       if (!searchQuery.trim()) {
@@ -50,68 +76,91 @@ export const ExerciseSearch: React.FC<ExerciseSearchProps> = ({
       try {
         console.log('Searching for exercises with query:', searchQuery);
         
-        // Enhanced search that handles muscle groups better
+        // Get muscle variations for better matching
+        const muscleVariations = getMuscleVariations(searchQuery.trim());
+        console.log('Muscle variations:', muscleVariations);
+
         let searchResults: Exercise[] = [];
         
         // First try the optimized search function
         const { data: optimizedData, error: optimizedError } = await supabase
           .rpc('search_exercises_optimized', {
             search_query: searchQuery,
-            limit_count: 15,
+            limit_count: 20,
             search_user_id: user?.id || null
           });
 
         if (optimizedError) {
-          console.warn('Optimized search failed, falling back to basic search:', optimizedError);
+          console.warn('Optimized search failed, falling back to enhanced search:', optimizedError);
           
-          // Enhanced fallback search for muscle groups
+          // Enhanced fallback search with better muscle group matching
           const { data: basicData, error: basicError } = await supabase
             .from('exercises')
             .select('id, name, description, primary_muscles, secondary_muscles, equipment, difficulty_level, category')
-            .or(`name.ilike.%${searchQuery}%,primary_muscles.cs.{${searchQuery}},secondary_muscles.cs.{${searchQuery}}`)
             .eq('is_active', true)
-            .limit(15);
+            .limit(20);
 
           if (basicError) {
-            console.error('Basic search also failed:', basicError);
+            console.error('Basic search failed:', basicError);
             throw basicError;
           }
 
-          searchResults = basicData?.map(ex => ({ ...ex, is_custom: false })) || [];
+          // Filter results manually for better muscle group matching
+          searchResults = (basicData || [])
+            .filter(exercise => {
+              const searchLower = searchQuery.toLowerCase();
+              const exerciseNameLower = exercise.name.toLowerCase();
+              const equipmentLower = exercise.equipment.toLowerCase();
+              
+              // Check name match
+              if (exerciseNameLower.includes(searchLower)) return true;
+              
+              // Check equipment match
+              if (equipmentLower.includes(searchLower)) return true;
+              
+              // Check muscle group matches (both primary and secondary)
+              const allMuscles = [...exercise.primary_muscles, ...exercise.secondary_muscles];
+              
+              // Direct muscle match
+              if (allMuscles.some(muscle => muscle.toLowerCase().includes(searchLower))) return true;
+              
+              // Enhanced muscle group matching
+              return muscleVariations.some(variation => 
+                allMuscles.some(muscle => 
+                  muscle.toLowerCase().includes(variation.toLowerCase()) ||
+                  variation.toLowerCase().includes(muscle.toLowerCase())
+                )
+              );
+            })
+            .map(ex => ({ ...ex, is_custom: false }));
         } else {
           searchResults = optimizedData || [];
         }
 
-        // Filter and sort results to prioritize muscle group matches
-        const isLikelyMuscleGroup = searchQuery.toLowerCase().match(/^(chest|back|shoulders|arms|biceps|triceps|legs|quadriceps|hamstrings|glutes|calves|core|abs|forearms|lats|traps)$/);
+        // Sort results to prioritize muscle group matches when searching for muscle groups
+        const isLikelyMuscleGroup = muscleGroupMappings[searchQuery.toLowerCase()];
         
         if (isLikelyMuscleGroup) {
-          // Sort muscle group matches to the top
           searchResults.sort((a, b) => {
             const aMatchesPrimary = a.primary_muscles.some(muscle => 
-              muscle.toLowerCase().includes(searchQuery.toLowerCase())
+              muscleVariations.some(variation => 
+                muscle.toLowerCase().includes(variation.toLowerCase())
+              )
             );
             const bMatchesPrimary = b.primary_muscles.some(muscle => 
-              muscle.toLowerCase().includes(searchQuery.toLowerCase())
+              muscleVariations.some(variation => 
+                muscle.toLowerCase().includes(variation.toLowerCase())
+              )
             );
             
             if (aMatchesPrimary && !bMatchesPrimary) return -1;
             if (!aMatchesPrimary && bMatchesPrimary) return 1;
             
-            const aMatchesSecondary = a.secondary_muscles.some(muscle => 
-              muscle.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            const bMatchesSecondary = b.secondary_muscles.some(muscle => 
-              muscle.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            
-            if (aMatchesSecondary && !bMatchesSecondary) return -1;
-            if (!aMatchesSecondary && bMatchesSecondary) return 1;
-            
             return a.name.localeCompare(b.name);
           });
         }
 
+        console.log('Search results:', searchResults.length, 'exercises found');
         setExercises(searchResults);
         setShowDropdown(searchResults.length > 0);
       } catch (err) {

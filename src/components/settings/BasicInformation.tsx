@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -102,6 +101,24 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
 
   const hasChanges = JSON.stringify(localProfile) !== JSON.stringify(profile);
 
+  const goalOptions = [
+    {
+      value: 'cut',
+      label: 'Cut',
+      description: 'Lose fat while preserving muscle mass'
+    },
+    {
+      value: 'bulk',
+      label: 'Bulk',
+      description: 'Gain muscle mass with controlled weight gain'
+    },
+    {
+      value: 'maintenance',
+      label: 'Maintenance',
+      description: 'Maintain current weight and body composition'
+    }
+  ];
+
   return (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
       <CardHeader>
@@ -194,20 +211,28 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         </div>
 
         {/* Primary Goal */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Label htmlFor="goal" className="text-white">Primary Goal</Label>
           <Select value={localProfile.goal} onValueChange={(value) => handleLocalChange('goal', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select primary goal" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="lose_weight">Lose Weight</SelectItem>
-              <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
-              <SelectItem value="maintain_weight">Maintain Weight</SelectItem>
-              <SelectItem value="improve_endurance">Improve Endurance</SelectItem>
-              <SelectItem value="general_fitness">General Fitness</SelectItem>
+              {goalOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{option.label}</span>
+                    <span className="text-xs text-gray-400">{option.description}</span>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+          {localProfile.goal && (
+            <div className="text-xs text-gray-400 mt-1">
+              {goalOptions.find(opt => opt.value === localProfile.goal)?.description}
+            </div>
+          )}
         </div>
 
         {/* Save Button */}

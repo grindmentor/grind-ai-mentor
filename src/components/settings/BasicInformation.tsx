@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,137 +7,100 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Calendar, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
-const BasicInformation = () => {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState({
-    weight: '',
-    birthday: '',
-    height: '',
-    experience: '',
-    activity: '',
-    goal: ''
-  });
-  const [preferences, setPreferences] = useState({
-    weight_unit: 'lbs',
-    height_unit: 'ft-in'
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      loadProfile();
-      loadPreferences();
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
-      } else if (data) {
-        setProfile({
-          weight: data.weight?.toString() || '',
-          birthday: data.birthday || '',
-          height: data.height?.toString() || '',
-          experience: data.experience || '',
-          activity: data.activity || '',
-          goal: data.goal || ''
-        });
-      }
-    } catch (error) {
-      console.error('Error in loadProfile:', error);
-    } finally {
-      setLoading(false);
-    }
+interface BasicInformationProps {
+  profile: {
+    weight: string;
+    birthday: string;
+    height: string;
+    heightFeet: string;
+    heightInches: string;
+    experience: string;
+    activity: string;
+    goal: string;
   };
-
-  const loadPreferences = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('weight_unit, height_unit')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading preferences:', error);
-      } else if (data) {
-        setPreferences({
-          weight_unit: data.weight_unit || 'lbs',
-          height_unit: data.height_unit || 'ft-in'
-        });
-      }
-    } catch (error) {
-      console.error('Error in loadPreferences:', error);
-    }
+  preferences: {
+    weight_unit: string;
+    height_unit: string;
   };
+  calculatedAge: number | null;
+  onInputChange: (field: string, value: string) => Promise<void>;
+  onWeightChange: (value: string) => void;
+  onHeightChange: (value: string) => void;
+  getWeightDisplay: () => string;
+  getHeightDisplay: () => string;
+}
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+const BasicInformation: React.FC<BasicInformationProps> = ({
+  profile,
+  preferences,
+  calculatedAge,
+  onInputChange,
+  onWeightChange,
+  onHeightChange,
+  getWeightDisplay,
+  getHeightDisplay
+}) => {
+  const [localProfile, setLocalProfile] = useState(profile);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleLocalChange = (field: string, value: string) => {
+    setLocalProfile(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    if (!user) return;
-    
-    setSaving(true);
+    setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email || '',
-          weight: profile.weight ? parseInt(profile.weight) : null,
-          height: profile.height ? parseInt(profile.height) : null,
-          birthday: profile.birthday || null,
-          experience: profile.experience || null,
-          activity: profile.activity || null,
-          goal: profile.goal || null
-        });
-
-      if (error) throw error;
+      // Convert units properly before saving
+      const updates: Record<string, any> = {};
+      
+      if (localProfile.weight !== profile.weight) {
+        let weightValue = parseFloat(localProfile.weight);
+        if (isNaN(weightValue)) weightValue = 0;
+        
+        // Convert to kg for storage (database stores in kg)
+        if (preferences.weight_unit === 'lbs') {
+          weightValue = weightValue / 2.20462; // Convert lbs to kg
+        }
+        // If unit is kg, store as is
+        updates.weight = Math.round(weightValue);
+      }
+      
+      if (localProfile.height !== profile.height) {
+        let heightValue = parseFloat(localProfile.height);
+        if (isNaN(heightValue)) heightValue = 0;
+        
+        // Convert to cm for storage (database stores in cm)
+        if (preferences.height_unit === 'ft-in') {
+          // Convert inches to cm
+          heightValue = heightValue * 2.54;
+        }
+        // If unit is cm, store as is
+        updates.height = Math.round(heightValue);
+      }
+      
+      // Handle other fields
+      Object.keys(localProfile).forEach(field => {
+        if (field !== 'weight' && field !== 'height' && localProfile[field as keyof typeof localProfile] !== profile[field as keyof typeof profile]) {
+          updates[field] = localProfile[field as keyof typeof localProfile];
+        }
+      });
+      
+      // Save all updates
+      for (const [field, value] of Object.entries(updates)) {
+        await onInputChange(field, value.toString());
+      }
+      
       toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error saving profile:', error);
       toast.error('Failed to save profile');
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
-  const calculateAge = () => {
-    if (!profile.birthday) return null;
-    const today = new Date();
-    const birthDate = new Date(profile.birthday);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  if (loading) {
-    return (
-      <Card className="bg-gray-900/40 border-gray-700/50">
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-700 rounded w-1/3"></div>
-            <div className="h-20 bg-gray-700 rounded"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const hasChanges = JSON.stringify(localProfile) !== JSON.stringify(profile);
 
   return (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
@@ -156,8 +119,8 @@ const BasicInformation = () => {
           <Input
             id="weight"
             type="number"
-            value={profile.weight}
-            onChange={(e) => handleInputChange('weight', e.target.value)}
+            value={localProfile.weight}
+            onChange={(e) => handleLocalChange('weight', e.target.value)}
             placeholder={`Enter weight in ${preferences.weight_unit}`}
             className="bg-gray-800/50 border-gray-600 text-white"
           />
@@ -171,8 +134,8 @@ const BasicInformation = () => {
           <Input
             id="height"
             type="number"
-            value={profile.height}
-            onChange={(e) => handleInputChange('height', e.target.value)}
+            value={localProfile.height}
+            onChange={(e) => handleLocalChange('height', e.target.value)}
             placeholder={`Enter height in ${preferences.height_unit === 'cm' ? 'cm' : 'inches'}`}
             className="bg-gray-800/50 border-gray-600 text-white"
           />
@@ -183,17 +146,17 @@ const BasicInformation = () => {
           <Label htmlFor="birthday" className="text-white flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
             Birthday
-            {calculateAge() && (
+            {calculatedAge && (
               <span className="ml-2 text-sm text-gray-400">
-                (Age: {calculateAge()})
+                (Age: {calculatedAge})
               </span>
             )}
           </Label>
           <Input
             id="birthday"
             type="date"
-            value={profile.birthday}
-            onChange={(e) => handleInputChange('birthday', e.target.value)}
+            value={localProfile.birthday}
+            onChange={(e) => handleLocalChange('birthday', e.target.value)}
             className="bg-gray-800/50 border-gray-600 text-white"
           />
         </div>
@@ -201,7 +164,7 @@ const BasicInformation = () => {
         {/* Experience Level */}
         <div className="space-y-2">
           <Label htmlFor="experience" className="text-white">Experience Level</Label>
-          <Select value={profile.experience} onValueChange={(value) => handleInputChange('experience', value)}>
+          <Select value={localProfile.experience} onValueChange={(value) => handleLocalChange('experience', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select experience level" />
             </SelectTrigger>
@@ -216,7 +179,7 @@ const BasicInformation = () => {
         {/* Activity Level */}
         <div className="space-y-2">
           <Label htmlFor="activity" className="text-white">Activity Level</Label>
-          <Select value={profile.activity} onValueChange={(value) => handleInputChange('activity', value)}>
+          <Select value={localProfile.activity} onValueChange={(value) => handleLocalChange('activity', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select activity level" />
             </SelectTrigger>
@@ -233,27 +196,31 @@ const BasicInformation = () => {
         {/* Primary Goal */}
         <div className="space-y-2">
           <Label htmlFor="goal" className="text-white">Primary Goal</Label>
-          <Select value={profile.goal} onValueChange={(value) => handleInputChange('goal', value)}>
+          <Select value={localProfile.goal} onValueChange={(value) => handleLocalChange('goal', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select primary goal" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="cut">Cut - Lose fat while preserving muscle mass</SelectItem>
-              <SelectItem value="bulk">Bulk - Gain muscle mass with controlled weight gain</SelectItem>
-              <SelectItem value="maintenance">Maintenance - Keep current weight and body composition</SelectItem>
+              <SelectItem value="lose_weight">Lose Weight</SelectItem>
+              <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
+              <SelectItem value="maintain_weight">Maintain Weight</SelectItem>
+              <SelectItem value="improve_endurance">Improve Endurance</SelectItem>
+              <SelectItem value="general_fitness">General Fitness</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Save Button */}
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
+        {hasChanges && (
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,19 +58,19 @@ const getModuleTheme = (title: string) => {
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
-    // TDEE Calculator - Green theme
+    // TDEE Calculator - Purple theme (FIXED from green)
     'TDEE Calculator': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
-      border: 'border-green-500/30',
-      iconBg: 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
+      bg: 'bg-gradient-to-br from-purple-900/50 to-indigo-900/50',
+      border: 'border-purple-500/30',
+      iconBg: 'bg-gradient-to-r from-purple-500/30 to-indigo-500/40 border-purple-500/30',
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
-    // Smart Training - Green theme
+    // Smart Training - Blue theme (FIXED from green) 
     'Smart Training': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
-      border: 'border-green-500/30',
-      iconBg: 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
+      bg: 'bg-gradient-to-br from-blue-900/50 to-indigo-900/50',
+      border: 'border-blue-500/30',
+      iconBg: 'bg-gradient-to-r from-blue-500/30 to-indigo-500/40 border-blue-500/30',
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
@@ -83,7 +82,7 @@ const getModuleTheme = (title: string) => {
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
-    // Workout Timer - Orange theme
+    // Workout Timer - Orange theme (FIXED colors)
     'Workout Timer': {
       bg: 'bg-gradient-to-br from-orange-900/50 to-yellow-900/50',
       border: 'border-orange-500/30',
@@ -114,18 +113,18 @@ const getModuleTheme = (title: string) => {
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
-    // Workout Logger AI - Green theme
+    // Workout Logger AI - Teal theme (FIXED from green)
     'Workout Logger AI': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
-      border: 'border-green-500/30',
-      iconBg: 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
+      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/50',
+      border: 'border-teal-500/30',
+      iconBg: 'bg-gradient-to-r from-teal-500/30 to-cyan-500/40 border-teal-500/30',
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
     'Workout Logger': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
-      border: 'border-green-500/30',
-      iconBg: 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
+      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/50',
+      border: 'border-teal-500/30',
+      iconBg: 'bg-gradient-to-r from-teal-500/30 to-cyan-500/40 border-teal-500/30',
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
@@ -137,11 +136,11 @@ const getModuleTheme = (title: string) => {
       iconColor: 'text-white',
       accent: 'text-white/90'
     },
-    // Smart Food Log - Teal theme
+    // Smart Food Log - Orange theme (FIXED from teal)
     'Smart Food Log': {
-      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/50',
-      border: 'border-teal-500/30',
-      iconBg: 'bg-gradient-to-r from-teal-500/30 to-cyan-500/40 border-teal-500/30',
+      bg: 'bg-gradient-to-br from-orange-900/50 to-amber-900/50',
+      border: 'border-orange-500/30',
+      iconBg: 'bg-gradient-to-r from-orange-500/30 to-amber-500/40 border-orange-500/30',
       iconColor: 'text-white',
       accent: 'text-white/90'
     },

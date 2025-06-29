@@ -1,3 +1,4 @@
+
 import { 
   MessageSquare, 
   Utensils, 
@@ -74,7 +75,7 @@ export const aiModules: AIModule[] = [
     title: 'Workout Logger',
     description: 'Track your workouts with AI-powered exercise recommendations',
     icon: Activity,
-    gradient: 'from-blue-600/80 to-blue-800/90 border-blue-500/60',
+    gradient: 'from-gray-600/40 to-gray-800/60 border-orange-500/60',
     component: WorkoutLoggerAI,
     isPremium: false
   },
@@ -85,6 +86,15 @@ export const aiModules: AIModule[] = [
     icon: Calculator,
     gradient: 'from-indigo-600/80 to-indigo-800/90 border-indigo-500/60',
     component: TDEECalculator,
+    isPremium: false
+  },
+  {
+    id: 'workout-timer',
+    title: 'Workout Timer',
+    description: 'Perfect timing for your workouts and rest periods',
+    icon: Timer,
+    gradient: 'from-cyan-600/80 to-cyan-800/90 border-cyan-500/60',
+    component: WorkoutTimer,
     isPremium: false
   },
   {

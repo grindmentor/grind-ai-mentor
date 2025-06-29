@@ -9,42 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      available_achievements: {
-        Row: {
-          category: string
-          created_at: string
-          description: string
-          icon_name: string | null
-          id: string
-          is_active: boolean
-          points: number
-          title: string
-          unlock_criteria: Json
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          description: string
-          icon_name?: string | null
-          id?: string
-          is_active?: boolean
-          points?: number
-          title: string
-          unlock_criteria?: Json
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string
-          icon_name?: string | null
-          id?: string
-          is_active?: boolean
-          points?: number
-          title?: string
-          unlock_criteria?: Json
-        }
-        Relationships: []
-      }
       coach_conversations: {
         Row: {
           conversation_session: string
@@ -932,36 +896,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_notifications: {
-        Row: {
-          created_at: string
-          id: string
-          message: string
-          read: boolean
-          title: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          message: string
-          read?: boolean
-          title: string
-          type?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          message?: string
-          read?: boolean
-          title?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_preferences: {
         Row: {
           created_at: string
@@ -969,7 +903,6 @@ export type Database = {
           email_updates: boolean | null
           height_unit: string | null
           id: string
-          notification_preferences: Json | null
           notifications: boolean | null
           updated_at: string
           user_id: string
@@ -981,7 +914,6 @@ export type Database = {
           email_updates?: boolean | null
           height_unit?: string | null
           id?: string
-          notification_preferences?: Json | null
           notifications?: boolean | null
           updated_at?: string
           user_id: string
@@ -993,7 +925,6 @@ export type Database = {
           email_updates?: boolean | null
           height_unit?: string | null
           id?: string
-          notification_preferences?: Json | null
           notifications?: boolean | null
           updated_at?: string
           user_id?: string

@@ -32,7 +32,7 @@ class OptimizedAIService {
 
   // Debounced request to prevent duplicate calls
   private debouncedRequest = debounce(
-    (prompt: string, options: OptimizedAIOptions, resolve: (value: string) => void, reject: (reason?: any) => void) => {
+    (prompt: string, options: OptimizedAIOptions, resolve: Function, reject: Function) => {
       this.processRequest(prompt, options).then(resolve).catch(reject);
     },
     this.DEBOUNCE_DELAY,

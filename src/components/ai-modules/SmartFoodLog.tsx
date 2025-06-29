@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database } from 'lucide-react';
+import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, X, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MobileHeader } from '@/components/MobileHeader';
 import { Badge } from '@/components/ui/badge';
+import FoodEntryModal from './FoodEntryModal';
 
 interface FoodEntry {
   id: string;
@@ -53,6 +54,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [portionSize, setPortionSize] = useState('100');
+  const [showCustomModal, setShowCustomModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -88,18 +90,30 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     
     setIsSearching(true);
     try {
-      // Mock USDA API call - replace with actual USDA API
+      // Mock USDA API call with more realistic data
       const mockResults: USDAFoodItem[] = [
         {
-          fdcId: 123456,
+          fdcId: 123456 + Math.random(),
           description: `${query} - Fresh`,
           dataType: 'Survey (FNDDS)',
           foodNutrients: [
-            { nutrientId: 1008, nutrientName: 'Energy', value: 89, unitName: 'KCAL' },
-            { nutrientId: 1003, nutrientName: 'Protein', value: 0.9, unitName: 'G' },
-            { nutrientId: 1005, nutrientName: 'Carbohydrate, by difference', value: 22.8, unitName: 'G' },
-            { nutrientId: 1004, nutrientName: 'Total lipid (fat)', value: 0.3, unitName: 'G' },
-            { nutrientId: 1079, nutrientName: 'Fiber, total dietary', value: 2.4, unitName: 'G' }
+            { nutrientId: 1008, nutrientName: 'Energy', value: Math.floor(Math.random() * 200) + 50, unitName: 'KCAL' },
+            { nutrientId: 1003, nutrientName: 'Protein', value: Math.floor(Math.random() * 30) + 1, unitName: 'G' },
+            { nutrientId: 1005, nutrientName: 'Carbohydrate, by difference', value: Math.floor(Math.random() * 50) + 5, unitName: 'G' },
+            { nutrientId: 1004, nutrientName: 'Total lipid (fat)', value: Math.floor(Math.random() * 20) + 1, unitName: 'G' },
+            { nutrientId: 1079, nutrientName: 'Fiber, total dietary', value: Math.floor(Math.random() * 10) + 1, unitName: 'G' }
+          ]
+        },
+        {
+          fdcId: 234567 + Math.random(),
+          description: `${query} - Cooked`,
+          dataType: 'Survey (FNDDS)',
+          foodNutrients: [
+            { nutrientId: 1008, nutrientName: 'Energy', value: Math.floor(Math.random() * 300) + 100, unitName: 'KCAL' },
+            { nutrientId: 1003, nutrientName: 'Protein', value: Math.floor(Math.random() * 25) + 5, unitName: 'G' },
+            { nutrientId: 1005, nutrientName: 'Carbohydrate, by difference', value: Math.floor(Math.random() * 40) + 10, unitName: 'G' },
+            { nutrientId: 1004, nutrientName: 'Total lipid (fat)', value: Math.floor(Math.random() * 15) + 2, unitName: 'G' },
+            { nutrientId: 1079, nutrientName: 'Fiber, total dietary', value: Math.floor(Math.random() * 8) + 1, unitName: 'G' }
           ]
         }
       ];
@@ -122,11 +136,11 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
     try {
       const nutrients = foodItem.foodNutrients;
-      const calories = nutrients.find(n => n.nutrientId === 1008)?.value || 0;
-      const protein = nutrients.find(n => n.nutrientId === 1003)?.value || 0;
-      const carbs = nutrients.find(n => n.nutrientId === 1005)?.value || 0;
-      const fat = nutrients.find(n => n.nutrientId === 1004)?.value || 0;
-      const fiber = nutrients.find(n => n.nutrientId === 1079)?.value || 0;
+      const baseCalories = nutrients.find(n => n.nutrientId === 1008)?.value || 0;
+      const baseProtein = nutrients.find(n => n.nutrientId === 1003)?.value || 0;
+      const baseCarbs = nutrients.find(n => n.nutrientId === 1005)?.value || 0;
+      const baseFat = nutrients.find(n => n.nutrientId === 1004)?.value || 0;
+      const baseFiber = nutrients.find(n => n.nutrientId === 1079)?.value || 0;
 
       // Calculate based on portion size
       const portionMultiplier = parseFloat(portionSize) / 100;
@@ -139,11 +153,11 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
           portion_size: `${portionSize}g`,
           meal_type: mealType,
           logged_date: selectedDate,
-          calories: Math.round(calories * portionMultiplier),
-          protein: Math.round(protein * portionMultiplier * 10) / 10,
-          carbs: Math.round(carbs * portionMultiplier * 10) / 10,
-          fat: Math.round(fat * portionMultiplier * 10) / 10,
-          fiber: Math.round(fiber * portionMultiplier * 10) / 10
+          calories: Math.round(baseCalories * portionMultiplier),
+          protein: Math.round(baseProtein * portionMultiplier * 10) / 10,
+          carbs: Math.round(baseCarbs * portionMultiplier * 10) / 10,
+          fat: Math.round(baseFat * portionMultiplier * 10) / 10,
+          fiber: Math.round(baseFiber * portionMultiplier * 10) / 10
         })
         .select()
         .single();
@@ -168,16 +182,39 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     }
   };
 
+  const removeFoodEntry = async (entryId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('food_log_entries')
+        .delete()
+        .eq('id', entryId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
+      toast({
+        title: 'Food Removed',
+        description: 'Food entry has been deleted successfully.'
+      });
+    } catch (error) {
+      console.error('Error removing food entry:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove food entry.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const analyzePhotoIngredients = async () => {
     if (!selectedPhoto || !user) return;
 
     setIsAnalyzing(true);
     try {
-      // Create FormData for photo upload
-      const formData = new FormData();
-      formData.append('photo', selectedPhoto);
-
-      // Mock photo analysis - replace with actual AI service
+      // Mock photo analysis with more ingredients
       const mockIngredients = [
         { name: 'Chicken Breast', amount: '150g', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0 },
         { name: 'White Rice', amount: '80g', calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4 },
@@ -218,6 +255,46 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       });
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleCustomFoodAdd = async (foodData: any) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('food_log_entries')
+        .insert({
+          user_id: user.id,
+          food_name: `✏️ ${foodData.name}`,
+          portion_size: `${foodData.portion}g`,
+          meal_type: foodData.mealType,
+          logged_date: selectedDate,
+          calories: foodData.calories,
+          protein: foodData.protein,
+          carbs: foodData.carbs,
+          fat: foodData.fat,
+          fiber: foodData.fiber || 0
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setFoodEntries(prev => [...prev, data]);
+      setShowCustomModal(false);
+      
+      toast({
+        title: 'Custom Food Added! ✏️',
+        description: `${foodData.name} added to your food log.`
+      });
+    } catch (error) {
+      console.error('Error adding custom food:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add custom food.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -340,7 +417,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                             <div className="font-medium text-white">{item.description}</div>
                             <div className="text-sm text-orange-300">{item.dataType}</div>
                             <div className="text-xs text-orange-400 mt-1">
-                              Per 100g: {item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0} cal
+                              Per 100g: {item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0} cal |
+                              Portion ({portionSize}g): {Math.round((item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0) * (parseFloat(portionSize) / 100))} cal
                             </div>
                           </div>
                           <Button
@@ -358,48 +436,58 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                 )}
               </div>
 
-              {/* Photo Analysis */}
-              <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
-                <h3 className="text-lg font-semibold text-orange-200 flex items-center">
-                  <Camera className="w-5 h-5 mr-2" />
-                  Photo Ingredient Analysis
-                </h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-orange-200">Upload Food Photo</Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setSelectedPhoto(e.target.files?.[0] || null)}
-                      className="w-full p-2 bg-orange-800/50 border border-orange-500/30 rounded text-white"
-                    />
-                  </div>
+              {/* Custom Food Entry & Photo Analysis */}
+              <div className="grid grid-cols-1 gap-4">
+                <Button
+                  onClick={() => setShowCustomModal(true)}
+                  className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Add Custom Food
+                </Button>
+
+                <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
+                  <h3 className="text-lg font-semibold text-orange-200 flex items-center">
+                    <Camera className="w-5 h-5 mr-2" />
+                    Photo Ingredient Analysis
+                  </h3>
                   
-                  {selectedPhoto && (
-                    <div className="space-y-2">
-                      <div className="text-sm text-orange-300">
-                        📸 {selectedPhoto.name} ({(selectedPhoto.size / 1024 / 1024).toFixed(2)} MB)
-                      </div>
-                      <Button
-                        onClick={analyzePhotoIngredients}
-                        disabled={isAnalyzing}
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
-                      >
-                        {isAnalyzing ? (
-                          <>
-                            <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            Analyzing Ingredients...
-                          </>
-                        ) : (
-                          <>
-                            <Camera className="w-4 h-4 mr-2" />
-                            Analyze & Separate Ingredients
-                          </>
-                        )}
-                      </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-orange-200">Upload Food Photo</Label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setSelectedPhoto(e.target.files?.[0] || null)}
+                        className="w-full p-2 bg-orange-800/50 border border-orange-500/30 rounded text-white"
+                      />
                     </div>
-                  )}
+                    
+                    {selectedPhoto && (
+                      <div className="space-y-2">
+                        <div className="text-sm text-orange-300">
+                          📸 {selectedPhoto.name} ({(selectedPhoto.size / 1024 / 1024).toFixed(2)} MB)
+                        </div>
+                        <Button
+                          onClick={analyzePhotoIngredients}
+                          disabled={isAnalyzing}
+                          className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Analyzing Ingredients...
+                            </>
+                          ) : (
+                            <>
+                              <Camera className="w-4 h-4 mr-2" />
+                              Analyze & Separate Ingredients
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -462,7 +550,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                         <div className="flex-1">
                           <div className="font-medium text-white">{entry.food_name}</div>
                           <div className="text-sm text-orange-300">{entry.portion_size}</div>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <Badge variant="outline" className="text-xs border-orange-400/30 text-orange-300 bg-orange-500/10 capitalize">
                               {entry.meal_type}
                             </Badge>
@@ -476,16 +564,31 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                                 USDA Database
                               </Badge>
                             )}
+                            {entry.food_name.includes('✏️') && (
+                              <Badge variant="outline" className="text-xs border-blue-400/30 text-blue-300 bg-blue-500/10">
+                                Custom Entry
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                        {entry.calories && (
-                          <div className="text-right">
-                            <div className="text-orange-200 font-medium">{entry.calories} cal</div>
-                            <div className="text-xs text-orange-300">
-                              P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
+                        <div className="text-right flex items-center gap-2">
+                          {entry.calories && (
+                            <div>
+                              <div className="text-orange-200 font-medium">{entry.calories} cal</div>
+                              <div className="text-xs text-orange-300">
+                                P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFoodEntry(entry.id)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -495,6 +598,14 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
           </Card>
         </div>
       </div>
+
+      {/* Custom Food Modal */}
+      <FoodEntryModal
+        isOpen={showCustomModal}
+        onClose={() => setShowCustomModal(false)}
+        onSave={handleCustomFoodAdd}
+        defaultMealType={mealType}
+      />
     </div>
   );
 };

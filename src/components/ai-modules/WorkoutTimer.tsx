@@ -195,17 +195,17 @@ const WorkoutTimer = ({ onBack }: WorkoutTimerProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-cyan-900/10 to-blue-800/20">
+    <div className="min-h-screen bg-gradient-to-br from-black via-cyan-900/10 to-cyan-800/20">
       <MobileHeader
         title="Workout Timer"
         onBack={onBack}
       />
       
       <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-        <Card className="bg-gradient-to-br from-cyan-900/20 to-blue-900/30 backdrop-blur-sm border-cyan-500/30">
+        <Card className="bg-gradient-to-br from-cyan-900/20 to-cyan-900/30 backdrop-blur-sm border-cyan-500/30">
           <CardHeader>
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/30 to-blue-500/40 rounded-xl flex items-center justify-center border border-cyan-500/30">
+              <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/30 to-cyan-500/40 rounded-xl flex items-center justify-center border border-cyan-500/30">
                 <Timer className="w-5 h-5 text-cyan-400" />
               </div>
               <div>

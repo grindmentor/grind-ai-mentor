@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Settings, Trash2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Bell, Settings, Trash2, CheckCircle2, Clock, Target, Droplets, Activity } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -28,14 +28,15 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
   const [activeTab, setActiveTab] = useState("notifications");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
   const [notificationSettings, setNotificationSettings] = useState({
-    hydrationReminders: true,
-    workoutReminders: true,
-    achievementAlerts: true,
+    hydrationReminders: false,
+    workoutReminders: false,
+    achievementAlerts: false,
     progressUpdates: false,
-    nutritionTips: true,
+    nutritionTips: false,
     recoveryAlerts: false,
-    goalDeadlines: true,
+    goalDeadlines: false,
     weeklyReports: false
   });
 
@@ -75,13 +76,16 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading notification settings:', error);
+        return;
+      }
       
       if (data?.notification_preferences) {
         setNotificationSettings(data.notification_preferences);
       }
     } catch (error) {
-      console.error('Error loading notification settings:', error);
+      console.error('Error in loadNotificationSettings:', error);
     }
   };
 
@@ -127,6 +131,7 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
     };
     
     setNotificationSettings(newSettings);
+    setSavingSettings(true);
 
     try {
       const { error } = await supabase
@@ -134,6 +139,8 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
         .upsert({
           user_id: user?.id,
           notification_preferences: newSettings
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
@@ -141,6 +148,10 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
     } catch (error) {
       console.error('Error updating notification settings:', error);
       toast.error('Failed to update notification settings');
+      // Revert the local state
+      setNotificationSettings(notificationSettings);
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -166,64 +177,80 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
     {
       id: 'hydrationReminders',
       title: 'Hydration Reminders',
-      description: 'Get reminded to drink water every 2-4 hours',
-      category: 'Health'
+      description: 'Get reminded to drink water throughout the day',
+      category: 'Health',
+      icon: Droplets,
+      note: 'Reminders will be sent based on your activity level and climate'
     },
     {
       id: 'workoutReminders',
       title: 'Workout Reminders',
-      description: 'Scheduled workout notifications and pre-workout alerts',
-      category: 'Training'
+      description: 'Get notified when it\'s time for your scheduled workouts',
+      category: 'Training',
+      icon: Activity,
+      note: 'Set your workout schedule in the Training module'
     },
     {
       id: 'achievementAlerts',
       title: 'Achievement Alerts',
-      description: 'Celebrate milestones and streaks with instant notifications',
-      category: 'Motivation'
+      description: 'Celebrate when you unlock new achievements and milestones',
+      category: 'Motivation',
+      icon: Target,
+      note: 'Instant notifications when you reach new personal bests'
     },
     {
       id: 'progressUpdates',
       title: 'Progress Updates',
-      description: 'Weekly and monthly progress summaries',
-      category: 'Progress'
+      description: 'Weekly summaries of your fitness progress and improvements',
+      category: 'Progress',
+      icon: Target,
+      note: 'Delivered every Sunday with your weekly stats'
     },
     {
       id: 'nutritionTips',
       title: 'Nutrition Tips',
-      description: 'Smart meal suggestions based on your goals',
-      category: 'Nutrition'
+      description: 'Personalized meal suggestions and nutrition advice',
+      category: 'Nutrition',
+      icon: Target,
+      note: 'Based on your goals and dietary preferences'
     },
     {
       id: 'recoveryAlerts',
       title: 'Recovery Alerts',
-      description: 'Rest day recommendations and sleep reminders',
-      category: 'Recovery'
+      description: 'Get notified when you need rest days or better sleep',
+      category: 'Recovery',
+      icon: Clock,
+      note: 'Smart recommendations based on your training intensity'
     },
     {
       id: 'goalDeadlines',
       title: 'Goal Deadline Alerts',
-      description: 'Reminders when approaching goal deadlines',
-      category: 'Goals'
+      description: 'Reminders when approaching your goal deadlines',
+      category: 'Goals',
+      icon: Target,
+      note: 'Notifications 7 days, 3 days, and 1 day before deadlines'
     },
     {
       id: 'weeklyReports',
       title: 'Weekly Reports',
-      description: 'Comprehensive weekly fitness reports via notifications',
-      category: 'Reports'
+      description: 'Comprehensive weekly fitness and progress reports',
+      category: 'Reports',
+      icon: Target,
+      note: 'Detailed analysis delivered every Monday morning'
     }
   ];
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'Nutrition': return 'bg-green-500/20 text-green-400';
-      case 'Training': return 'bg-blue-500/20 text-blue-400';
-      case 'Recovery': return 'bg-purple-500/20 text-purple-400';
-      case 'Health': return 'bg-blue-500/20 text-blue-400';
-      case 'Motivation': return 'bg-yellow-500/20 text-yellow-400';
-      case 'Progress': return 'bg-pink-500/20 text-pink-400';
-      case 'Goals': return 'bg-purple-500/20 text-purple-400';
-      case 'Reports': return 'bg-gray-500/20 text-gray-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      case 'Nutrition': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'Training': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'Recovery': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'Health': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
+      case 'Motivation': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'Progress': return 'bg-pink-500/20 text-pink-400 border-pink-500/30';
+      case 'Goals': return 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
+      case 'Reports': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -256,8 +283,11 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-gray-900">
-              <TabsTrigger value="notifications" className="data-[state=active]:bg-orange-500">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-900 border border-gray-700">
+              <TabsTrigger 
+                value="notifications" 
+                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300"
+              >
                 <Bell className="w-4 h-4 mr-1" />
                 Notifications
                 {unreadCount > 0 && (
@@ -266,7 +296,10 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500">
+              <TabsTrigger 
+                value="settings" 
+                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-300"
+              >
                 <Settings className="w-4 h-4 mr-1" />
                 Settings
               </TabsTrigger>
@@ -329,7 +362,7 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => markAsRead(notification.id)}
-                                className="text-blue-400 hover:text-blue-300"
+                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                               >
                                 <CheckCircle2 className="w-4 h-4" />
                               </Button>
@@ -338,7 +371,7 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
                               size="sm"
                               variant="ghost"
                               onClick={() => deleteNotification(notification.id)}
-                              className="text-red-400 hover:text-red-300"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -355,48 +388,66 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
             <TabsContent value="settings" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-white">Notification Settings</h2>
-                <Badge className="bg-green-500/20 text-green-400">
+                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">
                   {Object.values(notificationSettings).filter(Boolean).length}/{Object.keys(notificationSettings).length} Enabled
                 </Badge>
               </div>
               
               <div className="space-y-4">
-                {notificationOptions.map((option) => (
-                  <Card key={option.id} className="bg-gray-900 border-gray-800">
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0 mr-4">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="text-white font-semibold">{option.title}</h3>
-                            <Badge className={getCategoryColor(option.category)}>
-                              {option.category}
-                            </Badge>
+                {notificationOptions.map((option) => {
+                  const IconComponent = option.icon;
+                  const isEnabled = notificationSettings[option.id as keyof typeof notificationSettings];
+                  
+                  return (
+                    <Card key={option.id} className="bg-gray-900/50 border-gray-700/50 hover:bg-gray-900/70 transition-colors">
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1 min-w-0 mr-4">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              isEnabled 
+                                ? getCategoryColor(option.category).split(' ')[0] + ' ' + getCategoryColor(option.category).split(' ')[1]
+                                : 'bg-gray-700 text-gray-400'
+                            }`}>
+                              <IconComponent className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h3 className="text-white font-semibold">{option.title}</h3>
+                                <Badge className={getCategoryColor(option.category)}>
+                                  {option.category}
+                                </Badge>
+                              </div>
+                              <p className="text-gray-400 text-sm mb-2">{option.description}</p>
+                              <p className="text-gray-500 text-xs">{option.note}</p>
+                            </div>
                           </div>
-                          <p className="text-gray-400 text-sm">{option.description}</p>
+                          <div className="flex-shrink-0">
+                            <Switch
+                              checked={isEnabled}
+                              onCheckedChange={() => handleNotificationToggle(option.id)}
+                              disabled={savingSettings}
+                              className="data-[state=checked]:bg-orange-500 data-[state=unchecked]:bg-gray-600 border-2 border-gray-500 data-[state=checked]:border-orange-500"
+                            />
+                          </div>
                         </div>
-                        <Switch
-                          checked={notificationSettings[option.id as keyof typeof notificationSettings]}
-                          onCheckedChange={() => handleNotificationToggle(option.id)}
-                          className="data-[state=checked]:bg-orange-500"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
 
               <Card className="bg-blue-900/20 border-blue-500/30">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start space-x-3">
-                    <Bell className="w-5 h-5 text-blue-400 mt-0.5" />
+                    <Bell className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="text-blue-400 font-semibold mb-2">Smart Notifications</h3>
                       <p className="text-blue-300/80 text-sm mb-3">
-                        Our AI learns from your behavior to send notifications at optimal times. 
+                        Myotopia learns from your behavior to send notifications at optimal times. 
                         Enable notifications above to get personalized reminders that help you achieve your fitness goals.
                       </p>
                       <p className="text-blue-400/60 text-xs">
-                        You can always adjust these settings or turn off specific notification types.
+                        You can always adjust these settings or turn off specific notification types. All notifications are disabled by default.
                       </p>
                     </div>
                   </div>

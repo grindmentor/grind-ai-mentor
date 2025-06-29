@@ -54,29 +54,42 @@ const RealGoalsAchievements = () => {
     if (!user) return;
 
     try {
-      // Load goals
+      setLoading(true);
+      
+      // Load goals with better error handling
       const { data: goalsData, error: goalsError } = await supabase
         .from('user_goals')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (goalsError) throw goalsError;
+      if (goalsError) {
+        console.error('Error loading goals:', goalsError);
+        // Don't throw error, just log it and continue with empty array
+        setGoals([]);
+      } else {
+        setGoals(goalsData || []);
+      }
 
-      // Load achievements
+      // Load achievements with better error handling
       const { data: achievementsData, error: achievementsError } = await supabase
         .from('user_achievements')
         .select('*')
         .eq('user_id', user.id)
         .order('unlocked_at', { ascending: false });
 
-      if (achievementsError) throw achievementsError;
-
-      setGoals(goalsData || []);
-      setAchievements(achievementsData || []);
+      if (achievementsError) {
+        console.error('Error loading achievements:', achievementsError);
+        // Don't throw error, just log it and continue with empty array
+        setAchievements([]);
+      } else {
+        setAchievements(achievementsData || []);
+      }
     } catch (error) {
-      console.error('Error loading goals and achievements:', error);
-      toast.error('Failed to load goals and achievements');
+      console.error('Unexpected error loading goals and achievements:', error);
+      // Set empty arrays to prevent UI issues
+      setGoals([]);
+      setAchievements([]);
     } finally {
       setLoading(false);
     }
@@ -139,7 +152,7 @@ const RealGoalsAchievements = () => {
   const formatGoalDescription = (goal: Goal) => {
     // If the goal is weight-related and has "pounds" in description, replace with user's unit
     if (goal.category.toLowerCase() === 'weight' && goal.description.includes('pounds')) {
-      const weightUnit = preferences.weight_unit === 'kg' ? 'kg' : 'lbs';
+      const weightUnit = preferences?.weight_unit === 'kg' ? 'kg' : 'lbs';
       return goal.description.replace(/pounds?/gi, weightUnit);
     }
     return goal.description;

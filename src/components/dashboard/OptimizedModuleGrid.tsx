@@ -38,7 +38,7 @@ const OptimizedModuleCard: React.FC<OptimizedModuleCardProps> = ({
 
   if (!isVisible) {
     return (
-      <div ref={elementRef as React.RefObject<HTMLDivElement>} className="h-32">
+      <div ref={elementRef} className="h-32">
         <Skeleton className="h-full w-full rounded-lg bg-gray-800/50" />
       </div>
     );
@@ -46,7 +46,7 @@ const OptimizedModuleCard: React.FC<OptimizedModuleCardProps> = ({
 
   return (
     <Card
-      ref={elementRef as React.RefObject<HTMLDivElement>}
+      ref={elementRef}
       className={`
         cursor-pointer transition-all duration-200 hover:scale-[1.02] 
         bg-gray-900/40 backdrop-blur-sm border-gray-700/50 

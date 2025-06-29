@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -17,7 +16,7 @@ import NotificationCenter from '@/components/NotificationCenter';
 
 // Lazy load heavy components
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
-const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements').then(module => ({ default: module.RealGoalsAchievements })));
+const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements'));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
 

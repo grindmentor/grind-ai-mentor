@@ -1,18 +1,23 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Bell, Settings } from "lucide-react";
+import { ArrowLeft, Bell, Settings, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Notifications = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("settings");
+  const [userNotifications, setUserNotifications] = useState<any[]>([]);
   const [notificationSettings, setNotificationSettings] = useState({
     hydrationReminders: true,
     workoutReminders: true,
@@ -23,6 +28,103 @@ const Notifications = () => {
     goalDeadlines: true,
     weeklyReports: false
   });
+
+  // Load user notifications and preferences
+  useEffect(() => {
+    if (user) {
+      loadUserNotifications();
+      loadNotificationPreferences();
+    }
+  }, [user]);
+
+  const loadUserNotifications = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserNotifications(data || []);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  };
+
+  const loadNotificationPreferences = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('notification_preferences')
+        .eq('user_id', user.id)
+        .single();
+
+      if (data?.notification_preferences) {
+        setNotificationSettings(data.notification_preferences);
+      }
+    } catch (error) {
+      console.error('Error loading notification preferences:', error);
+    }
+  };
+
+  const handleNotificationToggle = async (settingId: string) => {
+    if (!user) return;
+
+    const newSettings = {
+      ...notificationSettings,
+      [settingId]: !notificationSettings[settingId as keyof typeof notificationSettings]
+    };
+
+    try {
+      // Update local state immediately for better UX
+      setNotificationSettings(newSettings);
+
+      // Update in database
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          notification_preferences: newSettings,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) throw error;
+
+      toast.success('Notification settings updated successfully');
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      // Revert local state on error
+      setNotificationSettings(notificationSettings);
+      toast.error('Failed to update notification settings');
+    }
+  };
+
+  const deleteNotification = async (notificationId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .delete()
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setUserNotifications(prev => prev.filter(n => n.id !== notificationId));
+      toast.success('Notification deleted');
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast.error('Failed to delete notification');
+    }
+  };
 
   const notificationOptions = [
     {
@@ -75,13 +177,6 @@ const Notifications = () => {
     }
   ];
 
-  const handleNotificationToggle = (settingId: string) => {
-    setNotificationSettings(prev => ({
-      ...prev,
-      [settingId]: !prev[settingId as keyof typeof prev]
-    }));
-  };
-
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'Nutrition': return 'bg-green-500/20 text-green-400';
@@ -123,10 +218,14 @@ const Notifications = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className={`grid w-full grid-cols-1 bg-gray-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            <TabsList className={`grid w-full grid-cols-2 bg-gray-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500">
                 <Settings className="w-4 h-4 mr-1" />
-                Notification Settings
+                Settings
+              </TabsTrigger>
+              <TabsTrigger value="history" className="data-[state=active]:bg-orange-500">
+                <Bell className="w-4 h-4 mr-1" />
+                History
               </TabsTrigger>
             </TabsList>
 
@@ -181,6 +280,52 @@ const Notifications = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Notification History Tab */}
+            <TabsContent value="history" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Recent Notifications</h2>
+                <Badge className="bg-gray-500/20 text-gray-400">
+                  {userNotifications.length} Total
+                </Badge>
+              </div>
+
+              {userNotifications.length === 0 ? (
+                <Card className="bg-gray-900 border-gray-800">
+                  <CardContent className="p-8 text-center">
+                    <Bell className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+                    <h3 className="text-lg font-semibold text-gray-400 mb-2">No Notifications Yet</h3>
+                    <p className="text-gray-500">You'll see your notifications here once you start receiving them.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {userNotifications.map((notification) => (
+                    <Card key={notification.id} className="bg-gray-900 border-gray-800 group">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-white font-medium">{notification.title}</h3>
+                            <p className="text-gray-400 text-sm mt-1">{notification.message}</p>
+                            <p className="text-gray-500 text-xs mt-2">
+                              {new Date(notification.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteNotification(notification.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

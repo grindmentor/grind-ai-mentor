@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database } from 'lucide-react';
+import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MobileHeader } from '@/components/MobileHeader';
 import { Badge } from '@/components/ui/badge';
+import { FoodEntryModal } from './FoodEntryModal';
 
 interface FoodEntry {
   id: string;
@@ -53,6 +54,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [portionSize, setPortionSize] = useState('100');
+  const [showCustomModal, setShowCustomModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -83,12 +85,39 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     }
   };
 
+  const deleteFoodEntry = async (entryId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('food_log_entries')
+        .delete()
+        .eq('id', entryId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
+      toast({
+        title: 'Food Removed',
+        description: 'Food entry deleted successfully.'
+      });
+    } catch (error) {
+      console.error('Error deleting food entry:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete food entry.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const searchUSDADatabase = async (query: string) => {
     if (!query.trim()) return;
     
     setIsSearching(true);
     try {
-      // Mock USDA API call - replace with actual USDA API
+      // Mock USDA API call with dynamic portion calculation
       const mockResults: USDAFoodItem[] = [
         {
           fdcId: 123456,
@@ -168,15 +197,41 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     }
   };
 
+  const addCustomFood = async (foodData: any) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('food_log_entries')
+        .insert({
+          user_id: user.id,
+          ...foodData
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setFoodEntries(prev => [...prev, data]);
+      toast({
+        title: 'Custom Food Added! ✍️',
+        description: 'Your custom food entry has been saved.'
+      });
+    } catch (error) {
+      console.error('Error adding custom food:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add custom food entry.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const analyzePhotoIngredients = async () => {
     if (!selectedPhoto || !user) return;
 
     setIsAnalyzing(true);
     try {
-      // Create FormData for photo upload
-      const formData = new FormData();
-      formData.append('photo', selectedPhoto);
-
       // Mock photo analysis - replace with actual AI service
       const mockIngredients = [
         { name: 'Chicken Breast', amount: '150g', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0 },
@@ -340,7 +395,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                             <div className="font-medium text-white">{item.description}</div>
                             <div className="text-sm text-orange-300">{item.dataType}</div>
                             <div className="text-xs text-orange-400 mt-1">
-                              Per 100g: {item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0} cal
+                              Per {portionSize}g: {Math.round((item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0) * parseFloat(portionSize) / 100)} cal
                             </div>
                           </div>
                           <Button
@@ -356,6 +411,15 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                     ))}
                   </div>
                 )}
+
+                {/* Custom Food Entry Button */}
+                <Button
+                  onClick={() => setShowCustomModal(true)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Custom Food
+                </Button>
               </div>
 
               {/* Photo Analysis */}
@@ -457,7 +521,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {foodEntries.map((entry) => (
-                    <div key={entry.id} className="p-3 bg-orange-900/30 rounded-lg border border-orange-500/20">
+                    <div key={entry.id} className="p-3 bg-orange-900/30 rounded-lg border border-orange-500/20 group">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="font-medium text-white">{entry.food_name}</div>
@@ -476,16 +540,31 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                                 USDA Database
                               </Badge>
                             )}
+                            {entry.food_name.includes('✍️') && (
+                              <Badge variant="outline" className="text-xs border-purple-400/30 text-purple-300 bg-purple-500/10">
+                                Custom Entry
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                        {entry.calories && (
-                          <div className="text-right">
-                            <div className="text-orange-200 font-medium">{entry.calories} cal</div>
-                            <div className="text-xs text-orange-300">
-                              P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
+                        <div className="flex items-center space-x-2">
+                          {entry.calories && (
+                            <div className="text-right">
+                              <div className="text-orange-200 font-medium">{entry.calories} cal</div>
+                              <div className="text-xs text-orange-300">
+                                P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                          <Button
+                            onClick={() => deleteFoodEntry(entry.id)}
+                            size="sm"
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -495,6 +574,14 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
           </Card>
         </div>
       </div>
+
+      {/* Custom Food Entry Modal */}
+      <FoodEntryModal
+        isOpen={showCustomModal}
+        onClose={() => setShowCustomModal(false)}
+        onSave={addCustomFood}
+        selectedDate={selectedDate}
+      />
     </div>
   );
 };

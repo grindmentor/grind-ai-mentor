@@ -36,29 +36,42 @@ const FitnessGoalSelector: React.FC<FitnessGoalSelectorProps> = ({
   ];
 
   return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className={className}>
-        <div className="flex items-center">
-          <Target className="w-4 h-4 mr-2 text-orange-400" />
-          <SelectValue placeholder="Select your fitness goal" />
+    <div className="space-y-2">
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger className={className}>
+          <div className="flex items-center">
+            <Target className="w-4 h-4 mr-2 text-orange-400" />
+            <SelectValue placeholder="Select your fitness goal" />
+          </div>
+        </SelectTrigger>
+        <SelectContent className="bg-gray-800 border-gray-700">
+          {goals.map((goal) => (
+            <SelectItem key={goal.value} value={goal.value} className="text-white hover:bg-gray-700">
+              <div className="flex items-center space-x-3">
+                <div className="text-orange-400">
+                  {goal.icon}
+                </div>
+                <div>
+                  <div className="font-medium">{goal.label}</div>
+                  <div className="text-sm text-gray-400">{goal.description}</div>
+                </div>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      {/* Show explanation for selected goal */}
+      {value && (
+        <div className="text-sm text-gray-400 bg-gray-800/30 p-2 rounded border border-gray-700/50">
+          <strong className="text-orange-400">
+            {goals.find(g => g.value === value)?.label}:
+          </strong>
+          {' '}
+          {goals.find(g => g.value === value)?.description}
         </div>
-      </SelectTrigger>
-      <SelectContent className="bg-gray-800 border-gray-700">
-        {goals.map((goal) => (
-          <SelectItem key={goal.value} value={goal.value} className="text-white hover:bg-gray-700">
-            <div className="flex items-center space-x-3">
-              <div className="text-orange-400">
-                {goal.icon}
-              </div>
-              <div>
-                <div className="font-medium">{goal.label}</div>
-                <div className="text-sm text-gray-400">{goal.description}</div>
-              </div>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      )}
+    </div>
   );
 };
 

@@ -10,7 +10,7 @@ interface LazyLoadOptions {
 export const useOptimizedLazyLoading = (options: LazyLoadOptions = {}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const elementRef = useRef<HTMLDivElement>(null);
+  const elementRef = useRef<HTMLElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   const { threshold = 0.1, rootMargin = '50px', triggerOnce = true } = options;

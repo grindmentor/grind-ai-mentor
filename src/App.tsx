@@ -1,4 +1,3 @@
-
 import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
-import ModulesProvider from "@/contexts/ModulesContext";
+import { ModulesProvider } from "@/contexts/ModulesContext";
 import { UsageProvider } from "@/contexts/UsageContext";
 import { PerformanceProvider } from '@/components/ui/performance-provider';
 import { LoadingScreen } from '@/components/ui/loading-screen';

@@ -10,7 +10,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import Logo from "@/components/ui/logo";
-import AvailableAchievements from "@/components/homepage/AvailableAchievements";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -127,13 +126,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-
-        {/* Available Achievements Section */}
-        {user && (
-          <div className="py-12 sm:py-16 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-            <AvailableAchievements />
-          </div>
-        )}
 
         {/* Features Section */}
         <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">

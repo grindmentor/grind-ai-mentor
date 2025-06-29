@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import Logo from "@/components/ui/logo";
+import AvailableAchievements from "@/components/homepage/AvailableAchievements";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -161,6 +161,9 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Available Achievements Section */}
+        <AvailableAchievements />
+
         {/* Benefits Section */}
         <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
           <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 md:mb-16">
@@ -214,7 +217,7 @@ const Index = () => {
           </AnimatedCard>
         </div>
 
-        {/* Footer Links - Visible on Desktop, Mobile-Friendly Placement */}
+        {/* Footer Links */}
         <footer className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 md:py-12 lg:px-8">
             <div className="flex flex-col md:flex-row justify-center items-center space-y-3 md:space-y-0 md:space-x-8">

@@ -12,13 +12,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
 import BasicInformation from '@/components/settings/BasicInformation';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentTier, currentTierData, subscriptionEnd, billingCycle } = useSubscription();
-  const { userData, updateUserData } = useUserData();
+  const { userData } = useUserData();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
   const [preferences, setPreferences] = useState({
@@ -88,61 +87,6 @@ const Profile = () => {
   const calculatedAge = userData.birthday 
     ? calculateExactAge(userData.birthday)
     : null;
-
-  // Profile data for BasicInformation component
-  const profileData = {
-    weight: userData.weight?.toString() || '',
-    birthday: userData.birthday || '',
-    height: userData.height?.toString() || '',
-    heightFeet: '',
-    heightInches: '',
-    experience: userData.experience || '',
-    activity: userData.activity || '',
-    goal: userData.goal || ''
-  };
-
-  // Handle input changes
-  const handleInputChange = async (field: string, value: string) => {
-    try {
-      if (!user?.id) return;
-      
-      // Update local state
-      await updateUserData({ [field]: value });
-      
-      // Update database
-      const { error } = await supabase
-        .from('profiles')
-        .update({ [field]: value })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
-    }
-  };
-
-  // Handle weight changes with unit conversion
-  const handleWeightChange = (value: string) => {
-    handleInputChange('weight', value);
-  };
-
-  // Handle height changes with unit conversion
-  const handleHeightChange = (value: string) => {
-    handleInputChange('height', value);
-  };
-
-  // Get weight display with unit
-  const getWeightDisplay = () => {
-    return userData.weight ? `${userData.weight}` : '';
-  };
-
-  // Get height display with unit
-  const getHeightDisplay = () => {
-    return userData.height ? `${userData.height}` : '';
-  };
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -301,18 +245,7 @@ const Profile = () => {
                 </TabsContent>
 
                 <TabsContent value="basic" className="mt-0">
-                  <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6">
-                    <BasicInformation 
-                      profile={profileData}
-                      preferences={preferences}
-                      calculatedAge={calculatedAge}
-                      onInputChange={handleInputChange}
-                      onWeightChange={handleWeightChange}
-                      onHeightChange={handleHeightChange}
-                      getWeightDisplay={getWeightDisplay}
-                      getHeightDisplay={getHeightDisplay}
-                    />
-                  </div>
+                  <BasicInformation />
                 </TabsContent>
               </div>
             </Tabs>

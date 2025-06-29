@@ -1,124 +1,28 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Bell, Settings, Trash2 } from "lucide-react";
+import { ArrowLeft, Bell, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 
 const Notifications = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("settings");
   const [notificationSettings, setNotificationSettings] = useState({
-    hydrationReminders: false,
-    workoutReminders: false,
-    achievementAlerts: false,
+    hydrationReminders: true,
+    workoutReminders: true,
+    achievementAlerts: true,
     progressUpdates: false,
-    nutritionTips: false,
+    nutritionTips: true,
     recoveryAlerts: false,
-    goalDeadlines: false,
+    goalDeadlines: true,
     weeklyReports: false
   });
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      fetchNotificationSettings();
-      fetchNotifications();
-    }
-  }, [user]);
-
-  const fetchNotificationSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('notification_preferences')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (data?.notification_preferences) {
-        setNotificationSettings(data.notification_preferences);
-      }
-    } catch (error) {
-      console.error('Error fetching notification settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
-
-  const updateNotificationSettings = async (newSettings) => {
-    try {
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          notification_preferences: newSettings,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-      toast.success('Notification settings updated');
-    } catch (error) {
-      console.error('Error updating notification settings:', error);
-      toast.error('Failed to update notification settings');
-    }
-  };
-
-  const handleNotificationToggle = async (settingId: string) => {
-    const newSettings = {
-      ...notificationSettings,
-      [settingId]: !notificationSettings[settingId]
-    };
-    
-    setNotificationSettings(newSettings);
-    await updateNotificationSettings(newSettings);
-  };
-
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('user_notifications')
-        .delete()
-        .eq('id', notificationId)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      toast.success('Notification deleted');
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      toast.error('Failed to delete notification');
-    }
-  };
 
   const notificationOptions = [
     {
@@ -171,6 +75,13 @@ const Notifications = () => {
     }
   ];
 
+  const handleNotificationToggle = (settingId: string) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [settingId]: !prev[settingId as keyof typeof prev]
+    }));
+  };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'Nutrition': return 'bg-green-500/20 text-green-400';
@@ -185,16 +96,8 @@ const Notifications = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+    <div className="min-h-screen bg-black text-white">
       <div className="p-4 sm:p-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -202,7 +105,7 @@ const Notifications = () => {
             <Button 
               variant="ghost" 
               onClick={() => navigate('/app')}
-              className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors w-fit"
+              className="text-white hover:bg-gray-800 hover:text-orange-400 transition-colors w-fit"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Dashboard
@@ -220,14 +123,10 @@ const Notifications = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className={`grid w-full grid-cols-2 bg-gray-900/40 backdrop-blur-sm ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+            <TabsList className={`grid w-full grid-cols-1 bg-gray-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500">
                 <Settings className="w-4 h-4 mr-1" />
-                Settings
-              </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
-                <Bell className="w-4 h-4 mr-1" />
-                History
+                Notification Settings
               </TabsTrigger>
             </TabsList>
 
@@ -242,7 +141,7 @@ const Notifications = () => {
               
               <div className="space-y-4">
                 {notificationOptions.map((option) => (
-                  <Card key={option.id} className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                  <Card key={option.id} className="bg-gray-900 border-gray-800">
                     <CardContent className="p-4 sm:p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0 mr-4">
@@ -255,7 +154,7 @@ const Notifications = () => {
                           <p className="text-gray-400 text-sm">{option.description}</p>
                         </div>
                         <Switch
-                          checked={notificationSettings[option.id] || false}
+                          checked={notificationSettings[option.id as keyof typeof notificationSettings]}
                           onCheckedChange={() => handleNotificationToggle(option.id)}
                           className="data-[state=checked]:bg-orange-500"
                         />
@@ -282,57 +181,6 @@ const Notifications = () => {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* Notification History Tab */}
-            <TabsContent value="history" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-white">Notification History</h2>
-                <Badge className="bg-blue-500/20 text-blue-400">
-                  {notifications.filter(n => !n.read).length} Unread
-                </Badge>
-              </div>
-
-              {notifications.length === 0 ? (
-                <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                  <CardContent className="p-6 text-center">
-                    <Bell className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-400">No notifications yet</p>
-                    <p className="text-gray-500 text-sm mt-2">Your notifications will appear here</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {notifications.map((notification) => (
-                    <Card key={notification.id} className={`bg-gray-900/40 backdrop-blur-sm border-gray-700/50 ${!notification.read ? 'border-orange-500/30' : ''}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <h3 className="text-white font-medium">{notification.title}</h3>
-                              {!notification.read && (
-                                <Badge className="bg-orange-500/20 text-orange-400 text-xs">New</Badge>
-                              )}
-                            </div>
-                            <p className="text-gray-400 text-sm mb-2">{notification.message}</p>
-                            <p className="text-gray-500 text-xs">
-                              {new Date(notification.created_at).toLocaleDateString()} at {new Date(notification.created_at).toLocaleTimeString()}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteNotification(notification.id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
             </TabsContent>
           </Tabs>
         </div>

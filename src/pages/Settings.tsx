@@ -7,17 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnitPreferences from '@/components/settings/UnitPreferences';
 import AppPreferences from '@/components/settings/AppPreferences';
 import AIMemoryReset from '@/components/settings/AIMemoryReset';
-import BasicInformation from '@/components/settings/BasicInformation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
 
 const Settings = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('units');
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: Globe },
     { id: 'units', label: 'Units', icon: Globe },
     { id: 'app', label: 'App', icon: Zap },
     { id: 'ai', label: 'AI Memory', icon: Brain }
@@ -48,7 +46,7 @@ const Settings = () => {
 
             {/* Settings Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-              <TabsList className={`grid w-full grid-cols-4 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
+              <TabsList className={`grid w-full grid-cols-3 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
@@ -62,10 +60,6 @@ const Settings = () => {
               </TabsList>
 
               <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6 mx-2 sm:mx-0">
-                <TabsContent value="profile" className="mt-0">
-                  <BasicInformation />
-                </TabsContent>
-
                 <TabsContent value="units" className="mt-0">
                   <UnitPreferences />
                 </TabsContent>

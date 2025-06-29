@@ -1,179 +1,111 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Calendar, Save, User } from 'lucide-react';
+import { Calendar, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
-const BasicInformation = () => {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState({
-    weight: '',
-    birthday: '',
-    height: '',
-    experience: '',
-    activity: '',
-    goal: ''
-  });
-  const [preferences, setPreferences] = useState({
-    weight_unit: 'lbs',
-    height_unit: 'ft-in'
-  });
-  const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [originalProfile, setOriginalProfile] = useState(profile);
-
-  useEffect(() => {
-    if (user) {
-      fetchUserData();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (profile.birthday) {
-      const birthDate = new Date(profile.birthday);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        setCalculatedAge(age - 1);
-      } else {
-        setCalculatedAge(age);
-      }
-    }
-  }, [profile.birthday]);
-
-  useEffect(() => {
-    setHasChanges(JSON.stringify(profile) !== JSON.stringify(originalProfile));
-  }, [profile, originalProfile]);
-
-  const fetchUserData = async () => {
-    try {
-      // Fetch profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
-
-      // Fetch preferences
-      const { data: preferencesData, error: preferencesError } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (preferencesError && preferencesError.code !== 'PGRST116') {
-        throw preferencesError;
-      }
-
-      const profileInfo = {
-        weight: profileData?.weight?.toString() || '',
-        birthday: profileData?.birthday || '',
-        height: profileData?.height?.toString() || '',
-        experience: profileData?.experience || '',
-        activity: profileData?.activity || '',
-        goal: profileData?.goal || ''
-      };
-
-      const preferencesInfo = {
-        weight_unit: preferencesData?.weight_unit || 'lbs',
-        height_unit: preferencesData?.height_unit || 'ft-in'
-      };
-
-      setProfile(profileInfo);
-      setOriginalProfile(profileInfo);
-      setPreferences(preferencesInfo);
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      toast.error('Failed to load profile data');
-    }
+interface BasicInformationProps {
+  profile: {
+    weight: string;
+    birthday: string;
+    height: string;
+    heightFeet: string;
+    heightInches: string;
+    experience: string;
+    activity: string;
+    goal: string;
   };
+  preferences: {
+    weight_unit: string;
+    height_unit: string;
+  };
+  calculatedAge: number | null;
+  onInputChange: (field: string, value: string) => Promise<void>;
+  onWeightChange: (value: string) => void;
+  onHeightChange: (value: string) => void;
+  getWeightDisplay: () => string;
+  getHeightDisplay: () => string;
+}
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+const BasicInformation: React.FC<BasicInformationProps> = ({
+  profile,
+  preferences,
+  calculatedAge,
+  onInputChange,
+  onWeightChange,
+  onHeightChange,
+  getWeightDisplay,
+  getHeightDisplay
+}) => {
+  const [localProfile, setLocalProfile] = useState(profile);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleLocalChange = (field: string, value: string) => {
+    setLocalProfile(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    if (!user) return;
-    
     setIsSaving(true);
     try {
-      // Convert weight and height to proper units for database storage
-      let weightValue = parseFloat(profile.weight) || 0;
-      let heightValue = parseFloat(profile.height) || 0;
-
-      // Convert to metric for storage
-      if (preferences.weight_unit === 'lbs') {
-        weightValue = weightValue / 2.20462; // Convert lbs to kg
+      // Convert units properly before saving
+      const updates: Record<string, any> = {};
+      
+      if (localProfile.weight !== profile.weight) {
+        let weightValue = parseFloat(localProfile.weight);
+        if (isNaN(weightValue)) weightValue = 0;
+        
+        // Convert to kg for storage (database stores in kg)
+        if (preferences.weight_unit === 'lbs') {
+          weightValue = weightValue / 2.20462; // Convert lbs to kg
+        }
+        // If unit is kg, store as is
+        updates.weight = Math.round(weightValue);
       }
-      if (preferences.height_unit === 'ft-in') {
-        heightValue = heightValue * 2.54; // Convert inches to cm
+      
+      if (localProfile.height !== profile.height) {
+        let heightValue = parseFloat(localProfile.height);
+        if (isNaN(heightValue)) heightValue = 0;
+        
+        // Convert to cm for storage (database stores in cm)
+        if (preferences.height_unit === 'ft-in') {
+          // Convert inches to cm
+          heightValue = heightValue * 2.54;
+        }
+        // If unit is cm, store as is
+        updates.height = Math.round(heightValue);
       }
-
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          weight: Math.round(weightValue),
-          height: Math.round(heightValue),
-          birthday: profile.birthday || null,
-          experience: profile.experience || null,
-          activity: profile.activity || null,
-          goal: profile.goal || null,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
-      setOriginalProfile(profile);
+      
+      // Handle other fields
+      Object.keys(localProfile).forEach(field => {
+        if (field !== 'weight' && field !== 'height' && localProfile[field as keyof typeof localProfile] !== profile[field as keyof typeof profile]) {
+          updates[field] = localProfile[field as keyof typeof localProfile];
+        }
+      });
+      
+      // Save all updates
+      for (const [field, value] of Object.entries(updates)) {
+        await onInputChange(field, value.toString());
+      }
+      
       toast.success('Profile updated successfully');
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const getWeightDisplay = () => {
-    if (!profile.weight) return '';
-    const weight = parseFloat(profile.weight);
-    if (preferences.weight_unit === 'kg') {
-      return `${weight} kg`;
-    }
-    return `${weight} lbs`;
-  };
-
-  const getHeightDisplay = () => {
-    if (!profile.height) return '';
-    const height = parseFloat(profile.height);
-    if (preferences.height_unit === 'cm') {
-      return `${height} cm`;
-    }
-    const feet = Math.floor(height / 12);
-    const inches = height % 12;
-    return `${feet}'${inches}"`;
-  };
+  const hasChanges = JSON.stringify(localProfile) !== JSON.stringify(profile);
 
   return (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
-          <User className="w-5 h-5 mr-2 text-orange-400" />
-          Basic Information
-        </CardTitle>
+        <CardTitle className="text-white">Basic Information</CardTitle>
         <CardDescription className="text-gray-400">
           Update your personal information and fitness profile
         </CardDescription>
@@ -187,8 +119,8 @@ const BasicInformation = () => {
           <Input
             id="weight"
             type="number"
-            value={profile.weight}
-            onChange={(e) => handleInputChange('weight', e.target.value)}
+            value={localProfile.weight}
+            onChange={(e) => handleLocalChange('weight', e.target.value)}
             placeholder={`Enter weight in ${preferences.weight_unit}`}
             className="bg-gray-800/50 border-gray-600 text-white"
           />
@@ -202,8 +134,8 @@ const BasicInformation = () => {
           <Input
             id="height"
             type="number"
-            value={profile.height}
-            onChange={(e) => handleInputChange('height', e.target.value)}
+            value={localProfile.height}
+            onChange={(e) => handleLocalChange('height', e.target.value)}
             placeholder={`Enter height in ${preferences.height_unit === 'cm' ? 'cm' : 'inches'}`}
             className="bg-gray-800/50 border-gray-600 text-white"
           />
@@ -223,8 +155,8 @@ const BasicInformation = () => {
           <Input
             id="birthday"
             type="date"
-            value={profile.birthday}
-            onChange={(e) => handleInputChange('birthday', e.target.value)}
+            value={localProfile.birthday}
+            onChange={(e) => handleLocalChange('birthday', e.target.value)}
             className="bg-gray-800/50 border-gray-600 text-white"
           />
         </div>
@@ -232,7 +164,7 @@ const BasicInformation = () => {
         {/* Experience Level */}
         <div className="space-y-2">
           <Label htmlFor="experience" className="text-white">Experience Level</Label>
-          <Select value={profile.experience} onValueChange={(value) => handleInputChange('experience', value)}>
+          <Select value={localProfile.experience} onValueChange={(value) => handleLocalChange('experience', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select experience level" />
             </SelectTrigger>
@@ -247,7 +179,7 @@ const BasicInformation = () => {
         {/* Activity Level */}
         <div className="space-y-2">
           <Label htmlFor="activity" className="text-white">Activity Level</Label>
-          <Select value={profile.activity} onValueChange={(value) => handleInputChange('activity', value)}>
+          <Select value={localProfile.activity} onValueChange={(value) => handleLocalChange('activity', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select activity level" />
             </SelectTrigger>
@@ -261,17 +193,19 @@ const BasicInformation = () => {
           </Select>
         </div>
 
-        {/* Primary Goal - Updated with Cut/Bulk/Maintenance */}
+        {/* Primary Goal */}
         <div className="space-y-2">
           <Label htmlFor="goal" className="text-white">Primary Goal</Label>
-          <Select value={profile.goal} onValueChange={(value) => handleInputChange('goal', value)}>
+          <Select value={localProfile.goal} onValueChange={(value) => handleLocalChange('goal', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select primary goal" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="cut">Cut - Lose fat while preserving muscle mass</SelectItem>
-              <SelectItem value="bulk">Bulk - Gain muscle mass with controlled weight gain</SelectItem>
-              <SelectItem value="maintenance">Maintenance - Maintain current physique and strength</SelectItem>
+              <SelectItem value="lose_weight">Lose Weight</SelectItem>
+              <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
+              <SelectItem value="maintain_weight">Maintain Weight</SelectItem>
+              <SelectItem value="improve_endurance">Improve Endurance</SelectItem>
+              <SelectItem value="general_fitness">General Fitness</SelectItem>
             </SelectContent>
           </Select>
         </div>

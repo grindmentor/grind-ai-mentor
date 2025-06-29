@@ -125,8 +125,6 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
   };
 
   const handleNotificationToggle = async (settingId: string) => {
-    if (savingSettings) return; // Prevent multiple simultaneous updates
-    
     const newSettings = {
       ...notificationSettings,
       [settingId]: !notificationSettings[settingId as keyof typeof notificationSettings]
@@ -136,68 +134,17 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
     setSavingSettings(true);
 
     try {
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      // First check if user_preferences record exists
-      const { data: existingPrefs, error: fetchError } = await supabase
+      const { error } = await supabase
         .from('user_preferences')
-        .select('id, notification_preferences')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .upsert({
+          user_id: user?.id,
+          notification_preferences: newSettings
+        }, {
+          onConflict: 'user_id'
+        });
 
-      if (fetchError) {
-        console.error('Error fetching user preferences:', fetchError);
-        throw fetchError;
-      }
-
-      let updateError;
-      if (existingPrefs) {
-        // Update existing record
-        const { error } = await supabase
-          .from('user_preferences')
-          .update({
-            notification_preferences: newSettings,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-        updateError = error;
-      } else {
-        // Create new record
-        const { error } = await supabase
-          .from('user_preferences')
-          .insert({
-            user_id: user.id,
-            notification_preferences: newSettings
-          });
-        updateError = error;
-      }
-
-      if (updateError) {
-        console.error('Error updating notification settings:', updateError);
-        throw updateError;
-      }
-
-      // Request notification permission if enabling notifications and not already granted
-      if (newSettings[settingId as keyof typeof newSettings] && 'Notification' in window) {
-        if (Notification.permission === 'default') {
-          const permission = await Notification.requestPermission();
-          if (permission === 'granted') {
-            toast.success('Notifications enabled and permission granted!');
-          } else if (permission === 'denied') {
-            toast.error('Notification permission denied. Enable in browser settings.');
-          }
-        } else if (Notification.permission === 'granted') {
-          // Test notification
-          new Notification('Myotopia Notification Test', {
-            body: 'Your notification settings have been updated!',
-            icon: '/icon-192x192.png'
-          });
-        }
-      }
-
-      toast.success('Notification settings updated successfully');
+      if (error) throw error;
+      toast.success('Notification settings updated');
     } catch (error) {
       console.error('Error updating notification settings:', error);
       toast.error('Failed to update notification settings');

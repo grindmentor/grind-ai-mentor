@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -39,20 +40,6 @@ interface USDAFoodItem {
 interface SmartFoodLogProps {
   onBack: () => void;
 }
-
-// Mock USDA nutrition data - replace with actual USDA API
-const mockUSDAData = {
-  'apple': { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2.4 },
-  'banana': { calories: 89, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6 },
-  'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0 },
-  'white rice': { calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4 },
-  'broccoli': { calories: 34, protein: 2.8, carbs: 7, fat: 0.4, fiber: 2.6 },
-  'salmon': { calories: 208, protein: 22, carbs: 0, fat: 12, fiber: 0 },
-  'sweet potato': { calories: 86, protein: 1.6, carbs: 20, fat: 0.1, fiber: 3 },
-  'spinach': { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2 },
-  'oats': { calories: 389, protein: 16.9, carbs: 66, fat: 6.9, fiber: 10.6 },
-  'eggs': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0 }
-};
 
 export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const { user } = useAuth();
@@ -101,28 +88,23 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     
     setIsSearching(true);
     try {
-      // Search mock USDA database
-      const searchTerm = query.toLowerCase();
-      const results: USDAFoodItem[] = [];
-      
-      Object.entries(mockUSDAData).forEach(([foodName, nutrition]) => {
-        if (foodName.includes(searchTerm)) {
-          results.push({
-            fdcId: Math.random() * 1000000,
-            description: foodName.charAt(0).toUpperCase() + foodName.slice(1),
-            dataType: 'USDA Database',
-            foodNutrients: [
-              { nutrientId: 1008, nutrientName: 'Energy', value: nutrition.calories, unitName: 'KCAL' },
-              { nutrientId: 1003, nutrientName: 'Protein', value: nutrition.protein, unitName: 'G' },
-              { nutrientId: 1005, nutrientName: 'Carbohydrate, by difference', value: nutrition.carbs, unitName: 'G' },
-              { nutrientId: 1004, nutrientName: 'Total lipid (fat)', value: nutrition.fat, unitName: 'G' },
-              { nutrientId: 1079, nutrientName: 'Fiber, total dietary', value: nutrition.fiber, unitName: 'G' }
-            ]
-          });
+      // Mock USDA API call - replace with actual USDA API
+      const mockResults: USDAFoodItem[] = [
+        {
+          fdcId: 123456,
+          description: `${query} - Fresh`,
+          dataType: 'Survey (FNDDS)',
+          foodNutrients: [
+            { nutrientId: 1008, nutrientName: 'Energy', value: 89, unitName: 'KCAL' },
+            { nutrientId: 1003, nutrientName: 'Protein', value: 0.9, unitName: 'G' },
+            { nutrientId: 1005, nutrientName: 'Carbohydrate, by difference', value: 22.8, unitName: 'G' },
+            { nutrientId: 1004, nutrientName: 'Total lipid (fat)', value: 0.3, unitName: 'G' },
+            { nutrientId: 1079, nutrientName: 'Fiber, total dietary', value: 2.4, unitName: 'G' }
+          ]
         }
-      });
+      ];
 
-      setSearchResults(results);
+      setSearchResults(mockResults);
     } catch (error) {
       console.error('USDA search error:', error);
       toast({
@@ -250,34 +232,6 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   };
 
   const totals = getTotalNutrition();
-
-  const deleteFoodEntry = async (entryId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('food_log_entries')
-        .delete()
-        .eq('id', entryId)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
-      
-      toast({
-        title: 'Food Entry Deleted! 🗑️',
-        description: 'Food entry has been removed from your log.'
-      });
-    } catch (error) {
-      console.error('Error deleting food entry:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete food entry.',
-        variant: 'destructive'
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-amber-900/30">
@@ -524,24 +478,14 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {entry.calories && (
-                            <div className="text-right">
-                              <div className="text-orange-200 font-medium">{entry.calories} cal</div>
-                              <div className="text-xs text-orange-300">
-                                P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
-                              </div>
+                        {entry.calories && (
+                          <div className="text-right">
+                            <div className="text-orange-200 font-medium">{entry.calories} cal</div>
+                            <div className="text-xs text-orange-300">
+                              P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
                             </div>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteFoodEntry(entry.id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

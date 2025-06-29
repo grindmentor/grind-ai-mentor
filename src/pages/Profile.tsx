@@ -11,7 +11,6 @@ import { useUserData } from '@/contexts/UserDataContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
 import BasicInformation from '@/components/settings/BasicInformation';
-import FitnessProfile from '@/components/settings/FitnessProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -70,9 +69,24 @@ const Profile = () => {
     }
   };
 
-  // Calculate age from birthday
+  // Calculate exact age from birthday - FIXED calculation
+  const calculateExactAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    // Subtract 1 if birthday hasn't occurred this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   const calculatedAge = userData.birthday 
-    ? new Date().getFullYear() - new Date(userData.birthday).getFullYear()
+    ? calculateExactAge(userData.birthday)
     : null;
 
   // Profile data for BasicInformation component
@@ -82,13 +96,6 @@ const Profile = () => {
     height: userData.height?.toString() || '',
     heightFeet: '',
     heightInches: '',
-    experience: userData.experience || '',
-    activity: userData.activity || '',
-    goal: userData.goal || ''
-  };
-
-  // Profile data for FitnessProfile component
-  const fitnessProfileData = {
     experience: userData.experience || '',
     activity: userData.activity || '',
     goal: userData.goal || ''
@@ -139,8 +146,7 @@ const Profile = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'basic', label: 'Basic Info' },
-    { id: 'fitness', label: 'Fitness' }
+    { id: 'basic', label: 'Basic Info' }
   ];
 
   return (
@@ -168,7 +174,7 @@ const Profile = () => {
 
             {/* Profile Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-              <TabsList className={`grid w-full grid-cols-3 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
+              <TabsList className={`grid w-full grid-cols-2 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
@@ -305,15 +311,6 @@ const Profile = () => {
                       onHeightChange={handleHeightChange}
                       getWeightDisplay={getWeightDisplay}
                       getHeightDisplay={getHeightDisplay}
-                    />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="fitness" className="mt-0">
-                  <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6">
-                    <FitnessProfile 
-                      profile={fitnessProfileData}
-                      onInputChange={handleInputChange}
                     />
                   </div>
                 </TabsContent>

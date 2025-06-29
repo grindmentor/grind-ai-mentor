@@ -8,13 +8,13 @@ const AppPreferences = () => {
   const { preferences, updatePreference } = usePreferences();
 
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
       <CardHeader>
         <CardTitle className="text-white flex items-center">
           <Smartphone className="w-5 h-5 mr-2 text-orange-500" />
           App Preferences
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-gray-400">
           Customize your app experience
         </CardDescription>
       </CardHeader>
@@ -27,6 +27,7 @@ const AppPreferences = () => {
           <Switch
             checked={preferences.email_updates}
             onCheckedChange={(checked) => updatePreference('email_updates', checked)}
+            className="data-[state=checked]:bg-orange-500"
           />
         </div>
 
@@ -38,6 +39,7 @@ const AppPreferences = () => {
           <Switch
             checked={preferences.notifications}
             onCheckedChange={(checked) => updatePreference('notifications', checked)}
+            className="data-[state=checked]:bg-orange-500"
           />
         </div>
       </CardContent>

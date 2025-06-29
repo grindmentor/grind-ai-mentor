@@ -95,7 +95,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [preferences]);
 
-  // Enhanced age calculation function
+  // Enhanced age calculation function - FIXED
   const calculateExactAge = (birthDate: string): number => {
     const today = new Date();
     const birth = new Date(birthDate);
@@ -134,7 +134,7 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (profile) {
         console.log("UserDataContext - Profile data loaded:", profile);
         
-        // Calculate exact age using full birthdate
+        // Calculate exact age using full birthdate - FIXED
         let age = null;
         if (profile.birthday) {
           age = calculateExactAge(profile.birthday);

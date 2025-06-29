@@ -1,21 +1,12 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Bell, Trophy, Target, CheckCircle } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const NotificationsSummary = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-
-  // Sample quick stats for the compact view
-  const quickStats = {
-    activeGoals: 3,
-    recentAchievements: 2,
-    pendingReminders: 1
-  };
 
   const handleViewAll = () => {
     navigate('/notifications');
@@ -31,30 +22,17 @@ const NotificationsSummary = () => {
             </div>
             <div>
               <h3 className="text-white font-semibold text-sm">Notifications</h3>
-              <p className="text-blue-200/80 text-xs">
-                {quickStats.activeGoals} goals, {quickStats.recentAchievements} achievements
-              </p>
+              <p className="text-blue-200/80 text-xs">Configure your preferences</p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1 text-xs">
-              <Target className="w-3 h-3 text-orange-400" />
-              <span className="text-gray-300">{quickStats.activeGoals}</span>
-            </div>
-            <div className="flex items-center space-x-1 text-xs">
-              <Trophy className="w-3 h-3 text-yellow-400" />
-              <span className="text-gray-300">{quickStats.recentAchievements}</span>
-            </div>
-            
-            <Button 
-              size="sm" 
-              className="bg-gradient-to-r from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white border-0"
-              onClick={handleViewAll}
-            >
-              View All
-            </Button>
-          </div>
+          <Button 
+            size="sm" 
+            className="bg-gradient-to-r from-blue-500/80 to-indigo-500/80 hover:from-blue-500 hover:to-indigo-500 text-white border-0"
+            onClick={handleViewAll}
+          >
+            Settings
+          </Button>
         </div>
       </CardContent>
     </Card>

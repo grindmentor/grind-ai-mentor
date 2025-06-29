@@ -99,11 +99,9 @@ const FitnessProfile: React.FC<FitnessProfileProps> = ({
               <SelectValue placeholder="Select your primary goal" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="lose_weight">Lose Weight</SelectItem>
-              <SelectItem value="gain_muscle">Gain Muscle</SelectItem>
-              <SelectItem value="maintain_weight">Maintain Weight</SelectItem>
-              <SelectItem value="improve_endurance">Improve Endurance</SelectItem>
-              <SelectItem value="general_fitness">General Fitness</SelectItem>
+              <SelectItem value="cut">Cut - Lose fat while preserving muscle mass</SelectItem>
+              <SelectItem value="bulk">Bulk - Gain muscle mass with controlled weight gain</SelectItem>
+              <SelectItem value="maintain">Maintain - Keep current weight and body composition</SelectItem>
             </SelectContent>
           </Select>
         </div>

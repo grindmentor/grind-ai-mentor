@@ -1,185 +1,106 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Trash2, Shield } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Brain, RotateCcw, AlertTriangle } from 'lucide-react';
+import { useUserData } from '@/contexts/UserDataContext';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const AIMemoryReset = () => {
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const { resetAIMemory } = useUserData();
   const [isResetting, setIsResetting] = useState(false);
-  const [showWarningOnce, setShowWarningOnce] = useState(false);
 
-  const handleResetMemory = async () => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to reset AI memory.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleReset = async () => {
     setIsResetting(true);
     try {
-      // Clear AI conversation history and related data
-      const tablesToClear = [
-        'coach_conversations', // Clear all AI chats
-        'ai_conversation_history',
-        'ai_recommendations', 
-        'ai_analysis_cache',
-        'ai_workout_suggestions',
-        'ai_meal_suggestions'
-      ];
-
-      // Clear AI-specific data without affecting core profile data
-      for (const table of tablesToClear) {
-        try {
-          await supabase
-            .from(table)
-            .delete()
-            .eq('user_id', user.id);
-        } catch (error) {
-          // Some tables might not exist, which is fine
-          console.log(`Table ${table} might not exist or is empty:`, error);
-        }
-      }
-
-      // Clear AI context from profiles but preserve essential data
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          ai_context: null,
-          ai_preferences: null,
-          conversation_history: null,
-          // Preserve essential data: height, weight, age, display_name, email, etc.
-        })
-        .eq('id', user.id);
-
-      if (profileError) {
-        console.error('Profile update error:', profileError);
-      }
-
-      // Also clear from customer_profiles if it exists
-      try {
-        await supabase
-          .from('customer_profiles')
-          .update({
-            notes: null,
-            // Keep fitness_goals, display_name, and other essential data
-          })
-          .eq('user_id', user.id);
-      } catch (error) {
-        console.log('Customer profiles update (optional):', error);
-      }
-
-      // Simulate processing time for better UX
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "AI Memory Reset Complete! 🧠",
-        description: "All AI conversations and context have been cleared. Your profile data like height, weight, and age remain intact.",
-      });
-
-      setShowWarningOnce(false); // Reset the warning flag for next session
+      await resetAIMemory();
+      toast.success('AI memory has been successfully reset');
     } catch (error) {
       console.error('Error resetting AI memory:', error);
-      toast({
-        title: "Reset Successful",
-        description: "AI memory has been cleared. Your profile data remains intact.",
-      });
+      toast.error('Failed to reset AI memory. Please try again.');
     } finally {
       setIsResetting(false);
     }
   };
 
-  const handleWarning = () => {
-    if (!showWarningOnce) {
-      setShowWarningOnce(true);
-      toast({
-        title: "Important: Data Preservation",
-        description: "This will clear all AI conversations and context. Your height, weight, age, and other essential data will be preserved.",
-      });
-    }
-  };
-
   return (
-    <Card className="bg-gray-900 border-gray-800">
+    <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
       <CardHeader>
         <CardTitle className="text-white flex items-center">
           <Brain className="w-5 h-5 mr-2 text-orange-500" />
           AI Memory Reset
         </CardTitle>
-        <CardDescription>
-          Clear all AI conversations, memory, and recommendations
+        <CardDescription className="text-gray-400">
+          Clear all AI conversation history and personalized data
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* What gets deleted */}
-          <div className="p-3 bg-red-900/20 rounded-lg border border-red-500/30">
-            <h4 className="text-red-300 font-medium text-sm mb-2 flex items-center">
-              <Trash2 className="w-4 h-4 mr-1" />
-              Will be deleted:
-            </h4>
-            <ul className="text-red-200/80 text-xs space-y-1">
-              <li>• All AI chat conversations</li>
-              <li>• AI conversation history and context</li>
-              <li>• Personalized recommendations</li>
-              <li>• Workout and meal suggestions</li>
-              <li>• Training analysis cache</li>
-            </ul>
+      <CardContent className="space-y-4">
+        <div className="p-4 rounded-lg bg-yellow-900/20 border border-yellow-500/30">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="text-yellow-300 font-medium mb-2">What gets reset:</h4>
+              <ul className="text-yellow-200/80 text-sm space-y-1">
+                <li>• All coach conversations and chat history</li>
+                <li>• AI-learned preferences and habits</li>
+                <li>• Personalized recommendations</li>
+                <li>• Training and nutrition insights</li>
+              </ul>
+              <h4 className="text-yellow-300 font-medium mt-3 mb-2">What stays:</h4>
+              <ul className="text-yellow-200/80 text-sm space-y-1">
+                <li>• Your basic profile (weight, height, age)</li>
+                <li>• Workout logs and progress data</li>
+                <li>• Goals and achievements</li>
+                <li>• App preferences and settings</li>
+              </ul>
+            </div>
           </div>
-
-          {/* What gets preserved */}
-          <div className="p-3 bg-green-900/20 rounded-lg border border-green-500/30">
-            <h4 className="text-green-300 font-medium text-sm mb-2 flex items-center">
-              <Shield className="w-4 h-4 mr-1" />
-              Will be preserved:
-            </h4>
-            <ul className="text-green-200/80 text-xs space-y-1">
-              <li>• Height, weight, and age</li>
-              <li>• Workout logs and progress</li>
-              <li>• Goals and achievements</li>
-              <li>• Profile settings and preferences</li>
-              <li>• Custom exercises and saved data</li>
-              <li>• Food logs and nutrition data</li>
-            </ul>
-          </div>
-
-          <p className="text-gray-300 text-sm">
-            This reset gives your AI coaches a completely fresh start while keeping all your important fitness data intact. 
-            Perfect for when you want to change training focus or resolve any AI confusion.
-          </p>
-
-          <Button
-            variant="destructive"
-            onClick={() => {
-              handleWarning();
-              handleResetMemory();
-            }}
-            disabled={isResetting}
-            className="w-full min-h-[48px]"
-          >
-            {isResetting ? (
-              <>
-                <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Clearing AI Memory & Conversations...
-              </>
-            ) : (
-              <>
-                <Brain className="w-4 h-4 mr-2" />
-                Reset All AI Memory & Chats
-              </>
-            )}
-          </Button>
-
-          <p className="text-gray-500 text-xs text-center">
-            This action cannot be undone, but your essential data remains safe
-          </p>
         </div>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="destructive"
+              className="w-full bg-red-600 hover:bg-red-700"
+              disabled={isResetting}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              {isResetting ? 'Resetting...' : 'Reset AI Memory'}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-gray-900 border-gray-700">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">Confirm AI Memory Reset</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-400">
+                This action cannot be undone. All AI conversation history and personalized data will be permanently deleted.
+                Your workout logs, goals, and basic profile information will remain intact.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-gray-800 text-white border-gray-600 hover:bg-gray-700">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleReset}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isResetting}
+              >
+                {isResetting ? 'Resetting...' : 'Reset Memory'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

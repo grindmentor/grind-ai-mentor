@@ -18,20 +18,20 @@ const FitnessGoalSelector: React.FC<FitnessGoalSelectorProps> = ({
     {
       value: 'cut',
       label: 'Cut',
-      description: 'Lose body fat while preserving muscle mass',
+      description: 'Lose body fat while preserving muscle',
       icon: <TrendingDown className="w-4 h-4" />
-    },
-    {
-      value: 'bulk',
-      label: 'Bulk', 
-      description: 'Build muscle and gain weight',
-      icon: <TrendingUp className="w-4 h-4" />
     },
     {
       value: 'maintenance',
       label: 'Maintenance', 
       description: 'Maintain current weight and body composition',
       icon: <Minus className="w-4 h-4" />
+    },
+    {
+      value: 'bulk',
+      label: 'Bulk',
+      description: 'Build muscle and gain weight',
+      icon: <TrendingUp className="w-4 h-4" />
     }
   ];
 

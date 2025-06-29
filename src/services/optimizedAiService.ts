@@ -32,7 +32,7 @@ class OptimizedAIService {
 
   // Debounced request to prevent duplicate calls
   private debouncedRequest = debounce(
-    (prompt: string, options: OptimizedAIOptions, resolve: (value: string) => void, reject: (reason: any) => void) => {
+    (prompt: string, options: OptimizedAIOptions, resolve: Function, reject: Function) => {
       this.processRequest(prompt, options).then(resolve).catch(reject);
     },
     this.DEBOUNCE_DELAY,
@@ -115,7 +115,7 @@ class OptimizedAIService {
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
           prompt,
-          maxTokens: options.maxTokens || 200,
+          maxTokens: options.maxTokens || 200, // Reduced default for speed
           temperature: options.temperature || 0.7,
           model
         }
@@ -175,14 +175,6 @@ class OptimizedAIService {
 
     // Process high priority requests immediately
     return this.processRequest(prompt, options);
-  }
-
-  async getCoachingAdvice(prompt: string): Promise<string> {
-    return this.getOptimizedAIResponse(prompt, {
-      maxTokens: 300,
-      temperature: 0.8,
-      priority: 'normal'
-    });
   }
 
   // Batch processing for multiple requests

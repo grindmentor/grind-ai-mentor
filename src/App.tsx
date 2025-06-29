@@ -1,109 +1,118 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React, { Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
-import Index from "./pages/Index";
-import AppPage from "./pages/App";
-import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
-import Pricing from "./pages/Pricing";
-import Support from "./pages/Support";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import About from "./pages/About";
-import ModuleLibrary from "./pages/ModuleLibrary";
-import SignIn from "./pages/SignIn";
-import SignUp from "./pages/SignUp";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
-import ModulesProvider from "@/contexts/ModulesContext";
-import { ExerciseShareProvider } from "@/contexts/ExerciseShareContext";
-import AppPreloader from "@/components/AppPreloader";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { ModulesProvider } from "@/contexts/ModulesContext";
+import { UsageProvider } from "@/contexts/UsageContext";
+import { PerformanceProvider } from '@/components/ui/performance-provider';
+import { LoadingScreen } from '@/components/ui/loading-screen';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { bundleOptimizer, SmartPreloader } from '@/services/bundleOptimizationService';
 
-const queryClient = new QueryClient();
+// Optimized lazy loading with preloading hints
+const Index = React.lazy(() => 
+  import('@/pages/Index').then(module => {
+    // Preload likely next routes
+    SmartPreloader.getInstance().preloadForRoute('/');
+    return module;
+  })
+);
+
+const Dashboard = React.lazy(() => 
+  import('@/components/Dashboard').then(module => {
+    // Preload related components
+    import('@/components/goals/RealGoalsAchievements').catch(() => {});
+    import('@/components/NotificationCenter').catch(() => {});
+    return module;
+  })
+);
+
+// Other lazy loaded routes with minimal bundle impact
+const SignIn = React.lazy(() => import('@/pages/SignIn'));
+const SignUp = React.lazy(() => import('@/pages/SignUp'));
+const AuthCallback = React.lazy(() => import('@/pages/AuthCallback'));
+const Settings = React.lazy(() => import('@/pages/Settings'));
+const Profile = React.lazy(() => import('@/pages/Profile'));
+const Pricing = React.lazy(() => import('@/pages/Pricing'));
+const About = React.lazy(() => import('@/pages/About'));
+
+// Optimized QueryClient with reduced cache time for better memory usage
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (reduced from default)
+      retry: 1, // Reduced retries for faster failures
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
-    // Simulate app initialization
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
+    // Apply bundle optimizations after initial render
+    if (typeof window !== 'undefined') {
+      // Use requestIdleCallback for non-critical optimizations
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => {
+          bundleOptimizer.removeUnusedCSS();
+          bundleOptimizer.optimizeFonts();
+        }, { timeout: 5000 });
+      } else {
+        setTimeout(() => {
+          bundleOptimizer.removeUnusedCSS();
+          bundleOptimizer.optimizeFonts();
+        }, 1000);
+      }
+    }
   }, []);
 
-  if (isLoading) {
-    return <AppPreloader onComplete={() => setIsLoading(false)} />;
-  }
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PreferencesProvider>
-          <UserDataProvider>
-            <ModulesProvider>
-              <ExerciseShareProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/signin" element={<SignIn />} />
-                      <Route path="/signup" element={<SignUp />} />
-                      <Route
-                        path="/app"
-                        element={
-                          <ProtectedRoute>
-                            <AppPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/modules"
-                        element={
-                          <ProtectedRoute>
-                            <ModuleLibrary />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/settings"
-                        element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/profile"
-                        element={
-                          <ProtectedRoute>
-                            <Profile />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="/pricing" element={<Pricing />} />
-                      <Route path="/support" element={<Support />} />
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/about" element={<About />} />
-                    </Routes>
-                  </BrowserRouter>
-                </TooltipProvider>
-              </ExerciseShareProvider>
-            </ModulesProvider>
-          </UserDataProvider>
-        </PreferencesProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <PerformanceProvider>
+          <TooltipProvider>
+            <AuthProvider>
+              <PreferencesProvider>
+                <UserDataProvider>
+                  <ModulesProvider>
+                    <UsageProvider>
+                      <Router>
+                        <div className="min-h-screen bg-black">
+                          <Suspense fallback={<LoadingScreen message="Loading Myotopia..." />}>
+                            <Routes>
+                              <Route path="/" element={<Index />} />
+                              <Route path="/signin" element={<SignIn />} />
+                              <Route path="/signup" element={<SignUp />} />
+                              <Route path="/auth/callback" element={<AuthCallback />} />
+                              <Route path="/app" element={<Dashboard />} />
+                              <Route path="/settings" element={<Settings />} />
+                              <Route path="/profile" element={<Profile />} />
+                              <Route path="/pricing" element={<Pricing />} />
+                              <Route path="/about" element={<About />} />
+                              <Route path="*" element={<Navigate to="/" replace />} />
+                            </Routes>
+                          </Suspense>
+                        </div>
+                      </Router>
+                      <Toaster />
+                    </UsageProvider>
+                  </ModulesProvider>
+                </UserDataProvider>
+              </PreferencesProvider>
+            </AuthProvider>
+          </TooltipProvider>
+        </PerformanceProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

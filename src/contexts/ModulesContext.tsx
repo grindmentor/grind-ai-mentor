@@ -1,11 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { aiModules } from '@/components/dashboard/AIModuleData';
 
 interface ModulesContextType {
   activeModule: string | null;
   setActiveModule: (moduleId: string | null) => void;
   moduleHistory: string[];
   addToHistory: (moduleId: string) => void;
+  modules: typeof aiModules;
 }
 
 const ModulesContext = createContext<ModulesContextType | undefined>(undefined);
@@ -36,7 +38,8 @@ export const ModulesProvider: React.FC<ModulesProviderProps> = ({ children }) =>
       activeModule,
       setActiveModule,
       moduleHistory,
-      addToHistory
+      addToHistory,
+      modules: aiModules
     }}>
       {children}
     </ModulesContext.Provider>

@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ScientificStudies } from '@/components/homepage/ScientificStudies';
+import ScientificStudies from '@/components/homepage/ScientificStudies';
 import { AvailableAchievements } from '@/components/homepage/AvailableAchievements';
 
 const Index = () => {

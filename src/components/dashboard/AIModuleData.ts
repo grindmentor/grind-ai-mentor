@@ -1,163 +1,144 @@
-
 import { 
-  Brain, 
+  MessageSquare, 
   Utensils, 
   Activity, 
-  Target, 
-  TrendingUp, 
-  Clock, 
   Calculator, 
-  Camera,
-  Timer,
-  Dumbbell,
+  Timer, 
+  Brain, 
+  TrendingUp,
+  TrendingDown,
   Heart,
+  CheckCircle,
+  Camera,
   Zap,
-  Users,
-  BookOpen,
-  BarChart3,
-  Lightbulb,
-  Shield
+  Target
 } from 'lucide-react';
+
+// Import components
+import CoachGPT from '@/components/ai-modules/CoachGPT';
+import SmartFoodLog from '@/components/ai-modules/SmartFoodLog';
+import WorkoutLoggerAI from '@/components/ai-modules/WorkoutLoggerAI';
+import TDEECalculator from '@/components/ai-modules/TDEECalculator';
+import WorkoutTimer from '@/components/ai-modules/WorkoutTimer';
+import MealPlanAI from '@/components/ai-modules/MealPlanAI';
+import ProgressHub from '@/components/ai-modules/ProgressHub';
+import RecoveryCoach from '@/components/ai-modules/RecoveryCoach';
+import HabitTracker from '@/components/ai-modules/HabitTracker';
+import ProgressAI from '@/components/ai-modules/ProgressAI';
+import CutCalcPro from '@/components/ai-modules/CutCalcPro';
+import BlueprintAI from '@/components/ai-modules/BlueprintAI';
 
 export interface AIModule {
   id: string;
   title: string;
   description: string;
   icon: any;
-  category: string;
+  gradient: string;
+  component: React.ComponentType<any>;
   isPremium: boolean;
-  gradient?: string;
-  comingSoon?: boolean;
+  isNew?: boolean;
 }
 
 export const aiModules: AIModule[] = [
   {
+    id: 'blueprint-ai',
+    title: 'Blueprint AI',
+    description: 'Intelligent session planner with science-backed workout templates',
+    icon: Target,
+    gradient: 'from-blue-600/80 to-blue-800/90 border-blue-500/60',
+    component: BlueprintAI,
+    isPremium: false,
+    isNew: true
+  },
+  {
     id: 'coach-gpt',
-    title: 'CoachGPT',
-    description: 'Your personal AI fitness coach for expert guidance and motivation',
-    icon: Brain,
-    category: 'AI Coach',
+    title: 'Coach GPT',
+    description: 'Your AI fitness coach for personalized guidance and motivation',
+    icon: MessageSquare,
+    gradient: 'from-green-600/80 to-green-800/90 border-green-500/60',
+    component: CoachGPT,
     isPremium: false,
-    gradient: 'from-blue-500/30 to-purple-600/40'
-  },
-  {
-    id: 'smart-training',
-    title: 'Smart Training',
-    description: 'AI-powered workout generation and progressive overload tracking',
-    icon: Dumbbell,
-    category: 'Training',
-    isPremium: false,
-    gradient: 'from-orange-500/30 to-red-600/40'
-  },
-  {
-    id: 'meal-plan-ai',
-    title: 'Meal Plan AI',
-    description: 'Personalized meal plans based on your goals and preferences',
-    icon: Utensils,
-    category: 'Nutrition',
-    isPremium: false,
-    gradient: 'from-green-500/30 to-teal-600/40'
+    isNew: false
   },
   {
     id: 'smart-food-log',
     title: 'Smart Food Log',
-    description: 'USDA database integration with photo analysis for accurate nutrition tracking',
-    icon: Camera,
-    category: 'Nutrition',
-    isPremium: false,
-    gradient: 'from-amber-500/30 to-orange-600/40'
+    description: 'AI-powered nutrition tracking with instant macro analysis',
+    icon: Utensils,
+    gradient: 'from-orange-600/80 to-orange-800/90 border-orange-500/60',
+    component: SmartFoodLog,
+    isPremium: false
   },
   {
-    id: 'progress-ai',
-    title: 'Progress AI',
-    description: 'AI-powered progress analysis with photo comparison and insights',
-    icon: TrendingUp,
-    category: 'Progress',
-    isPremium: false,
-    gradient: 'from-pink-500/30 to-rose-600/40'
-  },
-  {
-    id: 'recovery-coach',
-    title: 'Recovery Coach',
-    description: 'Optimize your rest and recovery with AI-driven recommendations',
-    icon: Heart,
-    category: 'Recovery',
-    isPremium: false,
-    gradient: 'from-purple-500/30 to-indigo-600/40'
-  },
-  {
-    id: 'habit-tracker',
-    title: 'Habit Tracker',
-    description: 'Build lasting fitness habits with AI-powered tracking and insights',
-    icon: Target,
-    category: 'Habits',
-    isPremium: false,
-    gradient: 'from-indigo-500/30 to-blue-600/40'
-  },
-  {
-    id: 'cut-calc-pro',
-    title: 'Cut Calc Pro',
-    description: 'Advanced cutting calculator with timeline and macro recommendations',
-    icon: Calculator,
-    category: 'Nutrition',
-    isPremium: false,
-    gradient: 'from-red-500/30 to-pink-600/40'
-  },
-  {
-    id: 'workout-timer',
-    title: 'Workout Timer',
-    description: 'Smart workout timer with rest period optimization and tracking',
-    icon: Timer,
-    category: 'Training',
-    isPremium: false,
-    gradient: 'from-cyan-500/30 to-teal-600/40'
-  },
-  {
-    id: 'workout-logger-ai',
+    id: 'workout-logger',
     title: 'Workout Logger',
-    description: 'AI-enhanced workout logging with exercise recommendations',
+    description: 'Track your workouts with AI-powered exercise recommendations',
     icon: Activity,
-    category: 'Training',
-    isPremium: false,
-    gradient: 'from-gray-500/20 to-gray-600/30'
+    gradient: 'from-blue-600/80 to-blue-800/90 border-blue-500/60',
+    component: WorkoutLoggerAI,
+    isPremium: false
   },
   {
     id: 'tdee-calculator',
     title: 'TDEE Calculator',
-    description: 'Calculate your Total Daily Energy Expenditure with precision',
-    icon: Zap,
-    category: 'Nutrition',
-    isPremium: false,
-    gradient: 'from-yellow-500/30 to-amber-600/40'
+    description: 'Calculate your daily energy expenditure with precision',
+    icon: Calculator,
+    gradient: 'from-indigo-600/80 to-indigo-800/90 border-indigo-500/60',
+    component: TDEECalculator,
+    isPremium: false
   },
   {
-    id: 'blueprint-ai',
-    title: 'Blueprint AI',
-    description: 'Create comprehensive fitness blueprints tailored to your goals',
-    icon: BookOpen,
-    category: 'Planning',
-    isPremium: true,
-    gradient: 'from-violet-500/30 to-purple-600/40'
+    id: 'cut-calc-pro',
+    title: 'CutCalc Pro',
+    description: 'Advanced cutting calculator with timeline and macro targets',
+    icon: TrendingDown,
+    gradient: 'from-red-600/80 to-red-800/90 border-red-500/60',
+    component: CutCalcPro,
+    isPremium: true
   },
   {
-    id: 'cardio-ai',
-    title: 'Cardio AI',
-    description: 'Intelligent cardio programming for optimal fat loss and conditioning',
+    id: 'meal-plan-ai',
+    title: 'Meal Plan AI',
+    description: 'Generate personalized meal plans based on your goals',
+    icon: Utensils,
+    gradient: 'from-orange-600/80 to-orange-800/90 border-orange-500/60',
+    component: MealPlanAI,
+    isPremium: true
+  },
+  {
+    id: 'progress-hub',
+    title: 'Progress Hub',
+    description: 'Track your fitness journey with detailed analytics',
+    icon: TrendingUp,
+    gradient: 'from-purple-600/80 to-purple-800/90 border-purple-500/60',
+    component: ProgressHub,
+    isPremium: false
+  },
+  {
+    id: 'recovery-coach',
+    title: 'Recovery Coach',
+    description: 'Optimize your recovery with personalized recommendations',
     icon: Heart,
-    category: 'Cardio',
-    isPremium: true,
-    gradient: 'from-red-500/30 to-orange-600/40'
+    gradient: 'from-teal-600/80 to-teal-800/90 border-teal-500/60',
+    component: RecoveryCoach,
+    isPremium: true
+  },
+  {
+    id: 'habit-tracker',
+    title: 'Habit Tracker',
+    description: 'Build healthy habits with AI-powered tracking and insights',
+    icon: CheckCircle,
+    gradient: 'from-emerald-600/80 to-emerald-800/90 border-emerald-500/60',
+    component: HabitTracker,
+    isPremium: false
+  },
+  {
+    id: 'physique-ai',
+    title: 'Physique AI',
+    description: 'AI-powered physique analysis and progress tracking',
+    icon: Camera,
+    gradient: 'from-slate-600/80 to-indigo-800/90 border-slate-500/60',
+    component: ProgressAI,
+    isPremium: true
   }
 ];
-
-export const getModulesByCategory = () => {
-  const categories = aiModules.reduce((acc, module) => {
-    if (!acc[module.category]) {
-      acc[module.category] = [];
-    }
-    acc[module.category].push(module);
-    return acc;
-  }, {} as Record<string, AIModule[]>);
-  
-  return categories;
-};

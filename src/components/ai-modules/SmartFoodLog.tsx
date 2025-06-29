@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, Trash2, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -66,6 +66,18 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [portionSize, setPortionSize] = useState('100');
+  
+  // Manual food entry states
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualFood, setManualFood] = useState({
+    name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
+    portion: '100'
+  });
 
   useEffect(() => {
     if (user) {
@@ -132,6 +144,64 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       });
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const addManualFood = async () => {
+    if (!user || !manualFood.name || !manualFood.calories) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please enter at least food name and calories.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const portionMultiplier = parseFloat(manualFood.portion) / 100;
+
+      const { data, error } = await supabase
+        .from('food_log_entries')
+        .insert({
+          user_id: user.id,
+          food_name: `✏️ ${manualFood.name}`,
+          portion_size: `${manualFood.portion}g`,
+          meal_type: mealType,
+          logged_date: selectedDate,
+          calories: Math.round(parseFloat(manualFood.calories) * portionMultiplier),
+          protein: manualFood.protein ? Math.round(parseFloat(manualFood.protein) * portionMultiplier * 10) / 10 : 0,
+          carbs: manualFood.carbs ? Math.round(parseFloat(manualFood.carbs) * portionMultiplier * 10) / 10 : 0,
+          fat: manualFood.fat ? Math.round(parseFloat(manualFood.fat) * portionMultiplier * 10) / 10 : 0,
+          fiber: manualFood.fiber ? Math.round(parseFloat(manualFood.fiber) * portionMultiplier * 10) / 10 : 0
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setFoodEntries(prev => [...prev, data]);
+      setManualFood({
+        name: '',
+        calories: '',
+        protein: '',
+        carbs: '',
+        fat: '',
+        fiber: '',
+        portion: '100'
+      });
+      setShowManualEntry(false);
+      
+      toast({
+        title: 'Manual Food Added! ✏️',
+        description: `${manualFood.name} added to your log.`
+      });
+    } catch (error) {
+      console.error('Error adding manual food:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add manual food entry.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -296,9 +366,9 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                   <Database className="w-5 h-5 text-orange-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-white text-xl">USDA Food Database</CardTitle>
+                  <CardTitle className="text-white text-xl">Food Database & Manual Entry</CardTitle>
                   <CardDescription className="text-orange-200/80">
-                    Search official USDA nutrition data
+                    Search USDA data or add your own foods
                   </CardDescription>
                 </div>
               </div>
@@ -319,43 +389,201 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                 />
               </div>
 
-              {/* USDA Search */}
-              <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
-                <h3 className="text-lg font-semibold text-orange-200 flex items-center">
-                  <Search className="w-5 h-5 mr-2" />
-                  USDA Database Search
-                </h3>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <Label className="text-orange-200">Search Food</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="e.g., apple, chicken breast, rice"
-                        className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
-                        onKeyPress={(e) => e.key === 'Enter' && searchUSDADatabase(searchQuery)}
-                      />
-                      <Button
-                        onClick={() => searchUSDADatabase(searchQuery)}
-                        disabled={isSearching}
-                        className="bg-orange-600 hover:bg-orange-700"
-                      >
-                        {isSearching ? '...' : 'Search'}
-                      </Button>
+              {/* Tab Selection */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowManualEntry(false)}
+                  variant={!showManualEntry ? "default" : "outline"}
+                  className={!showManualEntry ? "bg-orange-600 hover:bg-orange-700" : "border-orange-500/30 text-orange-200 hover:bg-orange-900/30"}
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Search USDA
+                </Button>
+                <Button
+                  onClick={() => setShowManualEntry(true)}
+                  variant={showManualEntry ? "default" : "outline"}
+                  className={showManualEntry ? "bg-orange-600 hover:bg-orange-700" : "border-orange-500/30 text-orange-200 hover:bg-orange-900/30"}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Manual Entry
+                </Button>
+              </div>
+
+              {!showManualEntry ? (
+                <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
+                  <h3 className="text-lg font-semibold text-orange-200 flex items-center">
+                    <Search className="w-5 h-5 mr-2" />
+                    USDA Database Search
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Label className="text-orange-200">Search Food</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="e.g., apple, chicken breast, rice"
+                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                          onKeyPress={(e) => e.key === 'Enter' && searchUSDADatabase(searchQuery)}
+                        />
+                        <Button
+                          onClick={() => searchUSDADatabase(searchQuery)}
+                          disabled={isSearching}
+                          className="bg-orange-600 hover:bg-orange-700"
+                        >
+                          {isSearching ? '...' : 'Search'}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-orange-200">Portion (grams)</Label>
+                        <Input
+                          type="number"
+                          value={portionSize}
+                          onChange={(e) => setPortionSize(e.target.value)}
+                          className="bg-orange-800/50 border-orange-500/30 text-white"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-orange-200">Meal Type</Label>
+                        <Select value={mealType} onValueChange={(value: any) => setMealType(value)}>
+                          <SelectTrigger className="bg-orange-800/50 border-orange-500/30 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-orange-800 border-orange-500/30">
+                            <SelectItem value="breakfast">🌅 Breakfast</SelectItem>
+                            <SelectItem value="lunch">☀️ Lunch</SelectItem>
+                            <SelectItem value="dinner">🌙 Dinner</SelectItem>
+                            <SelectItem value="snack">🥨 Snack</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Search Results */}
+                  {searchResults.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-orange-200">USDA Results</Label>
+                      {searchResults.map((item) => (
+                        <div key={item.fdcId} className="p-3 bg-orange-800/30 rounded-lg border border-orange-500/20">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium text-white">{item.description}</div>
+                              <div className="text-sm text-orange-300">{item.dataType}</div>
+                              <div className="text-xs text-orange-400 mt-1">
+                                Per 100g: {item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0} cal
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => addFoodFromUSDA(item)}
+                              size="sm"
+                              className="bg-orange-600 hover:bg-orange-700"
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
+                  <h3 className="text-lg font-semibold text-orange-200 flex items-center">
+                    <Edit className="w-5 h-5 mr-2" />
+                    Manual Food Entry
+                  </h3>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <Label className="text-orange-200">Portion (grams)</Label>
+                      <Label className="text-orange-200">Food Name *</Label>
                       <Input
-                        type="number"
-                        value={portionSize}
-                        onChange={(e) => setPortionSize(e.target.value)}
-                        className="bg-orange-800/50 border-orange-500/30 text-white"
+                        value={manualFood.name}
+                        onChange={(e) => setManualFood(prev => ({...prev, name: e.target.value}))}
+                        placeholder="e.g., Homemade Pizza"
+                        className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
                       />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-orange-200">Portion (grams)</Label>
+                        <Input
+                          type="number"
+                          value={manualFood.portion}
+                          onChange={(e) => setManualFood(prev => ({...prev, portion: e.target.value}))}
+                          className="bg-orange-800/50 border-orange-500/30 text-white"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-orange-200">Calories (per 100g) *</Label>
+                        <Input
+                          type="number"
+                          value={manualFood.calories}
+                          onChange={(e) => setManualFood(prev => ({...prev, calories: e.target.value}))}
+                          placeholder="250"
+                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-orange-200">Protein (g per 100g)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={manualFood.protein}
+                          onChange={(e) => setManualFood(prev => ({...prev, protein: e.target.value}))}
+                          placeholder="12.5"
+                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-orange-200">Carbs (g per 100g)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={manualFood.carbs}
+                          onChange={(e) => setManualFood(prev => ({...prev, carbs: e.target.value}))}
+                          placeholder="30.2"
+                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-orange-200">Fat (g per 100g)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={manualFood.fat}
+                          onChange={(e) => setManualFood(prev => ({...prev, fat: e.target.value}))}
+                          placeholder="8.5"
+                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-orange-200">Fiber (g per 100g)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={manualFood.fiber}
+                          onChange={(e) => setManualFood(prev => ({...prev, fiber: e.target.value}))}
+                          placeholder="2.1"
+                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                        />
+                      </div>
                     </div>
                     
                     <div>
@@ -372,37 +600,17 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    <Button
+                      onClick={addManualFood}
+                      className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Manual Food
+                    </Button>
                   </div>
                 </div>
-
-                {/* Search Results */}
-                {searchResults.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-orange-200">USDA Results</Label>
-                    {searchResults.map((item) => (
-                      <div key={item.fdcId} className="p-3 bg-orange-800/30 rounded-lg border border-orange-500/20">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium text-white">{item.description}</div>
-                            <div className="text-sm text-orange-300">{item.dataType}</div>
-                            <div className="text-xs text-orange-400 mt-1">
-                              Per 100g: {item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0} cal
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => addFoodFromUSDA(item)}
-                            size="sm"
-                            className="bg-orange-600 hover:bg-orange-700"
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Photo Analysis */}
               <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
@@ -498,7 +706,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                 <div className="text-center py-8 text-orange-300/70">
                   <Utensils className="w-12 h-12 mx-auto mb-3 text-orange-400/50" />
                   <p>No food entries for this date yet.</p>
-                  <p className="text-sm mt-1">Search USDA database or upload a photo!</p>
+                  <p className="text-sm mt-1">Search USDA database, add manually, or upload a photo!</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -520,6 +728,11 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                             {entry.food_name.includes('🥗') && (
                               <Badge variant="outline" className="text-xs border-green-400/30 text-green-300 bg-green-500/10">
                                 USDA Database
+                              </Badge>
+                            )}
+                            {entry.food_name.includes('✏️') && (
+                              <Badge variant="outline" className="text-xs border-blue-400/30 text-blue-300 bg-blue-500/10">
+                                Manual Entry
                               </Badge>
                             )}
                           </div>

@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LowDataToggle } from '@/components/ui/low-data-toggle';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import NotificationCenter from '@/components/NotificationCenter';
 import Logo from '@/components/ui/logo';
 
@@ -93,33 +93,9 @@ const DashboardHeader = memo(() => {
 
       {/* Notification Center Sheet */}
       <Sheet open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md bg-black/95 backdrop-blur-md border-l border-gray-800/50">
-          <SheetHeader>
-            <div className="flex items-center justify-between">
-              <SheetTitle className="text-white flex items-center">
-                <Bell className="w-5 h-5 mr-2 text-orange-400" />
-                Notifications
-              </SheetTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-gray-400 hover:text-white"
-                onClick={() => setIsNotificationOpen(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </SheetHeader>
-          <div className="mt-6">
-            <NotificationCenter />
-            <div className="mt-6 pt-4 border-t border-gray-800/50">
-              <Button
-                onClick={() => setIsNotificationOpen(false)}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-              >
-                Back to Dashboard
-              </Button>
-            </div>
+        <SheetContent side="right" className="w-full sm:max-w-4xl bg-black/95 backdrop-blur-md border-l border-gray-800/50 p-0">
+          <div className="h-full">
+            <NotificationCenter onBack={() => setIsNotificationOpen(false)} />
           </div>
         </SheetContent>
       </Sheet>

@@ -3,10 +3,10 @@ import React, { Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { AppBackground } from '@/components/ui/app-background';
+import AvailableAchievements from '@/components/homepage/AvailableAchievements';
 
 // Lazy load components
 const Dashboard = React.lazy(() => import('@/components/Dashboard'));
-const LandingPage = React.lazy(() => import('@/components/homepage/LandingPage'));
 
 // Create a simple landing page component with available achievements
 const LandingPage = () => {

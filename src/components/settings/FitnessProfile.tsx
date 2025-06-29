@@ -1,51 +1,95 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Dumbbell, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-interface FitnessProfileProps {
-  profile: {
-    experience: string;
-    activity: string;
-    goal: string;
+const FitnessProfile = () => {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState({
+    experience: '',
+    activity: '',
+    goal: ''
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('experience, activity, goal')
+        .eq('id', user?.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error);
+      } else if (data) {
+        setProfile({
+          experience: data.experience || '',
+          activity: data.activity || '',
+          goal: data.goal || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error in loadProfile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-  onInputChange: (field: string, value: string) => Promise<void>;
-}
 
-const FitnessProfile: React.FC<FitnessProfileProps> = ({
-  profile,
-  onInputChange
-}) => {
-  const [localProfile, setLocalProfile] = useState(profile);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleLocalChange = (field: string, value: string) => {
-    setLocalProfile(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: string, value: string) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
+    if (!user) return;
+    
+    setSaving(true);
     try {
-      // Save all changes
-      for (const [field, value] of Object.entries(localProfile)) {
-        if (value !== profile[field as keyof typeof profile]) {
-          await onInputChange(field, value);
-        }
-      }
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email || '',
+          experience: profile.experience || null,
+          activity: profile.activity || null,
+          goal: profile.goal || null
+        });
+
+      if (error) throw error;
       toast.success('Fitness profile updated successfully');
     } catch (error) {
       console.error('Error saving fitness profile:', error);
       toast.error('Failed to save fitness profile');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  const hasChanges = JSON.stringify(localProfile) !== JSON.stringify(profile);
+  if (loading) {
+    return (
+      <Card className="bg-gray-900/40 border-gray-700/50">
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-700 rounded w-1/3"></div>
+            <div className="h-20 bg-gray-700 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
@@ -62,7 +106,7 @@ const FitnessProfile: React.FC<FitnessProfileProps> = ({
         {/* Experience Level */}
         <div className="space-y-2">
           <Label htmlFor="experience" className="text-white">Training Experience</Label>
-          <Select value={localProfile.experience} onValueChange={(value) => handleLocalChange('experience', value)}>
+          <Select value={profile.experience} onValueChange={(value) => handleInputChange('experience', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select your training experience" />
             </SelectTrigger>
@@ -77,7 +121,7 @@ const FitnessProfile: React.FC<FitnessProfileProps> = ({
         {/* Activity Level */}
         <div className="space-y-2">
           <Label htmlFor="activity" className="text-white">Activity Level</Label>
-          <Select value={localProfile.activity} onValueChange={(value) => handleLocalChange('activity', value)}>
+          <Select value={profile.activity} onValueChange={(value) => handleInputChange('activity', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select your activity level" />
             </SelectTrigger>
@@ -94,29 +138,27 @@ const FitnessProfile: React.FC<FitnessProfileProps> = ({
         {/* Primary Goal */}
         <div className="space-y-2">
           <Label htmlFor="goal" className="text-white">Primary Fitness Goal</Label>
-          <Select value={localProfile.goal} onValueChange={(value) => handleLocalChange('goal', value)}>
+          <Select value={profile.goal} onValueChange={(value) => handleInputChange('goal', value)}>
             <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
               <SelectValue placeholder="Select your primary goal" />
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
               <SelectItem value="cut">Cut - Lose fat while preserving muscle mass</SelectItem>
               <SelectItem value="bulk">Bulk - Gain muscle mass with controlled weight gain</SelectItem>
-              <SelectItem value="maintain">Maintain - Keep current weight and body composition</SelectItem>
+              <SelectItem value="maintenance">Maintenance - Keep current weight and body composition</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Save Button */}
-        {hasChanges && (
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        )}
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {saving ? 'Saving...' : 'Save Changes'}
+        </Button>
       </CardContent>
     </Card>
   );

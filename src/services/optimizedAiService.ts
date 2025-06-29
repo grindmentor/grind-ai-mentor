@@ -32,7 +32,7 @@ class OptimizedAIService {
 
   // Debounced request to prevent duplicate calls
   private debouncedRequest = debounce(
-    (prompt: string, options: OptimizedAIOptions, resolve: (value: string) => void, reject: (reason: any) => void) => {
+    (prompt: string, options: OptimizedAIOptions, resolve: Function, reject: Function) => {
       this.processRequest(prompt, options).then(resolve).catch(reject);
     },
     this.DEBOUNCE_DELAY,
@@ -175,11 +175,6 @@ class OptimizedAIService {
 
     // Process high priority requests immediately
     return this.processRequest(prompt, options);
-  }
-
-  // Add the missing getCoachingAdvice method for backward compatibility
-  async getCoachingAdvice(prompt: string, options: OptimizedAIOptions = {}): Promise<string> {
-    return this.getOptimizedAIResponse(prompt, options);
   }
 
   // Batch processing for multiple requests

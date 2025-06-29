@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, Trophy, Calendar, Plus, TrendingUp, Weight, Flame, Activity } from 'lucide-react';
+import { Target, Trophy, Calendar, Plus, TrendingUp, Weight, Flame, Activity, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +41,7 @@ const RealGoalsAchievements = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [activeTab, setActiveTab] = useState<'goals' | 'achievements'>('goals');
 
   useEffect(() => {
@@ -84,6 +85,31 @@ const RealGoalsAchievements = () => {
   const handleGoalCreated = () => {
     loadGoalsAndAchievements();
     setShowGoalModal(false);
+    setEditingGoal(null);
+  };
+
+  const handleDeleteGoal = async (goalId: string) => {
+    if (!confirm('Are you sure you want to delete this goal?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_goals')
+        .delete()
+        .eq('id', goalId);
+
+      if (error) throw error;
+
+      setGoals(prev => prev.filter(goal => goal.id !== goalId));
+      toast.success('Goal deleted successfully');
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      toast.error('Failed to delete goal');
+    }
+  };
+
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setShowGoalModal(true);
   };
 
   const getProgressPercentage = (current: number, target: number) => {
@@ -94,7 +120,7 @@ const RealGoalsAchievements = () => {
     switch (category.toLowerCase()) {
       case 'weight': return Weight;
       case 'strength': return TrendingUp;
-      case 'cardio': return Activity;
+      case 'cardio': case 'training': return Activity;
       case 'nutrition': return Flame;
       default: return Target;
     }
@@ -104,7 +130,7 @@ const RealGoalsAchievements = () => {
     switch (category.toLowerCase()) {
       case 'weight': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'strength': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'cardio': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'cardio': case 'training': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'nutrition': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       default: return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
     }
@@ -169,7 +195,10 @@ const RealGoalsAchievements = () => {
               <div className="flex justify-between items-center">
                 <h3 className="text-white font-medium">Active Goals</h3>
                 <Button
-                  onClick={() => setShowGoalModal(true)}
+                  onClick={() => {
+                    setEditingGoal(null);
+                    setShowGoalModal(true);
+                  }}
                   size="sm"
                   className="bg-orange-500 hover:bg-orange-600"
                 >
@@ -183,7 +212,10 @@ const RealGoalsAchievements = () => {
                   <Target className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400 mb-4">No goals set yet</p>
                   <Button
-                    onClick={() => setShowGoalModal(true)}
+                    onClick={() => {
+                      setEditingGoal(null);
+                      setShowGoalModal(true);
+                    }}
                     className="bg-orange-500 hover:bg-orange-600"
                   >
                     Create Your First Goal
@@ -196,18 +228,36 @@ const RealGoalsAchievements = () => {
                     return (
                       <div key={goal.id} className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-3 flex-1">
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getCategoryColor(goal.category).split(' ')[0]}`}>
                               <IconComponent className="w-5 h-5" />
                             </div>
-                            <div>
+                            <div className="flex-1">
                               <h4 className="text-white font-medium">{goal.title}</h4>
                               <p className="text-gray-400 text-sm">{formatGoalDescription(goal)}</p>
                             </div>
                           </div>
-                          <Badge className={getCategoryColor(goal.category)}>
-                            {goal.category}
-                          </Badge>
+                          <div className="flex items-center space-x-2">
+                            <Badge className={getCategoryColor(goal.category)}>
+                              {goal.category}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditGoal(goal)}
+                              className="text-gray-400 hover:text-white p-1"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteGoal(goal.id)}
+                              className="text-gray-400 hover:text-red-400 p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                         
                         <div className="space-y-2">
@@ -288,8 +338,12 @@ const RealGoalsAchievements = () => {
 
       <GoalCreationModal
         isOpen={showGoalModal}
-        onClose={() => setShowGoalModal(false)}
+        onClose={() => {
+          setShowGoalModal(false);
+          setEditingGoal(null);
+        }}
         onGoalCreated={handleGoalCreated}
+        editingGoal={editingGoal}
       />
     </>
   );

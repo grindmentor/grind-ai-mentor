@@ -177,10 +177,9 @@ class OptimizedAIService {
     return this.processRequest(prompt, options);
   }
 
-  // Add the missing getCoachingAdvice method
+  // Add the missing getCoachingAdvice method for backward compatibility
   async getCoachingAdvice(prompt: string, options: OptimizedAIOptions = {}): Promise<string> {
-    const coachingPrompt = `As a knowledgeable fitness coach, provide helpful advice for: ${prompt}`;
-    return this.getOptimizedAIResponse(coachingPrompt, options);
+    return this.getOptimizedAIResponse(prompt, options);
   }
 
   // Batch processing for multiple requests

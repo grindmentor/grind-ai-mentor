@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,6 +151,12 @@ const Notifications = () => {
       title: 'Hydration Reminders',
       description: 'Get reminded to drink water every 2-4 hours',
       category: 'Health'
+    },
+    {
+      id: 'workoutReminders',
+      title: 'Workout Reminders',
+      description: 'Scheduled workout notifications and pre-workout alerts',
+      category: 'Training'
     },
     {
       id: 'achievementAlerts',

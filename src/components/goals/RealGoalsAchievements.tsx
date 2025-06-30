@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,8 +124,22 @@ const RealGoalsAchievements = () => {
     setShowGoalModal(true);
   };
 
-  const getProgressPercentage = (current: number, target: number) => {
-    return Math.min((current / target) * 100, 100);
+  const getProgressPercentage = (current: number, target: number, goalTitle: string) => {
+    // Check if this is a "downward" goal (lower is better)
+    const lowerIsBetter = goalTitle.toLowerCase().includes('run') && goalTitle.toLowerCase().includes('minute') ||
+                         goalTitle.toLowerCase().includes('time') ||
+                         goalTitle.toLowerCase().includes('body fat') ||
+                         goalTitle.toLowerCase().includes('weight') && goalTitle.toLowerCase().includes('lose');
+    
+    if (lowerIsBetter) {
+      // For downward goals, if current is at or below target, it's 100%
+      if (current <= target) return 100;
+      // Otherwise calculate how close we are (inverted)
+      return Math.max(0, (1 - (current - target) / target) * 100);
+    } else {
+      // Normal upward progress
+      return Math.min((current / target) * 100, 100);
+    }
   };
 
   const getCategoryIcon = (category: string) => {
@@ -199,12 +212,14 @@ const RealGoalsAchievements = () => {
               <Target className="w-5 h-5 mr-2 text-orange-400" />
               Goals & Achievements
             </CardTitle>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto">
               <Button
                 variant={activeTab === 'goals' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('goals')}
-                className={activeTab === 'goals' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'}
+                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 ${
+                  activeTab === 'goals' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'
+                }`}
               >
                 Goals ({goals.length})
               </Button>
@@ -212,7 +227,9 @@ const RealGoalsAchievements = () => {
                 variant={activeTab === 'achievements' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('achievements')}
-                className={activeTab === 'achievements' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'}
+                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 ${
+                  activeTab === 'achievements' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'
+                }`}
               >
                 Achievements ({achievements.length})
               </Button>
@@ -223,7 +240,7 @@ const RealGoalsAchievements = () => {
         <CardContent className="space-y-4">
           {activeTab === 'goals' && (
             <>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <h3 className="text-white font-medium">Active Goals</h3>
                 <Button
                   onClick={() => {
@@ -231,9 +248,9 @@ const RealGoalsAchievements = () => {
                     setShowGoalModal(true);
                   }}
                   size="sm"
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 mobile-button-enhanced"
                 >
-                  <Plus className="w-4 h-4 mr-1" />
+                  <Plus className="w-4 h-4 mr-2" />
                   Add Goal
                 </Button>
               </div>
@@ -247,7 +264,7 @@ const RealGoalsAchievements = () => {
                       setEditingGoal(null);
                       setShowGoalModal(true);
                     }}
-                    className="bg-orange-500 hover:bg-orange-600"
+                    className="bg-orange-500 hover:bg-orange-600 mobile-button-enhanced"
                   >
                     Create Your First Goal
                   </Button>
@@ -257,19 +274,21 @@ const RealGoalsAchievements = () => {
                   {goals.map((goal) => {
                     const IconComponent = getCategoryIcon(goal.category);
                     const GoalTypeIcon = getGoalTypeIcon(goal.goal_type);
+                    const progressPercentage = getProgressPercentage(goal.current_value, goal.target_value, goal.title);
+                    
                     return (
-                      <div key={goal.id} className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
+                      <div key={goal.id} className="p-3 sm:p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center space-x-3 flex-1">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getCategoryColor(goal.category).split(' ')[0]}`}>
-                              <IconComponent className="w-5 h-5" />
+                          <div className="flex items-center space-x-3 flex-1 min-w-0">
+                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${getCategoryColor(goal.category).split(' ')[0]}`}>
+                              <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-1">
-                                <h4 className="text-white font-medium">{goal.title}</h4>
-                                <GoalTypeIcon className="w-4 h-4 text-gray-400" />
+                                <h4 className="text-white font-medium text-sm sm:text-base truncate">{goal.title}</h4>
+                                <GoalTypeIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
                               </div>
-                              <p className="text-gray-400 text-sm">{formatGoalDescription(goal)}</p>
+                              <p className="text-gray-400 text-xs sm:text-sm truncate">{formatGoalDescription(goal)}</p>
                               <div className="flex items-center space-x-2 mt-1">
                                 <span className="text-xs text-gray-500">
                                   {getFrequencyText(goal.frequency)}
@@ -282,40 +301,40 @@ const RealGoalsAchievements = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={getCategoryColor(goal.category)}>
+                          <div className="flex items-center space-x-1 flex-shrink-0">
+                            <Badge className={`${getCategoryColor(goal.category)} text-xs`}>
                               {goal.category}
                             </Badge>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleEditGoal(goal)}
-                              className="text-gray-400 hover:text-white p-1"
+                              className="text-gray-400 hover:text-white p-1 w-8 h-8"
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-3 h-3" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDeleteGoal(goal.id)}
-                              className="text-gray-400 hover:text-red-400 p-1"
+                              className="text-gray-400 hover:text-red-400 p-1 w-8 h-8"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
                         </div>
                         
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-400">
+                            <span className="text-gray-400 text-xs sm:text-sm">
                               {goal.current_value} / {goal.target_value} {goal.unit}
                             </span>
-                            <span className="text-orange-400">
-                              {getProgressPercentage(goal.current_value, goal.target_value).toFixed(0)}%
+                            <span className="text-orange-400 text-xs sm:text-sm">
+                              {progressPercentage.toFixed(0)}%
                             </span>
                           </div>
                           <Progress 
-                            value={getProgressPercentage(goal.current_value, goal.target_value)} 
+                            value={progressPercentage} 
                             className="h-2"
                           />
                         </div>
@@ -325,11 +344,11 @@ const RealGoalsAchievements = () => {
                             <Calendar className="w-3 h-3 mr-1" />
                             Due: {new Date(goal.deadline).toLocaleDateString()}
                           </span>
-                          <Badge variant="outline" className={
+                          <Badge variant="outline" className={`text-xs ${
                             goal.status === 'completed' ? 'text-green-400 border-green-500/50' :
                             goal.status === 'paused' ? 'text-yellow-400 border-yellow-500/50' :
                             'text-blue-400 border-blue-500/50'
-                          }>
+                          }`}>
                             {goal.status}
                           </Badge>
                         </div>

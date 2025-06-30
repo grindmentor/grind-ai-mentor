@@ -12,6 +12,7 @@ import { MobileHeader } from '@/components/MobileHeader';
 import { Badge } from '@/components/ui/badge';
 import FoodEntryModal from './FoodEntryModal';
 import { Trash2 } from 'lucide-react';
+import FooterLinks from '@/components/dashboard/FooterLinks';
 
 interface FoodEntry {
   id: string;
@@ -55,6 +56,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [portionSize, setPortionSize] = useState('100');
   const [showCustomFoodModal, setShowCustomFoodModal] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [showFallbackModal, setShowFallbackModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -89,85 +92,85 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const getFoodNutritionData = (foodName: string) => {
     const lowerName = foodName.toLowerCase();
     
-    // Comprehensive nutrition database
+    // Comprehensive nutrition database with accurate USDA values
     const nutritionDatabase: Record<string, { calories: number; protein: number; carbs: number; fat: number; fiber: number }> = {
-      // Fruits
-      'apple': { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2.4 },
-      'banana': { calories: 89, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6 },
-      'orange': { calories: 47, protein: 0.9, carbs: 12, fat: 0.1, fiber: 2.4 },
-      'strawberry': { calories: 32, protein: 0.7, carbs: 8, fat: 0.3, fiber: 2.0 },
-      'blueberry': { calories: 57, protein: 0.7, carbs: 14, fat: 0.3, fiber: 2.4 },
+      // Fruits (per 100g)
+      'apple': { calories: 52, protein: 0.3, carbs: 13.8, fat: 0.2, fiber: 2.4 },
+      'banana': { calories: 89, protein: 1.1, carbs: 22.8, fat: 0.3, fiber: 2.6 },
+      'orange': { calories: 47, protein: 0.9, carbs: 11.8, fat: 0.1, fiber: 2.4 },
+      'strawberry': { calories: 32, protein: 0.7, carbs: 7.7, fat: 0.3, fiber: 2.0 },
+      'blueberry': { calories: 57, protein: 0.7, carbs: 14.5, fat: 0.3, fiber: 2.4 },
+      'grapes': { calories: 62, protein: 0.6, carbs: 16.0, fat: 0.2, fiber: 0.9 },
       
-      // Vegetables
-      'broccoli': { calories: 34, protein: 2.8, carbs: 7, fat: 0.4, fiber: 2.6 },
+      // Vegetables (per 100g)
+      'broccoli': { calories: 34, protein: 2.8, carbs: 6.6, fat: 0.4, fiber: 2.6 },
       'spinach': { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2 },
-      'carrot': { calories: 41, protein: 0.9, carbs: 10, fat: 0.2, fiber: 2.8 },
+      'carrot': { calories: 41, protein: 0.9, carbs: 9.6, fat: 0.2, fiber: 2.8 },
       'tomato': { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, fiber: 1.2 },
-      'cucumber': { calories: 16, protein: 0.7, carbs: 4, fat: 0.1, fiber: 0.5 },
+      'cucumber': { calories: 16, protein: 0.7, carbs: 3.6, fat: 0.1, fiber: 0.5 },
+      'lettuce': { calories: 15, protein: 1.4, carbs: 2.9, fat: 0.2, fiber: 1.3 },
       
-      // Proteins
-      'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0 },
-      'salmon': { calories: 208, protein: 20, carbs: 0, fat: 12, fiber: 0 },
-      'tuna': { calories: 144, protein: 30, carbs: 0, fat: 1, fiber: 0 },
-      'egg': { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0 },
-      'beef': { calories: 250, protein: 26, carbs: 0, fat: 15, fiber: 0 },
-      'turkey breast': { calories: 135, protein: 30, carbs: 0, fat: 1, fiber: 0 },
+      // Proteins (per 100g)
+      'chicken breast': { calories: 165, protein: 31.0, carbs: 0, fat: 3.6, fiber: 0 },
+      'salmon': { calories: 208, protein: 25.4, carbs: 0, fat: 12.4, fiber: 0 },
+      'tuna': { calories: 144, protein: 30.0, carbs: 0, fat: 1.0, fiber: 0 },
+      'egg': { calories: 155, protein: 13.0, carbs: 1.1, fat: 11.0, fiber: 0 },
+      'ground beef': { calories: 250, protein: 26.0, carbs: 0, fat: 15.0, fiber: 0 },
+      'turkey breast': { calories: 135, protein: 30.0, carbs: 0, fat: 1.0, fiber: 0 },
       
-      // Grains & Carbs
-      'rice': { calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4 },
-      'brown rice': { calories: 111, protein: 2.6, carbs: 23, fat: 0.9, fiber: 1.8 },
-      'quinoa': { calories: 120, protein: 4.4, carbs: 22, fat: 1.9, fiber: 2.8 },
-      'oats': { calories: 389, protein: 17, carbs: 66, fat: 7, fiber: 11 },
-      'bread': { calories: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7 },
-      'pasta': { calories: 131, protein: 5, carbs: 25, fat: 1.1, fiber: 1.8 },
+      // Grains & Carbs (per 100g cooked)
+      'white rice': { calories: 130, protein: 2.7, carbs: 28.0, fat: 0.3, fiber: 0.4 },
+      'brown rice': { calories: 111, protein: 2.6, carbs: 23.0, fat: 0.9, fiber: 1.8 },
+      'quinoa': { calories: 120, protein: 4.4, carbs: 22.0, fat: 1.9, fiber: 2.8 },
+      'oats': { calories: 68, protein: 2.4, carbs: 12.0, fat: 1.4, fiber: 1.7 },
+      'whole wheat bread': { calories: 247, protein: 13.0, carbs: 41.0, fat: 4.2, fiber: 6.0 },
+      'pasta': { calories: 131, protein: 5.0, carbs: 25.0, fat: 1.1, fiber: 1.8 },
       
-      // Nuts & Seeds
-      'almonds': { calories: 579, protein: 21, carbs: 22, fat: 50, fiber: 12 },
-      'walnuts': { calories: 654, protein: 15, carbs: 14, fat: 65, fiber: 7 },
-      'peanuts': { calories: 567, protein: 26, carbs: 16, fat: 49, fiber: 8.5 },
+      // Nuts & Seeds (per 100g)
+      'almonds': { calories: 579, protein: 21.2, carbs: 21.6, fat: 49.9, fiber: 12.5 },
+      'walnuts': { calories: 654, protein: 15.2, carbs: 13.7, fat: 65.2, fiber: 6.7 },
+      'peanuts': { calories: 567, protein: 25.8, carbs: 16.1, fat: 49.2, fiber: 8.5 },
       
-      // Dairy
-      'milk': { calories: 42, protein: 3.4, carbs: 5, fat: 1, fiber: 0 },
-      'yogurt': { calories: 59, protein: 10, carbs: 3.6, fat: 0.4, fiber: 0 },
-      'cheese': { calories: 113, protein: 7, carbs: 1, fat: 9, fiber: 0 },
+      // Dairy (per 100g)
+      'whole milk': { calories: 61, protein: 3.2, carbs: 4.8, fat: 3.3, fiber: 0 },
+      'greek yogurt': { calories: 59, protein: 10.0, carbs: 3.6, fat: 0.4, fiber: 0 },
+      'cheddar cheese': { calories: 403, protein: 25.0, carbs: 1.3, fat: 33.0, fiber: 0 },
       
-      // Oils & Fats
+      // Oils & Fats (per 100g)
       'olive oil': { calories: 884, protein: 0, carbs: 0, fat: 100, fiber: 0 },
-      'avocado': { calories: 160, protein: 2, carbs: 9, fat: 15, fiber: 7 }
+      'avocado': { calories: 160, protein: 2.0, carbs: 8.5, fat: 14.7, fiber: 6.7 }
     };
 
-    // Find matching food
+    // Find exact match first
     const exactMatch = nutritionDatabase[lowerName];
     if (exactMatch) return exactMatch;
 
-    // Partial matching for similar foods
+    // Try partial matching for similar foods
     for (const [key, value] of Object.entries(nutritionDatabase)) {
       if (lowerName.includes(key) || key.includes(lowerName)) {
         return value;
       }
     }
 
-    // Default fallback with varied calories based on food type
-    const defaultCalories = lowerName.includes('oil') || lowerName.includes('butter') ? 800 :
-                          lowerName.includes('meat') || lowerName.includes('chicken') || lowerName.includes('beef') ? 200 :
-                          lowerName.includes('fruit') ? 50 :
-                          lowerName.includes('vegetable') ? 25 : 100;
-
-    return {
-      calories: defaultCalories,
-      protein: defaultCalories * 0.15,
-      carbs: defaultCalories * 0.20,
-      fat: defaultCalories * 0.10,
-      fiber: defaultCalories * 0.05
-    };
+    // Return null if no match found - this will trigger error handling
+    return null;
   };
 
   const searchUSDADatabase = async (query: string) => {
     if (!query.trim()) return;
     
     setIsSearching(true);
+    setSearchError(null);
+    
     try {
       const nutritionData = getFoodNutritionData(query);
+      
+      if (!nutritionData) {
+        setSearchError(`No accurate nutritional data found for "${query}". Please try a different search or add it as a custom food.`);
+        setSearchResults([]);
+        setShowFallbackModal(true);
+        return;
+      }
       
       // Create enhanced mock results with accurate nutrition data
       const mockResults: USDAFoodItem[] = [
@@ -186,18 +189,18 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       ];
 
       // Add variations if it's a common food
-      if (['chicken', 'rice', 'apple', 'broccoli'].some(food => query.toLowerCase().includes(food))) {
-        const variation = getFoodNutritionData(query + ' cooked');
+      if (['chicken', 'rice', 'apple', 'broccoli', 'salmon'].some(food => query.toLowerCase().includes(food))) {
+        const cookedMultiplier = query.toLowerCase().includes('rice') ? 0.77 : 1.1; // Rice loses weight when cooked
         mockResults.push({
           fdcId: Math.floor(Math.random() * 1000000),
           description: `${query.charAt(0).toUpperCase() + query.slice(1)} - Cooked`,
           dataType: 'Foundation Food',
           foodNutrients: [
-            { nutrientId: 1008, nutrientName: 'Energy', value: Math.round(variation.calories * 1.1), unitName: 'KCAL' },
-            { nutrientId: 1003, nutrientName: 'Protein', value: Math.round(variation.protein * 10) / 10, unitName: 'G' },
-            { nutrientId: 1005, nutrientName: 'Carbohydrate, by difference', value: Math.round(variation.carbs * 10) / 10, unitName: 'G' },
-            { nutrientId: 1004, nutrientName: 'Total lipid (fat)', value: Math.round(variation.fat * 10) / 10, unitName: 'G' },
-            { nutrientId: 1079, nutrientName: 'Fiber, total dietary', value: Math.round(variation.fiber * 10) / 10, unitName: 'G' }
+            { nutrientId: 1008, nutrientName: 'Energy', value: Math.round(nutritionData.calories * cookedMultiplier), unitName: 'KCAL' },
+            { nutrientId: 1003, nutrientName: 'Protein', value: Math.round(nutritionData.protein * cookedMultiplier * 10) / 10, unitName: 'G' },
+            { nutrientId: 1005, nutrientName: 'Carbohydrate, by difference', value: Math.round(nutritionData.carbs * cookedMultiplier * 10) / 10, unitName: 'G' },
+            { nutrientId: 1004, nutrientName: 'Total lipid (fat)', value: Math.round(nutritionData.fat * cookedMultiplier * 10) / 10, unitName: 'G' },
+            { nutrientId: 1079, nutrientName: 'Fiber, total dietary', value: Math.round(nutritionData.fiber * cookedMultiplier * 10) / 10, unitName: 'G' }
           ]
         });
       }
@@ -205,11 +208,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       setSearchResults(mockResults);
     } catch (error) {
       console.error('USDA search error:', error);
-      toast({
-        title: 'Search Error',
-        description: 'Failed to search USDA database.',
-        variant: 'destructive'
-      });
+      setSearchError('Failed to search food database. Please try again or add as custom food.');
+      setShowFallbackModal(true);
     } finally {
       setIsSearching(false);
     }
@@ -247,6 +247,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       setFoodEntries(prev => [...prev, newEntry]);
       setSearchQuery('');
       setSearchResults([]);
+      setSearchError(null);
+      setShowFallbackModal(false);
       
       toast({
         title: 'Food Added! 🥗',
@@ -413,12 +415,25 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                 />
               </div>
 
-              {/* USDA Search */}
+              {/* USDA Search with Error Handling */}
               <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
                 <h3 className="text-lg font-semibold text-orange-200 flex items-center">
                   <Search className="w-5 h-5 mr-2" />
                   USDA Database Search
                 </h3>
+                
+                {searchError && (
+                  <div className="p-3 bg-red-900/30 border border-red-500/30 rounded-lg">
+                    <p className="text-red-200 text-sm">{searchError}</p>
+                    <Button
+                      onClick={() => setShowCustomFoodModal(true)}
+                      size="sm"
+                      className="mt-2 bg-red-600 hover:bg-red-700"
+                    >
+                      Add as Custom Food
+                    </Button>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-1 gap-4">
                   <div>
@@ -441,72 +456,33 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-orange-200">Portion (grams)</Label>
-                      <Input
-                        type="number"
-                        value={portionSize}
-                        onChange={(e) => setPortionSize(e.target.value)}
-                        className="bg-orange-800/50 border-orange-500/30 text-white"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label className="text-orange-200">Meal Type</Label>
-                      <Select value={mealType} onValueChange={(value: any) => setMealType(value)}>
-                        <SelectTrigger className="bg-orange-800/50 border-orange-500/30 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-orange-800 border-orange-500/30">
-                          <SelectItem value="breakfast">🌅 Breakfast</SelectItem>
-                          <SelectItem value="lunch">☀️ Lunch</SelectItem>
-                          <SelectItem value="dinner">🌙 Dinner</SelectItem>
-                          <SelectItem value="snack">🥨 Snack</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Search Results */}
-                {searchResults.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-orange-200">USDA Results</Label>
-                    {searchResults.map((item) => (
-                      <div key={item.fdcId} className="p-3 bg-orange-800/30 rounded-lg border border-orange-500/20">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium text-white">{item.description}</div>
-                            <div className="text-sm text-orange-300">{item.dataType}</div>
-                            <div className="text-xs text-orange-400 mt-1">
-                              Per 100g: {item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0} cal, 
-                              {' '}{Math.round((item.foodNutrients.find(n => n.nutrientId === 1003)?.value || 0) * 10) / 10}g protein
+                  {searchResults.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-orange-200">USDA Results</Label>
+                      {searchResults.map((item) => (
+                        <div key={item.fdcId} className="p-3 bg-orange-800/30 rounded-lg border border-orange-500/20">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium text-white">{item.description}</div>
+                              <div className="text-sm text-orange-300">{item.dataType}</div>
+                              <div className="text-xs text-orange-400 mt-1">
+                                Per 100g: {item.foodNutrients.find(n => n.nutrientId === 1008)?.value || 0} cal, 
+                                {' '}{Math.round((item.foodNutrients.find(n => n.nutrientId === 1003)?.value || 0) * 10) / 10}g protein
+                              </div>
                             </div>
+                            <Button
+                              onClick={() => addFoodFromUSDA(item)}
+                              size="sm"
+                              className="bg-orange-600 hover:bg-orange-700"
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Add
+                            </Button>
                           </div>
-                          <Button
-                            onClick={() => addFoodFromUSDA(item)}
-                            size="sm"
-                            className="bg-orange-600 hover:bg-orange-700"
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add
-                          </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Custom Food Entry Button */}
-                <div className="pt-4 border-t border-orange-500/20">
-                  <Button
-                    onClick={() => setShowCustomFoodModal(true)}
-                    className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Custom Food
-                  </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -611,9 +587,9 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                   {foodEntries.map((entry) => (
                     <div key={entry.id} className="p-3 bg-orange-900/30 rounded-lg border border-orange-500/20 group hover:bg-orange-900/40 transition-colors">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-medium text-white">{entry.food_name}</div>
-                          <div className="text-sm text-orange-300">{entry.portion_size}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-white truncate">{entry.food_name}</div>
+                          <div className="text-sm text-orange-300 truncate">{entry.portion_size}</div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs border-orange-400/30 text-orange-300 bg-orange-500/10 capitalize">
                               {entry.meal_type}
@@ -635,9 +611,9 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {entry.calories && (
-                            <div className="text-right">
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {entry.calories !== undefined && (
+                            <div className="text-right min-w-[80px]">
                               <div className="text-orange-200 font-medium">{entry.calories} cal</div>
                               <div className="text-xs text-orange-300">
                                 P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
@@ -649,6 +625,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                             variant="ghost"
                             onClick={() => removeFoodEntry(entry.id)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            aria-label={`Remove ${entry.food_name}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -664,11 +641,19 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       </div>
 
       <FoodEntryModal
-        isOpen={showCustomFoodModal}
-        onClose={() => setShowCustomFoodModal(false)}
+        isOpen={showCustomFoodModal || showFallbackModal}
+        onClose={() => {
+          setShowCustomFoodModal(false);
+          setShowFallbackModal(false);
+          setSearchError(null);
+        }}
         onAddFood={addCustomFood}
         mealType={mealType}
+        initialFoodName={showFallbackModal ? searchQuery : ''}
       />
+
+      {/* Legal Footer */}
+      <FooterLinks />
     </div>
   );
 };

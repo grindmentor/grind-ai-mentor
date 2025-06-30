@@ -50,19 +50,16 @@ const DashboardHeader = memo(() => {
 
           {/* Right Side */}
           <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
-            {/* Logo on the right */}
-            <Logo size="sm" showText={false} className="flex-shrink-0" />
-            
-            {/* Module Library - Mobile */}
+            {/* Module Library - Mobile - ALWAYS VISIBLE */}
             {isMobile && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+                className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 onClick={() => navigate('/modules')}
                 aria-label="Module Library"
               >
-                <Library className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Library className="w-5 h-5" />
               </Button>
             )}
             
@@ -77,7 +74,7 @@ const DashboardHeader = memo(() => {
             <Button
               variant="ghost"
               size="sm"
-              className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+              className="mobile-nav-button relative p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Notifications"
               onClick={() => setIsNotificationOpen(true)}
             >
@@ -89,7 +86,7 @@ const DashboardHeader = memo(() => {
             <Button
               variant="ghost"
               size="sm"
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+              className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
               onClick={() => window.location.href = '/profile'}
               aria-label="Profile"
             >
@@ -100,24 +97,12 @@ const DashboardHeader = memo(() => {
             <Button
               variant="ghost"
               size="sm"
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+              className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
               onClick={() => window.location.href = '/settings'}
               aria-label="Settings"
             >
               <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
-
-            {/* Mobile Menu - only on very small screens */}
-            {isMobile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 sm:hidden"
-                aria-label="Menu"
-              >
-                <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Button>
-            )}
           </div>
         </div>
       </div>

@@ -19,6 +19,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
@@ -26,9 +27,29 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
 
+  const calculateAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
   const validateForm = () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword || !birthDate) {
       setError("Please fill in all required fields");
+      return false;
+    }
+    
+    // Age validation - must be 18 or older
+    const age = calculateAge(birthDate);
+    if (age < 18) {
+      setError("You must be 18 years or older to register for Myotopia. This is for safety and legal compliance.");
       return false;
     }
     
@@ -93,7 +114,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
             <Heart className="w-8 h-8 text-white" />
           </div>
         </div>
-        <CardTitle className="text-white text-2xl">Join GrindMentor</CardTitle>
+        <CardTitle className="text-white text-2xl">Join Myotopia</CardTitle>
         <CardDescription className="text-gray-400">
           Start your science-backed fitness journey today
         </CardDescription>
@@ -120,6 +141,23 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 className="bg-gray-800 border-gray-700 text-white focus:border-orange-500 transition-colors"
                 disabled={isLoading}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="birthDate" className="text-white">Date of Birth</Label>
+              <Input
+                id="birthDate"
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                required
+                className="bg-gray-800 border-gray-700 text-white focus:border-orange-500 transition-colors"
+                disabled={isLoading}
+                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+              />
+              <p className="text-xs text-gray-400">
+                You must be 18 years or older to use Myotopia
+              </p>
             </div>
             
             <div className="space-y-2">
@@ -168,7 +206,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                   I agree to the <a href="/terms" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Terms of Service</a>
                 </Label>
                 <p className="text-gray-400 text-xs">
-                  By agreeing, you accept our terms for using GrindMentor's fitness services.
+                  By agreeing, you accept our terms for using Myotopia's fitness services.
                 </p>
               </div>
             </div>
@@ -221,7 +259,20 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
               <div>
                 <p className="text-blue-400 text-sm font-medium mb-1">Important Medical Disclaimer</p>
                 <p className="text-blue-300 text-xs leading-relaxed">
-                  GrindMentor provides general fitness information only. Always consult qualified healthcare professionals before starting any fitness or nutrition program. Not intended as medical advice.
+                  Myotopia provides general fitness information only. Always consult qualified healthcare professionals before starting any fitness or nutrition program. Not intended as medical advice.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Age restriction notice */}
+          <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Shield className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-orange-400 text-sm font-medium mb-1">Age Requirement</p>
+                <p className="text-orange-300 text-xs leading-relaxed">
+                  You must be 18 years or older to create an account. This ensures compliance with data protection laws and safety guidelines for fitness programs.
                 </p>
               </div>
             </div>

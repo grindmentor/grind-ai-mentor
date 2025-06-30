@@ -20,13 +20,15 @@ import {
   ChevronRight,
   Trophy,
   Star,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ProgressMetrics {
   strength: number;
@@ -58,9 +60,14 @@ interface RecoveryData {
   recovery_entries: number;
 }
 
-const ProgressHub = () => {
+interface ProgressHubProps {
+  onBack?: () => void;
+}
+
+const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { userData } = useUserData();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
   const [metrics, setMetrics] = useState<ProgressMetrics>({
     strength: 0,
@@ -345,9 +352,21 @@ const ProgressHub = () => {
 
   return (
     <div className="p-4 space-y-6 bg-gradient-to-br from-black via-orange-900/5 to-orange-800/10 min-h-screen">
-      {/* Header */}
+      {/* Header with Back Button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          {/* Back Button - visible on desktop */}
+          {!isMobile && onBack && (
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors mr-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back
+            </Button>
+          )}
           <div className="w-12 h-12 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center border border-orange-500/30">
             <TrendingUp className="w-6 h-6 text-orange-400" />
           </div>

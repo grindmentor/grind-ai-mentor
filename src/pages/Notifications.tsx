@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +21,6 @@ const Notifications = () => {
   const [savingSettings, setSavingSettings] = useState(false);
   const [notificationSettings, setNotificationSettings] = useState({
     hydrationReminders: true,
-    workoutReminders: true,
     achievementAlerts: true,
     progressUpdates: false,
     nutritionTips: true,
@@ -46,8 +44,8 @@ const Notifications = () => {
       const mockNotifications = [
         {
           id: '1',
-          title: 'Workout Reminder',
-          message: 'Time for your leg day workout!',
+          title: 'Hydration Reminder',
+          message: 'Time to drink some water! Stay hydrated for optimal performance.',
           type: 'info',
           read: false,
           created_at: new Date().toISOString()
@@ -55,7 +53,7 @@ const Notifications = () => {
         {
           id: '2',
           title: 'Achievement Unlocked',
-          message: 'You completed 7 days in a row!',
+          message: 'You completed 7 days in a row! Keep up the great work!',
           type: 'success',
           read: true,
           created_at: new Date(Date.now() - 86400000).toISOString()
@@ -145,18 +143,13 @@ const Notifications = () => {
     }
   };
 
+  // Removed non-implemented features like workoutReminders
   const notificationOptions = [
     {
       id: 'hydrationReminders',
       title: 'Hydration Reminders',
       description: 'Get reminded to drink water every 2-4 hours',
       category: 'Health'
-    },
-    {
-      id: 'workoutReminders',
-      title: 'Workout Reminders',
-      description: 'Scheduled workout notifications and pre-workout alerts',
-      category: 'Training'
     },
     {
       id: 'achievementAlerts',

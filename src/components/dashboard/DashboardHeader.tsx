@@ -1,6 +1,6 @@
 
 import React, { memo, useState } from 'react';
-import { Bell, Settings, User, Menu, X } from 'lucide-react';
+import { Bell, Settings, User, Menu, X, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -9,9 +9,11 @@ import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import NotificationCenter from '@/components/NotificationCenter';
 import Logo from '@/components/ui/logo';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardHeader = memo(() => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { lowDataMode } = usePerformanceContext();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -30,10 +32,39 @@ const DashboardHeader = memo(() => {
             )}
           </div>
 
-          {/* Right Side Logo */}
+          {/* Center Navigation - Desktop Only */}
+          {!isMobile && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+                onClick={() => navigate('/modules')}
+                aria-label="Module Library"
+              >
+                <Library className="w-4 h-4 mr-2" />
+                Module Library
+              </Button>
+            </div>
+          )}
+
+          {/* Right Side */}
           <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
             {/* Logo on the right */}
             <Logo size="sm" showText={false} className="flex-shrink-0" />
+            
+            {/* Module Library - Mobile */}
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+                onClick={() => navigate('/modules')}
+                aria-label="Module Library"
+              >
+                <Library className="w-4 h-4 sm:w-5 sm:h-5" />
+              </Button>
+            )}
             
             {/* Low Data Toggle - only show if not in low data mode or on mobile */}
             {(!lowDataMode || !isMobile) && (

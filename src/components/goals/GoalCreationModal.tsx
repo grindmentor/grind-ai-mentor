@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Target, Weight, Activity, Flame, TrendingUp } from 'lucide-react';
+import { CalendarIcon, Target, Weight, Activity, Flame, TrendingUp, Clock, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
@@ -24,69 +24,110 @@ interface GoalCreationModalProps {
   editingGoal?: any;
 }
 
+// Enhanced stock goals with better categorization and goal types
 const stockGoals = [
+  // Weight Goals (Target-based)
   {
     id: 'weight-loss-5kg',
     title: 'Lose 5kg',
-    description: 'Achieve a sustainable weight loss of 5 kilograms',
+    description: 'Achieve sustainable weight loss',
     category: 'weight',
+    goal_type: 'target',
+    frequency: 'once',
     target_value: 5,
     unit: 'kg',
+    tracking_unit: 'weight',
     duration_weeks: 12
   },
   {
-    id: 'weight-loss-10kg',
-    title: 'Lose 10kg',
-    description: 'Achieve a sustainable weight loss of 10 kilograms',
+    id: 'weight-gain-3kg',
+    title: 'Gain 3kg',
+    description: 'Build muscle and gain healthy weight',
     category: 'weight',
-    target_value: 10,
+    goal_type: 'target',
+    frequency: 'once',
+    target_value: 3,
     unit: 'kg',
-    duration_weeks: 20
-  },
-  {
-    id: 'muscle-gain-2kg',
-    title: 'Gain 2kg Muscle',
-    description: 'Build lean muscle mass through consistent training',
-    category: 'weight',
-    target_value: 2,
-    unit: 'kg',
+    tracking_unit: 'weight',
     duration_weeks: 16
   },
-  {
-    id: 'weekly-workouts',
-    title: '4 Workouts Per Week',
-    description: 'Maintain consistent training with 4 weekly sessions',
-    category: 'training',
-    target_value: 4,
-    unit: 'workouts',
-    duration_weeks: 8
-  },
+  
+  // Daily Habit Goals
   {
     id: 'daily-steps',
     title: '10,000 Daily Steps',
-    description: 'Achieve 10,000 steps every day for better health',
+    description: 'Walk 10,000 steps every day',
     category: 'cardio',
+    goal_type: 'habit',
+    frequency: 'daily',
     target_value: 10000,
     unit: 'steps',
+    tracking_unit: 'steps',
     duration_weeks: 4
   },
+  {
+    id: 'daily-water',
+    title: 'Drink 3L Water Daily',
+    description: 'Stay hydrated with 3 liters per day',
+    category: 'nutrition',
+    goal_type: 'habit',
+    frequency: 'daily',
+    target_value: 3,
+    unit: 'liters',
+    tracking_unit: 'volume',
+    duration_weeks: 4
+  },
+  {
+    id: 'daily-protein',
+    title: 'Daily Protein Goal',
+    description: 'Meet your daily protein target',
+    category: 'nutrition',
+    goal_type: 'habit',
+    frequency: 'daily',
+    target_value: 150,
+    unit: 'grams',
+    tracking_unit: 'grams',
+    duration_weeks: 4
+  },
+
+  // Weekly Goals
+  {
+    id: 'weekly-workouts',
+    title: '4 Workouts Per Week',
+    description: 'Maintain consistent training schedule',
+    category: 'training',
+    goal_type: 'habit',
+    frequency: 'weekly',
+    target_value: 4,
+    unit: 'workouts',
+    tracking_unit: 'count',
+    duration_weeks: 8
+  },
+
+  // Performance Goals (Target-based)
   {
     id: 'strength-bench',
     title: 'Bench Press Body Weight',
-    description: 'Press your own body weight on the bench press',
+    description: 'Press your own body weight',
     category: 'strength',
+    goal_type: 'target',
+    frequency: 'once',
     target_value: 1,
     unit: 'x bodyweight',
+    tracking_unit: 'multiplier',
     duration_weeks: 24
   },
   {
-    id: 'protein-daily',
-    title: 'Daily Protein Goal',
-    description: 'Meet your daily protein target consistently',
-    category: 'nutrition',
-    target_value: 150,
-    unit: 'grams',
-    duration_weeks: 4
+    id: 'cardio-5k',
+    title: 'Run 5K in 25 Minutes',
+    description: 'Improve your 5K running time',
+    category: 'cardio',
+    goal_type: 'target',
+    frequency: 'once',
+    target_value: 25,
+    unit: 'minutes',
+    tracking_unit: 'time',
+    duration_weeks: 12
   }
 ];
 
@@ -102,7 +143,10 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
     target_value: '',
     unit: '',
     category: '',
-    current_value: '0'
+    current_value: '0',
+    goal_type: 'target',
+    frequency: 'once',
+    tracking_unit: 'number'
   });
   const [loading, setLoading] = useState(false);
 
@@ -112,12 +156,17 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
       setFormData({
         title: editingGoal.title,
         description: editingGoal.description,
-        target_value: editingGoal.target_value.toString(),
-        unit: editingGoal.unit,
+        target_value: editingGoal.target_value?.toString() || '0',
+        unit: editingGoal.unit || '',
         category: editingGoal.category,
-        current_value: editingGoal.current_value.toString()
+        current_value: editingGoal.current_value?.toString() || '0',
+        goal_type: editingGoal.goal_type || 'target',
+        frequency: editingGoal.frequency || 'once',
+        tracking_unit: editingGoal.tracking_unit || 'number'
       });
-      setDeadline(new Date(editingGoal.deadline));
+      if (editingGoal.deadline) {
+        setDeadline(new Date(editingGoal.deadline));
+      }
     } else {
       // Reset form when creating new goal
       setFormData({
@@ -126,7 +175,10 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
         target_value: '',
         unit: '',
         category: '',
-        current_value: '0'
+        current_value: '0',
+        goal_type: 'target',
+        frequency: 'once',
+        tracking_unit: 'number'
       });
       setDeadline(undefined);
       setSelectedStock(null);
@@ -151,6 +203,14 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
       case 'cardio': case 'training': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'nutrition': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       default: return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+    }
+  };
+
+  const getGoalTypeIcon = (goalType: string) => {
+    switch (goalType) {
+      case 'habit': return Repeat;
+      case 'target': return Target;
+      default: return Target;
     }
   };
 
@@ -179,7 +239,10 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
       target_value: targetValue.toString(),
       unit: unit,
       category: goal.category,
-      current_value: '0'
+      current_value: '0',
+      goal_type: goal.goal_type,
+      frequency: goal.frequency,
+      tracking_unit: goal.tracking_unit
     });
 
     // Set deadline based on duration
@@ -190,7 +253,15 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !deadline) return;
+    if (!user) {
+      toast.error('Please log in to create goals');
+      return;
+    }
+
+    if (!deadline) {
+      toast.error('Please select a deadline for your goal');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -198,13 +269,18 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
         user_id: user.id,
         title: formData.title,
         description: formData.description,
-        target_value: parseFloat(formData.target_value),
-        current_value: parseFloat(formData.current_value),
+        target_value: parseFloat(formData.target_value) || 0,
+        current_value: parseFloat(formData.current_value) || 0,
         unit: formData.unit,
         category: formData.category,
         deadline: deadline.toISOString(),
-        status: 'active'
+        status: 'active',
+        goal_type: formData.goal_type,
+        frequency: formData.frequency,
+        tracking_unit: formData.tracking_unit
       };
+
+      console.log('Creating goal with data:', goalData);
 
       let result;
       if (editingGoal) {
@@ -218,13 +294,16 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
           .insert([goalData]);
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {
+        console.error('Supabase error:', result.error);
+        throw result.error;
+      }
 
-      toast.success(editingGoal ? 'Goal updated successfully!' : 'Goal created successfully!');
+      toast.success(editingGoal ? 'Goal updated successfully! 🎯' : 'Goal created successfully! 🎯');
       onGoalCreated();
     } catch (error) {
       console.error('Error saving goal:', error);
-      toast.error('Failed to save goal');
+      toast.error('Failed to save goal. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -261,7 +340,7 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
               onClick={() => setActiveTab('stock')}
               className={activeTab === 'stock' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'}
             >
-              Stock Goals
+              Template Goals
             </Button>
             <Button
               type="button"
@@ -277,10 +356,11 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
 
         {activeTab === 'stock' && !editingGoal && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white mb-4">Choose a Pre-made Goal</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Choose a Goal Template</h3>
             <div className="grid gap-3">
               {displayStockGoals.map((goal) => {
                 const IconComponent = getCategoryIcon(goal.category);
+                const GoalTypeIcon = getGoalTypeIcon(goal.goal_type);
                 return (
                   <Card
                     key={goal.id}
@@ -300,6 +380,12 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
                             <Badge className={getCategoryColor(goal.category)}>
                               {goal.category}
                             </Badge>
+                            <div className="flex items-center space-x-1">
+                              <GoalTypeIcon className="w-3 h-3 text-gray-400" />
+                              <span className="text-xs text-gray-400 capitalize">
+                                {goal.goal_type} • {goal.frequency}
+                              </span>
+                            </div>
                           </div>
                           <p className="text-gray-400 text-sm">{goal.description}</p>
                           <p className="text-orange-400 text-sm mt-1">
@@ -334,7 +420,7 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="bg-gray-800 border-gray-700 text-white"
-                  placeholder="e.g., Lose 5kg"
+                  placeholder="e.g., Run 10,000 steps daily"
                   required
                 />
               </div>
@@ -355,6 +441,44 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
                     <SelectItem value="cardio">Cardio</SelectItem>
                     <SelectItem value="training">Training</SelectItem>
                     <SelectItem value="nutrition">Nutrition</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="goal_type" className="text-white">Goal Type</Label>
+                <Select
+                  value={formData.goal_type}
+                  onValueChange={(value) => setFormData({ ...formData, goal_type: value })}
+                  required
+                >
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue placeholder="Select goal type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="target">Target Goal (achieve once)</SelectItem>
+                    <SelectItem value="habit">Habit Goal (repeat regularly)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="frequency" className="text-white">Frequency</Label>
+                <Select
+                  value={formData.frequency}
+                  onValueChange={(value) => setFormData({ ...formData, frequency: value })}
+                  required
+                >
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="once">Once (target goal)</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -409,7 +533,7 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   className="bg-gray-800 border-gray-700 text-white"
-                  placeholder="kg, reps, minutes..."
+                  placeholder="kg, steps, minutes..."
                   required
                 />
               </div>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, Trophy, Calendar, Plus, TrendingUp, Weight, Flame, Activity, Edit, Trash2 } from 'lucide-react';
+import { Target, Trophy, Calendar, Plus, TrendingUp, Weight, Flame, Activity, Edit, Trash2, Repeat, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,9 @@ interface Goal {
   category: string;
   deadline: string;
   status: 'active' | 'completed' | 'paused';
+  goal_type: 'target' | 'habit';
+  frequency: 'once' | 'daily' | 'weekly' | 'monthly';
+  tracking_unit: string;
   created_at: string;
 }
 
@@ -65,7 +68,6 @@ const RealGoalsAchievements = () => {
 
       if (goalsError) {
         console.error('Error loading goals:', goalsError);
-        // Don't throw error, just log it and continue with empty array
         setGoals([]);
       } else {
         setGoals(goalsData || []);
@@ -80,14 +82,12 @@ const RealGoalsAchievements = () => {
 
       if (achievementsError) {
         console.error('Error loading achievements:', achievementsError);
-        // Don't throw error, just log it and continue with empty array
         setAchievements([]);
       } else {
         setAchievements(achievementsData || []);
       }
     } catch (error) {
       console.error('Unexpected error loading goals and achievements:', error);
-      // Set empty arrays to prevent UI issues
       setGoals([]);
       setAchievements([]);
     } finally {
@@ -149,6 +149,14 @@ const RealGoalsAchievements = () => {
     }
   };
 
+  const getGoalTypeIcon = (goalType: string) => {
+    switch (goalType) {
+      case 'habit': return Repeat;
+      case 'target': return Target;
+      default: return Target;
+    }
+  };
+
   const formatGoalDescription = (goal: Goal) => {
     // If the goal is weight-related and has "pounds" in description, replace with user's unit
     if (goal.category.toLowerCase() === 'weight' && goal.description.includes('pounds')) {
@@ -156,6 +164,16 @@ const RealGoalsAchievements = () => {
       return goal.description.replace(/pounds?/gi, weightUnit);
     }
     return goal.description;
+  };
+
+  const getFrequencyText = (frequency: string) => {
+    switch (frequency) {
+      case 'daily': return 'Daily';
+      case 'weekly': return 'Weekly';
+      case 'monthly': return 'Monthly';
+      case 'once': return 'One-time';
+      default: return frequency;
+    }
   };
 
   if (loading) {
@@ -238,6 +256,7 @@ const RealGoalsAchievements = () => {
                 <div className="space-y-3">
                   {goals.map((goal) => {
                     const IconComponent = getCategoryIcon(goal.category);
+                    const GoalTypeIcon = getGoalTypeIcon(goal.goal_type);
                     return (
                       <div key={goal.id} className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
                         <div className="flex items-start justify-between mb-3">
@@ -246,8 +265,21 @@ const RealGoalsAchievements = () => {
                               <IconComponent className="w-5 h-5" />
                             </div>
                             <div className="flex-1">
-                              <h4 className="text-white font-medium">{goal.title}</h4>
+                              <div className="flex items-center space-x-2 mb-1">
+                                <h4 className="text-white font-medium">{goal.title}</h4>
+                                <GoalTypeIcon className="w-4 h-4 text-gray-400" />
+                              </div>
                               <p className="text-gray-400 text-sm">{formatGoalDescription(goal)}</p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className="text-xs text-gray-500">
+                                  {getFrequencyText(goal.frequency)}
+                                </span>
+                                {goal.goal_type === 'habit' && (
+                                  <span className="text-xs text-blue-400">
+                                    • Habit Goal
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">

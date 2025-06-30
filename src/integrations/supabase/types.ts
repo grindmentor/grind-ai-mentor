@@ -291,6 +291,44 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_progress_logs: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          logged_date: string
+          notes: string | null
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          logged_date?: string
+          notes?: string | null
+          user_id: string
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          logged_date?: string
+          notes?: string | null
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_progress_logs_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "user_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habit_completions: {
         Row: {
           completed_date: string
@@ -891,11 +929,15 @@ export type Database = {
           current_value: number | null
           deadline: string | null
           description: string | null
+          frequency: string | null
+          goal_type: string | null
           id: string
           is_completed: boolean | null
           priority: string | null
+          status: string | null
           target_value: number | null
           title: string
+          tracking_unit: string | null
           unit: string | null
           updated_at: string
           user_id: string
@@ -906,11 +948,15 @@ export type Database = {
           current_value?: number | null
           deadline?: string | null
           description?: string | null
+          frequency?: string | null
+          goal_type?: string | null
           id?: string
           is_completed?: boolean | null
           priority?: string | null
+          status?: string | null
           target_value?: number | null
           title: string
+          tracking_unit?: string | null
           unit?: string | null
           updated_at?: string
           user_id: string
@@ -921,11 +967,15 @@ export type Database = {
           current_value?: number | null
           deadline?: string | null
           description?: string | null
+          frequency?: string | null
+          goal_type?: string | null
           id?: string
           is_completed?: boolean | null
           priority?: string | null
+          status?: string | null
           target_value?: number | null
           title?: string
+          tracking_unit?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string

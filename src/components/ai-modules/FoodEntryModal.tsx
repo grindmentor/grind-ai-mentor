@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,15 @@ interface FoodEntryModalProps {
     fiber: number;
   }) => void;
   mealType: string;
+  initialFoodName?: string;
 }
 
 const FoodEntryModal: React.FC<FoodEntryModalProps> = ({
   isOpen,
   onClose,
   onAddFood,
-  mealType
+  mealType,
+  initialFoodName = ''
 }) => {
   const [foodName, setFoodName] = useState('');
   const [portionSize, setPortionSize] = useState('100');
@@ -37,6 +39,13 @@ const FoodEntryModal: React.FC<FoodEntryModalProps> = ({
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
   const [fiber, setFiber] = useState('0');
+
+  // Set initial food name when prop changes
+  useEffect(() => {
+    if (initialFoodName && isOpen) {
+      setFoodName(initialFoodName);
+    }
+  }, [initialFoodName, isOpen]);
 
   const handleSubmit = () => {
     if (!foodName || !calories || !protein || !carbs || !fat) {

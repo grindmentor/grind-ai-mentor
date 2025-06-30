@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -268,6 +269,10 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     };
   };
 
+  const handleMealTypeChange = (value: string) => {
+    setMealType(value as 'breakfast' | 'lunch' | 'dinner' | 'snack');
+  };
+
   const totals = getTotalNutrition();
 
   return (
@@ -346,7 +351,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                     </div>
                     <div>
                       <Label className="text-orange-200">Meal Type</Label>
-                      <Select value={mealType} onValueChange={setMealType}>
+                      <Select value={mealType} onValueChange={handleMealTypeChange}>
                         <SelectTrigger className="bg-orange-800/50 border-orange-500/30 text-white">
                           <SelectValue />
                         </SelectTrigger>

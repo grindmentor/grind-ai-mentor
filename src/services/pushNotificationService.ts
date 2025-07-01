@@ -90,14 +90,7 @@ class PushNotificationService {
         icon: options.icon || '/icon-192.png',
         badge: options.badge || '/icon-192.png',
         tag: options.tag,
-        requireInteraction: options.requireInteraction || false,
-        actions: [
-          {
-            action: 'view',
-            title: 'View',
-            icon: '/icon-192.png'
-          }
-        ]
+        requireInteraction: options.requireInteraction || false
       });
     } catch (error) {
       console.error('Failed to show notification:', error);

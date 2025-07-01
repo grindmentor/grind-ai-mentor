@@ -95,7 +95,7 @@ export const useOptimizedQuery = <T>(
 
       if (queryError) throw queryError;
 
-      const resultData = results || [];
+      const resultData = (results || []) as T[];
       
       // Cache the results
       queryCache.set(key, {

@@ -167,11 +167,20 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => clearInterval(memoryCheckInterval);
   }, []);
 
+  // Properly type the connectionType
+  const getConnectionType = (): 'slow' | 'fast' | 'unknown' => {
+    const quality = optimizedSettings.connectionQuality;
+    if (quality === 'slow' || quality === 'fast') {
+      return quality;
+    }
+    return 'unknown';
+  };
+
   return (
     <PerformanceContext.Provider value={{
       lowDataMode,
       toggleLowDataMode,
-      connectionType: optimizedSettings.connectionQuality,
+      connectionType: getConnectionType(),
       bandwidth: connectionInfo.downlink,
       optimizeImage,
       createDebouncedFunction,

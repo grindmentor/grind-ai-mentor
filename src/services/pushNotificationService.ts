@@ -91,7 +91,6 @@ class PushNotificationService {
         badge: options.badge || '/icon-192.png',
         tag: options.tag,
         requireInteraction: options.requireInteraction || false,
-        vibrate: [200, 100, 200],
         actions: [
           {
             action: 'view',
@@ -128,7 +127,7 @@ class PushNotificationService {
 
   // iOS-specific PWA installation check
   isIOSPWA(): boolean {
-    return window.navigator.standalone === true || 
+    return (window.navigator as any).standalone === true || 
            window.matchMedia('(display-mode: standalone)').matches;
   }
 

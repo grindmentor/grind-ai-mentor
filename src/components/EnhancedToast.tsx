@@ -67,6 +67,7 @@ export const showEnhancedToast = ({
     description,
     icon: getIcon(),
     duration: type === 'error' ? 6000 : 4000,
+    position: 'top-center', // Changed to top-center for mobile
     style: {
       background: type === 'error' ? '#1f2937' : '#111827',
       border: `1px solid ${

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -313,6 +312,20 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="bg-orange-900/30 border-orange-500/50 text-white"
                 />
+              </div>
+
+              {/* Quick Add Custom Food Button */}
+              <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-500/20">
+                <Button
+                  onClick={() => setShowCustomFoodModal(true)}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Custom Food Entry
+                </Button>
+                <p className="text-blue-200/80 text-sm mt-2 text-center">
+                  Manually enter food with calories and macros
+                </p>
               </div>
 
               {/* USDA Live Search */}

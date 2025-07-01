@@ -52,9 +52,9 @@ const Notifications = () => {
         },
         {
           id: '2',
-          title: 'Achievement Unlocked',
-          message: 'You completed 7 days in a row! Keep up the great work!',
-          type: 'success',
+          title: 'Daily Workout Check',
+          message: 'Did you hit the gym today? Keep up your training consistency!',
+          type: 'info',
           read: true,
           created_at: new Date(Date.now() - 86400000).toISOString()
         }
@@ -143,7 +143,7 @@ const Notifications = () => {
     }
   };
 
-  // Removed non-implemented features like workoutReminders
+  // Updated notification options with proper descriptions
   const notificationOptions = [
     {
       id: 'hydrationReminders',

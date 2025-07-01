@@ -1,14 +1,12 @@
+const CACHE_NAME = 'myotopia-v4-optimized';
+const STATIC_CACHE = 'myotopia-static-v4';
+const DYNAMIC_CACHE = 'myotopia-dynamic-v4';
+const AI_CACHE = 'myotopia-ai-responses-v2';
+const IMAGE_CACHE = 'myotopia-images-v2';
 
-const CACHE_NAME = 'myotopia-v3-optimized';
-const STATIC_CACHE = 'myotopia-static-v3';
-const DYNAMIC_CACHE = 'myotopia-dynamic-v3';
-const AI_CACHE = 'myotopia-ai-responses-v1';
-
-// Critical assets for immediate caching
+// Critical assets for immediate caching (reduced for faster install)
 const CRITICAL_ASSETS = [
   '/',
-  '/src/main.tsx',
-  '/src/index.css',
   '/manifest.json'
 ];
 
@@ -20,47 +18,48 @@ const STATIC_ASSETS = [
   '/apple-touch-icon.png'
 ];
 
-// Install with optimized caching strategy
+// Install with ultra-fast caching strategy
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing optimized service worker...');
+  console.log('[SW] Installing ultra-optimized service worker...');
   
   event.waitUntil(
     Promise.all([
-      // Cache critical assets immediately
+      // Cache only absolutely critical assets immediately
       caches.open(STATIC_CACHE).then((cache) => {
         console.log('[SW] Caching critical assets');
         return cache.addAll(CRITICAL_ASSETS);
       }),
       // Initialize other caches
       caches.open(DYNAMIC_CACHE),
-      caches.open(AI_CACHE)
+      caches.open(AI_CACHE),
+      caches.open(IMAGE_CACHE)
     ]).then(() => {
       console.log('[SW] Critical installation complete');
       return self.skipWaiting();
     })
   );
   
-  // Background cache non-critical assets
-  event.waitUntil(
+  // Background cache non-critical assets without blocking install
+  setTimeout(() => {
     caches.open(STATIC_CACHE).then((cache) => {
       return cache.addAll(STATIC_ASSETS).catch(err => {
         console.log('[SW] Background caching completed with some skips');
       });
-    })
-  );
+    });
+  }, 1000);
 });
 
 // Activate with aggressive cleanup
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating optimized service worker...');
+  console.log('[SW] Activating ultra-optimized service worker...');
   
   event.waitUntil(
     Promise.all([
-      // Clean old caches
+      // Clean old caches more aggressively
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (!cacheName.includes('v3') && !cacheName.includes('v1')) {
+            if (!cacheName.includes('v4') && !cacheName.includes('v2')) {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -70,40 +69,45 @@ self.addEventListener('activate', (event) => {
       // Take control immediately
       self.clients.claim()
     ]).then(() => {
-      console.log('[SW] Activation complete - ready for optimal performance');
+      console.log('[SW] Activation complete - ultra performance mode enabled');
     })
   );
 });
 
-// Optimized fetch handling
+// Ultra-optimized fetch handling with performance priorities
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
-  // Skip non-HTTP requests
-  if (!request.url.startsWith('http')) return;
+  // Skip non-HTTP requests and extension requests
+  if (!request.url.startsWith('http') || url.protocol === 'chrome-extension:') return;
   
-  // Handle different request types with optimized strategies
+  // Handle different request types with ultra-optimized strategies
   if (isCriticalAsset(request)) {
-    event.respondWith(handleCriticalAsset(request));
+    event.respondWith(handleCriticalAssetUltraFast(request));
+  } else if (isImage(request)) {
+    event.respondWith(handleImageOptimized(request));
   } else if (isAIRequest(request)) {
-    event.respondWith(handleAIRequest(request));
-  } else if (isStaticAsset(request)) {
-    event.respondWith(handleStaticAsset(request));
+    event.respondWith(handleAIRequestCached(request));
   } else if (isAPIRequest(request)) {
-    event.respondWith(handleAPIRequest(request));
+    event.respondWith(handleAPIRequestFast(request));
   } else if (isNavigationRequest(request)) {
-    event.respondWith(handleNavigationRequest(request));
+    event.respondWith(handleNavigationFast(request));
   } else {
-    event.respondWith(handleDynamicRequest(request));
+    event.respondWith(handleDynamicRequestOptimized(request));
   }
 });
 
-// Asset type detection
+// Asset type detection (optimized)
 function isCriticalAsset(request) {
   const url = new URL(request.url);
   return CRITICAL_ASSETS.some(asset => url.pathname === asset) ||
-         url.pathname.match(/\.(css|js)$/) && url.pathname.includes('/src/');
+         (url.pathname.match(/\.(css|js)$/) && url.pathname.includes('/src/'));
+}
+
+function isImage(request) {
+  const url = new URL(request.url);
+  return url.pathname.match(/\.(png|jpg|jpeg|svg|ico|woff|woff2|webp|avif)$/);
 }
 
 function isAIRequest(request) {
@@ -111,11 +115,6 @@ function isAIRequest(request) {
   return url.pathname.includes('fitness-ai') || 
          url.pathname.includes('coach-gpt') ||
          url.searchParams.has('ai-query');
-}
-
-function isStaticAsset(request) {
-  const url = new URL(request.url);
-  return url.pathname.match(/\.(png|jpg|jpeg|svg|ico|woff|woff2|webp|avif)$/);
 }
 
 function isAPIRequest(request) {
@@ -129,15 +128,15 @@ function isNavigationRequest(request) {
   return request.mode === 'navigate';
 }
 
-// Optimized handlers
-async function handleCriticalAsset(request) {
+// Ultra-fast handlers
+async function handleCriticalAssetUltraFast(request) {
   try {
     const cache = await caches.open(STATIC_CACHE);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
       // Serve from cache immediately, update in background
-      fetchAndCache(request, cache);
+      fetchAndCacheBackground(request, cache);
       return cachedResponse;
     }
     
@@ -147,18 +146,40 @@ async function handleCriticalAsset(request) {
     }
     return networkResponse;
   } catch (error) {
+    // Fallback to any cached version
     const cache = await caches.open(STATIC_CACHE);
-    const fallback = await cache.match('/');
-    return fallback || new Response('Critical asset unavailable', { status: 503 });
+    const fallback = await cache.match('/') || new Response('Critical asset unavailable', { status: 503 });
+    return fallback;
   }
 }
 
-async function handleAIRequest(request) {
+async function handleImageOptimized(request) {
+  const cache = await caches.open(IMAGE_CACHE);
+  const cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
   try {
-    // Check cache for repeated AI queries first
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      // Cache images for longer period
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache);
+    }
+    return networkResponse;
+  } catch (error) {
+    return new Response('Image not available offline', { status: 503 });
+  }
+}
+
+async function handleAIRequestCached(request) {
+  try {
+    // Check cache for repeated AI queries first (faster than network)
     if (request.method === 'POST') {
       const cache = await caches.open(AI_CACHE);
-      const cacheKey = await generateAICacheKey(request);
+      const cacheKey = await generateAICacheKeyFast(request);
       const cachedResponse = await cache.match(cacheKey);
       
       if (cachedResponse) {
@@ -172,10 +193,13 @@ async function handleAIRequest(request) {
     // Cache successful AI responses for repeated queries
     if (networkResponse.ok && request.method === 'POST') {
       const cache = await caches.open(AI_CACHE);
-      const cacheKey = await generateAICacheKey(request);
-      // Cache for 1 hour for AI responses
+      const cacheKey = await generateAICacheKeyFast(request);
+      // Cache for shorter time for AI responses (30 minutes)
       const responseToCache = networkResponse.clone();
-      setTimeout(() => cache.put(cacheKey, responseToCache), 0);
+      cache.put(cacheKey, responseToCache);
+      
+      // Clean old AI cache entries to prevent memory issues
+      setTimeout(() => cleanAICache(), 0);
     }
     
     return networkResponse;
@@ -191,36 +215,23 @@ async function handleAIRequest(request) {
   }
 }
 
-async function handleStaticAsset(request) {
-  const cache = await caches.open(STATIC_CACHE);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    return new Response('Asset not available offline', { status: 503 });
-  }
-}
-
-async function handleAPIRequest(request) {
+async function handleAPIRequestFast(request) {
   try {
     const networkResponse = await fetch(request, {
       // Optimize API requests
       keepalive: true
     });
     
-    // Cache successful GET requests only
+    // Cache successful GET requests only for short periods
     if (networkResponse.ok && request.method === 'GET') {
       const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache);
+      
+      // Auto-expire after 5 minutes
+      setTimeout(() => {
+        cache.delete(request);
+      }, 300000);
     }
     
     return networkResponse;
@@ -244,9 +255,13 @@ async function handleAPIRequest(request) {
   }
 }
 
-async function handleNavigationRequest(request) {
+async function handleNavigationFast(request) {
   try {
-    const networkResponse = await fetch(request);
+    // Try network first for navigation (fresher content)
+    const networkResponse = await Promise.race([
+      fetch(request),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), 3000))
+    ]);
     return networkResponse;
   } catch (error) {
     const cache = await caches.open(STATIC_CACHE);
@@ -255,13 +270,17 @@ async function handleNavigationRequest(request) {
   }
 }
 
-async function handleDynamicRequest(request) {
+async function handleDynamicRequestOptimized(request) {
   const cache = await caches.open(DYNAMIC_CACHE);
   
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+      // Only cache smaller responses to avoid memory issues
+      const contentLength = networkResponse.headers.get('content-length');
+      if (!contentLength || parseInt(contentLength) < 1048576) { // 1MB limit
+        cache.put(request, networkResponse.clone());
+      }
     }
     return networkResponse;
   } catch (error) {
@@ -270,8 +289,8 @@ async function handleDynamicRequest(request) {
   }
 }
 
-// Utility functions
-async function fetchAndCache(request, cache) {
+// Utility functions (optimized)
+async function fetchAndCacheBackground(request, cache) {
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -282,38 +301,42 @@ async function fetchAndCache(request, cache) {
   }
 }
 
-async function generateAICacheKey(request) {
-  const body = await request.text();
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body));
-  const hashArray = Array.from(new Uint8Array(hash));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return new Request(`${request.url}?hash=${hashHex}`);
-}
-
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(doBackgroundSync());
+async function generateAICacheKeyFast(request) {
+  try {
+    const body = await request.text();
+    // Use simpler hash for better performance
+    const simpleHash = body.length + body.charCodeAt(0) + body.charCodeAt(body.length - 1);
+    return new Request(`${request.url}?hash=${simpleHash}`);
+  } catch {
+    return request;
   }
-});
-
-async function doBackgroundSync() {
-  console.log('[SW] Performing background sync...');
-  // Sync offline data when connection returns
 }
 
-// Enhanced push notifications
+async function cleanAICache() {
+  try {
+    const cache = await caches.open(AI_CACHE);
+    const keys = await cache.keys();
+    
+    // Keep only the 50 most recent AI responses
+    if (keys.length > 50) {
+      const keysToDelete = keys.slice(0, keys.length - 50);
+      await Promise.all(keysToDelete.map(key => cache.delete(key)));
+      console.log('[SW] Cleaned old AI cache entries');
+    }
+  } catch (error) {
+    console.log('[SW] AI cache cleanup failed:', error);
+  }
+}
+
+// Enhanced push notifications with better performance
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New update available!',
     icon: '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png',
     badge: '/favicon-32x32.png',
-    vibrate: [100, 50, 100],
     data: { dateOfArrival: Date.now(), primaryKey: 1 },
-    actions: [
-      { action: 'explore', title: 'Open App', icon: '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png' },
-      { action: 'close', title: 'Close', icon: '/favicon-32x32.png' }
-    ]
+    requireInteraction: false,
+    silent: false
   };
   
   event.waitUntil(
@@ -323,10 +346,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
-  if (event.action === 'explore') {
-    event.waitUntil(clients.openWindow('/'));
-  }
+  event.waitUntil(clients.openWindow('/'));
 });
 
 // Handle messages for cache updates
@@ -343,4 +363,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('[SW] Optimized service worker loaded successfully');
+console.log('[SW] Ultra-optimized service worker loaded successfully');

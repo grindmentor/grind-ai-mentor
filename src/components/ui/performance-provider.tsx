@@ -6,23 +6,32 @@ interface PerformanceContextType {
   lowDataMode: boolean;
   toggleLowDataMode: () => void;
   connectionType: 'slow' | 'fast' | 'unknown';
-  optimizeImage: (src: string, options?: { width?: number; quality?: number }) => string;
+  bandwidth: number;
+  optimizeImage: (src: string, options?: { width?: number; quality?: number; format?: 'webp' | 'avif' | 'auto' }) => string;
   createDebouncedFunction: (fn: Function, delay?: number) => Function;
+  createThrottledFunction: (fn: Function, delay?: number) => Function;
   preloadResource: (url: string, type?: 'script' | 'style' | 'image') => void;
   measurePerformance: (name: string, fn: Function) => any;
+  prefetchResource: (url: string, type?: 'script' | 'style' | 'image' | 'fetch') => void;
 }
 
 const PerformanceContext = createContext<PerformanceContextType | undefined>(undefined);
 
 export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { optimizeImage, createDebouncedFunction, measurePerformance } = usePerformanceOptimization();
+  const { 
+    optimizeImage, 
+    createDebouncedFunction, 
+    createThrottledFunction, 
+    measurePerformance, 
+    prefetchResource 
+  } = usePerformanceOptimization();
   const { lowDataMode, toggleLowDataMode } = useLowDataMode();
-  const connectionType = useConnectionQuality();
+  const { connectionType, bandwidth } = useConnectionQuality();
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Resource preloading utility
+  // Ultra-optimized resource preloading utility
   const preloadResource = useCallback((url: string, type: 'script' | 'style' | 'image' = 'script') => {
-    if (lowDataMode) return; // Skip preloading in low data mode
+    if (lowDataMode || connectionType === 'slow') return; // Skip preloading on slow connections
     
     const link = document.createElement('link');
     link.rel = 'preload';
@@ -41,42 +50,53 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
     
     document.head.appendChild(link);
-  }, [lowDataMode]);
+  }, [lowDataMode, connectionType]);
 
-  // Initialize performance optimizations
+  // Ultra-optimized performance initialization
   useEffect(() => {
     if (isInitialized) return;
     
     const initializePerformance = () => {
-      // Critical resource preloading
-      if (!lowDataMode) {
+      // Critical resource preloading based on connection quality
+      if (!lowDataMode && connectionType !== 'slow') {
         const criticalResources = [
           '/src/components/Dashboard.tsx',
-          '/src/components/ui/loading-screen.tsx'
+          '/src/components/ui/loading-screen.tsx',
+          '/src/components/ai-modules/CoachGPT.tsx'
         ];
         
-        criticalResources.forEach(resource => {
-          preloadResource(resource, 'script');
+        criticalResources.forEach((resource, index) => {
+          setTimeout(() => {
+            preloadResource(resource, 'script');
+          }, index * 100);
         });
       }
 
-      // Performance monitoring setup
+      // Ultra-optimized performance monitoring setup
       if ('performance' in window && 'PerformanceObserver' in window) {
         try {
           const observer = new PerformanceObserver((list) => {
             const entries = list.getEntries();
             entries.forEach((entry) => {
               if (entry.entryType === 'navigation') {
-                console.log('[Performance] Page load time:', entry.duration, 'ms');
+                const navEntry = entry as PerformanceNavigationTiming;
+                console.log(`[Performance] Page load time: ${navEntry.loadEventEnd - navEntry.loadEventStart}ms`);
               } else if (entry.entryType === 'largest-contentful-paint') {
-                console.log('[Performance] LCP:', entry.startTime, 'ms');
+                console.log(`[Performance] LCP: ${entry.startTime}ms`);
+                if (entry.startTime > 2500) {
+                  console.warn('[Performance Warning] LCP is slow (>2.5s)');
+                }
+              } else if (entry.entryType === 'first-input-delay') {
+                console.log(`[Performance] FID: ${entry.duration}ms`);
               }
             });
           });
           
-          observer.observe({ entryTypes: ['navigation', 'largest-contentful-paint'] });
+          observer.observe({ 
+            entryTypes: ['navigation', 'largest-contentful-paint', 'first-input-delay', 'cumulative-layout-shift'] 
+          });
         } catch (error) {
-          console.log('[Performance] Observer not supported');
+          console.log('[Performance] Observer not fully supported');
         }
       }
 
@@ -85,54 +105,76 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     // Use requestIdleCallback for non-critical initialization
     if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(initializePerformance);
+      window.requestIdleCallback(initializePerformance, { timeout: 5000 });
     } else {
-      setTimeout(initializePerformance, 0);
+      setTimeout(initializePerformance, 100);
     }
-  }, [isInitialized, lowDataMode, preloadResource]);
+  }, [isInitialized, lowDataMode, connectionType, preloadResource]);
 
-  // Apply performance optimizations based on connection and settings
+  // Ultra-optimized performance CSS variables based on connection and settings
   useEffect(() => {
     const root = document.documentElement;
     
-    if (lowDataMode || connectionType === 'slow') {
-      // Aggressive performance mode
+    if (lowDataMode || connectionType === 'slow' || bandwidth < 1) {
+      // Ultra-aggressive performance mode
       root.style.setProperty('--animation-duration', '0.1s');
       root.style.setProperty('--transition-duration', '0.1s');
-      root.style.setProperty('--image-quality', '60');
-      
-      // Reduce motion for accessibility and performance
+      root.style.setProperty('--image-quality', '50');
       root.style.setProperty('--reduced-motion', '1');
+      root.style.setProperty('--blur-amount', '0px'); // Disable blur effects
       
-      // Add performance-focused CSS class
-      document.body.classList.add('performance-mode');
+      // Add ultra-performance CSS class
+      document.body.classList.add('ultra-performance-mode');
+    } else if (connectionType === 'fast' && bandwidth > 5) {
+      // High-performance mode
+      root.style.setProperty('--animation-duration', '0.2s');
+      root.style.setProperty('--transition-duration', '0.2s');
+      root.style.setProperty('--image-quality', '85');
+      root.style.setProperty('--reduced-motion', '0');
+      root.style.setProperty('--blur-amount', '8px');
+      
+      document.body.classList.remove('ultra-performance-mode');
+      document.body.classList.add('high-performance-mode');
     } else {
       // Standard performance mode
       root.style.setProperty('--animation-duration', '0.3s');
       root.style.setProperty('--transition-duration', '0.3s');
-      root.style.setProperty('--image-quality', '80');
+      root.style.setProperty('--image-quality', '75');
       root.style.setProperty('--reduced-motion', '0');
+      root.style.setProperty('--blur-amount', '4px');
       
-      document.body.classList.remove('performance-mode');
+      document.body.classList.remove('ultra-performance-mode', 'high-performance-mode');
     }
-  }, [lowDataMode, connectionType]);
+  }, [lowDataMode, connectionType, bandwidth]);
 
-  // Memory management
+  // Ultra-optimized memory management
   useEffect(() => {
     const handleMemoryPressure = () => {
       if ('memory' in performance && (performance as any).memory) {
         const memory = (performance as any).memory;
         const usedPercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
         
-        if (usedPercent > 80) {
-          console.log('[Performance] High memory usage detected, enabling aggressive cleanup');
-          // Could trigger cache cleanup or component unmounting
+        if (usedPercent > 85) {
+          console.warn('[Performance] High memory usage detected:', usedPercent.toFixed(1) + '%');
+          // Trigger aggressive cleanup
+          if (window.gc && typeof window.gc === 'function') {
+            window.gc();
+          }
         }
       }
     };
 
+    // Check memory every 30 seconds
     const memoryCheckInterval = setInterval(handleMemoryPressure, 30000);
     return () => clearInterval(memoryCheckInterval);
+  }, []);
+
+  // Resource cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup any performance observers or intervals
+      console.log('[Performance] Provider cleanup completed');
+    };
   }, []);
 
   return (
@@ -140,10 +182,13 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       lowDataMode,
       toggleLowDataMode,
       connectionType,
+      bandwidth,
       optimizeImage,
       createDebouncedFunction,
+      createThrottledFunction,
       preloadResource,
-      measurePerformance
+      measurePerformance,
+      prefetchResource
     }}>
       {children}
     </PerformanceContext.Provider>

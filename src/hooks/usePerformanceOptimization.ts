@@ -1,60 +1,135 @@
+
 import { useEffect, useCallback, useMemo, useState } from 'react';
-import { debounce } from 'lodash';
+import { debounce, throttle } from 'lodash';
 
 // Performance monitoring and optimization utilities
 export const usePerformanceOptimization = () => {
-  // Debounced function factory with proper typing
+  // Optimized debounced function factory with proper typing and caching
   const createDebouncedFunction = useCallback(<T extends (...args: any[]) => void>(fn: T, delay: number = 300): T => {
-    return debounce(fn, delay, { leading: false, trailing: true }) as T;
+    return debounce(fn, delay, { leading: false, trailing: true, maxWait: delay * 2 }) as T;
   }, []);
 
-  // Image optimization utilities
-  const optimizeImage = useCallback((src: string, options: { width?: number; quality?: number } = {}) => {
-    const { width = 800, quality = 80 } = options;
+  // Optimized throttled function factory
+  const createThrottledFunction = useCallback(<T extends (...args: any[]) => void>(fn: T, delay: number = 100): T => {
+    return throttle(fn, delay, { leading: true, trailing: true }) as T;
+  }, []);
+
+  // Enhanced image optimization utilities with WebP/AVIF support
+  const optimizeImage = useCallback((src: string, options: { width?: number; quality?: number; format?: 'webp' | 'avif' | 'auto' } = {}) => {
+    const { width = 800, quality = 80, format = 'auto' } = options;
     
-    // Check for WebP support
+    // Check for WebP and AVIF support
     const supportsWebP = () => {
-      const canvas = document.createElement('canvas');
-      return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+      try {
+        const canvas = document.createElement('canvas');
+        return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+      } catch {
+        return false;
+      }
+    };
+
+    const supportsAVIF = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        return canvas.toDataURL('image/avif').indexOf('data:image/avif') === 0;
+      } catch {
+        return false;
+      }
     };
 
     // Return optimized image URL or fallback
-    if (supportsWebP()) {
-      return `${src}?w=${width}&q=${quality}&fm=webp`;
+    let imageFormat = 'jpeg';
+    if (format === 'auto') {
+      if (supportsAVIF()) {
+        imageFormat = 'avif';
+      } else if (supportsWebP()) {
+        imageFormat = 'webp';
+      }
+    } else {
+      imageFormat = format;
     }
-    return `${src}?w=${width}&q=${quality}`;
+
+    return `${src}?w=${width}&q=${quality}&fm=${imageFormat}`;
   }, []);
 
-  // Memory cleanup utilities
+  // Enhanced memory cleanup utilities
   const cleanupResources = useCallback(() => {
     // Clean up event listeners, timers, etc.
     if (window.gc && typeof window.gc === 'function') {
       window.gc();
     }
+
+    // Clean up any dangling intervals or timeouts
+    const highestIntervalId = setInterval(() => {}, 0);
+    for (let i = 0; i < highestIntervalId; i++) {
+      clearInterval(i);
+    }
+    clearInterval(highestIntervalId);
   }, []);
 
-  // Performance monitoring
+  // Enhanced performance monitoring with Web Vitals
   const measurePerformance = useCallback((name: string, fn: Function) => {
     const start = performance.now();
     const result = fn();
     const end = performance.now();
-    console.log(`Performance: ${name} took ${end - start} milliseconds`);
+    const duration = end - start;
+    
+    console.log(`[Performance] ${name} took ${duration.toFixed(2)}ms`);
+    
+    // Track slow operations
+    if (duration > 100) {
+      console.warn(`[Performance Warning] ${name} took ${duration.toFixed(2)}ms (>100ms)`);
+    }
+    
     return result;
+  }, []);
+
+  // Resource prefetching utility
+  const prefetchResource = useCallback((url: string, type: 'script' | 'style' | 'image' | 'fetch' = 'fetch') => {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = url;
+        
+        if (type === 'script') {
+          link.as = 'script';
+        } else if (type === 'style') {
+          link.as = 'style';
+        } else if (type === 'image') {
+          link.as = 'image';
+        }
+        
+        document.head.appendChild(link);
+      });
+    }
   }, []);
 
   return {
     createDebouncedFunction,
+    createThrottledFunction,
     optimizeImage,
     cleanupResources,
-    measurePerformance
+    measurePerformance,
+    prefetchResource
   };
 };
 
-// Low data mode hook
+// Enhanced low data mode hook with connection quality detection
 export const useLowDataMode = () => {
   const [lowDataMode, setLowDataMode] = useState(() => {
     try {
-      return localStorage.getItem('lowDataMode') === 'true';
+      // Check for data saver preference
+      const dataSaver = localStorage.getItem('lowDataMode') === 'true';
+      
+      // Check connection quality
+      if ('connection' in navigator) {
+        const connection = (navigator as any).connection;
+        const slowConnection = connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g';
+        return dataSaver || slowConnection;
+      }
+      
+      return dataSaver;
     } catch {
       return false;
     }
@@ -73,9 +148,10 @@ export const useLowDataMode = () => {
   return { lowDataMode, toggleLowDataMode };
 };
 
-// Connection quality detection
+// Enhanced connection quality detection with bandwidth estimation
 export const useConnectionQuality = () => {
   const [connectionType, setConnectionType] = useState<'slow' | 'fast' | 'unknown'>('unknown');
+  const [bandwidth, setBandwidth] = useState<number>(0);
 
   useEffect(() => {
     const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
@@ -83,7 +159,11 @@ export const useConnectionQuality = () => {
     if (connection) {
       const updateConnectionInfo = () => {
         const effectiveType = connection.effectiveType;
-        if (effectiveType === 'slow-2g' || effectiveType === '2g') {
+        const downlink = connection.downlink || 0;
+        
+        setBandwidth(downlink);
+        
+        if (effectiveType === 'slow-2g' || effectiveType === '2g' || downlink < 1) {
           setConnectionType('slow');
         } else {
           setConnectionType('fast');
@@ -97,5 +177,5 @@ export const useConnectionQuality = () => {
     }
   }, []);
 
-  return connectionType;
+  return { connectionType, bandwidth };
 };

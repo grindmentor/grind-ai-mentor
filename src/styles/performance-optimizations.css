@@ -1,0 +1,144 @@
+
+/* Ultra-Performance Mode Optimizations */
+.ultra-performance-mode {
+  /* Disable all non-essential animations */
+  * {
+    animation-duration: 0.1s !important;
+    transition-duration: 0.1s !important;
+  }
+  
+  /* Disable expensive effects */
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg {
+    backdrop-filter: none !important;
+  }
+  
+  /* Reduce box shadows */
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Simplify gradients */
+  .bg-gradient-to-r,
+  .bg-gradient-to-br,
+  .bg-gradient-to-bl {
+    background: var(--fallback-bg, #1a1a1a) !important;
+  }
+}
+
+/* High-Performance Mode Optimizations */
+.high-performance-mode {
+  /* Optimize animations */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Use GPU acceleration where beneficial */
+  .transform,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+}
+
+/* Performance-optimized component styles */
+.performance-optimized {
+  /* Enable GPU layering for smooth animations */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Reduce motion for accessibility and performance */
+@media (prefers-reduced-motion: reduce) {
+  .ultra-performance-mode *,
+  .high-performance-mode * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Connection-aware loading states */
+.slow-connection .animate-pulse {
+  animation: none;
+  opacity: 0.7;
+}
+
+.slow-connection .animate-spin {
+  animation: spin 2s linear infinite;
+}
+
+.slow-connection .animate-bounce {
+  animation: none;
+  transform: translateY(-2px);
+}
+
+/* Mobile-specific performance optimizations */
+@media (max-width: 768px) {
+  .ultra-performance-mode .backdrop-blur-sm,
+  .ultra-performance-mode .backdrop-blur-md {
+    backdrop-filter: none !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
+  
+  /* Reduce complex layouts on mobile */
+  .ultra-performance-mode .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Simplify mobile animations */
+  .ultra-performance-mode .hover\\:scale-105:hover {
+    transform: none !important;
+  }
+}
+
+/* Performance-focused loading animations */
+.performance-loader {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #f97316;
+  border-radius: 50%;
+  animation: performance-spin 1s linear infinite;
+}
+
+@keyframes performance-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Memory-efficient grid layouts */
+.performance-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  contain: layout style;
+}
+
+/* Optimize image rendering */
+.performance-image {
+  image-rendering: auto;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Battery-conscious styles */
+@media (prefers-reduced-motion: reduce), 
+       (prefers-color-scheme: dark) and (max-width: 768px) {
+  .ultra-performance-mode {
+    /* Further reduce animations on mobile dark mode (battery saver) */
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}

@@ -5,6 +5,8 @@ import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { AppBackground } from '@/components/ui/app-background';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { initializePreloading } from '@/utils/componentPreloader';
+import { BrandedLoading } from '@/components/ui/branded-loading';
+import { useModulePreloader } from '@/hooks/useModulePreloader';
 
 // Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
@@ -18,6 +20,7 @@ const Dashboard = React.lazy(() =>
 
 export default function App() {
   const { lowDataMode, measurePerformance } = usePerformanceContext();
+  const { preloadModule } = useModulePreloader();
 
   useEffect(() => {
     // Initialize component preloading
@@ -56,8 +59,9 @@ export default function App() {
     <AppBackground>
       <Suspense 
         fallback={
-          <LoadingScreen 
+          <BrandedLoading
             message={lowDataMode ? "Loading (Power Saver Mode)" : "Loading Myotopia..."} 
+            showLogo={true}
           />
         }
       >

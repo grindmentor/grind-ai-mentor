@@ -13,8 +13,12 @@ import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLocation } from 'react-router-dom';
 import NotificationCenter from '@/components/NotificationCenter';
+import { SmoothTransition } from '@/components/ui/smooth-transition';
+import { BrandedLoading } from '@/components/ui/branded-loading';
+import { useSessionCache } from '@/hooks/useSessionCache';
+import { useModulePreloader } from '@/hooks/useModulePreloader';
 
-// Lazy load heavy components
+// Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
 const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements'));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
@@ -31,6 +35,10 @@ const Dashboard = () => {
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
   const { currentTier, currentTierData } = useSubscription();
+  const { preloadModule } = useModulePreloader();
+  
+  // Session caching for dashboard data
+  const dashboardCache = useSessionCache('dashboard', 300000); // 5 minutes
 
   // Check if we should open notifications from navigation state or URL params
   useEffect(() => {
@@ -44,10 +52,16 @@ const Dashboard = () => {
     }
   }, [location.state]);
 
-  // Optimized module click handler with debouncing
+  // Optimized module click handler with preloading
   const handleModuleClick = useMemo(() => {
     const handler = (module: any) => {
       console.log('Module clicked:', module.id, 'at', new Date().toISOString());
+      
+      // Preload the module if not already loaded
+      if (module.id && !lowDataMode) {
+        preloadModule(module.id);
+      }
+      
       try {
         setSelectedModule(module);
         setNavigationSource('dashboard');
@@ -56,7 +70,7 @@ const Dashboard = () => {
       }
     };
     return createDebouncedFunction(handler, 150) as (module: any) => void;
-  }, [createDebouncedFunction]);
+  }, [createDebouncedFunction, preloadModule, lowDataMode]);
 
   const handleBackToDashboard = useMemo(() => {
     const handler = () => {
@@ -90,41 +104,59 @@ const Dashboard = () => {
     return createDebouncedFunction(handler, 200) as (data: any) => void;
   }, [createDebouncedFunction]);
 
-  // Memoized computed values
+  // Memoized computed values with caching
   const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {
-    if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null, favoriteModules: [] };
+    const cacheKey = 'computed-modules';
+    const cached = dashboardCache.get(cacheKey);
+    
+    if (cached && modules && modules.length > 0) {
+      return cached;
+    }
+
+    if (!modules || modules.length === 0) {
+      return { regularModules: [], progressHubModule: null, favoriteModules: [] };
+    }
     
     const regular = modules.filter(m => m.id !== 'progress-hub');
     const progressHub = modules.find(m => m.id === 'progress-hub');
     const favoritesList = regular.filter(module => favorites.includes(module.id));
     
-    return {
+    const result = {
       regularModules: regular,
       progressHubModule: progressHub,
       favoriteModules: favoritesList
     };
-  }, [modules, favorites]);
+
+    // Cache the computed result
+    dashboardCache.set(cacheKey, result);
+    return result;
+  }, [modules, favorites, dashboardCache]);
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
     console.log('Modules not loaded yet, showing loading screen');
-    return <LoadingScreen message="Loading Myotopia modules..." />;
+    return <BrandedLoading message="Loading Myotopia modules..." />;
   }
 
-  // Show notifications
+  // Show notifications with smooth transition
   if (showNotifications) {
-    return <NotificationCenter onBack={handleBackToDashboard} />;
+    return (
+      <SmoothTransition transitionKey="notifications">
+        <NotificationCenter onBack={handleBackToDashboard} />
+      </SmoothTransition>
+    );
   }
 
+  // Show selected module with smooth transition
   if (selectedModule) {
     console.log('Rendering selected module:', selectedModule.id);
     try {
       const ModuleComponent = selectedModule.component;
       return (
         <ErrorBoundary>
-          <PageTransition>
+          <SmoothTransition transitionKey={selectedModule.id}>
             <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-              <Suspense fallback={<LoadingScreen message="Loading module..." />}>
+              <Suspense fallback={<BrandedLoading message={`Loading ${selectedModule.title}...`} />}>
                 <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
                   <ModuleComponent 
                     onBack={handleBackToDashboard}
@@ -134,7 +166,7 @@ const Dashboard = () => {
                 </ModuleErrorBoundary>
               </Suspense>
             </div>
-          </PageTransition>
+          </SmoothTransition>
         </ErrorBoundary>
       );
     } catch (error) {
@@ -147,7 +179,7 @@ const Dashboard = () => {
 
   return (
     <ErrorBoundary>
-      <PageTransition>
+      <SmoothTransition transitionKey="dashboard">
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
           {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
@@ -218,7 +250,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Main Content with mobile-optimized spacing */}
+          {/* Main Content with optimized loading */}
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full overflow-x-hidden">
             <div className="max-w-7xl mx-auto">
               {/* Welcome section with responsive text */}
@@ -249,7 +281,7 @@ const Dashboard = () => {
                       Add More
                     </Button>
                   </div>
-                  <Suspense fallback={<div className="h-32 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                  <Suspense fallback={<BrandedLoading compact message="Loading favorites..." />}>
                     <ModuleGrid
                       modules={favoriteModules}
                       favorites={favorites}
@@ -309,10 +341,10 @@ const Dashboard = () => {
               {/* Dashboard Content Grid - Performance optimized */}
               {!lowDataMode && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                  <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                  <Suspense fallback={<BrandedLoading compact message="Loading achievements..." />}>
                     <RealGoalsAchievements />
                   </Suspense>
-                  <Suspense fallback={<div className="h-48 bg-gray-900/40 rounded-xl animate-pulse" />}>
+                  <Suspense fallback={<BrandedLoading compact message="Loading research..." />}>
                     <LatestResearch />
                   </Suspense>
                 </div>
@@ -320,7 +352,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </PageTransition>
+      </SmoothTransition>
     </ErrorBoundary>
   );
 };

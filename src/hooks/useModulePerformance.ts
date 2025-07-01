@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 interface ModulePerformance {
   loadTime: number;
@@ -15,11 +15,11 @@ export const useModulePerformance = (moduleName: string) => {
   });
 
   const startTimer = useCallback(() => {
-    return performance.now();
+    return window.performance.now();
   }, []);
 
   const endTimer = useCallback((startTime: number, type: 'load' | 'render') => {
-    const endTime = performance.now();
+    const endTime = window.performance.now();
     const duration = endTime - startTime;
     
     setPerformance(prev => ({

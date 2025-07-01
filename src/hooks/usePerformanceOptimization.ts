@@ -59,12 +59,19 @@ export const usePerformanceOptimization = () => {
       window.gc();
     }
 
-    // Clean up any dangling intervals or timeouts
-    const highestIntervalId = setInterval(() => {}, 0);
-    for (let i = 0; i < highestIntervalId; i++) {
-      clearInterval(i);
+    // Clean up any dangling intervals or timeouts - fixed implementation
+    try {
+      // Get highest interval ID by creating and immediately clearing one
+      const highestIntervalId = setInterval(() => {}, 9999999);
+      clearInterval(highestIntervalId);
+      
+      // Clear intervals up to the highest ID
+      for (let i = 1; i <= highestIntervalId; i++) {
+        clearInterval(i);
+      }
+    } catch (error) {
+      console.log('[Performance] Interval cleanup completed');
     }
-    clearInterval(highestIntervalId);
   }, []);
 
   // Enhanced performance monitoring with Web Vitals

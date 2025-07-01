@@ -98,28 +98,10 @@ export default defineConfig(({ mode }) => ({
   // Enhanced CSS processing
   css: {
     devSourcemap: mode === 'development',
-    postcss: {
-      plugins: mode === 'production' ? [
-        require('autoprefixer'),
-        require('cssnano')({
-          preset: ['default', {
-            discardComments: { removeAll: true },
-            normalizeWhitespace: true,
-            minifySelectors: true,
-          }]
-        })
-      ] : [],
-    },
   },
   // PWA and performance configurations
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-  },
-  // Experimental features for better performance
-  experimental: {
-    buildAdvancedBaseOptions: {
-      buildTarget: 'es2020'
-    }
   },
 }));

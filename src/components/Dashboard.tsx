@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -24,6 +25,13 @@ const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
 const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements'));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
+
+// Define the type for computed modules
+interface ComputedModules {
+  regularModules: any[];
+  progressHubModule: any;
+  favoriteModules: any[];
+}
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -106,20 +114,20 @@ const Dashboard = () => {
   }, [createDebouncedFunction]);
 
   // Memoized computed values with caching - Fixed typing issue
-  const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {
+  const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
     const cacheKey = 'computed-modules';
     const cached = dashboardCache.get(cacheKey);
     
-    if (cached && modules && modules.length > 0) {
-      return cached;
-    }
-
     // Consistent return type structure
-    const defaultResult = {
+    const defaultResult: ComputedModules = {
       regularModules: [] as any[],
       progressHubModule: null as any,
       favoriteModules: [] as any[]
     };
+
+    if (cached && modules && modules.length > 0) {
+      return cached as ComputedModules;
+    }
 
     if (!modules || modules.length === 0) {
       return defaultResult;
@@ -129,7 +137,7 @@ const Dashboard = () => {
     const progressHub = modules.find(m => m.id === 'progress-hub') || null;
     const favoritesList = regular.filter(module => favorites.includes(module.id));
     
-    const result = {
+    const result: ComputedModules = {
       regularModules: regular,
       progressHubModule: progressHub,
       favoriteModules: favoritesList
@@ -366,3 +374,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
@@ -104,7 +105,7 @@ const Dashboard = () => {
     return createDebouncedFunction(handler, 200) as (data: any) => void;
   }, [createDebouncedFunction]);
 
-  // Memoized computed values with caching
+  // Memoized computed values with caching - Fixed typing issue
   const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {
     const cacheKey = 'computed-modules';
     const cached = dashboardCache.get(cacheKey);
@@ -113,12 +114,19 @@ const Dashboard = () => {
       return cached;
     }
 
+    // Consistent return type structure
+    const defaultResult = {
+      regularModules: [] as any[],
+      progressHubModule: null as any,
+      favoriteModules: [] as any[]
+    };
+
     if (!modules || modules.length === 0) {
-      return { regularModules: [], progressHubModule: null, favoriteModules: [] };
+      return defaultResult;
     }
     
     const regular = modules.filter(m => m.id !== 'progress-hub');
-    const progressHub = modules.find(m => m.id === 'progress-hub');
+    const progressHub = modules.find(m => m.id === 'progress-hub') || null;
     const favoritesList = regular.filter(module => favorites.includes(module.id));
     
     const result = {

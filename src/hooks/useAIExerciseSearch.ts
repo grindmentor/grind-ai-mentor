@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useConnectionOptimization } from './useConnectionOptimization';
 
 export interface AIExercise {
   name: string;
@@ -24,6 +25,10 @@ export interface WorkoutTemplate {
   focus_areas: string[];
 }
 
+// Session cache for AI responses
+const aiCache = new Map<string, { data: AIExercise[]; timestamp: number }>();
+const CACHE_TTL = 300000; // 5 minutes
+
 export const useAIExerciseSearch = () => {
   const [exercises, setExercises] = useState<AIExercise[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -32,13 +37,14 @@ export const useAIExerciseSearch = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const { optimizedSettings } = useConnectionOptimization();
 
-  // Predefined search suggestions for quick access
+  // Lightweight predefined search suggestions
   const popularSearches = [
     'chest workout', 'leg day', 'back exercises', 'shoulder training',
-    'arms workout', 'deadlift variations', 'squat techniques', 'bench press',
-    'pull ups', 'rows', 'tricep exercises', 'bicep curls', 'leg press',
-    'overhead press', 'lat pulldowns', 'cable exercises'
+    'arms workout', 'deadlift', 'squat', 'bench press',
+    'pull ups', 'rows', 'tricep', 'bicep', 'leg press'
   ];
 
   const getSuggestions = useCallback((query: string) => {
@@ -47,40 +53,31 @@ export const useAIExerciseSearch = () => {
       return;
     }
 
-    // Clear previous timeout
     if (suggestionTimeoutRef.current) {
       clearTimeout(suggestionTimeoutRef.current);
     }
 
     suggestionTimeoutRef.current = setTimeout(() => {
       const queryLower = query.toLowerCase();
-      const filtered = popularSearches.filter(search => 
-        search.toLowerCase().includes(queryLower)
-      );
+      const filtered = popularSearches
+        .filter(search => search.toLowerCase().includes(queryLower))
+        .slice(0, optimizedSettings.lowDataMode ? 3 : 6);
       
-      // Add dynamic suggestions based on query
-      const dynamicSuggestions = [];
-      if (queryLower.includes('chest')) {
-        dynamicSuggestions.push('chest press variations', 'chest fly exercises', 'incline chest workout');
-      }
-      if (queryLower.includes('leg')) {
-        dynamicSuggestions.push('leg day routine', 'quad exercises', 'hamstring workouts');
-      }
-      if (queryLower.includes('back')) {
-        dynamicSuggestions.push('back muscle building', 'lat exercises', 'rhomboid training');
-      }
-      if (queryLower.includes('arm')) {
-        dynamicSuggestions.push('arm pump workout', 'bicep and tricep', 'forearm exercises');
-      }
-
-      const allSuggestions = [...new Set([...filtered, ...dynamicSuggestions])].slice(0, 6);
-      setSuggestions(allSuggestions);
-    }, 150);
-  }, []);
+      setSuggestions(filtered);
+    }, 100);
+  }, [optimizedSettings.lowDataMode]);
 
   const searchExercises = useCallback(async (query: string) => {
     if (!query.trim()) {
       setExercises([]);
+      return;
+    }
+
+    // Check cache first
+    const cacheKey = `${query.toLowerCase().trim()}_${optimizedSettings.pageSize}`;
+    const cached = aiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      setExercises(cached.data);
       return;
     }
 
@@ -89,7 +86,6 @@ export const useAIExerciseSearch = () => {
       abortControllerRef.current.abort();
     }
 
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
@@ -97,7 +93,9 @@ export const useAIExerciseSearch = () => {
     // Get suggestions immediately
     getSuggestions(query);
 
-    // Debounce the search
+    // Debounce the search with connection-aware delay
+    const debounceDelay = optimizedSettings.lowDataMode ? 800 : 400;
+    
     searchTimeoutRef.current = setTimeout(async () => {
       setLoading(true);
       setError(null);
@@ -107,52 +105,41 @@ export const useAIExerciseSearch = () => {
 
       try {
         const { data, error } = await supabase.functions.invoke('exercise-search-ai', {
-          body: { query },
+          body: { 
+            query,
+            maxResults: optimizedSettings.pageSize,
+            maxTokens: optimizedSettings.maxTokens
+          },
           headers: {
             'Content-Type': 'application/json',
           }
         });
 
-        if (abortController.signal.aborted) {
-          return;
-        }
-
+        if (abortController.signal.aborted) return;
         if (error) throw error;
 
-        // Strict filtering for gym-only strength exercises
-        const filteredExercises = (data.exercises || []).filter((exercise: AIExercise) => {
-          const isStrengthOnly = exercise.category === 'Strength' || exercise.category === 'Full Workout';
-          const hasGymEquipment = exercise.equipment && 
-            (exercise.equipment.toLowerCase().includes('barbell') ||
-             exercise.equipment.toLowerCase().includes('dumbbell') ||
-             exercise.equipment.toLowerCase().includes('cable') ||
-             exercise.equipment.toLowerCase().includes('machine') ||
-             exercise.equipment.toLowerCase().includes('bench') ||
-             exercise.equipment.toLowerCase().includes('rack') ||
-             exercise.equipment.toLowerCase() === 'bodyweight');
-          
-          // Exclude cardio terms - check name and description for cardio keywords
-          const exerciseName = exercise.name.toLowerCase();
-          const exerciseDesc = exercise.description.toLowerCase();
-          const cardioKeywords = ['running', 'cycling', 'treadmill', 'elliptical', 'rowing machine', 'jump', 'cardio', 'hiit'];
-          const isCardio = cardioKeywords.some(keyword => 
-            exerciseName.includes(keyword) || exerciseDesc.includes(keyword)
-          );
+        // Filter for gym-only strength exercises (optimized filtering)
+        const filteredExercises = (data.exercises || [])
+          .filter((exercise: AIExercise) => {
+            const isStrength = exercise.category === 'Strength' || exercise.category === 'Full Workout';
+            const hasGymEquipment = /barbell|dumbbell|cable|machine|bench|rack|bodyweight/i.test(exercise.equipment);
+            const isNotCardio = !/running|cycling|treadmill|elliptical|cardio|hiit/i.test(
+              exercise.name + ' ' + exercise.description
+            );
+            return isStrength && hasGymEquipment && isNotCardio;
+          })
+          .slice(0, optimizedSettings.pageSize);
 
-          // Exclude stretching/flexibility
-          const stretchingKeywords = ['stretch', 'yoga', 'mobility'];
-          const isStretching = stretchingKeywords.some(keyword =>
-            exerciseName.includes(keyword) || exerciseDesc.includes(keyword)
-          );
-          
-          return isStrengthOnly && hasGymEquipment && !isCardio && !isStretching;
+        // Cache the results
+        aiCache.set(cacheKey, {
+          data: filteredExercises,
+          timestamp: Date.now()
         });
 
         setExercises(filteredExercises);
       } catch (err) {
-        if (abortController.signal.aborted) {
-          return;
-        }
+        if (abortController.signal.aborted) return;
+        
         console.error('Error searching exercises:', err);
         setError('Failed to search exercises');
         setExercises([]);
@@ -161,8 +148,8 @@ export const useAIExerciseSearch = () => {
           setLoading(false);
         }
       }
-    }, 500); // 500ms debounce
-  }, [getSuggestions]);
+    }, debounceDelay);
+  }, [getSuggestions, optimizedSettings]);
 
   return {
     exercises,
@@ -174,9 +161,8 @@ export const useAIExerciseSearch = () => {
   };
 };
 
-// Curated workout templates for the library
+// Curated workout templates (unchanged for compatibility)
 export const curatedWorkoutTemplates: WorkoutTemplate[] = [
-  // Workout Splits
   {
     id: 'push-pull-legs',
     name: 'Push/Pull/Legs Split',

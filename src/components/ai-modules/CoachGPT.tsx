@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
+import { usePerformanceContext } from '@/components/ui/performance-provider';
 
 interface Message {
   id: string;
@@ -25,6 +26,7 @@ interface CoachGPTProps {
 export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { optimizedSettings } = usePerformanceContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +45,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: optimizedSettings.reduceAnimations ? 'auto' : 'smooth' });
   };
 
   const loadConversationHistory = async () => {
@@ -52,10 +54,10 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     try {
       const { data, error } = await supabase
         .from('coach_conversations')
-        .select('*')
+        .select('id, message_role, message_content, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
-        .limit(20);
+        .limit(optimizedSettings.lowDataMode ? 10 : 20); // Connection-aware limit
 
       if (error) {
         console.error('Error loading conversation:', error);
@@ -91,7 +93,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     setIsLoading(true);
 
     try {
-      // Save user message
+      // Save user message (optimized insert)
       const { error: saveError } = await supabase
         .from('coach_conversations')
         .insert({
@@ -153,7 +155,7 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         return;
       }
 
-      // Get AI response for general coaching
+      // Get AI response with optimized settings
       const { data, error } = await supabase.functions.invoke('fitness-ai', {
         body: {
           prompt: `You are CoachGPT, an expert fitness coach for Myotopia. You provide structured, motivational, and science-backed fitness coaching advice.
@@ -181,7 +183,8 @@ User question: ${userMessage.content}
 
 Format your response with clear headings and structure. Be encouraging and cite scientific principles when relevant.`,
           type: 'coaching',
-          maxTokens: 500
+          maxTokens: optimizedSettings.maxTokens, // Connection-aware token limit
+          useGPT4Mini: optimizedSettings.useGPT4Mini
         }
       });
 
@@ -201,7 +204,7 @@ Format your response with clear headings and structure. Be encouraging and cite 
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Save assistant message
+      // Save assistant message (optimized insert)
       await supabase
         .from('coach_conversations')
         .insert({

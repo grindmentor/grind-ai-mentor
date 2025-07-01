@@ -3,6 +3,7 @@ import React from 'react';
 import { Dumbbell } from 'lucide-react';
 import Logo from './logo';
 import { usePerformanceContext } from './performance-provider';
+import { cn } from '@/lib/utils';
 
 interface BrandedLoadingProps {
   message?: string;

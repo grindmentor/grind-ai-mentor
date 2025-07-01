@@ -65,8 +65,9 @@ export const usePerformanceOptimization = () => {
       const highestIntervalId = setInterval(() => {}, 9999999);
       clearInterval(highestIntervalId);
       
-      // Clear intervals up to the highest ID
-      for (let i = 1; i <= highestIntervalId; i++) {
+      // Clear intervals up to the highest ID - fix type issue
+      const maxId = Number(highestIntervalId);
+      for (let i = 1; i <= maxId; i++) {
         clearInterval(i);
       }
     } catch (error) {

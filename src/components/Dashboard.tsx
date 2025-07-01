@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { PageTransition } from '@/components/ui/page-transition';
-import { EnhancedLoadingScreen } from '@/components/ui/enhanced-loading-screen';
-import { ModuleTransitionWrapper } from '@/components/ui/module-transition-wrapper';
+import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus } from 'lucide-react';
@@ -13,19 +12,10 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLocation } from 'react-router-dom';
-import { useTabCache } from '@/hooks/useTabCache';
-import { useModulePreloader } from '@/hooks/useModulePreloader';
 import NotificationCenter from '@/components/NotificationCenter';
 
-// Lazy load heavy components with preloading hints
-const ModuleGrid = lazy(() => 
-  import('@/components/dashboard/ModuleGrid').then(module => {
-    // Preload related components
-    import('@/components/goals/RealGoalsAchievements').catch(() => {});
-    return module;
-  })
-);
-
+// Lazy load heavy components
+const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
 const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements'));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
@@ -39,22 +29,8 @@ const Dashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
-  const { lowDataMode, createDebouncedFunction, measurePerformance } = usePerformanceContext();
+  const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
   const { currentTier, currentTierData } = useSubscription();
-  
-  // Tab caching for performance
-  const tabCache = useTabCache<any>({ maxAge: 300000, maxEntries: 10 });
-  
-  // Preload critical modules
-  useModulePreloader({
-    modules: [
-      '/src/components/goals/RealGoalsAchievements',
-      '/src/components/homepage/LatestResearch',
-      '/src/components/dashboard/ModuleGrid'
-    ],
-    priority: 'low',
-    delay: 1000
-  });
 
   // Check if we should open notifications from navigation state or URL params
   useEffect(() => {
@@ -68,44 +44,32 @@ const Dashboard = () => {
     }
   }, [location.state]);
 
-  // Optimized module click handler with caching
+  // Optimized module click handler with debouncing
   const handleModuleClick = useMemo(() => {
     const handler = (module: any) => {
       console.log('Module clicked:', module.id, 'at', new Date().toISOString());
       try {
-        // Cache the current state before switching
-        tabCache.set('dashboard-state', {
-          favorites,
-          timestamp: Date.now()
-        });
-        
         setSelectedModule(module);
         setNavigationSource('dashboard');
       } catch (error) {
         console.error('Error setting selected module:', error);
       }
     };
-    return createDebouncedFunction(handler, 100) as (module: any) => void;
-  }, [createDebouncedFunction, tabCache, favorites]);
+    return createDebouncedFunction(handler, 150) as (module: any) => void;
+  }, [createDebouncedFunction]);
 
   const handleBackToDashboard = useMemo(() => {
     const handler = () => {
       console.log('Returning to dashboard at', new Date().toISOString());
       try {
-        // Restore cached state if available
-        const cachedState = tabCache.get('dashboard-state');
-        if (cachedState) {
-          console.log('Restoring cached dashboard state');
-        }
-        
         setSelectedModule(null);
         setShowNotifications(false);
       } catch (error) {
         console.error('Error returning to dashboard:', error);
       }
     };
-    return createDebouncedFunction(handler, 50) as () => void;
-  }, [createDebouncedFunction, tabCache]);
+    return createDebouncedFunction(handler, 100) as () => void;
+  }, [createDebouncedFunction]);
 
   const handleNotificationsClick = () => {
     setShowNotifications(true);
@@ -126,46 +90,30 @@ const Dashboard = () => {
     return createDebouncedFunction(handler, 200) as (data: any) => void;
   }, [createDebouncedFunction]);
 
-  // Memoized computed values with caching
+  // Memoized computed values
   const { regularModules, progressHubModule, favoriteModules } = useMemo(() => {
-    const cacheKey = `modules-computed-${modules?.length}-${favorites.length}`;
-    const cached = tabCache.get(cacheKey);
+    if (!modules || modules.length === 0) return { regularModules: [], progressHubModule: null, favoriteModules: [] };
     
-    if (cached) {
-      return cached;
-    }
-
-    if (!modules || modules.length === 0) {
-      return { regularModules: [], progressHubModule: null, favoriteModules: [] };
-    }
+    const regular = modules.filter(m => m.id !== 'progress-hub');
+    const progressHub = modules.find(m => m.id === 'progress-hub');
+    const favoritesList = regular.filter(module => favorites.includes(module.id));
     
-    const result = {
-      regularModules: modules.filter(m => m.id !== 'progress-hub'),
-      progressHubModule: modules.find(m => m.id === 'progress-hub'),
-      favoriteModules: modules.filter(m => m.id !== 'progress-hub' && favorites.includes(m.id))
+    return {
+      regularModules: regular,
+      progressHubModule: progressHub,
+      favoriteModules: favoritesList
     };
-    
-    tabCache.set(cacheKey, result);
-    return result;
-  }, [modules, favorites, tabCache]);
+  }, [modules, favorites]);
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
     console.log('Modules not loaded yet, showing loading screen');
-    return <EnhancedLoadingScreen message="Loading Myotopia modules..." fullScreen />;
+    return <LoadingScreen message="Loading Myotopia modules..." />;
   }
 
-  // Show notifications with transition
+  // Show notifications
   if (showNotifications) {
-    return (
-      <ModuleTransitionWrapper 
-        moduleId="notifications"
-        moduleName="Notifications"
-        onTransitionEnd={() => console.log('Notifications loaded')}
-      >
-        <NotificationCenter onBack={handleBackToDashboard} />
-      </ModuleTransitionWrapper>
-    );
+    return <NotificationCenter onBack={handleBackToDashboard} />;
   }
 
   if (selectedModule) {
@@ -174,14 +122,9 @@ const Dashboard = () => {
       const ModuleComponent = selectedModule.component;
       return (
         <ErrorBoundary>
-          <ModuleTransitionWrapper
-            moduleId={selectedModule.id}
-            moduleName={selectedModule.title}
-            onTransitionStart={() => console.log(`Loading module: ${selectedModule.title}`)}
-            onTransitionEnd={() => console.log(`Module loaded: ${selectedModule.title}`)}
-          >
+          <PageTransition>
             <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-              <Suspense fallback={<EnhancedLoadingScreen moduleName={selectedModule.title} />}>
+              <Suspense fallback={<LoadingScreen message="Loading module..." />}>
                 <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
                   <ModuleComponent 
                     onBack={handleBackToDashboard}
@@ -191,7 +134,7 @@ const Dashboard = () => {
                 </ModuleErrorBoundary>
               </Suspense>
             </div>
-          </ModuleTransitionWrapper>
+          </PageTransition>
         </ErrorBoundary>
       );
     } catch (error) {
@@ -206,7 +149,7 @@ const Dashboard = () => {
     <ErrorBoundary>
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-          {/* Enhanced header - keep existing structure */}
+          {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between">
@@ -275,10 +218,10 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Main Content - keep existing content structure */}
+          {/* Main Content with mobile-optimized spacing */}
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full overflow-x-hidden">
             <div className="max-w-7xl mx-auto">
-              {/* Welcome section */}
+              {/* Welcome section with responsive text */}
               <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
                 <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight">
                   Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
@@ -288,7 +231,7 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {/* Favorites Section with optimized loading */}
+              {/* Favorites Section with performance optimization */}
               {!favoritesLoading && favoriteModules.length > 0 ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <div className="flex items-center justify-between mb-4 sm:mb-6">

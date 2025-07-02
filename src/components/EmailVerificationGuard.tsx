@@ -79,7 +79,7 @@ const EmailVerificationGuard: React.FC<EmailVerificationGuardProps> = ({ childre
 
           <div className="space-y-4">
             <p className="text-sm text-gray-400 text-center">
-              Please check your inbox and click the verification link to continue using GrindMentor.
+              Please check your inbox and click the verification link to continue using Myotopia.
             </p>
 
             <div className="space-y-3">

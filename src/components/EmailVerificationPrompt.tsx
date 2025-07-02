@@ -50,7 +50,7 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
           <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
             <span className="font-bold text-white text-sm">GM</span>
           </div>
-          <span className="text-2xl font-bold">GrindMentor</span>
+          <span className="text-2xl font-bold">Myotopia</span>
         </div>
 
         <Card className="bg-gray-900 border-gray-800">
@@ -85,7 +85,7 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
                     <ol className="text-sm text-gray-400 space-y-1">
                       <li>1. Check your email inbox</li>
                       <li>2. Click the verification link</li>
-                      <li>3. Return here to start using GrindMentor</li>
+                      <li>3. Return here to start using Myotopia</li>
                     </ol>
                   </div>
                 </div>

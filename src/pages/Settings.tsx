@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Globe, Zap, Brain } from 'lucide-react';
+import { ArrowLeft, Globe, Zap, Brain, FileText, HelpCircle, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnitPreferences from '@/components/settings/UnitPreferences';
@@ -9,17 +9,32 @@ import AppPreferences from '@/components/settings/AppPreferences';
 import AIMemoryReset from '@/components/settings/AIMemoryReset';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('units');
 
   const tabs = [
     { id: 'units', label: 'Units', icon: Globe },
     { id: 'app', label: 'App', icon: Zap },
-    { id: 'ai', label: 'AI Memory', icon: Brain }
+    { id: 'ai', label: 'AI Memory', icon: Brain },
+    { id: 'legal', label: 'Legal', icon: FileText },
+    { id: 'support', label: 'Support', icon: HelpCircle }
   ];
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <PageTransition>
@@ -44,9 +59,22 @@ const Settings = () => {
               </div>
             </div>
 
+            {/* Logout Button */}
+            <div className="flex items-center justify-between mb-4">
+              <div></div>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+
             {/* Settings Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-              <TabsList className={`grid w-full grid-cols-3 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
+              <TabsList className={`grid w-full grid-cols-5 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
@@ -70,6 +98,65 @@ const Settings = () => {
 
                 <TabsContent value="ai" className="mt-0">
                   <AIMemoryReset />
+                </TabsContent>
+
+                <TabsContent value="legal" className="mt-0">
+                  <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                    <CardHeader>
+                      <CardTitle className="text-white">Legal Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Button
+                        onClick={() => navigate('/terms')}
+                        variant="outline"
+                        className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Terms of Service
+                      </Button>
+                      <Button
+                        onClick={() => navigate('/privacy')}
+                        variant="outline"
+                        className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Privacy Policy
+                      </Button>
+                      <Button
+                        onClick={() => navigate('/about')}
+                        variant="outline"
+                        className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        About Myotopia
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="support" className="mt-0">
+                  <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                    <CardHeader>
+                      <CardTitle className="text-white">Support</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Button
+                        onClick={() => navigate('/support')}
+                        variant="outline"
+                        className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
+                      >
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Contact Support
+                      </Button>
+                      <div className="p-4 bg-gray-800/30 rounded-lg">
+                        <h3 className="text-white font-medium mb-2">Quick Help</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed">
+                          For technical issues, account questions, or feature requests, 
+                          use the Contact Support button above to reach our team.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </div>
             </Tabs>

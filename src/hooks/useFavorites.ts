@@ -63,11 +63,7 @@ export const useFavorites = () => {
 
       if (error) {
         console.error('Error saving favorites:', error);
-        toast({
-          title: 'Sync Warning',
-          description: 'Favorites saved locally but may not sync across devices',
-          variant: 'destructive'
-        });
+        // Silent fallback - favorites still saved locally
       }
 
       // Always save to localStorage as backup

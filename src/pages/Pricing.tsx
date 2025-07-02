@@ -59,9 +59,9 @@ const Pricing = () => {
         </div>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Choose Your Plan</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">Unlock Premium Myotopia</h1>
           <p className="text-gray-400 text-lg">
-            All plans include science-backed AI recommendations with peer-reviewed research citations
+            Get unlimited access to all AI-powered fitness features with science-backed recommendations
           </p>
           
           {/* Billing Period Toggle */}
@@ -99,13 +99,13 @@ const Pricing = () => {
             </Badge>
             {billingPeriod === 'annual' && (
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                Annual plans: Save 17% compared to monthly
+                Annual plans: Save $19.89 compared to monthly
               </Badge>
             )}
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => (
             <SubscriptionCard
               key={key}

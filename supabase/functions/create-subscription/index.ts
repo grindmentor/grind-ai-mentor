@@ -47,17 +47,26 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Price mapping for monthly and annual billing
-    const prices = {
-      basic: {
-        monthly: 1000, // $10
-        annual: 10000  // $100 (save ~17%)
-      },
+    // Stripe product IDs for the Premium plan
+    const priceIds = {
       premium: {
-        monthly: 1500, // $15
-        annual: 15000  // $150 (save ~17%)
+        monthly: 'prod_SbMYMe5X5uV2FT', // Monthly Premium
+        annual: 'prod_SbMZ8cG7FKq3C6'   // Annual Premium
       }
     };
+
+    // Price mapping for monthly and annual billing
+    const prices = {
+      premium: {
+        monthly: 999, // $9.99
+        annual: 9999  // $99.99
+      }
+    };
+
+    // Only allow premium tier now
+    if (tier !== 'premium') {
+      throw new Error("Only Premium subscriptions are available");
+    }
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -66,10 +75,10 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: { 
-              name: `${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan`,
-              description: `${billing === 'annual' ? 'Annual' : 'Monthly'} subscription to ${tier} plan`
+              name: "Myotopia Premium",
+              description: `${billing === 'annual' ? 'Annual' : 'Monthly'} Premium subscription`
             },
-            unit_amount: prices[tier][billing],
+            unit_amount: prices.premium[billing],
             recurring: { 
               interval: billing === 'annual' ? 'year' : 'month',
               interval_count: 1

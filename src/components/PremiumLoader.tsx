@@ -96,7 +96,7 @@ const PremiumLoader: React.FC<PremiumLoaderProps> = ({
           </div>
           
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">GrindMentor</h2>
+            <h2 className="text-2xl font-bold text-white">Myotopia</h2>
             <p className="text-gray-400 animate-fade-in">{currentMessage}</p>
             
             <div className="w-full bg-gray-800/50 rounded-full h-2 overflow-hidden">

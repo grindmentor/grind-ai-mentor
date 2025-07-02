@@ -84,7 +84,7 @@ const LatestResearch = () => {
                 BREAKTHROUGH
               </div>
             </div>
-            <h3 className="text-white font-semibold text-sm mb-1 line-clamp-2">
+            <h3 className="text-white font-semibold text-base mb-1 leading-tight">
               {latestArticle.title}
             </h3>
             <div className="flex items-center space-x-2 text-xs text-gray-400 mb-2">
@@ -96,7 +96,7 @@ const LatestResearch = () => {
             </div>
           </div>
           
-          <p className="text-gray-300 text-sm leading-relaxed mb-3 line-clamp-3">
+          <p className="text-gray-300 text-sm leading-relaxed mb-3 font-medium">
             {latestArticle.summary}
           </p>
           
@@ -104,9 +104,9 @@ const LatestResearch = () => {
             <h4 className="text-white text-xs font-semibold mb-2">Key Findings:</h4>
             <ul className="space-y-1">
               {latestArticle.keyFindings.map((finding, index) => (
-                <li key={index} className="text-gray-400 text-xs flex items-start">
-                  <ChevronRight className="w-3 h-3 text-green-400 mr-1 mt-0.5 flex-shrink-0" />
-                  <span>{finding}</span>
+                <li key={index} className="text-gray-300 text-sm flex items-start leading-relaxed">
+                  <ChevronRight className="w-4 h-4 text-green-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="font-medium">{finding}</span>
                 </li>
               ))}
             </ul>

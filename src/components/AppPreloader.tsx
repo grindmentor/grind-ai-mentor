@@ -58,7 +58,7 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
           <div className="w-16 h-16 bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-xl flex items-center justify-center">
             <Dumbbell className="w-8 h-8 text-white animate-pulse" />
           </div>
-          <span className="text-3xl font-bold text-white">GrindMentor</span>
+          <span className="text-3xl font-bold text-white">Myotopia</span>
         </div>
 
         {/* Progress Bar */}

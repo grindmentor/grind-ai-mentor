@@ -171,7 +171,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                Welcome to GrindMentor
+                Welcome to Myotopia
               </h1>
               <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
                 Step {currentStep} of {totalSteps}

@@ -85,7 +85,7 @@ const Onboarding = () => {
           <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
             <span className="font-bold text-white text-sm">GM</span>
           </div>
-          <span className="text-2xl font-bold">GrindMentor</span>
+          <span className="text-2xl font-bold">Myotopia</span>
         </div>
 
         <Card className="bg-gray-900 border-gray-800">

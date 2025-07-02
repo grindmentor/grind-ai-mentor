@@ -13,12 +13,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     flowType: 'pkce',
     // Enhanced iOS PWA settings
-    storageKey: 'grindmentor-auth-token',
+    storageKey: 'myotopia-auth-token',
     debug: process.env.NODE_ENV === 'development'
   },
   global: {
     headers: {
-      'X-Client-Info': 'grindmentor-web'
+      'X-Client-Info': 'myotopia-web'
     }
   },
   realtime: {

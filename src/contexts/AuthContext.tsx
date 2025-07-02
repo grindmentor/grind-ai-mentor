@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const checkOnboardingStatus = async (userId: string) => {
     try {
       // Check localStorage first for immediate response
-      const localOnboarding = localStorage.getItem(`grindmentor_onboarding_${userId}`);
+      const localOnboarding = localStorage.getItem(`myotopia_onboarding_${userId}`);
       if (localOnboarding) {
         setHasCompletedOnboarding(true);
         return;
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Update localStorage to match database state
         if (isComplete) {
-          localStorage.setItem(`grindmentor_onboarding_${userId}`, 'completed');
+          localStorage.setItem(`myotopia_onboarding_${userId}`, 'completed');
         }
       } else {
         setHasCompletedOnboarding(false);
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const markOnboardingComplete = () => {
     if (user) {
       try {
-        localStorage.setItem(`grindmentor_onboarding_${user.id}`, 'completed');
+        localStorage.setItem(`myotopia_onboarding_${user.id}`, 'completed');
         setHasCompletedOnboarding(true);
       } catch (error) {
         console.warn('Could not save onboarding completion to localStorage:', error);

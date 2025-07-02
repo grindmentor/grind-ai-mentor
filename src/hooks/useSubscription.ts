@@ -45,37 +45,10 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       food_photo_analyses: 2
     }
   },
-  basic: {
-    name: 'Basic',
-    monthlyPrice: 10,
-    annualPrice: 100,
-    features: [
-      '50 CoachGPT queries/month',
-      '15 MealPlanAI generations',
-      '50 Smart Food Log analyses',
-      '20 TDEE calculations',
-      '10 Smart Training programs',
-      '15 Physique AI analyses',
-      '200 Habit checks',
-      'Science-backed recommendations'
-    ],
-    limits: {
-      coach_gpt_queries: 50,
-      meal_plan_generations: 15,
-      food_log_analyses: 50,
-      tdee_calculations: 20,
-      habit_checks: 200,
-      training_programs: 10,
-      progress_analyses: 15,
-      cut_calc_uses: 20,
-      workout_timer_sessions: 50,
-      food_photo_analyses: 25
-    }
-  },
   premium: {
     name: 'Premium',
-    monthlyPrice: 15,
-    annualPrice: 150,
+    monthlyPrice: 9.99,
+    annualPrice: 99.99,
     features: [
       'Unlimited CoachGPT queries',
       'Unlimited meal plans', 

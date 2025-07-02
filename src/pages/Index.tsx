@@ -20,9 +20,14 @@ const Index = () => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      
+      // Redirect logged-in users to dashboard on mobile
+      if (user && isMobile) {
+        navigate('/app');
+      }
     };
     checkUser();
-  }, []);
+  }, [isMobile, navigate]);
 
   const features = [
     {

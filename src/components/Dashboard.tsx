@@ -113,9 +113,10 @@ const Dashboard = () => {
     return createDebouncedFunction(handler, 200) as (data: any) => void;
   }, [createDebouncedFunction]);
 
-  // Memoized computed values with caching - Fixed typing issue
+  // Memoized computed values with caching - Fixed favorites update issue
   const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
-    const cacheKey = 'computed-modules';
+    // Include favorites in cache key to invalidate when favorites change
+    const cacheKey = `computed-modules-${favorites.join(',')}-${modules?.length || 0}`;
     const cached = dashboardCache.get(cacheKey);
     
     // Consistent return type structure
@@ -125,7 +126,7 @@ const Dashboard = () => {
       favoriteModules: [] as any[]
     };
 
-    if (cached && modules && modules.length > 0) {
+    if (cached && modules && modules.length > 0 && !favoritesLoading) {
       return cached as ComputedModules;
     }
 
@@ -143,10 +144,12 @@ const Dashboard = () => {
       favoriteModules: favoritesList
     };
 
-    // Cache the computed result
-    dashboardCache.set(cacheKey, result);
+    // Cache the computed result only when favorites are loaded
+    if (!favoritesLoading) {
+      dashboardCache.set(cacheKey, result);
+    }
     return result;
-  }, [modules, favorites, dashboardCache]);
+  }, [modules, favorites, favoritesLoading, dashboardCache]);
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {

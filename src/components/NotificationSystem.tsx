@@ -25,33 +25,31 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ notifications, 
   const [currentNotification, setCurrentNotification] = useState<Notification | null>(null);
 
   useEffect(() => {
-    // Show only one notification at a time
-    if (notifications.length > 0 && !currentNotification) {
-      const nextNotification = notifications[0];
-      setCurrentNotification(nextNotification);
+    // Show only one notification at a time, prioritize newer notifications
+    if (notifications.length > 0) {
+      const latestNotification = notifications[notifications.length - 1];
       
-      // Auto-remove after duration
-      if (nextNotification.duration !== 0) {
-        const timeout = setTimeout(() => {
-          handleRemove(nextNotification.id);
-        }, nextNotification.duration || 5000);
+      // Only update if we don't have a current notification or if the latest is different
+      if (!currentNotification || currentNotification.id !== latestNotification.id) {
+        setCurrentNotification(latestNotification);
         
-        return () => clearTimeout(timeout);
+        // Auto-remove after duration
+        if (latestNotification.duration !== 0) {
+          const timeout = setTimeout(() => {
+            handleRemove(latestNotification.id);
+          }, latestNotification.duration || 5000);
+          
+          return () => clearTimeout(timeout);
+        }
       }
+    } else if (notifications.length === 0) {
+      setCurrentNotification(null);
     }
-  }, [notifications, currentNotification]);
+  }, [notifications]);
 
   const handleRemove = (id: string) => {
     setCurrentNotification(null);
     onRemove(id);
-    
-    // Show next notification after a brief delay
-    setTimeout(() => {
-      const remaining = notifications.filter(n => n.id !== id);
-      if (remaining.length > 0) {
-        setCurrentNotification(remaining[0]);
-      }
-    }, 300);
   };
 
   const getIcon = (type: string) => {

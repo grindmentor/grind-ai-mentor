@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
+import { useUserUnits } from '@/hooks/useUserUnits';
 
 interface WorkoutSet {
   weight: string | number;
@@ -43,6 +44,7 @@ interface WorkoutLoggerAIProps {
 
 const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const { user } = useAuth();
+  const { units } = useUserUnits();
   const [activeTab, setActiveTab] = useState('current');
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [workoutName, setWorkoutName] = useState('');
@@ -320,10 +322,10 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               </div>
               
               <div>
-                <Label className="text-xs text-gray-400 block mb-1">Weight</Label>
+                <Label className="text-xs text-gray-400 block mb-1">Weight ({units.weightUnit})</Label>
                 <Input
                   type="number"
-                  placeholder="lbs"
+                  placeholder={units.weightUnit === 'kg' ? 'kg' : 'lbs'}
                   value={set.weight || ''}
                   onChange={(e) => updateSet(exerciseIndex, setIndex, 'weight', e.target.value)}
                   className="bg-gray-700/50 border-gray-600 text-white h-8 text-sm"
@@ -416,7 +418,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               {exercise.sets?.map((set: any, setIdx: number) => (
                 <div key={setIdx} className="flex items-center justify-between text-xs text-gray-400 bg-gray-800/30 p-2 rounded">
                   <span>Set {setIdx + 1}</span>
-                  <span>{set.weight}lbs × {set.reps}</span>
+                  <span>{set.weight}{units.weightUnit} × {set.reps}</span>
                   {set.rpe && (
                     <Badge className={`${getRIRColor(getRIRFromRPE(set.rpe))} text-xs px-2 py-1`}>
                       {getRIRFromRPE(set.rpe)} RIR

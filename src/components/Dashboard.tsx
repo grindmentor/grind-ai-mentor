@@ -19,6 +19,7 @@ import { SmoothTransition } from '@/components/ui/smooth-transition';
 import { BrandedLoading } from '@/components/ui/branded-loading';
 import { useSessionCache } from '@/hooks/useSessionCache';
 import { useModulePreloader } from '@/hooks/useModulePreloader';
+import PremiumPromoCard from '@/components/PremiumPromoCard';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -354,6 +355,15 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </Button>
+                </div>
+              )}
+
+              {/* Premium Promotion for Free Users */}
+              {currentTier === 'free' && (
+                <div className="mb-6 sm:mb-8">
+                  <Suspense fallback={<div className="h-32 bg-gray-800/30 rounded-lg animate-pulse" />}>
+                    <PremiumPromoCard variant="full" />
+                  </Suspense>
                 </div>
               )}
 

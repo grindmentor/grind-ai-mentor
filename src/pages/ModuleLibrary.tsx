@@ -11,6 +11,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useSubscription } from '@/hooks/useSubscription';
+import PremiumPromoCard from '@/components/PremiumPromoCard';
 
 type ViewMode = 'grid' | 'list';
 
@@ -19,6 +21,7 @@ const ModuleLibrary = () => {
   const { modules } = useModules();
   const isMobile = useIsMobile();
   const { favorites, toggleFavorite } = useFavorites();
+  const { currentTier } = useSubscription();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState(null);
@@ -247,13 +250,20 @@ const ModuleLibrary = () => {
                 <p className="text-orange-300/70 text-lg">Try adjusting your search or filters</p>
               </div>
             ) : (
-              <ModuleGrid
+              <div className="space-y-6">
+                {/* Premium Promotion for Free Users */}
+                {currentTier === 'free' && (
+                  <PremiumPromoCard variant="compact" />
+                )}
+                
+                <ModuleGrid
                 modules={sortedModules}
                 favorites={favorites}
                 onModuleClick={handleModuleClick}
                 onToggleFavorite={toggleFavorite}
                 viewMode={viewMode}
-              />
+                />
+              </div>
             )}
           </div>
         </div>

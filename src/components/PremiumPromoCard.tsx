@@ -27,7 +27,7 @@ const PremiumPromoCard: React.FC<PremiumPromoCardProps> = ({
               </div>
               <div>
                 <h3 className="text-white font-semibold text-sm">Unlock Premium</h3>
-                <p className="text-orange-200/80 text-xs">Unlimited AI features</p>
+                <p className="text-orange-200/80 text-xs">Enhanced AI + 30 uploads/mo</p>
               </div>
             </div>
             <Button
@@ -59,22 +59,22 @@ const PremiumPromoCard: React.FC<PremiumPromoCardProps> = ({
               Upgrade to Premium
             </h3>
             <p className="text-gray-300 text-sm">
-              Unlock unlimited AI coaching, meal plans, and all premium features
+              Enhanced AI features, 30 photo uploads/month, and premium tools
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="flex items-center space-x-2 text-orange-200">
               <Brain className="w-4 h-4" />
-              <span>Unlimited CoachGPT</span>
+              <span>Enhanced AI Features</span>
             </div>
             <div className="flex items-center space-x-2 text-orange-200">
               <Zap className="w-4 h-4" />
-              <span>Smart Training AI</span>
+              <span>30 Photo Uploads/month</span>
             </div>
             <div className="flex items-center space-x-2 text-orange-200">
               <TrendingUp className="w-4 h-4" />
-              <span>Progress Analytics</span>
+              <span>Advanced Analytics</span>
             </div>
             <div className="flex items-center space-x-2 text-orange-200">
               <Crown className="w-4 h-4" />

@@ -358,11 +358,11 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Premium Promotion for Free Users */}
+              {/* Premium Promotion for Free Users - Moved to sidebar */}
               {currentTier === 'free' && (
                 <div className="mb-6 sm:mb-8">
-                  <Suspense fallback={<div className="h-32 bg-gray-800/30 rounded-lg animate-pulse" />}>
-                    <PremiumPromoCard variant="full" />
+                  <Suspense fallback={<div className="h-24 bg-gray-800/30 rounded-lg animate-pulse" />}>
+                    <PremiumPromoCard variant="compact" />
                   </Suspense>
                 </div>
               )}

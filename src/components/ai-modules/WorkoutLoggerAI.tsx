@@ -396,6 +396,57 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     </Card>
   );
 
+  const loadWorkoutFromSession = (session: any) => {
+    if (!session.exercises_data) return;
+    
+    // Load exercises from the session
+    const loadedExercises = session.exercises_data.map((exercise: any) => ({
+      name: exercise.name,
+      sets: exercise.sets.map((set: any) => ({
+        weight: '',
+        reps: '',
+        rpe: set.rpe || 7
+      })),
+      muscleGroup: exercise.muscleGroup
+    }));
+    
+    setExercises(loadedExercises);
+    setWorkoutName(`${session.workout_name} (Copy)`);
+    setActiveTab('current');
+    toast.success(`Loaded workout: ${session.workout_name}`);
+  };
+
+  const saveAsTemplate = async (session: any) => {
+    if (!user?.id || !session.exercises_data) return;
+
+    try {
+      const templateData = {
+        user_id: user.id,
+        name: `${session.workout_name} Template`,
+        program_data: {
+          exercises: session.exercises_data.map((exercise: any) => ({
+            name: exercise.name,
+            sets: exercise.sets.length,
+            muscleGroup: exercise.muscleGroup
+          }))
+        },
+        description: `Template created from ${session.workout_name}`,
+        difficulty_level: 'Intermediate'
+      };
+
+      const { error } = await supabase
+        .from('training_programs')
+        .insert([templateData]);
+
+      if (error) throw error;
+      
+      toast.success('Workout saved as template!');
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast.error('Failed to save as template');
+    }
+  };
+
   const PreviousSessionCard = ({ session }: { session: any }) => (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
       <CardContent className="p-4">
@@ -406,9 +457,26 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               {new Date(session.session_date).toLocaleDateString()} • {session.duration_minutes} min
             </p>
           </div>
-          <Badge className="bg-orange-500/20 text-orange-400">
-            {session.exercises_data?.length || 0} exercises
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-orange-500/20 text-orange-400">
+              {session.exercises_data?.length || 0} exercises
+            </Badge>
+            <Button
+              onClick={() => loadWorkoutFromSession(session)}
+              size="sm"
+              className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/40"
+            >
+              Reuse
+            </Button>
+            <Button
+              onClick={() => saveAsTemplate(session)}
+              size="sm"
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
+            >
+              Save Template
+            </Button>
+          </div>
         </div>
 
         {session.exercises_data?.map((exercise: any, idx: number) => (

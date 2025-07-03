@@ -125,7 +125,6 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       const portionMultiplier = parseFloat(portionSize) / 100;
 
       const newEntry = {
-        id: Date.now().toString(),
         user_id: user.id,
         food_name: `🥗 ${foodItem.name}${foodItem.brand ? ` (${foodItem.brand})` : ''}`,
         portion_size: `${portionSize}g`,
@@ -136,24 +135,33 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         carbs: Math.round(foodItem.carbs * portionMultiplier * 10) / 10,
         fat: Math.round(foodItem.fat * portionMultiplier * 10) / 10,
         fiber: Math.round(foodItem.fiber * portionMultiplier * 10) / 10,
-        created_at: new Date().toISOString()
       };
 
-      setFoodEntries(prev => [...prev, newEntry]);
+      // Save to database
+      const { data, error } = await supabase
+        .from('food_log_entries')
+        .insert([newEntry])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to local state with database ID
+      setFoodEntries(prev => [...prev, data]);
       setSearchQuery('');
       setSearchResults([]);
       setSearchError(null);
       setNoResultsMessage(null);
       
       toast({
-        title: 'Food Added! 🥗',
-        description: `${foodItem.name} added from USDA database.`
+        title: 'Food Saved! 🥗',
+        description: `${foodItem.name} saved to your food log.`
       });
     } catch (error) {
-      console.error('Error adding food from USDA:', error);
+      console.error('Error saving food from USDA:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add food from USDA database.',
+        description: 'Failed to save food from USDA database.',
         variant: 'destructive'
       });
     }
@@ -164,24 +172,32 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
     try {
       const newEntry = {
-        id: Date.now().toString(),
         user_id: user.id,
         ...foodData,
         logged_date: selectedDate,
-        created_at: new Date().toISOString()
       };
 
-      setFoodEntries(prev => [...prev, newEntry]);
+      // Save to database
+      const { data, error } = await supabase
+        .from('food_log_entries')
+        .insert([newEntry])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to local state with database ID
+      setFoodEntries(prev => [...prev, data]);
       
       toast({
-        title: 'Custom Food Added! 📝',
-        description: `${foodData.food_name.replace('📝 ', '')} added successfully.`
+        title: 'Custom Food Saved! 📝',
+        description: `${foodData.food_name.replace('📝 ', '')} saved to your food log.`
       });
     } catch (error) {
-      console.error('Error adding custom food:', error);
+      console.error('Error saving custom food:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add custom food.',
+        description: 'Failed to save custom food.',
         variant: 'destructive'
       });
     }
@@ -189,6 +205,15 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
   const removeFoodEntry = async (entryId: string) => {
     try {
+      // Remove from database
+      const { error } = await supabase
+        .from('food_log_entries')
+        .delete()
+        .eq('id', entryId);
+
+      if (error) throw error;
+
+      // Remove from local state
       setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
       toast({
         title: 'Food Removed',

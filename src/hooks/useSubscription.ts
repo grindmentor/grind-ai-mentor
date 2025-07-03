@@ -50,15 +50,11 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
     monthlyPrice: 9.99,
     annualPrice: 99.99,
     features: [
-      'Unlimited CoachGPT queries',
-      'Unlimited meal plans', 
-      'Unlimited food logging',
-      'Unlimited Smart Training',
-      'Unlimited Physique AI',
-      'Priority support',
-      'All future features',
-      'Custom workout creation',
-      'Advanced analytics'
+      'Unlimited text-based AI prompts across all modules',
+      '30 image uploads per month across applicable modules',
+      'Full access to CoachGPT, Smart Training, Meal Plans, Recovery Coach, Blueprint AI',
+      'Priority support and faster AI processing queues',
+      'Early access to upcoming features'
     ],
     limits: {
       coach_gpt_queries: -1,
@@ -70,7 +66,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       progress_analyses: -1,
       cut_calc_uses: -1,
       workout_timer_sessions: -1,
-      food_photo_analyses: -1
+      food_photo_analyses: 30
     }
   }
 };

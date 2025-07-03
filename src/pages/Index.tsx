@@ -21,13 +21,14 @@ const Index = () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       
-      // Redirect logged-in users to dashboard on mobile
-      if (user && isMobile) {
-        navigate('/app');
+      // Redirect authenticated users to dashboard immediately to avoid flash
+      if (user) {
+        navigate('/app', { replace: true });
+        return;
       }
     };
     checkUser();
-  }, [isMobile, navigate]);
+  }, [navigate]);
 
   const features = [
     {

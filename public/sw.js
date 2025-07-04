@@ -204,14 +204,9 @@ async function handleAIRequestCached(request) {
     
     return networkResponse;
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      error: 'AI service temporarily unavailable',
-      offline: true,
-      fallback: 'I\'m currently offline. Please try again when you\'re connected to the internet.'
-    }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.error('[SW] AI request failed:', error);
+    // Let the original error response through instead of generic offline message
+    return fetch(request);
   }
 }
 

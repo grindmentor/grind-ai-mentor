@@ -136,13 +136,13 @@ async function handleCriticalAssetUltraFast(request) {
     
     if (cachedResponse) {
       // Serve from cache immediately, update in background
-      fetchAndCacheBackground(request, cache);
+      fetchAndCacheBackground(request.clone(), cache);
       return cachedResponse;
     }
     
-    const networkResponse = await fetch(request);
+    const networkResponse = await fetch(request.clone());
     if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+      cache.put(request.clone(), networkResponse.clone());
     }
     return networkResponse;
   } catch (error) {
@@ -162,11 +162,11 @@ async function handleImageOptimized(request) {
   }
   
   try {
-    const networkResponse = await fetch(request);
+    const networkResponse = await fetch(request.clone());
     if (networkResponse.ok) {
       // Cache images for longer period
       const responseToCache = networkResponse.clone();
-      cache.put(request, responseToCache);
+      cache.put(request.clone(), responseToCache);
     }
     return networkResponse;
   } catch (error) {
@@ -212,7 +212,7 @@ async function handleAIRequestCached(request) {
 
 async function handleAPIRequestFast(request) {
   try {
-    const networkResponse = await fetch(request, {
+    const networkResponse = await fetch(request.clone(), {
       // Optimize API requests
       keepalive: true
     });
@@ -221,11 +221,11 @@ async function handleAPIRequestFast(request) {
     if (networkResponse.ok && request.method === 'GET') {
       const cache = await caches.open(DYNAMIC_CACHE);
       const responseToCache = networkResponse.clone();
-      cache.put(request, responseToCache);
+      cache.put(request.clone(), responseToCache);
       
       // Auto-expire after 5 minutes
       setTimeout(() => {
-        cache.delete(request);
+        cache.delete(request.clone());
       }, 300000);
     }
     
@@ -269,12 +269,12 @@ async function handleDynamicRequestOptimized(request) {
   const cache = await caches.open(DYNAMIC_CACHE);
   
   try {
-    const networkResponse = await fetch(request);
+    const networkResponse = await fetch(request.clone());
     if (networkResponse.ok) {
       // Only cache smaller responses to avoid memory issues
       const contentLength = networkResponse.headers.get('content-length');
       if (!contentLength || parseInt(contentLength) < 1048576) { // 1MB limit
-        cache.put(request, networkResponse.clone());
+        cache.put(request.clone(), networkResponse.clone());
       }
     }
     return networkResponse;
@@ -287,9 +287,9 @@ async function handleDynamicRequestOptimized(request) {
 // Utility functions (optimized)
 async function fetchAndCacheBackground(request, cache) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(request.clone());
     if (response.ok) {
-      cache.put(request, response);
+      cache.put(request.clone(), response);
     }
   } catch (error) {
     console.log('[SW] Background fetch failed:', error);

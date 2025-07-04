@@ -47,7 +47,7 @@ export const aiModules: AIModule[] = [
     icon: Target,
     gradient: 'from-blue-600/80 to-blue-800/90 border-blue-500/60',
     component: BlueprintAI,
-    isPremium: false,
+    isPremium: true,
     isNew: true
   },
   {

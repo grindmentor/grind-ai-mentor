@@ -12,6 +12,7 @@ interface AIModuleCardProps {
   gradient: string;
   isPremium?: boolean;
   onClick: () => void;
+  isSubscribed?: boolean;
 }
 
 const AIModuleCard: React.FC<AIModuleCardProps> = ({
@@ -20,7 +21,8 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   icon: Icon,
   gradient,
   isPremium,
-  onClick
+  onClick,
+  isSubscribed = false
 }) => {
   // Enhanced module color mapping with proper 50% opacity to match interior themes
   const getModuleGradient = (originalGradient: string, title: string) => {
@@ -99,10 +101,19 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   const borderColor = getBorderColor(moduleGradient, title);
   const iconBgColor = getIconBgColor(title);
 
+  const handleClick = () => {
+    if (isPremium && !isSubscribed) {
+      // Don't prevent click for premium modules - let the module handle its own restriction
+      onClick();
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <Card 
-      className={`bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`}
-      onClick={onClick}
+      className={`bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor} ${isPremium && !isSubscribed ? 'opacity-75' : ''}`}
+      onClick={handleClick}
     >
       {/* Background pattern with reduced opacity */}
       <div className="absolute inset-0 opacity-5">

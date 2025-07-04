@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import FeatureGate from '@/components/FeatureGate';
 
 interface ProgressAIProps {
   onBack: () => void;
@@ -23,7 +24,7 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [uploadsUsed, setUploadsUsed] = useState(0);
 
-  const maxUploads = currentTierData?.limits.progress_analyses || 1;
+  const maxUploads = currentTierData?.limits.food_photo_analyses || 1;
   const isUnlimited = maxUploads === -1;
   const canUpload = isUnlimited || uploadsUsed < maxUploads;
 
@@ -125,7 +126,8 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-indigo-900 text-white p-6">
+    <FeatureGate featureKey="food_photo_analyses" allowPreview={false}>
+      <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-indigo-900 text-white p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -139,21 +141,21 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
               Dashboard
             </Button>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-indigo-700 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/25 border-2 border-indigo-400/40">
-                <TrendingUp className="w-8 h-8 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/40 flex-shrink-0">
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold text-white">
+              <div className="min-w-0">
+                <h1 className="text-2xl md:text-3xl font-bold text-white break-words">
                   Physique AI
                 </h1>
-                <p className="text-slate-400 text-lg">AI-powered physique analysis and progress tracking</p>
+                <p className="text-slate-400 text-sm md:text-base">AI-powered physique analysis and progress tracking</p>
               </div>
             </div>
           </div>
           
-          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 px-4 py-2">
-            <Zap className="w-4 h-4 mr-2" />
-            AI Analysis
+          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 px-3 py-1 flex-shrink-0">
+            <Zap className="w-3 h-3 mr-1" />
+            <span className="hidden sm:inline">AI Analysis</span>
           </Badge>
         </div>
 
@@ -390,8 +392,9 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
             </Card>
           ))}
         </div>
+        </div>
       </div>
-    </div>
+    </FeatureGate>
   );
 };
 

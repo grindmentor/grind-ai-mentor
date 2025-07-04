@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
+import FeatureGate from '@/components/FeatureGate';
 
 interface MealPlanAIProps {
   onBack: () => void;
@@ -171,7 +172,8 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   };
 
   return (
-    <UsageLimitGuard featureKey="meal_plan_generations" featureName="Meal Plan AI">
+    <FeatureGate featureKey="meal_plan_generations" allowPreview={false}>
+      <UsageLimitGuard featureKey="meal_plan_generations" featureName="Meal Plan AI">
       <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
         <MobileHeader 
           title="Meal Plan AI" 
@@ -394,6 +396,7 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
         </div>
       </div>
     </UsageLimitGuard>
+    </FeatureGate>
   );
 };
 

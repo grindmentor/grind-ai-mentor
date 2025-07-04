@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
+import FeatureGate from '@/components/FeatureGate';
 
 interface SmartTrainingProps {
   onBack: () => void;
@@ -264,7 +265,8 @@ ${isMinimalist ? `
   };
 
   return (
-    <UsageLimitGuard featureKey="training_programs" featureName="Smart Training">
+    <FeatureGate featureKey="training_programs" allowPreview={false}>
+      <UsageLimitGuard featureKey="training_programs" featureName="Smart Training">
       <div className="min-h-screen bg-gradient-to-br from-black via-blue-900/10 to-blue-800/20">
         <MobileHeader 
           title="Smart Training" 
@@ -507,6 +509,7 @@ ${isMinimalist ? `
         </div>
       </div>
     </UsageLimitGuard>
+    </FeatureGate>
   );
 };
 

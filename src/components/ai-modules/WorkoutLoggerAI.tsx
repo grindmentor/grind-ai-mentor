@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
 import { useUserUnits } from '@/hooks/useUserUnits';
+import WorkoutTemplateSelector from './WorkoutTemplateSelector';
 
 interface WorkoutSet {
   weight: string | number;
@@ -315,7 +316,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
 
         <div className="space-y-3">
           {exercise.sets.map((set, setIndex) => (
-            <div key={setIndex} className="grid grid-cols-4 gap-3 items-center p-3 bg-gray-800/30 rounded-lg">
+            <div key={setIndex} className="grid grid-cols-5 gap-3 items-center p-3 bg-gray-800/30 rounded-lg">
               <div className="text-center">
                 <Label className="text-xs text-gray-400 block mb-1">Set</Label>
                 <span className="text-white font-medium">{setIndex + 1}</span>
@@ -325,6 +326,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                 <Label className="text-xs text-gray-400 block mb-1">Weight ({units.weightUnit})</Label>
                 <Input
                   type="number"
+                  inputMode="decimal"
                   placeholder={units.weightUnit === 'kg' ? 'kg' : 'lbs'}
                   value={set.weight || ''}
                   onChange={(e) => updateSet(exerciseIndex, setIndex, 'weight', e.target.value)}
@@ -336,6 +338,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                 <Label className="text-xs text-gray-400 block mb-1">Reps</Label>
                 <Input
                   type="number"
+                  inputMode="numeric"
                   placeholder="12"
                   value={set.reps || ''}
                   onChange={(e) => updateSet(exerciseIndex, setIndex, 'reps', e.target.value)}
@@ -375,6 +378,17 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                     {getRIRLabel(getRIRFromRPE(set.rpe))}
                   </Badge>
                 )}
+              </div>
+              
+              <div className="text-center">
+                <Button
+                  onClick={() => removeSet(exerciseIndex, setIndex)}
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1 h-8 w-8"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
               </div>
             </div>
           ))}
@@ -447,6 +461,42 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
   };
 
+  const loadTemplateWorkout = (template: any) => {
+    if (!template.program_data?.exercises) return;
+    
+    const loadedExercises = template.program_data.exercises.map((exercise: any) => ({
+      name: exercise.name,
+      sets: Array(exercise.sets || 1).fill(null).map(() => ({
+        weight: '',
+        reps: '',
+        rpe: 7
+      })),
+      muscleGroup: exercise.muscleGroup
+    }));
+    
+    setExercises(loadedExercises);
+    setWorkoutName(template.name.replace(' Template', ''));
+    toast.success(`Loaded template: ${template.name}`);
+  };
+
+  const deleteWorkoutSession = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('workout_sessions')
+        .delete()
+        .eq('id', sessionId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      
+      setPreviousSessions(previousSessions.filter(s => s.id !== sessionId));
+      toast.success('Workout deleted successfully');
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      toast.error('Failed to delete workout');
+    }
+  };
+
   const PreviousSessionCard = ({ session }: { session: any }) => (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
       <CardContent className="p-4">
@@ -476,6 +526,14 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
             >
               Save Template
             </Button>
+            <Button
+              onClick={() => deleteWorkoutSession(session.id)}
+              size="sm"
+              variant="ghost"
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
           </div>
         </div>
 
@@ -486,7 +544,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               {exercise.sets?.map((set: any, setIdx: number) => (
                 <div key={setIdx} className="flex items-center justify-between text-xs text-gray-400 bg-gray-800/30 p-2 rounded">
                   <span>Set {setIdx + 1}</span>
-                  <span>{set.weight}{units.weightUnit} × {set.reps}</span>
+                  <span>{set.weight}{units.weightUnit} × {set.reps} reps</span>
                   {set.rpe && (
                     <Badge className={`${getRIRColor(getRIRFromRPE(set.rpe))} text-xs px-2 py-1`}>
                       {getRIRFromRPE(set.rpe)} RIR
@@ -588,6 +646,12 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Template Selector */}
+          <WorkoutTemplateSelector 
+            onSelectTemplate={loadTemplateWorkout}
+            className="mb-4"
+          />
 
           {/* Add Exercise - Fixed z-index and positioning */}
           <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 relative z-10">

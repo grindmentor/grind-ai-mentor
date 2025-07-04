@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Crown, Sparkles, Grid, List } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface Module {
   id: string;
@@ -172,6 +173,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
   viewMode = 'grid'
 }) => {
   const isMobile = useIsMobile();
+  const { isSubscribed } = useSubscription();
 
   if (viewMode === 'list') {
     return (

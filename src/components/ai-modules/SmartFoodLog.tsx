@@ -234,50 +234,110 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
     setIsAnalyzing(true);
     try {
-      // Create FormData for photo upload
-      const formData = new FormData();
-      formData.append('photo', selectedPhoto);
+      // Convert photo to base64 for API
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedPhoto);
+      });
 
-      // Mock photo analysis - replace with actual AI service
-      const mockIngredients = [
-        { name: 'Chicken Breast', amount: '150g', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0 },
-        { name: 'White Rice', amount: '80g', calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4 },
-        { name: 'Broccoli', amount: '100g', calories: 34, protein: 2.8, carbs: 7, fat: 0.4, fiber: 2.6 }
-      ];
+      const base64Image = await base64Promise;
 
-      // Add each ingredient as separate entry
-      for (const ingredient of mockIngredients) {
-        const newEntry = {
-          id: Date.now().toString() + Math.random(),
-          user_id: user.id,
-          food_name: `📸 ${ingredient.name}`,
-          portion_size: ingredient.amount,
-          meal_type: mealType,
-          logged_date: selectedDate,
-          calories: ingredient.calories,
-          protein: ingredient.protein,
-          carbs: ingredient.carbs,
-          fat: ingredient.fat,
-          fiber: ingredient.fiber,
-          created_at: new Date().toISOString()
-        };
-        
-        setFoodEntries(prev => [...prev, newEntry]);
+      // Call fitness AI function for food analysis
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `Analyze this food photo and identify individual ingredients with nutritional information. Return as JSON array with format:
+          [{"name": "ingredient name", "amount": "estimated portion", "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}]
+          
+          Photo description: ${base64Image}
+          
+          Provide realistic estimates for visible portions. If you cannot clearly identify foods, return an error message.`,
+          type: 'food_log',
+          image: base64Image
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data.error) {
+        throw new Error(data.error);
       }
 
+      // Try to parse the response as JSON
+      let ingredients;
+      try {
+        const response = data.response || '';
+        // Extract JSON from response if it's wrapped in text
+        const jsonMatch = response.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          ingredients = JSON.parse(jsonMatch[0]);
+        } else {
+          // Fallback if AI doesn't return proper JSON
+          throw new Error('Unable to identify foods in this image');
+        }
+      } catch (parseError) {
+        // If we can't parse the response, show error
+        setSearchError('Could not identify foods in this image. Please try a clearer photo or add foods manually.');
+        setSelectedPhoto(null);
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Validate and add ingredients
+      if (!Array.isArray(ingredients) || ingredients.length === 0) {
+        throw new Error('No foods could be identified in this image');
+      }
+
+      // Add each ingredient as separate entry to database
+      const entries = [];
+      for (const ingredient of ingredients) {
+        if (!ingredient.name) continue;
+        
+        const newEntry = {
+          user_id: user.id,
+          food_name: `📸 ${ingredient.name}`,
+          portion_size: ingredient.amount || '100g',
+          meal_type: mealType,
+          logged_date: selectedDate,
+          calories: Math.round(ingredient.calories || 0),
+          protein: Math.round((ingredient.protein || 0) * 10) / 10,
+          carbs: Math.round((ingredient.carbs || 0) * 10) / 10,
+          fat: Math.round((ingredient.fat || 0) * 10) / 10,
+          fiber: Math.round((ingredient.fiber || 0) * 10) / 10,
+        };
+        
+        entries.push(newEntry);
+      }
+
+      // Save all entries to database
+      const { data: savedEntries, error: saveError } = await supabase
+        .from('food_log_entries')
+        .insert(entries)
+        .select();
+
+      if (saveError) throw saveError;
+
+      // Add to local state
+      setFoodEntries(prev => [...prev, ...savedEntries]);
       setSelectedPhoto(null);
+      setSearchError(null);
       
       toast({
         title: 'Photo Analyzed! 📸',
-        description: `Identified ${mockIngredients.length} ingredients and added them separately.`
+        description: `Identified ${ingredients.length} ingredients and added them to your log.`
       });
     } catch (error) {
       console.error('Photo analysis error:', error);
       toast({
         title: 'Analysis Error',
-        description: 'Failed to analyze photo.',
+        description: error instanceof Error ? error.message : 'Failed to analyze photo. Please try manual entry.',
         variant: 'destructive'
       });
+      
+      // Show manual entry option
+      setSearchError('Photo analysis failed. Would you like to add foods manually?');
+      setNoResultsMessage('Click "Add Custom Food Entry" to manually log your meal.');
     } finally {
       setIsAnalyzing(false);
     }

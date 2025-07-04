@@ -26,7 +26,11 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   return (
     <div className="flex flex-col items-center justify-center space-y-4">
       <div className={`${containerSizes[size]} bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-xl flex items-center justify-center animate-pulse`}>
-        <Dumbbell className={`${sizeClasses[size]} text-white animate-bounce`} />
+        <div className="text-white animate-bounce font-bold tracking-wider font-mono">
+          {size === 'sm' && 'M'}
+          {size === 'md' && 'MY'}
+          {size === 'lg' && 'MYO'}
+        </div>
       </div>
       {text && (
         <p className="text-gray-400 text-sm font-medium">{text}</p>

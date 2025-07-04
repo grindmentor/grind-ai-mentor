@@ -9,6 +9,7 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { GoalCreationModal } from './GoalCreationModal';
+import GoalProgressLogger from './GoalProgressLogger';
 
 interface Goal {
   id: string;
@@ -45,6 +46,7 @@ const RealGoalsAchievements = () => {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [activeTab, setActiveTab] = useState<'goals' | 'achievements'>('goals');
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -203,6 +205,17 @@ const RealGoalsAchievements = () => {
     );
   }
 
+  // Show goal progress logger if a goal is selected
+  if (selectedGoal) {
+    return (
+      <GoalProgressLogger
+        goal={selectedGoal}
+        onBack={() => setSelectedGoal(null)}
+        onGoalUpdated={loadGoalsAndAchievements}
+      />
+    );
+  }
+
   return (
     <>
       <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
@@ -276,8 +289,12 @@ const RealGoalsAchievements = () => {
                     const GoalTypeIcon = getGoalTypeIcon(goal.goal_type);
                     const progressPercentage = getProgressPercentage(goal.current_value, goal.target_value, goal.title);
                     
-                    return (
-                      <div key={goal.id} className="p-3 sm:p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
+                     return (
+                      <div 
+                        key={goal.id} 
+                        className="p-3 sm:p-4 rounded-lg bg-gray-800/50 border border-gray-700/50 cursor-pointer transition-all duration-200 hover:bg-gray-800/70 hover:border-orange-500/30"
+                        onClick={() => setSelectedGoal(goal)}
+                      >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${getCategoryColor(goal.category).split(' ')[0]}`}>
@@ -308,7 +325,10 @@ const RealGoalsAchievements = () => {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleEditGoal(goal)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditGoal(goal);
+                              }}
                               className="text-gray-400 hover:text-white p-1 w-8 h-8"
                             >
                               <Edit className="w-3 h-3" />
@@ -316,7 +336,10 @@ const RealGoalsAchievements = () => {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleDeleteGoal(goal.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteGoal(goal.id);
+                              }}
                               className="text-gray-400 hover:text-red-400 p-1 w-8 h-8"
                             >
                               <Trash2 className="w-3 h-3" />

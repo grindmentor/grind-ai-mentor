@@ -355,8 +355,8 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       {/* Header with Back Button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          {/* Back Button - visible on desktop */}
-          {!isMobile && onBack && (
+          {/* Back Button - visible on all devices */}
+          {onBack && (
             <Button
               onClick={onBack}
               variant="ghost"

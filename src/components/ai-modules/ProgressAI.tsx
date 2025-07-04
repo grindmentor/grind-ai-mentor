@@ -83,41 +83,76 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
 
     setIsAnalyzing(true);
     try {
-      // Create FormData for photo upload
-      const formData = new FormData();
-      formData.append('photo', selectedPhoto);
+      // Convert photo to base64 for API
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedPhoto);
+      });
+
+      const base64Image = await base64Promise;
+      
+      // Get user profile data for context
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('weight, height')
+        .eq('id', user.id)
+        .single();
 
       // Call Supabase edge function for photo analysis
       const { data, error } = await supabase.functions.invoke('analyze-photo', {
-        body: formData,
+        body: {
+          image: base64Image,
+          weight: profileData?.weight || null,
+          height: profileData?.height || null
+        }
       });
 
       if (error) throw error;
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-      // Mock analysis result for now
-      const mockResult = {
-        bodyFat: 15.2,
-        muscleMass: 68.5,
-        recommendations: [
-          'Great muscle definition in arms and shoulders',
-          'Consider focusing on lower body development',
-          'Overall excellent progress from previous photos'
+      // Process analysis result
+      const result = {
+        bodyFat: data.bodyFat || 15,
+        muscleMass: data.muscleMass || 60,
+        recommendations: data.analysis ? data.analysis.split('•').filter(item => item.trim()).map(item => item.trim()) : [
+          'Analysis complete',
+          'Continue tracking progress with regular photos'
         ],
-        progressScore: 8.5
+        progressScore: Math.min(10, Math.max(1, (100 - data.bodyFat) / 10))
       };
 
-      setAnalysisResult(mockResult);
+      setAnalysisResult(result);
       setUploadsUsed(prev => prev + 1);
+      
+      // Save photo analysis to database
+      const { error: saveError } = await supabase
+        .from('progress_photos')
+        .insert({
+          user_id: user.id,
+          file_name: selectedPhoto.name,
+          taken_date: new Date().toISOString().split('T')[0],
+          analysis_result: JSON.stringify(result),
+          weight_at_time: profileData?.weight || null
+        });
+
+      if (saveError) {
+        console.error('Error saving photo analysis:', saveError);
+      }
       
       toast({
         title: 'Photo Analyzed! 📸',
-        description: 'Your physique analysis is complete.'
+        description: `Body fat: ${result.bodyFat}% | Muscle mass: ${result.muscleMass}kg`
       });
     } catch (error) {
       console.error('Photo analysis error:', error);
       toast({
         title: 'Analysis Failed',
-        description: 'Failed to analyze photo. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to analyze photo. Please try again.',
         variant: 'destructive'
       });
     } finally {

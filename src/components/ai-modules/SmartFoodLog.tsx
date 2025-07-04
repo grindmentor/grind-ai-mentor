@@ -670,11 +670,14 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                               </div>
                             </div>
                           )}
-                          <Button
+                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => removeFoodEntry(entry.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFoodEntry(entry.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity text-red-400 hover:text-red-300 hover:bg-red-500/10 flex-shrink-0"
                             aria-label={`Remove ${entry.food_name}`}
                           >
                             <Trash2 className="w-4 h-4" />

@@ -88,8 +88,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/app?payment=success`,
-      cancel_url: `${req.headers.get("origin")}/pricing?payment=cancelled`,
+      success_url: `${req.headers.get("origin")}/app?payment=success&pwa=true`,
+      cancel_url: `${req.headers.get("origin")}/pricing?payment=cancelled&pwa=true`,
       metadata: {
         user_id: user.id,
         tier: tier,

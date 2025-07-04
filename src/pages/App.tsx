@@ -7,6 +7,7 @@ import { pushNotificationService } from '@/services/pushNotificationService';
 import { initializePreloading } from '@/utils/componentPreloader';
 import { BrandedLoading } from '@/components/ui/branded-loading';
 import { useModulePreloader } from '@/hooks/useModulePreloader';
+import PWAHandler from '@/components/PWAHandler';
 
 // Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
@@ -65,6 +66,7 @@ export default function App() {
           />
         }
       >
+        <PWAHandler />
         {measurePerformance('Dashboard Render', () => (
           <Dashboard />
         ))}

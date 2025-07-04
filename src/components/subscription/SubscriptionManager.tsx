@@ -30,9 +30,19 @@ const SubscriptionManager = () => {
         return;
       }
 
+      // Open Stripe customer portal - optimized for iOS PWA
       if (data?.url) {
-        // Open Stripe customer portal in new tab
-        window.open(data.url, '_blank');
+        // Check if running as PWA on iOS
+        const isIOSPWA = (window.navigator as any).standalone === true;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isIOSPWA || isIOS) {
+          // For iOS PWA, use window.location to stay in the same context
+          window.location.href = data.url;
+        } else {
+          // For other platforms, open in new tab
+          window.open(data.url, '_blank');
+        }
       } else {
         toast({
           title: "Error",

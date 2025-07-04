@@ -221,10 +221,34 @@ ${isMinimalist ? `
       });
     } catch (error) {
       console.error('Error generating program:', error);
+      
+      // Enhanced error handling with specific messages
+      let errorMessage = 'Failed to generate program. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          errorMessage = 'AI service unavailable. Please check your connection and try again.';
+        } else if (error.message.includes('quota') || error.message.includes('limit')) {
+          errorMessage = 'AI service quota exceeded. Please try again later or contact support.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timed out. Please try again with a simpler program description.';
+        }
+      }
+      
       toast({
-        title: 'Error',
-        description: 'Failed to generate program. Please try again.',
+        title: 'Program Generation Failed',
+        description: errorMessage,
         variant: 'destructive'
+      });
+      
+      // Show fallback message
+      setGeneratedProgram({
+        name: programData.name,
+        goal: programData.goal,
+        duration: parseInt(programData.duration) || 8,
+        daysPerWeek: parseInt(programData.daysPerWeek) || 4,
+        approach: programData.trainingApproach,
+        content: `# ${programData.name}\n\n**AI Generation Temporarily Unavailable**\n\nWe're experiencing technical difficulties with our AI service. Please try again in a few minutes.\n\nIn the meantime, here's a basic framework for your ${programData.goal} program:\n\n## Week 1-2: Foundation Phase\n- Focus on form and consistency\n- 2-3 sets per exercise\n- 8-12 repetitions\n- 2-3 minute rest periods\n\n## Week 3-4: Progressive Phase\n- Increase intensity gradually\n- 3-4 sets per exercise\n- 6-10 repetitions\n- 3-4 minute rest periods\n\n## Week 5-${programData.duration || 8}: Peak Phase\n- Maximum effort and progression\n- Progressive overload focus\n- Track all improvements\n\n*Please try generating again when the AI service is restored.*`
       });
     } finally {
       setIsGenerating(false);

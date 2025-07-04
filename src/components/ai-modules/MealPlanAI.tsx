@@ -11,6 +11,7 @@ import { Utensils, Zap, Target, Calendar, Apple, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FeatureGate from '@/components/FeatureGate';
@@ -22,6 +23,7 @@ interface MealPlanAIProps {
 export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { incrementUsage } = useUsageTracking();
   const [isGenerating, setIsGenerating] = useState(false);
   const [planData, setPlanData] = useState({
     goal: '',
@@ -69,60 +71,64 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
       return;
     }
 
+    const success = await incrementUsage('meal_plan_generations');
+    if (!success) return;
+
     setIsGenerating(true);
     try {
-      // Mock meal plan generation - in production this would call an AI service
-      const mockPlan = {
-        title: `${planData.dietType} ${planData.goal} Plan`,
-        duration: parseInt(planData.duration),
-        calories: parseInt(planData.calories) || 2000,
-        meals: [
-          {
-            day: 'Monday',
-            breakfast: {
-              name: 'Protein Overnight Oats',
-              calories: 350,
-              macros: { protein: 25, carbs: 45, fat: 8 },
-              ingredients: ['1 cup oats', '1 scoop protein powder', '1 cup almond milk', '1 tbsp chia seeds', '1/2 banana']
-            },
-            lunch: {
-              name: 'Grilled Chicken Salad',
-              calories: 450,
-              macros: { protein: 35, carbs: 20, fat: 22 },
-              ingredients: ['6oz chicken breast', '2 cups mixed greens', '1/4 avocado', '1 tbsp olive oil', 'cherry tomatoes']
-            },
-            dinner: {
-              name: 'Salmon with Sweet Potato',
-              calories: 500,
-              macros: { protein: 40, carbs: 35, fat: 20 },
-              ingredients: ['6oz salmon fillet', '1 medium sweet potato', '1 cup broccoli', '1 tsp olive oil']
-            }
-          },
-          {
-            day: 'Tuesday',
-            breakfast: {
-              name: 'Greek Yogurt Bowl',
-              calories: 320,
-              macros: { protein: 20, carbs: 35, fat: 10 },
-              ingredients: ['1 cup Greek yogurt', '1/2 cup berries', '1 tbsp honey', '1 tbsp almonds']
-            },
-            lunch: {
-              name: 'Turkey and Hummus Wrap',
-              calories: 420,
-              macros: { protein: 30, carbs: 40, fat: 15 },
-              ingredients: ['whole wheat tortilla', '4oz turkey', '2 tbsp hummus', 'spinach', 'cucumber']
-            },
-            dinner: {
-              name: 'Lean Beef Stir Fry',
-              calories: 480,
-              macros: { protein: 35, carbs: 30, fat: 18 },
-              ingredients: ['5oz lean beef', '1 cup mixed vegetables', '1/2 cup brown rice', '1 tbsp sesame oil']
-            }
-          }
-        ]
-      };
+      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+        body: {
+          prompt: `Create a detailed ${planData.duration || 7} day meal plan for a ${planData.dietType} diet with the goal of ${planData.goal}.
 
-      setGeneratedPlan(mockPlan);
+MEAL PLAN REQUIREMENTS:
+- Daily calories: ${planData.calories || 2000}
+- Diet type: ${planData.dietType}
+- Goal: ${planData.goal}
+- Allergies/restrictions: ${planData.allergies || 'None specified'}
+- Duration: ${planData.duration || 7} days
+
+FORMAT AS JSON:
+{
+  "title": "Plan Name",
+  "duration": ${planData.duration || 7},
+  "calories": ${planData.calories || 2000},
+  "meals": [
+    {
+      "day": "Monday",
+      "breakfast": {
+        "name": "meal name",
+        "calories": number,
+        "macros": {"protein": number, "carbs": number, "fat": number},
+        "ingredients": ["ingredient 1", "ingredient 2"]
+      },
+      "lunch": {...},
+      "dinner": {...}
+    }
+  ]
+}
+
+Include complete nutritional information and practical, easy-to-prepare meals. Base recommendations on the latest nutrition science.`,
+          type: 'nutrition',
+          maxTokens: 2500
+        }
+      });
+
+      if (error) throw error;
+
+      let parsedPlan;
+      try {
+        parsedPlan = JSON.parse(data.response);
+      } catch (parseError) {
+        // If JSON parsing fails, create a structured plan from the text response
+        parsedPlan = {
+          title: `${planData.dietType} ${planData.goal} Plan`,
+          duration: parseInt(planData.duration) || 7,
+          calories: parseInt(planData.calories) || 2000,
+          content: data.response
+        };
+      }
+
+      setGeneratedPlan(parsedPlan);
       
       toast({
         title: 'Meal Plan Generated! 🍽️',

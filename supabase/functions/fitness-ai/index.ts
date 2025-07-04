@@ -312,7 +312,8 @@ DEFAULT RECOMMENDATIONS:
       }),
     });
 
-    console.log('OpenAI response status:', response.status);
+    console.log('🤖 FITNESS-AI: OpenAI response status:', response.status);
+    console.log('🤖 FITNESS-AI: OpenAI response ok:', response.ok);
 
     if (!response.ok) {
       const errorData = await response.text();
@@ -346,7 +347,13 @@ DEFAULT RECOMMENDATIONS:
     }
 
     const data = await response.json();
-    console.log('OpenAI response received successfully');
+    console.log('🤖 FITNESS-AI: OpenAI response received successfully');
+    console.log('🤖 FITNESS-AI: Response data structure:', { 
+      hasChoices: !!data.choices, 
+      choicesLength: data.choices?.length || 0,
+      firstChoiceHasMessage: !!(data.choices?.[0]?.message),
+      contentPreview: data.choices?.[0]?.message?.content?.substring(0, 100) + '...'
+    });
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Invalid OpenAI response structure:', data);

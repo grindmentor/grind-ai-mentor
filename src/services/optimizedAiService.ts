@@ -55,6 +55,10 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
   }
 
   try {
+    console.log('🔍 AI SERVICE: Starting getOptimizedAIResponse');
+    console.log('🔍 AI SERVICE: Prompt:', prompt.substring(0, 100) + '...');
+    console.log('🔍 AI SERVICE: Options:', options);
+    
     const { data, error } = await supabase.functions.invoke('fitness-ai', {
       body: {
         prompt,
@@ -63,6 +67,8 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
         type: 'coaching'
       }
     });
+
+    console.log('🔍 AI SERVICE: Supabase response:', { data, error });
 
     if (error) {
       console.error('Optimized AI Error:', error);

@@ -179,7 +179,7 @@ async function handleAIRequestCached(request) {
     // Check cache for repeated AI queries first (faster than network)
     if (request.method === 'POST') {
       const cache = await caches.open(AI_CACHE);
-      const cacheKey = await generateAICacheKeyFast(request);
+      const cacheKey = await generateAICacheKeyFast(request.clone());
       const cachedResponse = await cache.match(cacheKey);
       
       if (cachedResponse) {
@@ -188,12 +188,12 @@ async function handleAIRequestCached(request) {
       }
     }
     
-    const networkResponse = await fetch(request);
+    const networkResponse = await fetch(request.clone());
     
     // Cache successful AI responses for repeated queries
     if (networkResponse.ok && request.method === 'POST') {
       const cache = await caches.open(AI_CACHE);
-      const cacheKey = await generateAICacheKeyFast(request);
+      const cacheKey = await generateAICacheKeyFast(request.clone());
       // Cache for shorter time for AI responses (30 minutes)
       const responseToCache = networkResponse.clone();
       cache.put(cacheKey, responseToCache);
@@ -205,7 +205,7 @@ async function handleAIRequestCached(request) {
     return networkResponse;
   } catch (error) {
     console.error('[SW] AI request failed:', error);
-    // Let the original error response through instead of generic offline message
+    // Return a proper network-first fallback
     return fetch(request);
   }
 }

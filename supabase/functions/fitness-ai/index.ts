@@ -33,18 +33,24 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Received request to fitness-ai function');
+    console.log('🚀 FITNESS-AI: Received request to fitness-ai function');
+    console.log('🔑 FITNESS-AI: Checking OpenAI API key...');
+    console.log('🔑 FITNESS-AI: API key exists:', !!openAIApiKey);
+    console.log('🔑 FITNESS-AI: API key length:', openAIApiKey ? openAIApiKey.length : 0);
     
     if (!openAIApiKey) {
-      console.error('OpenAI API key not found in environment variables');
+      console.error('❌ FITNESS-AI: OpenAI API key not found in environment variables');
       return new Response(JSON.stringify({ 
         error: 'OpenAI API key not configured. Please add your API key in the Supabase Edge Function secrets.',
-        details: 'Missing OPENAI_API_KEY environment variable'
+        details: 'Missing OPENAI_API_KEY environment variable',
+        debug: 'Function can access environment but OPENAI_API_KEY is not set'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('✅ FITNESS-AI: OpenAI API key found, proceeding...');
 
     let requestBody;
     try {
@@ -286,7 +292,8 @@ DEFAULT RECOMMENDATIONS:
 
     // Select appropriate model based on complexity
     const selectedModel = selectModel(type, actualInput);
-    console.log('Making request to OpenAI with model:', selectedModel, 'type:', type);
+    console.log('🤖 FITNESS-AI: Making request to OpenAI with model:', selectedModel, 'type:', type);
+    console.log('🤖 FITNESS-AI: Request body:', { model: selectedModel, prompt: actualInput.substring(0, 100) + '...' });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

@@ -215,10 +215,14 @@ Format your response with clear headings and structure. Be encouraging and cite 
         });
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('🚨 CoachGPT Error Details:', error);
+      console.error('🚨 Error message:', error?.message);
+      console.error('🚨 Error name:', error?.name);
+      console.error('🚨 Full error object:', JSON.stringify(error, null, 2));
+      
       toast({
         title: 'Error',
-        description: 'Failed to send message. Please try again.',
+        description: `Failed to send message: ${error?.message || 'Unknown error'}`,
         variant: 'destructive'
       });
       

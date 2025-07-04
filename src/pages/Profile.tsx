@@ -56,7 +56,7 @@ const Profile = () => {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'premium': return 'from-purple-500 to-pink-500';
-      case 'basic': return 'from-blue-500 to-cyan-500';
+      
       default: return 'from-gray-500 to-gray-600';
     }
   };
@@ -64,7 +64,7 @@ const Profile = () => {
   const getTierIcon = (tier: string) => {
     switch (tier) {
       case 'premium': return Crown;
-      case 'basic': return Star;
+      
       default: return User;
     }
   };
@@ -146,7 +146,7 @@ const Profile = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'basic', label: 'Basic Info' }
+    { id: 'info', label: 'Basic Info' }
   ];
 
   return (
@@ -300,7 +300,7 @@ const Profile = () => {
                   )}
                 </TabsContent>
 
-                <TabsContent value="basic" className="mt-0">
+                <TabsContent value="info" className="mt-0">
                   <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6">
                     <BasicInformation 
                       profile={profileData}

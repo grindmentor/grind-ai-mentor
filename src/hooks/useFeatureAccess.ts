@@ -26,7 +26,7 @@ export const useFeatureAccess = (featureKey: string) => {
         canPreview: true, // Always allow preview
         remaining: 0,
         isUnlimited: currentTier === 'premium',
-        tierRequired: 'basic',
+        tierRequired: 'premium',
         upgradeMessage: 'Checking access...'
       };
     }
@@ -43,15 +43,12 @@ export const useFeatureAccess = (featureKey: string) => {
     const canUse = canAccess && (currentTier === 'premium' || isUnlimited || remaining > 0);
 
     // Determine required tier for upgrade messaging
-    let tierRequired = 'basic';
-    let upgradeMessage = 'Upgrade to Basic to access this feature';
+    let tierRequired = 'premium';
+    let upgradeMessage = 'Upgrade to Premium to access this feature';
 
     if (currentTier === 'free') {
-      tierRequired = 'basic';
-      upgradeMessage = 'Upgrade to Basic to unlock this feature';
-    } else if (currentTier === 'basic' && !canAccess) {
       tierRequired = 'premium';
-      upgradeMessage = 'Upgrade to Premium for unlimited access';
+      upgradeMessage = 'Upgrade to Premium to unlock this feature';
     } else if (currentTier === 'premium') {
       // Premium users should never see upgrade messages
       upgradeMessage = 'You have full access to this feature';

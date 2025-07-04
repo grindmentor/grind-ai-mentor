@@ -101,11 +101,11 @@ serve(async (req) => {
     const amount = price.unit_amount || 0;
     const interval = price.recurring?.interval || 'month';
     
-    let subscriptionTier = 'basic';
+    let subscriptionTier = 'premium';
     if (interval === 'month') {
-      subscriptionTier = amount <= 1000 ? 'basic' : 'premium';
+      subscriptionTier = 'premium';
     } else if (interval === 'year') {
-      subscriptionTier = amount <= 10000 ? 'basic' : 'premium';
+      subscriptionTier = 'premium';
     }
 
     const billingCycle = interval === 'year' ? 'annual' : 'monthly';

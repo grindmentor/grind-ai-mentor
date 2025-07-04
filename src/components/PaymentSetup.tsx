@@ -33,7 +33,7 @@ const PaymentSetup = ({ onUpgrade }: PaymentSetupProps) => {
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
             <div>
-              <h3 className="text-white font-medium">Basic Plan</h3>
+              <h3 className="text-white font-medium">Premium Plan</h3>
               <p className="text-sm text-gray-400">Higher monthly usage limits</p>
             </div>
             <div className="text-right">

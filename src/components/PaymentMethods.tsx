@@ -25,7 +25,7 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
     setPaymentStarted(true);
     
     try {
-      const tier = planName.toLowerCase().includes('basic') ? 'basic' : 'premium';
+      const tier = 'premium'; // Only premium tier available
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: { tier }
       });

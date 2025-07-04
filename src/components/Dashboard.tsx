@@ -213,7 +213,7 @@ const Dashboard = () => {
                   <div className="hidden sm:block">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                       currentTier === 'premium' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
-                      currentTier === 'basic' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
+                      
                       'bg-gray-600 text-gray-300'
                     }`}>
                       {currentTier.toUpperCase()}

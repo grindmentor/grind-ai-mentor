@@ -7,7 +7,7 @@ import { Check, X, Crown, Zap, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PricingTableProps {
-  onUpgrade?: (plan: 'basic' | 'premium') => void;
+  onUpgrade?: (plan: 'premium') => void;
 }
 
 const PricingTable = ({ onUpgrade }: PricingTableProps) => {
@@ -25,8 +25,8 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
       borderColor: 'border-gray-600',
       bgColor: 'bg-gray-900/40',
       features: [
-        { name: 'Basic AI Coach', included: true },
-        { name: 'Workout Logging', included: true },
+        { name: 'Limited AI Coach', included: true },
+        { name: 'Basic Workout Logging', included: true },
         { name: 'Basic Calculators', included: true },
         { name: 'Limited Food Logging', included: true },
         { name: 'Photo Uploads', included: false },
@@ -34,29 +34,6 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
         { name: 'Meal Planning', included: false },
         { name: 'Progress Analytics', included: false },
         { name: 'Premium Support', included: false }
-      ]
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      price: '$9.99',
-      period: 'per month',
-      description: 'Enhanced features for serious training',
-      icon: <Star className="w-5 h-5" />,
-      color: 'from-orange-500 to-red-500',
-      borderColor: 'border-orange-500',
-      bgColor: 'bg-orange-500/10',
-      popular: true,
-      features: [
-        { name: 'Everything in Free', included: true },
-        { name: 'Advanced AI Coach', included: true },
-        { name: 'Unlimited Food Logging', included: true },
-        { name: 'Basic Meal Planning', included: true },
-        { name: 'Progress Tracking', included: true },
-        { name: 'Photo Uploads (Limited)', included: true },
-        { name: 'Advanced Analytics', included: false },
-        { name: 'Custom Programs', included: false },
-        { name: 'Priority Support', included: false }
       ]
     },
     {
@@ -69,8 +46,9 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
       color: 'from-yellow-500 to-orange-500',
       borderColor: 'border-yellow-500',
       bgColor: 'bg-yellow-500/10',
+      popular: true,
       features: [
-        { name: 'Everything in Basic', included: true },
+        { name: 'Everything in Free', included: true },
         { name: 'Unlimited AI Features', included: true },
         { name: 'Advanced Meal Planning', included: true },
         { name: 'Photo Uploads (5/day)', included: true },
@@ -94,7 +72,7 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
         </p>
       </div>
 
-      <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`}>
+      <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} max-w-4xl mx-auto`}>
         {plans.map((plan) => (
           <Card 
             key={plan.id}
@@ -147,10 +125,10 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
                   </Button>
                 ) : (
                   <Button 
-                    onClick={() => onUpgrade?.(plan.id as 'basic' | 'premium')}
+                    onClick={() => onUpgrade?.(plan.id as 'premium')}
                     className={`w-full bg-gradient-to-r ${plan.color} hover:opacity-90 text-white font-semibold transition-all duration-300`}
                   >
-                    {plan.id === 'basic' ? 'Upgrade to Basic' : 'Upgrade to Premium'}
+                    Upgrade to Premium
                   </Button>
                 )}
               </div>

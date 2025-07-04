@@ -28,7 +28,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
     monthlyPrice: 0,
     annualPrice: 0,
     features: [
-      'Basic AI coaching',
+      'Limited AI coaching',
       'Limited usage',
       'Essential calculators'
     ],

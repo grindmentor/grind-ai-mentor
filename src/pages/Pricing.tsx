@@ -105,7 +105,7 @@ const Pricing = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-8">
           {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => (
             <SubscriptionCard
               key={key}

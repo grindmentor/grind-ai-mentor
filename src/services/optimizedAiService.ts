@@ -38,37 +38,47 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
   temperature?: number;
   useCache?: boolean;
   priority?: 'low' | 'normal' | 'high';
+  type?: string;
 } = {}) => {
-  const {
-    maxTokens = 150,
-    temperature = 0.7,
-    useCache = true,
-    priority = 'normal'
-  } = options;
+    const {
+      maxTokens = 100, // Reduced default for cost efficiency
+      temperature = 0.7,
+      useCache = true,
+      priority = 'normal',
+      type = 'coaching'
+    } = options;
 
-  const cacheKey = `ai:${prompt}:${maxTokens}:${temperature}`.toLowerCase();
+  // Optimized token limits based on query type and priority
+  const optimizedMaxTokens = priority === 'low' ? Math.min(maxTokens, 80) : 
+                            priority === 'high' ? Math.min(maxTokens, 1500) : 
+                            Math.min(maxTokens, 600); // Further reduced default
+
+  const cacheKey = `ai:${type}:${prompt.substring(0, 50)}:${optimizedMaxTokens}:${temperature}`.toLowerCase();
   
   // Check cache first
   if (useCache) {
     const cached = cache.get(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      console.log('🚀 AI SERVICE: Cache hit for', type);
+      return cached;
+    }
   }
 
   try {
-    console.log('🔍 AI SERVICE: Starting getOptimizedAIResponse');
-    console.log('🔍 AI SERVICE: Prompt:', prompt.substring(0, 100) + '...');
-    console.log('🔍 AI SERVICE: Options:', options);
+    console.log('🔍 AI SERVICE: Starting optimized AI request');
+    console.log('🔍 AI SERVICE: Type:', type, 'Priority:', priority, 'Tokens:', optimizedMaxTokens);
     
     const { data, error } = await supabase.functions.invoke('fitness-ai', {
       body: {
         prompt,
-        maxTokens,
+        userInput: prompt, // Ensure compatibility
+        maxTokens: optimizedMaxTokens,
         temperature,
-        type: 'coaching'
+        type
       }
     });
 
-    console.log('🔍 AI SERVICE: Supabase response:', { data, error });
+    console.log('🔍 AI SERVICE: Response received:', { hasData: !!data, hasError: !!error });
 
     if (error) {
       console.error('Optimized AI Error:', error);
@@ -77,7 +87,7 @@ export const getOptimizedAIResponse = async (prompt: string, options: {
 
     const response = data?.response || "I'm having trouble processing your request right now. Please try again later.";
     
-    // Cache successful responses
+    // Cache successful responses with shorter TTL for high-frequency requests
     if (useCache && response && !response.includes('having trouble')) {
       cache.set(cacheKey, response);
     }

@@ -31,10 +31,10 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Faster app initialization for better mobile UX
+    // Ultra-fast app initialization - reduce loading time to 300ms
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, []);

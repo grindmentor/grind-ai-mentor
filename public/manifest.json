@@ -3,7 +3,7 @@
   "name": "Myotopia - Science-Based AI Fitness Coach",
   "short_name": "Myotopia",
   "description": "Transform your physique with personalized, science-based AI fitness coaching",
-  "start_url": "/",
+  "start_url": "/app",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#000000",

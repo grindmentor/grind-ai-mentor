@@ -10,6 +10,7 @@ import { aiService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import SmartLoading from "@/components/ui/smart-loading";
 
 interface FoodPhotoLoggerProps {
   onBack: () => void;
@@ -38,26 +39,24 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
     setIsAnalyzing(true);
     
     try {
-      const analysisPrompt = `You are a professional nutritionist with access to the latest USDA Food Data Central (2024), FoodData4 database, and the most recent Matvaretabellen (Norwegian Food Composition Table 2024). Analyze this food photo with scientific precision.
-
-Use the most current nutritional databases and research from 2023-2024 to provide:
-
-1. **Food Identification**: List all visible foods using the latest food classification systems
-2. **Portion Estimation**: Use evidence-based visual portion estimation methods from recent nutrition research (2023-2024)
-3. **Macro & Micronutrient Analysis**: Cross-reference with multiple current databases:
-   - USDA Food Data Central (2024 release)
-   - Latest Matvaretabellen entries
-   - Recent food industry nutritional updates
-4. **Total Nutritional Profile**: Precise calculations based on latest data
-5. **Professional Recommendations**: Based on current nutritional science and dietary guidelines (2024)
-
-Meal context: ${mealType}
-${additionalNotes ? `Additional notes: ${additionalNotes}` : ''}
-
-Provide exact values using the most recent and accurate nutritional data available. Reference specific databases when possible.`;
-
-      const analysis = await aiService.getCoachingAdvice(analysisPrompt);
+      // Convert image to base64 for API
+      const imageBase64 = await convertFileToBase64(selectedFile);
       
+      // Call the new food-photo-ai edge function
+      const { data, error } = await supabase.functions.invoke('food-photo-ai', {
+        body: {
+          image: imageBase64,
+          mealType,
+          additionalNotes
+        }
+      });
+
+      if (error) {
+        console.error('Food photo analysis error:', error);
+        throw new Error(error.message || 'Failed to analyze food photo');
+      }
+
+      // Check usage limits
       const success = await incrementUsage('food_photo_analyses');
       if (!success) {
         toast({
@@ -69,35 +68,71 @@ Provide exact values using the most recent and accurate nutritional data availab
         return;
       }
 
-      // Enhanced parsing with better accuracy
-      const calories = extractNutrientValue(analysis, 'calories') || 0;
-      const protein = extractNutrientValue(analysis, 'protein') || 0;
-      const carbs = extractNutrientValue(analysis, 'carbs') || extractNutrientValue(analysis, 'carbohydrates') || 0;
-      const fat = extractNutrientValue(analysis, 'fat') || 0;
-      const fiber = extractNutrientValue(analysis, 'fiber') || 0;
+      // Handle the structured response from the AI
+      const analysis = data;
+      
+      if (analysis.confidence === 'low') {
+        toast({
+          title: "⚠️ Low Confidence Analysis",
+          description: analysis.analysis || "Food detection confidence is low. Consider taking a clearer photo.",
+          variant: "destructive",
+        });
+      }
 
-      // Save to food log with enhanced metadata
-      const { error } = await supabase
+      // Extract nutrition from the structured response
+      const totalNutrition = analysis.totalNutrition || {};
+      const calories = totalNutrition.calories || 0;
+      const protein = totalNutrition.protein || 0;
+      const carbs = totalNutrition.carbs || 0;
+      const fat = totalNutrition.fat || 0;
+      const fiber = totalNutrition.fiber || 0;
+
+      // Create detailed food name with detected items
+      const detectedFoods = analysis.foodsDetected || [];
+      const foodNames = detectedFoods.map(food => food.name).join(', ') || 'Mixed Foods';
+      const foodName = `📸 ${foodNames}`;
+
+      // Create detailed portion description
+      const portionDetails = detectedFoods.map(food => 
+        `${food.name}: ${food.quantity}`
+      ).join(' | ');
+      const portionSize = portionDetails || 'AI Photo Analysis';
+
+      // Save to food log with enhanced data
+      const { error: logError } = await supabase
         .from('food_log_entries')
         .insert({
           user_id: user.id,
-          food_name: `📸 AI Photo Analysis - ${selectedFile.name}`,
+          food_name: foodName,
           meal_type: mealType,
           calories: Math.round(calories),
-          protein: Math.round(protein * 10) / 10,
-          carbs: Math.round(carbs * 10) / 10,
-          fat: Math.round(fat * 10) / 10,
-          fiber: Math.round(fiber * 10) / 10,
-          portion_size: `Professional AI Analysis: ${analysis.substring(0, 200)}...`,
+          protein: Math.round((protein || 0) * 10) / 10,
+          carbs: Math.round((carbs || 0) * 10) / 10,
+          fat: Math.round((fat || 0) * 10) / 10,
+          fiber: Math.round((fiber || 0) * 10) / 10,
+          portion_size: `${portionSize} | Analysis: ${analysis.analysis?.substring(0, 100) || 'AI processed'}`,
           logged_date: new Date().toISOString().split('T')[0]
         });
 
-      if (error) throw error;
+      if (logError) throw logError;
 
+      // Show success message based on confidence
+      const confidenceEmoji = analysis.confidence === 'high' ? '✅' : analysis.confidence === 'medium' ? '⚡' : '⚠️';
+      
       toast({
-        title: "✅ Photo Analysis Complete!",
-        description: `Nutritional data added using latest 2024 databases. ${Math.round(calories)} cal, ${Math.round(protein)}g protein`,
+        title: `${confidenceEmoji} Photo Analysis Complete!`,
+        description: `${Math.round(calories)} cal, ${Math.round(protein)}g protein detected. Confidence: ${analysis.confidence}`,
       });
+
+      // Show recommendations if available
+      if (analysis.recommendations) {
+        setTimeout(() => {
+          toast({
+            title: "💡 Nutrition Insight",
+            description: analysis.recommendations,
+          });
+        }, 2000);
+      }
 
       // Reset form and notify parent
       setSelectedFile(null);
@@ -108,12 +143,22 @@ Provide exact values using the most recent and accurate nutritional data availab
       console.error('Food analysis error:', error);
       toast({
         title: "Analysis failed",
-        description: "Please try again or log the food manually.",
+        description: error.message || "Please try again or log the food manually.",
         variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  // Helper function to convert file to base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const extractNutrientValue = (text: string, nutrient: string): number | null => {
@@ -300,10 +345,12 @@ Provide exact values using the most recent and accurate nutritional data availab
                         className="w-full bg-gradient-to-r from-pink-500 to-pink-700 hover:from-pink-600 hover:to-pink-800 text-white font-medium py-4 rounded-xl transition-all duration-200 shadow-xl shadow-pink-500/25"
                       >
                         {isAnalyzing ? (
-                          <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                            Analyzing Photo...
-                          </>
+                          <SmartLoading 
+                            message="Analyzing Photo..." 
+                            type="analysis" 
+                            size="sm"
+                            className="text-white"
+                          />
                         ) : (
                           <>
                             <Sparkles className="w-5 h-5 mr-3" />

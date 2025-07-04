@@ -13,18 +13,24 @@ const corsHeaders = {
 const responseCache = new Map<string, any>();
 const CACHE_DURATION = 20 * 60 * 1000; // 20 minutes
 
-// Determine model based on query complexity and type
+// Optimized model selection for cost efficiency
 function selectModel(type: string, userInput: string): string {
-  // Use lightweight model for simple queries and basic coaching
-  const simpleTypes = ['coaching', 'food_log'];
-  const shortQueries = userInput && userInput.length < 100;
+  const inputLength = userInput ? userInput.length : 0;
   
-  if (simpleTypes.includes(type) || shortQueries) {
-    return 'gpt-4o-mini'; // Lightest model for simple queries
+  // Ultra-lightweight for very short queries
+  if (inputLength < 50) {
+    return 'gpt-4o-mini';
   }
   
-  // Use more powerful model for complex training programs and detailed nutrition
-  return 'gpt-4o-mini'; // Still using lightweight model but can upgrade specific cases
+  // Lightweight for most common use cases
+  const lightweightTypes = ['coaching', 'food_log', 'recovery'];
+  if (lightweightTypes.includes(type) || inputLength < 200) {
+    return 'gpt-4o-mini';
+  }
+  
+  // Still use lightweight model for all cases to minimize cost
+  // Only upgrade for extremely complex queries if needed
+  return 'gpt-4o-mini';
 }
 
 serve(async (req) => {
@@ -308,7 +314,7 @@ DEFAULT RECOMMENDATIONS:
           { role: 'user', content: actualInput }
         ],
         temperature: 0.7,
-        max_tokens: type === 'coaching' || type === 'food_log' ? 1500 : 3000, // Optimize token usage
+        max_tokens: requestBody.maxTokens || (type === 'coaching' || type === 'food_log' ? 600 : 1200), // Further optimized for cost
       }),
     });
 

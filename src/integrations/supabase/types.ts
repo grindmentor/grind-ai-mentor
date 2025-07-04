@@ -1017,6 +1017,7 @@ export type Database = {
           created_at: string
           dark_mode: boolean | null
           email_updates: boolean | null
+          favorite_modules: string[] | null
           height_unit: string | null
           id: string
           notification_preferences: Json | null
@@ -1029,6 +1030,7 @@ export type Database = {
           created_at?: string
           dark_mode?: boolean | null
           email_updates?: boolean | null
+          favorite_modules?: string[] | null
           height_unit?: string | null
           id?: string
           notification_preferences?: Json | null
@@ -1041,6 +1043,7 @@ export type Database = {
           created_at?: string
           dark_mode?: boolean | null
           email_updates?: boolean | null
+          favorite_modules?: string[] | null
           height_unit?: string | null
           id?: string
           notification_preferences?: Json | null

@@ -244,17 +244,12 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
       const base64Image = await base64Promise;
 
-      // Call fitness AI function for food analysis
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
+      // Call food-photo-ai function for food analysis
+      const { data, error } = await supabase.functions.invoke('food-photo-ai', {
         body: {
-          prompt: `Analyze this food photo and identify individual ingredients with nutritional information. Return as JSON array with format:
-          [{"name": "ingredient name", "amount": "estimated portion", "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}]
-          
-          Photo description: ${base64Image}
-          
-          Provide realistic estimates for visible portions. If you cannot clearly identify foods, return an error message.`,
-          type: 'food_log',
-          image: base64Image
+          image: base64Image,
+          mealType: mealType,
+          additionalNotes: `Portion size: ${portionSize}g`
         }
       });
 
@@ -264,47 +259,39 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         throw new Error(data.error);
       }
 
-      // Try to parse the response as JSON
-      let ingredients;
-      try {
-        const response = data.response || '';
-        // Extract JSON from response if it's wrapped in text
-        const jsonMatch = response.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          ingredients = JSON.parse(jsonMatch[0]);
-        } else {
-          // Fallback if AI doesn't return proper JSON
-          throw new Error('Unable to identify foods in this image');
-        }
-      } catch (parseError) {
-        // If we can't parse the response, show error
-        setSearchError('Could not identify foods in this image. Please try a clearer photo or add foods manually.');
+      // Handle the structured response from food-photo-ai
+      const analysis = data;
+      
+      if (analysis.confidence === 'low') {
+        setSearchError('Food detection confidence is low. Consider taking a clearer photo or adding foods manually.');
         setSelectedPhoto(null);
         setIsAnalyzing(false);
         return;
       }
 
-      // Validate and add ingredients
-      if (!Array.isArray(ingredients) || ingredients.length === 0) {
+      // Extract foods from the analysis
+      const detectedFoods = analysis.foodsDetected || [];
+      
+      if (detectedFoods.length === 0) {
         throw new Error('No foods could be identified in this image');
       }
 
-      // Add each ingredient as separate entry to database
+      // Add each detected food as separate entry to database
       const entries = [];
-      for (const ingredient of ingredients) {
-        if (!ingredient.name) continue;
+      for (const food of detectedFoods) {
+        if (!food.name) continue;
         
         const newEntry = {
           user_id: user.id,
-          food_name: `📸 ${ingredient.name}`,
-          portion_size: ingredient.amount || '100g',
+          food_name: `📸 ${food.name}`,
+          portion_size: food.quantity || '100g',
           meal_type: mealType,
           logged_date: selectedDate,
-          calories: Math.round(ingredient.calories || 0),
-          protein: Math.round((ingredient.protein || 0) * 10) / 10,
-          carbs: Math.round((ingredient.carbs || 0) * 10) / 10,
-          fat: Math.round((ingredient.fat || 0) * 10) / 10,
-          fiber: Math.round((ingredient.fiber || 0) * 10) / 10,
+          calories: Math.round(food.calories || 0),
+          protein: Math.round((food.protein || 0) * 10) / 10,
+          carbs: Math.round((food.carbs || 0) * 10) / 10,
+          fat: Math.round((food.fat || 0) * 10) / 10,
+          fiber: Math.round((food.fiber || 0) * 10) / 10,
         };
         
         entries.push(newEntry);
@@ -325,7 +312,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       
       toast({
         title: 'Photo Analyzed! 📸',
-        description: `Identified ${ingredients.length} ingredients and added them to your log.`
+        description: `Identified ${detectedFoods.length} ingredients and added them to your log.`
       });
     } catch (error) {
       console.error('Photo analysis error:', error);

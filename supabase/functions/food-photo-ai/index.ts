@@ -41,7 +41,7 @@ serve(async (req) => {
       throw new Error('Image data is required');
     }
 
-    console.log('🍽️ FOOD-PHOTO-AI: Analyzing food image with GPT-4o');
+    console.log('🍽️ FOOD-PHOTO-AI: Analyzing food image with GPT-4.1-2025-04-14');
 
     // Enhanced food analysis prompt
     const analysisPrompt = `You are a professional nutritionist with access to current USDA Food Data Central and comprehensive nutritional databases.
@@ -83,7 +83,7 @@ If you cannot clearly identify foods, return confidence: "low" and explain why i
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           {
             role: 'system',

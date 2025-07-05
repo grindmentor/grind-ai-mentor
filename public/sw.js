@@ -270,8 +270,8 @@ async function handleDynamicRequestOptimized(request) {
   
   try {
     const networkResponse = await fetch(request.clone());
-    if (networkResponse.ok) {
-      // Only cache smaller responses to avoid memory issues
+    if (networkResponse.ok && request.method === 'GET') {
+      // Only cache GET requests and smaller responses to avoid memory issues
       const contentLength = networkResponse.headers.get('content-length');
       if (!contentLength || parseInt(contentLength) < 1048576) { // 1MB limit
         cache.put(request.clone(), networkResponse.clone());
@@ -279,8 +279,13 @@ async function handleDynamicRequestOptimized(request) {
     }
     return networkResponse;
   } catch (error) {
-    const cachedResponse = await cache.match(request);
-    return cachedResponse || new Response('Content not available offline', { status: 503 });
+    if (request.method === 'GET') {
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+    }
+    return new Response('Content not available offline', { status: 503 });
   }
 }
 

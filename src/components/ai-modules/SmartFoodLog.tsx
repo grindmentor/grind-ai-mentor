@@ -232,6 +232,25 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const analyzePhotoIngredients = async () => {
     if (!selectedPhoto || !user) return;
 
+    // Check session status before function call
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    console.log('🔍 Session check before function call:', {
+      hasSession: !!sessionData.session,
+      hasAccessToken: !!sessionData.session?.access_token,
+      userId: sessionData.session?.user?.id,
+      sessionError
+    });
+
+    if (!sessionData.session) {
+      console.error('❌ No valid session found');
+      toast({
+        title: 'Authentication Error', 
+        description: 'Please log in again',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     console.log('🔍 Starting photo analysis...', {
       photoName: selectedPhoto.name,
       photoSize: selectedPhoto.size,

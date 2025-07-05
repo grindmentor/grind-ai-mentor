@@ -48,7 +48,7 @@ export const aiModules: AIModule[] = [
     gradient: 'from-blue-600/80 to-blue-800/90 border-blue-500/60',
     component: BlueprintAI,
     isPremium: true,
-    isNew: true
+    isNew: false
   },
   {
     id: 'coach-gpt',

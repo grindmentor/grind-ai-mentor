@@ -431,7 +431,10 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   };
 
   const saveAsTemplate = async (session: any) => {
-    if (!user?.id || !session.exercises_data) return;
+    if (!user?.id || !session.exercises_data) {
+      toast.error('No workout data to save as template');
+      return;
+    }
 
     try {
       const templateData = {
@@ -440,8 +443,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         program_data: {
           exercises: session.exercises_data.map((exercise: any) => ({
             name: exercise.name,
-            sets: exercise.sets.length,
-            muscleGroup: exercise.muscleGroup
+            sets: exercise.sets?.length || 3,
+            muscleGroup: exercise.muscleGroup || 'General'
           }))
         },
         description: `Template created from ${session.workout_name}`,
@@ -452,12 +455,15 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         .from('training_programs')
         .insert([templateData]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Template save error:', error);
+        throw error;
+      }
       
       toast.success('Workout saved as template!');
     } catch (error) {
       console.error('Error saving template:', error);
-      toast.error('Failed to save as template');
+      toast.error(`Failed to save template: ${error.message || 'Unknown error'}`);
     }
   };
 

@@ -125,6 +125,6 @@ export const withPerformanceMonitoring = <P extends object>(
       };
     }, []);
 
-    return React.createElement(Component, { ...props, ref });
+    return React.createElement(Component, props as P);
   });
 };

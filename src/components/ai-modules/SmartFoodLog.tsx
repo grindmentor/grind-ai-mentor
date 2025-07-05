@@ -232,6 +232,14 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const analyzePhotoIngredients = async () => {
     if (!selectedPhoto || !user) return;
 
+    console.log('🔍 Starting photo analysis...', {
+      photoName: selectedPhoto.name,
+      photoSize: selectedPhoto.size,
+      mealType: mealType,
+      portionSize: portionSize,
+      userId: user.id
+    });
+
     setIsAnalyzing(true);
     try {
       // Convert photo to base64 for API
@@ -243,8 +251,10 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       });
 
       const base64Image = await base64Promise;
+      console.log('📸 Photo converted to base64, length:', base64Image.length);
 
       // Call food-photo-ai function for food analysis
+      console.log('🚀 Calling food-photo-ai function...');
       const { data, error } = await supabase.functions.invoke('food-photo-ai', {
         body: {
           image: base64Image,
@@ -253,14 +263,21 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         }
       });
 
-      if (error) throw error;
+      console.log('📡 Supabase function response:', { data, error });
+
+      if (error) {
+        console.error('❌ Supabase function error:', error);
+        throw error;
+      }
       
       if (data.error) {
+        console.error('❌ Function returned error:', data.error);
         throw new Error(data.error);
       }
 
       // Handle the structured response from food-photo-ai
       const analysis = data;
+      console.log('🔬 Analysis result:', analysis);
       
       if (analysis.confidence === 'low') {
         setSearchError('Food detection confidence is low. Consider taking a clearer photo or adding foods manually.');

@@ -1,5 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -41,7 +41,7 @@ serve(async (req) => {
       throw new Error('Image data is required');
     }
 
-    console.log('🍽️ FOOD-PHOTO-AI: Analyzing food image with GPT-4.1');
+    console.log('🍽️ FOOD-PHOTO-AI: Analyzing food image with GPT-4o');
 
     // Enhanced food analysis prompt
     const analysisPrompt = `You are a professional nutritionist with access to current USDA Food Data Central and comprehensive nutritional databases.
@@ -83,7 +83,7 @@ If you cannot clearly identify foods, return confidence: "low" and explain why i
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',

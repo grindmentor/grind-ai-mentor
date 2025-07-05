@@ -1,5 +1,5 @@
-// Food Photo AI Analysis Function
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -8,62 +8,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Advanced food analysis cache with unique keys per image
-const analysisCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour for food analysis
-
-// Generate unique hash for image data
-function generateImageHash(imageData: string): string {
-  // Simple hash based on image data length and first/last characters
-  const dataStr = imageData.replace(/^data:image\/[^;]+;base64,/, '');
-  return `img_${dataStr.length}_${dataStr.slice(0, 10)}_${dataStr.slice(-10)}`;
-}
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Simple health check endpoint
+  if (req.method === 'GET') {
+    console.log('🍽️ FOOD-PHOTO-AI: Health check requested');
+    return new Response(JSON.stringify({ 
+      status: 'healthy', 
+      openai_configured: !!openAIApiKey,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
     console.log('🍽️ FOOD-PHOTO-AI: Starting food photo analysis');
     
     if (!openAIApiKey) {
+      console.error('🍽️ FOOD-PHOTO-AI: OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
     const { image, mealType, additionalNotes } = await req.json();
     
     if (!image) {
+      console.error('🍽️ FOOD-PHOTO-AI: No image data provided');
       throw new Error('Image data is required');
     }
 
-    // Generate unique cache key for this specific image
-    const imageHash = generateImageHash(image);
-    const cacheKey = `${imageHash}_${mealType || 'unknown'}`;
-    
-    // Check cache first to avoid duplicate analysis
-    const cached = analysisCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log('🍽️ FOOD-PHOTO-AI: Returning cached analysis');
-      return new Response(JSON.stringify(cached.data), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    console.log('🍽️ FOOD-PHOTO-AI: Analyzing food image with GPT-4.1');
 
-    console.log('🍽️ FOOD-PHOTO-AI: Analyzing new food image with GPT-4o-mini vision');
-
-    // Enhanced food analysis prompt with 2025 nutrition databases
-    const analysisPrompt = `You are a professional nutritionist with access to the most current USDA Food Data Central (2025), comprehensive international food databases, and the latest nutritional research.
-
-CRITICAL ANALYSIS REQUIREMENTS:
-1. IDENTIFY ALL VISIBLE FOODS with scientific precision
-2. ESTIMATE PORTIONS using visual cues and standard serving sizes  
-3. CALCULATE PRECISE MACROS using 2025 nutritional data
-4. DETECT MULTIPLE INGREDIENTS and components
-5. PROVIDE STRUCTURED JSON RESPONSE
-
-Context: ${mealType ? `Meal type: ${mealType}` : 'General food analysis'}
-${additionalNotes ? `Additional context: ${additionalNotes}` : ''}
+    // Enhanced food analysis prompt
+    const analysisPrompt = `You are a professional nutritionist with access to current USDA Food Data Central and comprehensive nutritional databases.
 
 ANALYZE THIS FOOD IMAGE AND RETURN ONLY A JSON OBJECT WITH THIS EXACT STRUCTURE:
 {
@@ -87,11 +68,13 @@ ANALYZE THIS FOOD IMAGE AND RETURN ONLY A JSON OBJECT WITH THIS EXACT STRUCTURE:
   },
   "confidence": "high|medium|low",
   "analysis": "Brief analysis of what you see and how you calculated portions",
-  "recommendations": "Brief nutritional insights or suggestions"
+  "recommendations": "Brief nutritional insights"
 }
 
-If you cannot clearly identify foods, return confidence: "low" and explain why in analysis.
-Use ONLY scientific nutritional data from 2025 databases.`;
+Context: ${mealType ? `Meal type: ${mealType}` : 'General food analysis'}
+${additionalNotes ? `Additional context: ${additionalNotes}` : ''}
+
+If you cannot clearly identify foods, return confidence: "low" and explain why in analysis.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -100,7 +83,7 @@ Use ONLY scientific nutritional data from 2025 databases.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           {
             role: 'system',
@@ -123,21 +106,23 @@ Use ONLY scientific nutritional data from 2025 databases.`;
             ]
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.3 // Lower temperature for more consistent analysis
+        max_tokens: 1500,
+        temperature: 0.3
       }),
     });
+
+    console.log('🍽️ FOOD-PHOTO-AI: OpenAI API response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('🍽️ FOOD-PHOTO-AI: OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
     const content = data.choices[0].message.content;
     
-    console.log('🍽️ FOOD-PHOTO-AI: Raw AI response:', content.substring(0, 200));
+    console.log('🍽️ FOOD-PHOTO-AI: Raw AI response length:', content.length);
 
     let analysisResult;
     try {
@@ -157,9 +142,9 @@ Use ONLY scientific nutritional data from 2025 databases.`;
       console.log('🍽️ FOOD-PHOTO-AI: Successfully parsed analysis result');
       
     } catch (parseError) {
-      console.error('🍽️ FOOD-PHOTO-AI: Failed to parse AI response, using fallback:', parseError);
+      console.error('🍽️ FOOD-PHOTO-AI: Failed to parse AI response:', parseError);
       
-      // Intelligent fallback based on image analysis attempt
+      // Fallback response
       analysisResult = {
         foodsDetected: [
           {
@@ -180,22 +165,9 @@ Use ONLY scientific nutritional data from 2025 databases.`;
           fiber: 5
         },
         confidence: "low",
-        analysis: "Unable to clearly identify specific foods in the image. Using estimated nutritional values.",
-        recommendations: "For accurate nutrition tracking, try taking a clearer photo with good lighting or manually enter the food items."
+        analysis: "Unable to clearly identify specific foods. Using estimated values.",
+        recommendations: "For accurate tracking, try a clearer photo or manually enter foods."
       };
-    }
-
-    // Cache successful analysis
-    analysisCache.set(cacheKey, {
-      data: analysisResult,
-      timestamp: Date.now()
-    });
-
-    // Clean old cache entries periodically
-    if (analysisCache.size > 100) {
-      const entries = Array.from(analysisCache.entries());
-      const expired = entries.filter(([_, value]) => Date.now() - value.timestamp > CACHE_DURATION);
-      expired.forEach(([key]) => analysisCache.delete(key));
     }
 
     console.log('🍽️ FOOD-PHOTO-AI: Analysis complete, confidence:', analysisResult.confidence);
@@ -205,13 +177,13 @@ Use ONLY scientific nutritional data from 2025 databases.`;
     });
 
   } catch (error) {
-    console.error('🍽️ FOOD-PHOTO-AI: Analysis error:', error);
+    console.error('🍽️ FOOD-PHOTO-AI: Function error:', error);
     
-    // Return structured error response with fallback nutrition data
+    // Return structured error response
     const errorResponse = {
       foodsDetected: [
         {
-          name: "Food Analysis Error",
+          name: "Analysis Error",
           quantity: "unknown",
           calories: 0,
           protein: 0,
@@ -228,8 +200,8 @@ Use ONLY scientific nutritional data from 2025 databases.`;
         fiber: 0
       },
       confidence: "low",
-      analysis: `Analysis failed: ${error.message}. Please try again with a clearer image or enter food manually.`,
-      recommendations: "For best results, ensure good lighting, clear focus, and include reference objects for scale."
+      analysis: `Analysis failed: ${error.message}`,
+      recommendations: "Try again with a clearer image or enter food manually."
     };
 
     return new Response(JSON.stringify(errorResponse), {

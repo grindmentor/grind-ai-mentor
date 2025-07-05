@@ -1,7 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
+console.log('🍽️ FOOD-PHOTO-AI: Function starting up...');
+
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+console.log('🍽️ FOOD-PHOTO-AI: OpenAI key present:', !!openAIApiKey);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,8 +12,12 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('🍽️ FOOD-PHOTO-AI: Function called, method:', req.method);
+  console.log('🍽️ FOOD-PHOTO-AI: OpenAI key configured:', !!openAIApiKey);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('🍽️ FOOD-PHOTO-AI: Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 

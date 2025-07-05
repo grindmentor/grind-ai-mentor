@@ -42,7 +42,7 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
       // Convert image to base64 for API
       const imageBase64 = await convertFileToBase64(selectedFile);
       
-      // Call the new food-photo-ai edge function
+      // Call the food-photo-ai edge function
       const { data, error } = await supabase.functions.invoke('food-photo-ai', {
         body: {
           image: imageBase64,

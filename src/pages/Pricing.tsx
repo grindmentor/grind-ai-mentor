@@ -30,11 +30,18 @@ const Pricing = () => {
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
-        // Refresh subscription status after payment
-        setTimeout(() => {
-          refreshSubscription();
-        }, 3000);
+        // Better mobile handling
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+        
+        if (isMobile || isPWA) {
+          // Mobile/PWA: redirect in same tab
+          window.location.href = data.url;
+        } else {
+          // Desktop: new tab
+          window.open(data.url, '_blank');
+          setTimeout(refreshSubscription, 3000);
+        }
       }
     } catch (error) {
       console.error('Payment error:', error);

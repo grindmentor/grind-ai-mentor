@@ -33,43 +33,52 @@ const PaymentMethods = ({ planName, amount, onSuccess }: PaymentMethodsProps) =>
       if (error) throw error;
 
       if (data?.url) {
-        // Open Stripe checkout in a new tab
-        const newWindow = window.open(data.url, '_blank');
+        // Better mobile handling - use location.href for mobile, window.open for desktop
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches;
         
-        // Enhanced payment monitoring
-        let attempts = 0;
-        const maxAttempts = 60; // 10 minutes of checking
-        
-        const checkStatus = async () => {
-          attempts++;
-          await checkPaymentStatus();
+        if (isMobile || isPWA) {
+          // On mobile/PWA, redirect in same tab for better compatibility
+          window.location.href = data.url;
+        } else {
+          // Desktop: open in new tab
+          const newWindow = window.open(data.url, '_blank');
           
-          if (attempts < maxAttempts && newWindow && !newWindow.closed) {
-            setTimeout(checkStatus, 10000); // Check every 10 seconds
-          } else if (newWindow?.closed) {
-            // Window was closed, do final checks
-            setTimeout(async () => {
-              await checkPaymentStatus();
-              // Additional verification
+          // Enhanced payment monitoring for desktop
+          let attempts = 0;
+          const maxAttempts = 60;
+          
+          const checkStatus = async () => {
+            attempts++;
+            await checkPaymentStatus();
+            
+            if (attempts < maxAttempts && newWindow && !newWindow.closed) {
+              setTimeout(checkStatus, 10000);
+            } else if (newWindow?.closed) {
+              // Window was closed, do final checks
               setTimeout(async () => {
                 await checkPaymentStatus();
-                toast({
-                  title: "Checking Payment Status",
-                  description: "We're verifying your payment. This may take a moment...",
-                });
-              }, 3000);
-            }, 2000);
-          }
-        };
+                // Additional verification
+                setTimeout(async () => {
+                  await checkPaymentStatus();
+                  toast({
+                    title: "Checking Payment Status",
+                    description: "We're verifying your payment. This may take a moment...",
+                  });
+                }, 3000);
+              }, 2000);
+            }
+          };
 
-        // Start checking after a short delay
-        setTimeout(checkStatus, 3000);
-        
-        toast({
-          title: "Redirected to Stripe",
-          description: "Complete your payment in the new tab. We'll automatically update your account.",
-          duration: 8000,
-        });
+          // Start checking after a short delay
+          setTimeout(checkStatus, 3000);
+          
+          toast({
+            title: "Redirected to Stripe",
+            description: "Complete your payment in the new tab. We'll automatically update your account.",
+            duration: 8000,
+          });
+        }
       }
     } catch (error) {
       console.error('Payment error:', error);

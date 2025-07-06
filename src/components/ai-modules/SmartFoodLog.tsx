@@ -229,111 +229,96 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     }
   };
 
+  const compressImage = (file: File, maxSizeMB: number = 2): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 1024px)
+        let { width, height } = img;
+        const maxSize = 1024;
+        
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Try different quality levels until under size limit
+        let quality = 0.8;
+        const tryCompress = () => {
+          const base64 = canvas.toDataURL('image/jpeg', quality);
+          const sizeInMB = (base64.length * 0.75) / (1024 * 1024);
+          
+          if (sizeInMB <= maxSizeMB || quality <= 0.1) {
+            resolve(base64);
+          } else {
+            quality -= 0.1;
+            tryCompress();
+          }
+        };
+        
+        tryCompress();
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const analyzePhotoIngredients = async () => {
     if (!selectedPhoto || !user) return;
 
-    // Check session status before function call
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    console.log('🔍 Session check before function call:', {
-      hasSession: !!sessionData.session,
-      hasAccessToken: !!sessionData.session?.access_token,
-      userId: sessionData.session?.user?.id,
-      sessionError
-    });
-
-    if (!sessionData.session) {
-      console.error('❌ No valid session found');
-      toast({
-        title: 'Authentication Error', 
-        description: 'Please log in again',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    console.log('🔍 Starting photo analysis...', {
-      photoName: selectedPhoto.name,
-      photoSize: selectedPhoto.size,
-      mealType: mealType,
-      portionSize: portionSize,
-      userId: user.id
-    });
-
     setIsAnalyzing(true);
+    setSearchError(null);
+    
     try {
-      // Convert photo to base64 for API
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(selectedPhoto);
-      });
-
-      const base64Image = await base64Promise;
-      console.log('📸 Photo converted to base64, length:', base64Image.length);
-
-      // Call food-photo-ai function for food analysis
-      console.log('🚀 Calling food-photo-ai function...');
+      // Compress image if needed
+      const base64Image = await compressImage(selectedPhoto, 2);
+      
       const { data, error } = await supabase.functions.invoke('food-photo-ai', {
         body: {
           image: base64Image,
-          mealType: mealType,
-          additionalNotes: `Portion size: ${portionSize}g`
+          mealType: mealType
         }
       });
 
-      console.log('📡 Supabase function response:', { data, error });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
-      if (error) {
-        console.error('❌ Supabase function error:', error);
-        throw error;
-      }
-      
-      if (data.error) {
-        console.error('❌ Function returned error:', data.error);
-        throw new Error(data.error);
-      }
-
-      // Handle the structured response from food-photo-ai
       const analysis = data;
-      console.log('🔬 Analysis result:', analysis);
       
-      if (analysis.confidence === 'low') {
-        setSearchError('Food detection confidence is low. Consider taking a clearer photo or adding foods manually.');
-        setSelectedPhoto(null);
-        setIsAnalyzing(false);
+      if (analysis.confidence === 'low' || !analysis.foodsDetected?.length) {
+        // Immediately show manual entry option
+        setSearchError('Could not identify foods clearly from photo');
+        setNoResultsMessage('Photo unclear - add foods manually for best accuracy');
+        setShowCustomFoodModal(true);
         return;
       }
 
-      // Extract foods from the analysis
-      const detectedFoods = analysis.foodsDetected || [];
-      
-      if (detectedFoods.length === 0) {
-        throw new Error('No foods could be identified in this image');
-      }
+      // Process detected foods
+      const entries = analysis.foodsDetected.map((food: any) => ({
+        user_id: user.id,
+        food_name: `📸 ${food.name}`,
+        portion_size: food.quantity || '1 serving',
+        meal_type: mealType,
+        logged_date: selectedDate,
+        calories: Math.round(food.calories || 0),
+        protein: Math.round((food.protein || 0) * 10) / 10,
+        carbs: Math.round((food.carbs || 0) * 10) / 10,
+        fat: Math.round((food.fat || 0) * 10) / 10,
+        fiber: Math.round((food.fiber || 0) * 10) / 10,
+      }));
 
-      // Add each detected food as separate entry to database
-      const entries = [];
-      for (const food of detectedFoods) {
-        if (!food.name) continue;
-        
-        const newEntry = {
-          user_id: user.id,
-          food_name: `📸 ${food.name}`,
-          portion_size: food.quantity || '100g',
-          meal_type: mealType,
-          logged_date: selectedDate,
-          calories: Math.round(food.calories || 0),
-          protein: Math.round((food.protein || 0) * 10) / 10,
-          carbs: Math.round((food.carbs || 0) * 10) / 10,
-          fat: Math.round((food.fat || 0) * 10) / 10,
-          fiber: Math.round((food.fiber || 0) * 10) / 10,
-        };
-        
-        entries.push(newEntry);
-      }
-
-      // Save all entries to database
       const { data: savedEntries, error: saveError } = await supabase
         .from('food_log_entries')
         .insert(entries)
@@ -341,26 +326,29 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
       if (saveError) throw saveError;
 
-      // Add to local state
       setFoodEntries(prev => [...prev, ...savedEntries]);
       setSelectedPhoto(null);
-      setSearchError(null);
       
       toast({
         title: 'Photo Analyzed! 📸',
-        description: `Identified ${detectedFoods.length} ingredients and added them to your log.`
-      });
-    } catch (error) {
-      console.error('Photo analysis error:', error);
-      toast({
-        title: 'Analysis Error',
-        description: error instanceof Error ? error.message : 'Failed to analyze photo. Please try manual entry.',
-        variant: 'destructive'
+        description: `Added ${entries.length} foods to your log`
       });
       
-      // Show manual entry option
-      setSearchError('Photo analysis failed. Would you like to add foods manually?');
-      setNoResultsMessage('Click "Add Custom Food Entry" to manually log your meal.');
+    } catch (error) {
+      console.error('Photo analysis error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Analysis failed';
+      
+      setSearchError(errorMsg.includes('too large') ? 
+        'Image too large - please use a smaller photo' : 
+        'Analysis failed - try a clearer, well-lit photo'
+      );
+      setNoResultsMessage('Manual entry recommended for accuracy');
+      
+      toast({
+        title: 'Analysis Failed',
+        description: 'Try manual entry or retake photo with better lighting',
+        variant: 'destructive'
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -588,14 +576,14 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                         className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                       >
                         {isAnalyzing ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Analyzing Ingredients...
-                          </>
+                          <div className="flex items-center justify-center space-x-2">
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>Analyzing photo...</span>
+                          </div>
                         ) : (
                           <>
                             <Camera className="w-4 h-4 mr-2" />
-                            Analyze & Separate Ingredients
+                            Analyze Photo
                           </>
                         )}
                       </Button>

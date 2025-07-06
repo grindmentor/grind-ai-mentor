@@ -28,6 +28,14 @@ serve(async (req) => {
       throw new Error('Image is required');
     }
 
+    // Compress image if it's too large (>4MB base64 ≈ 3MB actual)
+    let processedImage = image;
+    if (image.length > 4 * 1024 * 1024) {
+      console.log('Image too large, needs compression');
+      // For now, reject very large images with helpful message
+      throw new Error('Image too large. Please use a smaller image (under 3MB) or compress it first.');
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -35,18 +43,50 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o',
         messages: [
+          {
+            role: 'system',
+            content: 'You are a nutrition expert specializing in food portion estimation from photos. Be precise with quantities and realistic with calorie estimates.'
+          },
           {
             role: 'user',
             content: [
               { 
                 type: 'text', 
-                text: `Analyze this food photo and return JSON: {"foodsDetected":[{"name":"food","quantity":"100g","calories":200,"protein":10,"carbs":20,"fat":5,"fiber":3}],"totalNutrition":{"calories":200,"protein":10,"carbs":20,"fat":5,"fiber":3},"confidence":"high","analysis":"brief description","recommendations":"tips"}` 
+                text: `Analyze this food photo for accurate nutrition logging. Look at the portion size carefully - use visual cues like plate size, utensils, or standard serving sizes for reference.
+
+Return JSON in this exact format:
+{
+  "foodsDetected": [
+    {
+      "name": "specific food name",
+      "quantity": "realistic portion in grams",
+      "calories": accurate_calorie_count,
+      "protein": protein_grams,
+      "carbs": carb_grams,
+      "fat": fat_grams,
+      "fiber": fiber_grams
+    }
+  ],
+  "totalNutrition": {
+    "calories": total_calories,
+    "protein": total_protein,
+    "carbs": total_carbs,
+    "fat": total_fat,
+    "fiber": total_fiber
+  },
+  "confidence": "high/medium/low",
+  "analysis": "brief description of what you see",
+  "recommendations": "nutrition tips if relevant"
+}
+
+Meal context: ${mealType}
+Be conservative with portions - it's better to underestimate than overestimate. Focus on realistic serving sizes.` 
               },
               { 
                 type: 'image_url', 
-                image_url: { url: image } 
+                image_url: { url: processedImage } 
               }
             ]
           }

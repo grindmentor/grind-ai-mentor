@@ -437,33 +437,46 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
 
     try {
+      // Validate exercises_data structure
+      if (!Array.isArray(session.exercises_data) || session.exercises_data.length === 0) {
+        throw new Error('Invalid workout data - no exercises found');
+      }
+
       const templateData = {
         user_id: user.id,
         name: `${session.workout_name} Template`,
         program_data: {
           exercises: session.exercises_data.map((exercise: any) => ({
-            name: exercise.name,
+            name: exercise.name || 'Unknown Exercise',
             sets: exercise.sets?.length || 3,
-            muscleGroup: exercise.muscleGroup || 'General'
+            muscleGroup: exercise.muscleGroup || 'General',
+            targetReps: exercise.sets?.[0]?.reps || '8-12',
+            notes: `Template from ${session.workout_name}`
           }))
         },
-        description: `Template created from ${session.workout_name}`,
-        difficulty_level: 'Intermediate'
+        description: `Template created from ${session.workout_name} on ${new Date(session.session_date).toLocaleDateString()}`,
+        difficulty_level: 'Intermediate',
+        duration_weeks: 4
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('training_programs')
-        .insert([templateData]);
+        .insert([templateData])
+        .select()
+        .single();
 
       if (error) {
-        console.error('Template save error:', error);
-        throw error;
+        console.error('Template save error details:', error);
+        throw new Error(`Database error: ${error.message}`);
       }
       
       toast.success('Workout saved as template!');
+      return data;
     } catch (error) {
       console.error('Error saving template:', error);
-      toast.error(`Failed to save template: ${error.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save template: ${errorMessage}`);
+      throw error;
     }
   };
 

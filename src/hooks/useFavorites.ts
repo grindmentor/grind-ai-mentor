@@ -74,14 +74,22 @@ export const useFavorites = () => {
     }
   };
 
-  // Toggle favorite
+  // Toggle favorite with optimistic updates
   const toggleFavorite = async (moduleId: string) => {
     const newFavorites = favorites.includes(moduleId) 
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
     
+    // Immediate UI update (optimistic)
     setFavorites(newFavorites);
-    await saveFavorites(newFavorites);
+    
+    try {
+      await saveFavorites(newFavorites);
+    } catch (error) {
+      // Revert on error
+      setFavorites(favorites);
+      console.error('Failed to save favorites:', error);
+    }
   };
 
   useEffect(() => {

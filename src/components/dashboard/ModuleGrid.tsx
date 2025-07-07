@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Star, Crown, Sparkles, Grid, List } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PerformanceOptimizedCard } from "@/components/ui/performance-optimized-card";
 
 interface Module {
   id: string;
@@ -254,15 +255,14 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         const theme = getModuleTheme(module.title);
         
         return (
-          <Card 
+          <PerformanceOptimizedCard
             key={module.id}
-            className={`group cursor-pointer transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60 relative overflow-hidden`}
+            className={`group ${theme.bg} ${theme.border}`}
+            gradient={`${theme.bg} ${theme.border}`}
+            hoverEffect={true}
+            clickable={true}
             onClick={() => onModuleClick(module)}
           >
-            {/* Background pattern with reduced opacity */}
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
-            </div>
             
             <CardHeader className="relative z-10 pb-2">
               <div className="flex items-start justify-between mb-3">
@@ -313,7 +313,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                 {module.description}
               </CardDescription>
             </CardContent>
-          </Card>
+          </PerformanceOptimizedCard>
         );
       })}
     </div>

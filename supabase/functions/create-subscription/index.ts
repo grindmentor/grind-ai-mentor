@@ -47,7 +47,7 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Stripe product IDs for the Premium plan
+    // Use the correct Stripe product IDs specified by user
     const priceIds = {
       premium: {
         monthly: 'prod_SbMYMe5X5uV2FT', // Monthly Premium
@@ -55,7 +55,7 @@ serve(async (req) => {
       }
     };
 
-    // Price mapping for monthly and annual billing
+    // Correct pricing as specified
     const prices = {
       premium: {
         monthly: 999, // $9.99
@@ -88,8 +88,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/app?payment=success&pwa=true`,
-      cancel_url: `${req.headers.get("origin")}/pricing?payment=cancelled&pwa=true`,
+      success_url: `${req.headers.get("origin")}/app?payment=success`,
+      cancel_url: `${req.headers.get("origin")}/pricing?payment=cancelled`,
       metadata: {
         user_id: user.id,
         tier: tier,

@@ -25,19 +25,27 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ notifications, 
   const [currentNotification, setCurrentNotification] = useState<Notification | null>(null);
 
   useEffect(() => {
-    // Show only one notification at a time, prioritize newer notifications
+    // Queue system - show one at a time with smooth transitions
     if (notifications.length > 0) {
       const latestNotification = notifications[notifications.length - 1];
       
       // Only update if we don't have a current notification or if the latest is different
       if (!currentNotification || currentNotification.id !== latestNotification.id) {
-        setCurrentNotification(latestNotification);
+        // If we have a current notification, remove it first
+        if (currentNotification) {
+          setCurrentNotification(null);
+          setTimeout(() => {
+            setCurrentNotification(latestNotification);
+          }, 150); // Short delay for smooth transition
+        } else {
+          setCurrentNotification(latestNotification);
+        }
         
-        // Auto-remove after duration
+        // Auto-remove after duration (reduced for better UX)
         if (latestNotification.duration !== 0) {
           const timeout = setTimeout(() => {
             handleRemove(latestNotification.id);
-          }, latestNotification.duration || 5000);
+          }, latestNotification.duration || 3500);
           
           return () => clearTimeout(timeout);
         }
@@ -45,7 +53,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ notifications, 
     } else if (notifications.length === 0) {
       setCurrentNotification(null);
     }
-  }, [notifications]);
+  }, [notifications, currentNotification?.id]);
 
   const handleRemove = (id: string) => {
     setCurrentNotification(null);
@@ -75,26 +83,30 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ notifications, 
   const IconComponent = getIcon(currentNotification.type);
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-4 sm:max-w-md">
+    <div className="fixed top-safe z-[9999] left-1/2 transform -translate-x-1/2 w-full max-w-sm px-4 sm:max-w-md pointer-events-none">
       <div 
         className={`
           ${getColor(currentNotification.type)}
-          rounded-lg border backdrop-blur-sm shadow-lg p-4
-          animate-in slide-in-from-top-2 duration-300
-          mobile-notification-item
+          rounded-xl border backdrop-blur-md shadow-2xl p-4
+          animate-in slide-in-from-top-2 duration-300 ease-out
+          mobile-notification-item pointer-events-auto
+          transform hover:scale-[1.02] transition-transform
         `}
+        style={{
+          top: 'max(env(safe-area-inset-top, 16px), 16px)',
+        }}
       >
         <div className="flex items-start space-x-3">
-          <IconComponent className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <IconComponent className="w-5 h-5 flex-shrink-0 mt-0.5 animate-pulse" />
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-sm sm:text-base">{currentNotification.title}</h4>
-            <p className="text-xs sm:text-sm opacity-90 mt-1">{currentNotification.message}</p>
+            <h4 className="font-semibold text-sm sm:text-base leading-tight">{currentNotification.title}</h4>
+            <p className="text-xs sm:text-sm opacity-90 mt-1 leading-relaxed">{currentNotification.message}</p>
             {currentNotification.action && (
               <Button
                 onClick={currentNotification.action.onClick}
                 size="sm"
                 variant="outline"
-                className="mt-2 h-7 text-xs"
+                className="mt-3 h-8 text-xs font-medium bg-white/10 hover:bg-white/20 border-white/30"
               >
                 {currentNotification.action.label}
               </Button>
@@ -104,9 +116,9 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ notifications, 
             onClick={() => handleRemove(currentNotification.id)}
             size="sm"
             variant="ghost"
-            className="text-current hover:bg-white/20 p-1 h-6 w-6 flex-shrink-0"
+            className="text-current hover:bg-white/20 p-1.5 h-7 w-7 flex-shrink-0 rounded-lg transition-all"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>

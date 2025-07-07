@@ -90,7 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('Initializing auth context');
     
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email);
       
       setSession(session);
@@ -105,10 +105,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsNewUser(minutesDiff < 5);
         checkOnboardingStatus(session.user.id);
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+        
+        // For logged-in users, redirect to dashboard immediately
+        if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+          // Use replace to avoid back button issues
+          window.history.replaceState(null, '', '/app');
+        }
       } else if (event === 'SIGNED_OUT') {
         setIsNewUser(false);
         setIsEmailUnconfirmed(false);
         setHasCompletedOnboarding(false);
+        
+        // Redirect to home on sign out
+        if (window.location.pathname === '/app' || window.location.pathname.startsWith('/app')) {
+          window.history.replaceState(null, '', '/');
+        }
       }
       
       setAuthPending(false);
@@ -127,6 +138,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session.user);
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
         checkOnboardingStatus(session.user.id);
+        
+        // Instant redirect for existing sessions
+        if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+          window.history.replaceState(null, '', '/app');
+        }
       }
       
       setLoading(false);

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -25,7 +24,6 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     logStep("Stripe key verified");
 
-    // Initialize Supabase client with the service role key
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -51,10 +49,10 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || "https://81218661-24ca-47f1-bdc1-0449f8b1af91.lovableproject.com";
+    const origin = req.headers.get("origin") || "https://druwyttcxnfpwgyrmt.supabase.co";
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/account`,
+      return_url: `${origin}/app`,
     });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 

@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -15,11 +14,55 @@ serve(async (req) => {
   }
 
   try {
-    const { image, weight, height } = await req.json();
+    const { image, height, weight, bodyFat, goals } = await req.json();
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    if (!image) {
+      return new Response(JSON.stringify({ error: 'No image provided' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
+
+    // Enhanced Physique AI analysis prompt
+    const analysisPrompt = `You are an expert fitness coach and body composition analyzer. Analyze this physique photo with scientific precision.
+
+USER CONTEXT:
+- Height: ${height || 'Not specified'}
+- Weight: ${weight || 'Not specified'}  
+- Current Body Fat: ${bodyFat || 'Unknown'}%
+- Goals: ${goals || 'General fitness improvement'}
+
+ANALYSIS REQUIREMENTS:
+1. **Body Composition Assessment**:
+   - Estimate current body fat percentage (be conservative)
+   - Assess muscle mass distribution
+   - Identify strong and weak muscle groups
+   - Note posture and structural balance
+
+2. **Scientific Recommendations**:
+   - Specific training focus areas
+   - Recommended rep ranges and training styles
+   - Nutrition guidance based on goals
+   - Recovery and mobility suggestions
+
+3. **Progress Tracking**:
+   - Key metrics to track
+   - Expected timeline for visible changes
+   - Photo comparison guidelines
+
+4. **Personalized Action Plan**:
+   - 4-week immediate focus
+   - 12-week transformation goals
+   - Specific exercises to prioritize
+
+FORMAT YOUR RESPONSE WITH:
+- Use ### for main sections
+- Use **bold** for key points
+- Use bullet points for lists
+- Be encouraging but realistic
+- Include specific, actionable advice
+
+Keep the analysis comprehensive but concise (400-600 words).`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -28,73 +71,54 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
-          {
-            role: 'system',
-            content: `You are a fitness assessment AI. Analyze progress photos and provide body composition estimates. 
-            
-            CRITICAL: Return ONLY a JSON object with this exact format:
-            {
-              "bodyFat": number,
-              "muscleMass": number,
-              "analysis": "detailed analysis text with bullet points using • symbol only"
-            }
-            
-            For bodyFat: estimate body fat percentage (5-35 range)
-            For muscleMass: calculate estimated muscle mass in kg based on visible muscle definition and provided stats
-            For analysis: provide detailed assessment using ONLY bullet points with • symbol, no bold text or other formatting`
-          },
           {
             role: 'user',
             content: [
-              {
-                type: 'text',
-                text: `Please analyze this progress photo. Weight: ${weight || 'not provided'} lbs, Height: ${height || 'not provided'} inches. Provide body fat percentage estimate, muscle mass estimate, and detailed analysis.`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: image
-                }
+              { type: 'text', text: analysisPrompt },
+              { 
+                type: 'image_url', 
+                image_url: { 
+                  url: image,
+                  detail: 'high'
+                } 
               }
             ]
           }
         ],
-        max_tokens: 500
+        max_tokens: 1200,
+        temperature: 0.2
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', errorText);
+      return new Response(JSON.stringify({ 
+        error: 'AI analysis service temporarily unavailable. Please try again later.'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const analysis = data.choices[0].message.content;
+
+    console.log('Physique analysis completed successfully');
     
-    try {
-      const result = JSON.parse(content);
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (parseError) {
-      // Fallback if JSON parsing fails
-      return new Response(JSON.stringify({
-        bodyFat: 15,
-        muscleMass: weight ? Math.round((weight * 0.453592) * 0.4) : 60,
-        analysis: content
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    return new Response(JSON.stringify({ 
+      analysis,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error in analyze-photo function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
-      bodyFat: 15,
-      muscleMass: 60,
-      analysis: "• Analysis unavailable due to technical error\n• Please try again later"
+      error: 'Analysis failed. Please ensure image is clear and well-lit, then try again.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

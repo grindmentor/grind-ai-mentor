@@ -1,6 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -11,30 +13,59 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method === 'GET') {
-    return new Response(JSON.stringify({ status: 'ok' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
   try {
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
     const { image, mealType } = await req.json();
+
     if (!image) {
-      throw new Error('Image is required');
+      return new Response(JSON.stringify({ error: 'No image provided' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
 
-    // Compress image if it's too large (>4MB base64 ≈ 3MB actual)
-    let processedImage = image;
-    if (image.length > 4 * 1024 * 1024) {
-      console.log('Image too large, needs compression');
-      // For now, reject very large images with helpful message
-      throw new Error('Image too large. Please use a smaller image (under 3MB) or compress it first.');
+    // Enhanced CalAI-style food detection prompt
+    const analysisPrompt = `You are a precise nutrition analysis AI. Analyze this food photo and provide CONSERVATIVE estimates.
+
+CRITICAL RULES:
+1. Only identify foods you can clearly see
+2. Estimate portions SMALLER rather than larger (people tend to overestimate)
+3. Use common serving sizes (1 cup, 1 slice, 1 piece, etc.)
+4. If uncertain about a food, mark confidence as "low"
+5. Return ONLY valid JSON - no additional text
+
+For each food item, provide:
+- name: Clear, simple food name
+- quantity: Conservative portion estimate with units
+- calories: Conservative calorie estimate
+- protein: Grams of protein
+- carbs: Grams of carbohydrates  
+- fat: Grams of fat
+- fiber: Grams of fiber
+- confidence: "high", "medium", or "low"
+
+Example response format:
+{
+  "confidence": "high",
+  "foodsDetected": [
+    {
+      "name": "Chicken breast",
+      "quantity": "4 oz",
+      "calories": 140,
+      "protein": 26,
+      "carbs": 0,
+      "fat": 3,
+      "fiber": 0,
+      "confidence": "high"
     }
+  ]
+}
+
+If you cannot clearly identify foods or the image is unclear, return:
+{
+  "confidence": "low",
+  "foodsDetected": [],
+  "error": "Unable to clearly identify foods in image"
+}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -43,91 +74,88 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
-          {
-            role: 'system',
-            content: 'You are a nutrition expert specializing in food portion estimation from photos. Be precise with quantities and realistic with calorie estimates.'
-          },
           {
             role: 'user',
             content: [
-              { 
-                type: 'text', 
-                text: `Analyze this food photo for accurate nutrition logging. Look at the portion size carefully - use visual cues like plate size, utensils, or standard serving sizes for reference.
-
-Return JSON in this exact format:
-{
-  "foodsDetected": [
-    {
-      "name": "specific food name",
-      "quantity": "realistic portion in grams",
-      "calories": accurate_calorie_count,
-      "protein": protein_grams,
-      "carbs": carb_grams,
-      "fat": fat_grams,
-      "fiber": fiber_grams
-    }
-  ],
-  "totalNutrition": {
-    "calories": total_calories,
-    "protein": total_protein,
-    "carbs": total_carbs,
-    "fat": total_fat,
-    "fiber": total_fiber
-  },
-  "confidence": "high/medium/low",
-  "analysis": "brief description of what you see",
-  "recommendations": "nutrition tips if relevant"
-}
-
-Meal context: ${mealType}
-Be conservative with portions - it's better to underestimate than overestimate. Focus on realistic serving sizes.` 
-              },
+              { type: 'text', text: analysisPrompt },
               { 
                 type: 'image_url', 
-                image_url: { url: processedImage } 
+                image_url: { 
+                  url: image,
+                  detail: 'high'
+                } 
               }
             ]
           }
-        ]
+        ],
+        max_tokens: 1000,
+        temperature: 0.1 // Low temperature for consistent results
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', errorText);
+      return new Response(JSON.stringify({ 
+        error: 'AI analysis service temporarily unavailable',
+        confidence: 'low',
+        foodsDetected: []
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
 
     const data = await response.json();
-    let result = data.choices[0].message.content;
-    
+    const aiResponse = data.choices[0].message.content;
+
     try {
-      result = JSON.parse(result);
-    } catch {
-      result = {
-        foodsDetected: [{ name: "Food Item", quantity: "1 serving", calories: 250, protein: 12, carbs: 30, fat: 8, fiber: 4 }],
-        totalNutrition: { calories: 250, protein: 12, carbs: 30, fat: 8, fiber: 4 },
-        confidence: "medium",
-        analysis: "Food detected from photo",
-        recommendations: "Balanced meal"
-      };
+      // Parse and validate the JSON response
+      const analysisResult = JSON.parse(aiResponse);
+      
+      // Validate response structure
+      if (!analysisResult.confidence || !Array.isArray(analysisResult.foodsDetected)) {
+        throw new Error('Invalid response structure');
+      }
+
+      // Additional validation for food items
+      analysisResult.foodsDetected = analysisResult.foodsDetected.filter(food => 
+        food.name && 
+        food.quantity && 
+        typeof food.calories === 'number' &&
+        food.calories > 0
+      );
+
+      console.log('Food analysis result:', analysisResult);
+      
+      return new Response(JSON.stringify(analysisResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError, 'Raw response:', aiResponse);
+      
+      return new Response(JSON.stringify({
+        confidence: 'low',
+        foodsDetected: [],
+        error: 'Unable to analyze image clearly'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-
   } catch (error) {
+    console.error('Error in food-photo-ai function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
-      foodsDetected: [{ name: "Error", quantity: "0g", calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }],
-      totalNutrition: { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
-      confidence: "low",
-      analysis: "Analysis failed",
-      recommendations: "Try again"
+      error: 'Analysis failed - please try again or add foods manually',
+      confidence: 'low',
+      foodsDetected: []
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

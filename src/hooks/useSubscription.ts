@@ -22,27 +22,29 @@ export interface SubscriptionTier {
   };
 }
 
+// Simplified Premium-only subscription system
 export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
   free: {
     name: 'Free',
     monthlyPrice: 0,
     annualPrice: 0,
     features: [
-      'Limited AI coaching',
-      'Limited usage',
-      'Essential calculators'
+      '5 AI queries per month',
+      'Basic workout logging',
+      'Food search (USDA)',
+      'Essential fitness tracking'
     ],
     limits: {
-      coach_gpt_queries: 3,
-      meal_plan_generations: 1,
-      food_log_analyses: 5,
+      coach_gpt_queries: 5,
+      meal_plan_generations: 0,
+      food_log_analyses: 3,
       tdee_calculations: 2,
       habit_checks: 10,
       training_programs: 0,
       progress_analyses: 1,
       cut_calc_uses: 2,
-      workout_timer_sessions: 3,
-      food_photo_analyses: 2
+      workout_timer_sessions: 5,
+      food_photo_analyses: 0
     }
   },
   premium: {
@@ -50,11 +52,12 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
     monthlyPrice: 9.99,
     annualPrice: 99.99,
     features: [
-      'Unlimited text-based AI prompts across all modules',
-      '30 image uploads per month across applicable modules',
-      'Full access to CoachGPT, Smart Training, Meal Plans, Recovery Coach, Blueprint AI',
-      'Priority support and faster AI processing queues',
-      'Early access to upcoming features'
+      'Unlimited text-based AI prompts',
+      '30 photo uploads per month',
+      'Exclusive access to Physique AI',
+      'Smart Training & Meal Plans',
+      'Advanced progress tracking',
+      'Priority support'
     ],
     limits: {
       coach_gpt_queries: -1,

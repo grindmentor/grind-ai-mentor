@@ -522,9 +522,11 @@ export type Database = {
       profiles: {
         Row: {
           activity: string | null
+          age_verified: boolean | null
           birthday: string | null
           body_fat_percentage: number | null
           created_at: string
+          date_of_birth: string | null
           dietary_preferences: string | null
           display_name: string | null
           email: string
@@ -539,9 +541,11 @@ export type Database = {
         }
         Insert: {
           activity?: string | null
+          age_verified?: boolean | null
           birthday?: string | null
           body_fat_percentage?: number | null
           created_at?: string
+          date_of_birth?: string | null
           dietary_preferences?: string | null
           display_name?: string | null
           email: string
@@ -556,9 +560,11 @@ export type Database = {
         }
         Update: {
           activity?: string | null
+          age_verified?: boolean | null
           birthday?: string | null
           body_fat_percentage?: number | null
           created_at?: string
+          date_of_birth?: string | null
           dietary_preferences?: string | null
           display_name?: string | null
           email?: string
@@ -1112,6 +1118,7 @@ export type Database = {
           id: string
           meal_plan_generations: number | null
           month_year: string
+          photo_uploads: number | null
           progress_analyses: number | null
           tdee_calculations: number | null
           training_programs: number | null
@@ -1129,6 +1136,7 @@ export type Database = {
           id?: string
           meal_plan_generations?: number | null
           month_year: string
+          photo_uploads?: number | null
           progress_analyses?: number | null
           tdee_calculations?: number | null
           training_programs?: number | null
@@ -1146,6 +1154,7 @@ export type Database = {
           id?: string
           meal_plan_generations?: number | null
           month_year?: string
+          photo_uploads?: number | null
           progress_analyses?: number | null
           tdee_calculations?: number | null
           training_programs?: number | null
@@ -1220,6 +1229,7 @@ export type Database = {
           cut_calc_uses: number
           workout_timer_sessions: number
           food_photo_analyses: number
+          photo_uploads: number
         }[]
       }
       get_user_profile_data: {
@@ -1294,6 +1304,10 @@ export type Database = {
           is_custom: boolean
           relevance_score: number
         }[]
+      }
+      verify_user_age: {
+        Args: { p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

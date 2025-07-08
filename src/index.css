@@ -101,9 +101,91 @@
   touch-action: manipulation;
 }
 
-/* Define custom styles for GPU acceleration */
-.gpu-accelerated {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
+@layer utilities {
+  /* Core animations with GPU acceleration */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+    transform: translateZ(0);
+  }
+  
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+    transform: translateZ(0);
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+    transform: translateZ(0);
+  }
+  
+  /* Safe area utilities */
+  .pt-safe {
+    padding-top: var(--safe-area-inset-top);
+  }
+  
+  .pb-safe {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+  
+  .pb-safe-bottom {
+    padding-bottom: max(var(--safe-area-inset-bottom), 16px);
+  }
+  
+  .top-safe {
+    top: var(--safe-area-inset-top);
+  }
+  
+  /* Performance optimizations */
+  .gpu-layer {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+  
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile touch improvements */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
 }

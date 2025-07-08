@@ -50,8 +50,7 @@ export const useOptimizedAI = ({
         body: { 
           prompt,
           ...additionalData
-        },
-        signal: abortControllerRef.current.signal
+        }
       });
 
       if (aiError) throw aiError;

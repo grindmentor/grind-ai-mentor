@@ -84,12 +84,62 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'slideUp': {
+					from: {
+						transform: 'translateY(100%) translateZ(0)',
+						opacity: '0'
+					},
+					to: {
+						transform: 'translateY(0) translateZ(0)',
+						opacity: '1'
+					}
+				},
+				'slideDown': {
+					from: {
+						transform: 'translateY(-100%) translateZ(0)',
+						opacity: '0'
+					},
+					to: {
+						transform: 'translateY(0) translateZ(0)',
+						opacity: '1'
+					}
+				},
+				'fadeIn': {
+					from: {
+						opacity: '0',
+						transform: 'translateY(10px) translateZ(0)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateY(0) translateZ(0)'
+					}
+				},
+				'scaleIn': {
+					from: {
+						transform: 'scale(0.95) translateZ(0)',
+						opacity: '0'
+					},
+					to: {
+						transform: 'scale(1) translateZ(0)',
+						opacity: '1'
+					}
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
-			}
+				"accordion-down": "accordion-down 0.2s ease-out",
+				"accordion-up": "accordion-up 0.2s ease-out",
+				"slide-up": "slideUp 0.3s ease-out",
+				"slide-down": "slideDown 0.3s ease-out", 
+				"fade-in": "fadeIn 0.3s ease-out",
+				"scale-in": "scaleIn 0.2s ease-out",
+			},
+			spacing: {
+				'safe-top': 'var(--safe-area-inset-top)',
+				'safe-bottom': 'var(--safe-area-inset-bottom)',
+				'safe-left': 'var(--safe-area-inset-left)',
+				'safe-right': 'var(--safe-area-inset-right)',
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

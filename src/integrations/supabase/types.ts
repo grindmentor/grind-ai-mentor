@@ -1222,6 +1222,18 @@ export type Database = {
           food_photo_analyses: number
         }[]
       }
+      get_user_profile_data: {
+        Args: { p_user_id: string }
+        Returns: {
+          height: number
+          weight: number
+          age: number
+          experience: string
+          activity: string
+          goal: string
+          display_name: string
+        }[]
+      }
       search_exercises: {
         Args: {
           search_query: string

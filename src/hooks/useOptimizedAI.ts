@@ -23,14 +23,8 @@ export const useOptimizedAI = ({
   const [error, setError] = useState<string | null>(null);
   
   const cacheRef = useRef<Map<string, AIResponse>>(new Map());
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const callAI = useCallback(async (prompt: string, additionalData?: any) => {
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
     // Check cache first
     const key = cacheKey ? `${cacheKey}-${prompt}` : prompt;
     const cached = cacheRef.current.get(key);
@@ -41,9 +35,6 @@ export const useOptimizedAI = ({
 
     setIsLoading(true);
     setError(null);
-    
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
 
     try {
       const { data, error: aiError } = await supabase.functions.invoke(functionName, {
@@ -63,8 +54,6 @@ export const useOptimizedAI = ({
       setResponse(result);
       return result;
     } catch (err) {
-      if (err.name === 'AbortError') return;
-      
       const errorMessage = err instanceof Error ? err.message : 'AI request failed';
       setError(errorMessage);
       
@@ -74,7 +63,6 @@ export const useOptimizedAI = ({
       throw err;
     } finally {
       setIsLoading(false);
-      abortControllerRef.current = null;
     }
   }, [functionName, cacheKey]);
 
@@ -88,19 +76,12 @@ export const useOptimizedAI = ({
     cacheRef.current.clear();
   }, []);
 
-  const cancelRequest = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-  }, []);
-
   return {
     isLoading,
     response,
     error,
     callAI,
     debouncedCallAI,
-    clearCache,
-    cancelRequest
+    clearCache
   };
 };

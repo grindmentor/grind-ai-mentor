@@ -8,7 +8,7 @@ interface BackButtonProps {
   text?: string;
   className?: string;
   variant?: "default" | "ghost" | "outline";
-  size?: "sm" | "default" | "lg" | "icon";
+  size?: "default" | "sm" | "lg" | "icon";
 }
 
 export const BackButton: React.FC<BackButtonProps> = ({

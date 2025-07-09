@@ -82,6 +82,22 @@ self.addEventListener('fetch', (event) => {
   // Skip non-HTTP requests and extension requests
   if (!request.url.startsWith('http') || url.protocol === 'chrome-extension:') return;
   
+  // Handle PWA special features first
+  if (url.pathname === '/app' && url.searchParams.has('share') && request.method === 'POST') {
+    event.respondWith(handleShareTarget(request));
+    return;
+  }
+  
+  if (url.pathname === '/app' && url.searchParams.has('handler')) {
+    event.respondWith(handleFileOpen(request));
+    return;
+  }
+  
+  if (url.pathname === '/app' && url.searchParams.has('protocol')) {
+    event.respondWith(handleProtocolOpen(request));
+    return;
+  }
+  
   // Handle different request types with ultra-optimized strategies
   if (isCriticalAsset(request)) {
     event.respondWith(handleCriticalAssetUltraFast(request));
@@ -349,6 +365,240 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(clients.openWindow('/'));
 });
 
+// Background Sync for offline data persistence
+self.addEventListener('sync', (event) => {
+  console.log('[SW] Background sync triggered:', event.tag);
+  
+  if (event.tag === 'workout-sync') {
+    event.waitUntil(syncWorkouts());
+  } else if (event.tag === 'food-log-sync') {
+    event.waitUntil(syncFoodLogs());
+  } else if (event.tag === 'progress-sync') {
+    event.waitUntil(syncProgress());
+  } else if (event.tag === 'goal-sync') {
+    event.waitUntil(syncGoals());
+  } else if (event.tag === 'preference-sync') {
+    event.waitUntil(syncPreferences());
+  }
+});
+
+// Periodic Background Sync for data refresh
+self.addEventListener('periodicsync', (event) => {
+  console.log('[SW] Periodic sync triggered:', event.tag);
+  
+  if (event.tag === 'data-refresh') {
+    event.waitUntil(refreshAppData());
+  }
+});
+
+
+// Share target implementation
+async function handleShareTarget(request) {
+  try {
+    const formData = await request.formData();
+    const title = formData.get('title') || '';
+    const text = formData.get('text') || '';
+    const url = formData.get('url') || '';
+    const files = formData.getAll('photos');
+    
+    // Store shared data for the app to process
+    const shareData = {
+      title,
+      text,
+      url,
+      files: files.map(file => ({
+        name: file.name,
+        type: file.type,
+        size: file.size
+      })),
+      timestamp: Date.now()
+    };
+    
+    // Store in IndexedDB or cache for the app to retrieve
+    const cache = await caches.open(DYNAMIC_CACHE);
+    await cache.put('/share-data', new Response(JSON.stringify(shareData)));
+    
+    // Redirect to app with share indicator
+    return Response.redirect('/app?shared=true', 302);
+  } catch (error) {
+    console.error('[SW] Share target error:', error);
+    return Response.redirect('/app', 302);
+  }
+}
+
+// File handler implementation
+async function handleFileOpen(request) {
+  const url = new URL(request.url);
+  const handler = url.searchParams.get('handler');
+  
+  // Redirect to appropriate app section based on file type
+  if (handler === 'workout') {
+    return Response.redirect('/app?module=workout-logger&import=true', 302);
+  }
+  
+  return Response.redirect('/app', 302);
+}
+
+// Protocol handler implementation
+async function handleProtocolOpen(request) {
+  const url = new URL(request.url);
+  const protocol = url.searchParams.get('protocol');
+  
+  // Parse myotopia:// protocol URLs
+  if (protocol && protocol.startsWith('myotopia://')) {
+    const protocolUrl = new URL(protocol);
+    const action = protocolUrl.pathname.substring(1); // Remove leading /
+    
+    switch (action) {
+      case 'workout':
+        return Response.redirect('/app?module=workout-logger', 302);
+      case 'nutrition':
+        return Response.redirect('/app?module=food-log', 302);
+      case 'progress':
+        return Response.redirect('/app?module=progress-hub', 302);
+      default:
+        return Response.redirect('/app', 302);
+    }
+  }
+  
+  return Response.redirect('/app', 302);
+}
+
+// Background sync functions
+async function syncWorkouts() {
+  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+  const workoutItems = syncQueue.filter(item => item.action === 'workout-save');
+  
+  for (const item of workoutItems) {
+    try {
+      await fetch('/api/workouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.data)
+      });
+      
+      // Remove from queue on success
+      removeFromSyncQueue(item);
+    } catch (error) {
+      console.error('[SW] Workout sync failed:', error);
+    }
+  }
+}
+
+async function syncFoodLogs() {
+  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+  const foodItems = syncQueue.filter(item => item.action === 'food-log');
+  
+  for (const item of foodItems) {
+    try {
+      await fetch('/api/food-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.data)
+      });
+      
+      removeFromSyncQueue(item);
+    } catch (error) {
+      console.error('[SW] Food log sync failed:', error);
+    }
+  }
+}
+
+async function syncProgress() {
+  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+  const progressItems = syncQueue.filter(item => item.action === 'progress-update');
+  
+  for (const item of progressItems) {
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.data)
+      });
+      
+      removeFromSyncQueue(item);
+    } catch (error) {
+      console.error('[SW] Progress sync failed:', error);
+    }
+  }
+}
+
+async function syncGoals() {
+  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+  const goalItems = syncQueue.filter(item => item.action === 'goal-update');
+  
+  for (const item of goalItems) {
+    try {
+      await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.data)
+      });
+      
+      removeFromSyncQueue(item);
+    } catch (error) {
+      console.error('[SW] Goal sync failed:', error);
+    }
+  }
+}
+
+async function syncPreferences() {
+  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+  const preferenceItems = syncQueue.filter(item => item.action === 'preference-update');
+  
+  for (const item of preferenceItems) {
+    try {
+      await fetch('/api/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.data)
+      });
+      
+      removeFromSyncQueue(item);
+    } catch (error) {
+      console.error('[SW] Preferences sync failed:', error);
+    }
+  }
+}
+
+async function refreshAppData() {
+  try {
+    // Refresh critical app data in background
+    const endpoints = [
+      '/api/user/profile',
+      '/api/workouts/recent',
+      '/api/progress/summary',
+      '/api/goals/active'
+    ];
+    
+    await Promise.all(
+      endpoints.map(async (endpoint) => {
+        try {
+          const response = await fetch(endpoint);
+          if (response.ok) {
+            const cache = await caches.open(DYNAMIC_CACHE);
+            await cache.put(endpoint, response);
+          }
+        } catch (error) {
+          console.warn(`[SW] Failed to refresh ${endpoint}:`, error);
+        }
+      })
+    );
+    
+    console.log('[SW] Periodic data refresh completed');
+  } catch (error) {
+    console.error('[SW] Periodic sync failed:', error);
+  }
+}
+
+function removeFromSyncQueue(item) {
+  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+  const updatedQueue = syncQueue.filter(queueItem => 
+    queueItem.timestamp !== item.timestamp || queueItem.action !== item.action
+  );
+  localStorage.setItem('syncQueue', JSON.stringify(updatedQueue));
+}
+
 // Handle messages for cache updates
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
@@ -361,6 +611,18 @@ self.addEventListener('message', (event) => {
       cache.put(new Request(`/ai-cache/${btoa(query)}`), new Response(JSON.stringify(response)));
     });
   }
+  
+  if (event.data && event.data.type === 'QUEUE_FOR_SYNC') {
+    const { action, data } = event.data;
+    const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+    syncQueue.push({
+      action,
+      data,
+      timestamp: Date.now(),
+      retries: 0
+    });
+    localStorage.setItem('syncQueue', JSON.stringify(syncQueue));
+  }
 });
 
-console.log('[SW] Ultra-optimized service worker loaded successfully');
+console.log('[SW] PWA-optimized service worker with background sync loaded successfully');

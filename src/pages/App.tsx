@@ -4,10 +4,12 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { AppBackground } from '@/components/ui/app-background';
 import { pushNotificationService } from '@/services/pushNotificationService';
+import { backgroundSync } from '@/services/backgroundSyncService';
 import { initializePreloading } from '@/utils/componentPreloader';
 import { BrandedLoading } from '@/components/ui/branded-loading';
 import { useModulePreloader } from '@/hooks/useModulePreloader';
 import PWAHandler from '@/components/PWAHandler';
+import PWAStatus from '@/components/PWAStatus';
 
 // Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
@@ -27,11 +29,12 @@ export default function App() {
     // Initialize component preloading
     initializePreloading();
 
-    // Initialize push notifications with performance optimization
-    const initializePushNotifications = async () => {
+    // Initialize push notifications and background sync
+    const initializeServices = async () => {
       try {
-        const initialized = await pushNotificationService.initialize();
-        if (initialized) {
+        // Initialize push notifications
+        const pushInitialized = await pushNotificationService.initialize();
+        if (pushInitialized) {
           // Setup iOS-specific notifications if on iOS
           await pushNotificationService.setupIOSNotifications();
           
@@ -41,18 +44,22 @@ export default function App() {
             console.log('Push notifications enabled');
           }
         }
+
+        // Initialize background sync (already singleton)
+        console.log('Background sync service initialized');
+        
       } catch (error) {
-        console.error('Failed to initialize push notifications:', error);
+        console.error('Failed to initialize services:', error);
       }
     };
 
     // Use requestIdleCallback for non-critical initialization
     if ('requestIdleCallback' in window) {
       window.requestIdleCallback(() => {
-        initializePushNotifications();
+        initializeServices();
       });
     } else {
-      setTimeout(initializePushNotifications, 100);
+      setTimeout(initializeServices, 100);
     }
   }, []);
 
@@ -67,6 +74,7 @@ export default function App() {
         }
       >
         <PWAHandler />
+        <PWAStatus />
         {measurePerformance('Dashboard Render', () => (
           <Dashboard />
         ))}

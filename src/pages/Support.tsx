@@ -51,9 +51,16 @@ const Support = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white ios-safe-area">
-      {/* Fixed Header */}
-      <nav className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800 px-6 py-4" style={{ paddingTop: 'max(env(safe-area-inset-top) + 1rem, 1rem)' }}>
+    <div className="min-h-screen bg-black text-white">
+      {/* Mobile-Optimized Header */}
+      <nav 
+        className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800 px-4 py-3"
+        style={{ 
+          paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)',
+          paddingLeft: 'max(env(safe-area-inset-left, 16px), 16px)',
+          paddingRight: 'max(env(safe-area-inset-right, 16px), 16px)'
+        }}
+      >
         <div className="container mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
@@ -61,24 +68,40 @@ const Support = () => {
             </div>
             <span className="text-xl font-bold logo-text">Myotopia</span>
           </Link>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <Link to="/app">
-              <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px] touch-manipulation">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Dashboard
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-gray-800 min-h-[44px] px-3 mobile-nav-button touch-manipulation"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Dashboard</span>
+                <span className="sm:hidden">Back</span>
               </Button>
             </Link>
             <Link to="/">
-              <Button variant="ghost" className="text-white hover:bg-gray-800 min-h-[48px] touch-manipulation">
-                <Home className="w-4 h-4 mr-2" />
-                Home
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-gray-800 min-h-[44px] px-3 mobile-nav-button touch-manipulation"
+              >
+                <Home className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Home</span>
               </Button>
             </Link>
           </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-6xl pb-32 safe-area-bottom">
+      <div 
+        className="container mx-auto px-4 py-6 max-w-6xl"
+        style={{
+          paddingBottom: 'max(env(safe-area-inset-bottom, 32px), 32px)',
+          paddingLeft: 'max(env(safe-area-inset-left, 16px), 16px)',
+          paddingRight: 'max(env(safe-area-inset-right, 16px), 16px)'
+        }}
+      >
         <div className="text-center mb-12">
           <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-6">
             <HeadphonesIcon className="w-8 h-8 text-white" />

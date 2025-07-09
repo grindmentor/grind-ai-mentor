@@ -305,6 +305,71 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     );
   }
 
+  // Hexagonal Progress Component
+  const HexagonProgress = ({ score, size, label, icon: Icon }: { 
+    score: number; 
+    size: 'small' | 'large'; 
+    label: string; 
+    icon?: any;
+  }) => {
+    const isLarge = size === 'large';
+    const hexSize = isLarge ? 120 : 80;
+    const strokeWidth = isLarge ? 8 : 6;
+    const circumference = hexSize * 0.6 * 6; // Approximate hexagon perimeter
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference * (1 - score / 100);
+    
+    return (
+      <div className="relative flex flex-col items-center">
+        <div className={`relative ${isLarge ? 'w-32 h-32' : 'w-20 h-20'}`}>
+          {/* Hexagon SVG */}
+          <svg 
+            className="absolute inset-0 transform -rotate-90" 
+            width={hexSize + 20} 
+            height={hexSize + 20}
+            viewBox={`0 0 ${hexSize + 20} ${hexSize + 20}`}
+          >
+            {/* Background hexagon */}
+            <polygon
+              points={`${(hexSize + 20) / 2},${10} ${hexSize - 5},${(hexSize + 20) / 4} ${hexSize - 5},${3 * (hexSize + 20) / 4} ${(hexSize + 20) / 2},${hexSize + 10} ${15},${3 * (hexSize + 20) / 4} ${15},${(hexSize + 20) / 4}`}
+              fill="none"
+              stroke="rgb(55, 65, 81)"
+              strokeWidth={strokeWidth}
+            />
+            {/* Progress hexagon */}
+            <polygon
+              points={`${(hexSize + 20) / 2},${10} ${hexSize - 5},${(hexSize + 20) / 4} ${hexSize - 5},${3 * (hexSize + 20) / 4} ${(hexSize + 20) / 2},${hexSize + 10} ${15},${3 * (hexSize + 20) / 4} ${15},${(hexSize + 20) / 4}`}
+              fill="none"
+              stroke={score < 50 ? '#ef4444' : score < 70 ? '#3b82f6' : score < 80 ? '#10b981' : score < 90 ? '#f59e0b' : '#a855f7'}
+              strokeWidth={strokeWidth}
+              strokeDasharray={strokeDasharray}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              className="transition-all duration-1000 ease-out"
+            />
+          </svg>
+          
+          {/* Center content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            {Icon && !isLarge && <Icon className="w-4 h-4 text-orange-400 mb-1" />}
+            <span className={`font-bold text-white ${isLarge ? 'text-2xl' : 'text-sm'}`}>
+              {score}%
+            </span>
+            {isLarge && (
+              <Badge className={`${getScoreColor(score)} text-xs mt-2`}>
+                {getScoreLabel(score)}
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        <span className={`text-center font-medium mt-2 ${isLarge ? 'text-lg text-white' : 'text-xs text-gray-300'}`}>
+          {label}
+        </span>
+      </div>
+    );
+  };
+
   const MetricCard = ({ 
     title, 
     icon: Icon, 
@@ -413,7 +478,45 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         </CardContent>
       </Card>
 
-      {/* Metrics Grid */}
+      {/* Hexagonal Progress Visualization */}
+      <div className="relative flex items-center justify-center mb-8">
+        {/* Central Hexagon */}
+        <div className="relative">
+          <HexagonProgress score={metrics.overall} size="large" label="Overall" />
+        </div>
+        
+        {/* Surrounding Metric Hexagons */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative w-80 h-80">
+            {/* Strength - Top */}
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4">
+              <HexagonProgress score={metrics.strength} size="small" label="Strength" icon={Dumbbell} />
+            </div>
+            
+            {/* Endurance - Top Right */}
+            <div className="absolute top-8 right-4 transform translate-x-2 -translate-y-2">
+              <HexagonProgress score={metrics.endurance} size="small" label="Endurance" icon={Heart} />
+            </div>
+            
+            {/* Nutrition - Bottom Right */}
+            <div className="absolute bottom-8 right-4 transform translate-x-2 translate-y-2">
+              <HexagonProgress score={metrics.nutrition} size="small" label="Nutrition" icon={Scale} />
+            </div>
+            
+            {/* Recovery - Bottom */}
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-4">
+              <HexagonProgress score={metrics.recovery} size="small" label="Recovery" icon={Brain} />
+            </div>
+            
+            {/* Consistency - Bottom Left */}
+            <div className="absolute bottom-8 left-4 transform -translate-x-2 translate-y-2">
+              <HexagonProgress score={metrics.consistency} size="small" label="Consistency" icon={Calendar} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics Details Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <MetricCard
           title="Strength"

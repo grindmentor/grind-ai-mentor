@@ -442,22 +442,37 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         throw new Error('Invalid workout data - no exercises found');
       }
 
+      // Ensure session has required fields
+      const workoutName = session.workout_name || 'Unnamed Workout';
+      const sessionDate = session.session_date || new Date().toISOString().split('T')[0];
+
       const templateData = {
         user_id: user.id,
-        name: `${session.workout_name} Template`,
+        name: `${workoutName} Template`,
         program_data: {
-          exercises: session.exercises_data.map((exercise: any) => ({
-            name: exercise.name || 'Unknown Exercise',
-            sets: exercise.sets?.length || 3,
-            muscleGroup: exercise.muscleGroup || 'General',
-            targetReps: exercise.sets?.[0]?.reps || '8-12',
-            notes: `Template from ${session.workout_name}`
-          }))
+          exercises: session.exercises_data.map((exercise: any, index: number) => {
+            // Robust data extraction with fallbacks
+            const exerciseName = exercise.name || exercise.exercise_name || `Exercise ${index + 1}`;
+            const sets = Array.isArray(exercise.sets) ? exercise.sets : [];
+            const targetReps = sets.length > 0 && sets[0].reps ? sets[0].reps.toString() : '8-12';
+            
+            return {
+              name: exerciseName,
+              sets: sets.length || 3,
+              muscleGroup: exercise.muscleGroup || 'General',
+              targetReps: targetReps,
+              notes: `Template from ${workoutName}`,
+              targetWeight: sets.length > 0 && sets[0].weight ? sets[0].weight.toString() : '',
+              rpe: sets.length > 0 && sets[0].rpe ? sets[0].rpe : 7
+            };
+          })
         },
-        description: `Template created from ${session.workout_name} on ${new Date(session.session_date).toLocaleDateString()}`,
+        description: `Template created from "${workoutName}" on ${new Date(sessionDate).toLocaleDateString()}`,
         difficulty_level: 'Intermediate',
         duration_weeks: 4
       };
+
+      console.log('Saving template with data:', templateData);
 
       const { data, error } = await supabase
         .from('training_programs')
@@ -470,7 +485,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         throw new Error(`Database error: ${error.message}`);
       }
       
-      toast.success('Workout saved as template!');
+      toast.success(`Template "${templateData.name}" saved successfully!`);
       return data;
     } catch (error) {
       console.error('Error saving template:', error);

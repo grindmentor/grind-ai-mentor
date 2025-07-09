@@ -83,7 +83,13 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ notifications, 
   const IconComponent = getIcon(currentNotification.type);
 
   return (
-    <div className="fixed top-safe z-[9999] left-1/2 transform -translate-x-1/2 w-full max-w-sm px-4 sm:max-w-md pointer-events-none">
+    <div 
+      className="fixed left-1/2 transform -translate-x-1/2 w-full max-w-sm px-4 sm:max-w-md pointer-events-none"
+      style={{
+        top: 'max(env(safe-area-inset-top, 20px), 20px)',
+        zIndex: 10000 // Higher than any other component
+      }}
+    >
       <div 
         className={`
           ${getColor(currentNotification.type)}
@@ -91,10 +97,8 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({ notifications, 
           animate-in slide-in-from-top-2 duration-300 ease-out
           mobile-notification-item pointer-events-auto
           transform hover:scale-[1.02] transition-transform
+          mx-auto
         `}
-        style={{
-          top: 'max(env(safe-area-inset-top, 16px), 16px)',
-        }}
       >
         <div className="flex items-start space-x-3">
           <IconComponent className="w-5 h-5 flex-shrink-0 mt-0.5 animate-pulse" />

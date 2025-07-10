@@ -64,7 +64,7 @@ const Support = () => {
         <div className="container mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-white text-sm">GM</span>
+              <span className="font-bold text-white text-sm">M</span>
             </div>
             <span className="text-xl font-bold logo-text">Myotopia</span>
           </Link>

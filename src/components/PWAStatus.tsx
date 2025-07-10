@@ -83,7 +83,7 @@ export const PWAStatus: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="fixed top-20 right-4 z-40 space-y-2">
       {/* Connection Status */}
       <div className="flex items-center space-x-2">
         <Badge 

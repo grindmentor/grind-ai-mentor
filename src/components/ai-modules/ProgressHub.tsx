@@ -418,7 +418,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   return (
     <div className="p-4 space-y-6 bg-gradient-to-br from-black via-orange-900/5 to-orange-800/10 min-h-screen">
       {/* Header with Back Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center space-x-3">
           {/* Back Button - visible on all devices */}
           {onBack && (
@@ -440,16 +440,16 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             <p className="text-gray-400 text-sm">Elite performance tracking</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
           {lastUpdated && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 hidden sm:block">
               Updated {lastUpdated.toLocaleTimeString()}
             </span>
           )}
           <Button
             onClick={loadProgressData}
             size="sm"
-            className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border-orange-500/40"
+            className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border-orange-500/40 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4 mr-1" />
             Refresh

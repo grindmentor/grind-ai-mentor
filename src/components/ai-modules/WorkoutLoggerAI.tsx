@@ -331,6 +331,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   value={set.weight || ''}
                   onChange={(e) => updateSet(exerciseIndex, setIndex, 'weight', e.target.value)}
                   className="bg-gray-700/50 border-gray-600 text-white h-8 text-sm"
+                  onBlur={(e) => e.target.blur()} // Force blur on iOS
                 />
               </div>
               
@@ -343,6 +344,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   value={set.reps || ''}
                   onChange={(e) => updateSet(exerciseIndex, setIndex, 'reps', e.target.value)}
                   className="bg-gray-700/50 border-gray-600 text-white h-8 text-sm"
+                  onBlur={(e) => e.target.blur()} // Force blur on iOS
                 />
               </div>
               
@@ -425,7 +427,9 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }));
     
     setExercises(loadedExercises);
-    setWorkoutName(`${session.workout_name} (Copy)`);
+    // Generate a new workout name with today's date instead of (Copy)
+    const today = new Date().toLocaleDateString();
+    setWorkoutName(`${session.workout_name} - ${today}`);
     setActiveTab('current');
     toast.success(`Loaded workout: ${session.workout_name}`);
   };

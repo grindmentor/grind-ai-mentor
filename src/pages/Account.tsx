@@ -172,7 +172,7 @@ const Account = () => {
         </div>
 
         <Card className="bg-card border-border">
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 space-y-4">
             <Button 
               onClick={handleSave}
               disabled={isLoading}

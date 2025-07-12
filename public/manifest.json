@@ -6,7 +6,7 @@
   "description": "Transform your physique with personalized, science-based AI fitness coaching",
   "start_url": "/app",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "fullscreen"],
   "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#F97316",

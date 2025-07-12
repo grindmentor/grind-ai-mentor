@@ -3,13 +3,13 @@ import React, { Suspense, useEffect } from 'react';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { AppBackground } from '@/components/ui/app-background';
+import { AppShell } from '@/components/ui/app-shell';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { backgroundSync } from '@/services/backgroundSyncService';
 import { initializePreloading } from '@/utils/componentPreloader';
 import { BrandedLoading } from '@/components/ui/branded-loading';
-import { useModulePreloader } from '@/hooks/useModulePreloader';
+import { usePreloadComponents } from '@/hooks/usePreloadComponents';
 import PWAHandler from '@/components/PWAHandler';
-import PWAStatus from '@/components/PWAStatus';
 
 // Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
@@ -23,7 +23,9 @@ const Dashboard = React.lazy(() =>
 
 export default function App() {
   const { lowDataMode, measurePerformance } = usePerformanceContext();
-  const { preloadModule } = useModulePreloader();
+  
+  // Initialize component preloading
+  usePreloadComponents();
 
   useEffect(() => {
     // Initialize component preloading
@@ -65,20 +67,26 @@ export default function App() {
 
   return (
     <AppBackground>
-      <Suspense 
-        fallback={
-          <BrandedLoading
-            message={lowDataMode ? "Loading (Power Saver Mode)" : "Loading Myotopia..."} 
-            showLogo={true}
-          />
-        }
+      <AppShell
+        title="Myotopia"
+        showBackButton={false}
+        showNotificationButton={true}
+        className="h-full"
       >
-        <PWAHandler />
-        <PWAStatus />
-        {measurePerformance('Dashboard Render', () => (
-          <Dashboard />
-        ))}
-      </Suspense>
+        <Suspense 
+          fallback={
+            <BrandedLoading
+              message={lowDataMode ? "Loading (Power Saver Mode)" : "Loading Myotopia..."} 
+              showLogo={true}
+            />
+          }
+        >
+          <PWAHandler />
+          {measurePerformance('Dashboard Render', () => (
+            <Dashboard />
+          ))}
+        </Suspense>
+      </AppShell>
     </AppBackground>
   );
 }

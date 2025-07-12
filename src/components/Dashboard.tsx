@@ -18,8 +18,12 @@ import NotificationCenter from '@/components/NotificationCenter';
 import { SmoothTransition } from '@/components/ui/smooth-transition';
 import { BrandedLoading } from '@/components/ui/branded-loading';
 import { useSessionCache } from '@/hooks/useSessionCache';
-import { useModulePreloader } from '@/hooks/useModulePreloader';
+import { useModulePreloader } from '@/hooks/usePreloadComponents';
+import { useSessionPersistence } from '@/hooks/useSessionPersistence';
+import { useMobileGestures } from '@/hooks/useMobileGestures';
+import { SmoothPageTransition } from '@/components/ui/smooth-page-transition';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
+import { toast } from 'sonner';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -46,6 +50,28 @@ const Dashboard = () => {
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
   const { currentTier, currentTierData } = useSubscription();
   const { preloadModule } = useModulePreloader();
+  
+  // Session persistence for smooth navigation
+  const {
+    scrollElementRef,
+    sessionState,
+    toggleSection,
+    isSectionExpanded
+  } = useSessionPersistence('dashboard');
+
+  // Mobile gestures for native app feel
+  const { elementRef: gestureRef, isRefreshing } = useMobileGestures({
+    onPullToRefresh: () => {
+      // Refresh functionality - could trigger a data refetch
+      toast.success('Dashboard refreshed');
+    },
+    onSwipeRight: () => {
+      if (selectedModule) {
+        setSelectedModule(null);
+        setNavigationSource('dashboard');
+      }
+    }
+  });
   
   // Session caching for dashboard data
   const dashboardCache = useSessionCache('dashboard', 300000); // 5 minutes

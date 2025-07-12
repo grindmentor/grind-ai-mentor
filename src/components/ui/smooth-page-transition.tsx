@@ -1,55 +1,61 @@
-import React, { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SmoothPageTransitionProps {
   children: React.ReactNode;
+  routeKey: string;
   className?: string;
-  transition?: "fade" | "slide" | "scale";
-  duration?: number;
 }
+
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    x: 10,
+    scale: 0.98
+  },
+  in: {
+    opacity: 1,
+    x: 0,
+    scale: 1
+  },
+  out: {
+    opacity: 0,
+    x: -10,
+    scale: 0.98
+  }
+};
+
+const pageTransition = {
+  type: "tween" as const,
+  ease: "anticipate" as const,
+  duration: 0.3
+};
 
 export const SmoothPageTransition: React.FC<SmoothPageTransitionProps> = ({
   children,
-  className,
-  transition = "fade",
-  duration = 300
+  routeKey,
+  className = ""
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Trigger animation on mount
-    const timer = setTimeout(() => setIsVisible(true), 10);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const getTransitionClass = () => {
-    switch (transition) {
-      case "slide":
-        return isVisible 
-          ? "translate-y-0 opacity-100" 
-          : "translate-y-4 opacity-0";
-      case "scale":
-        return isVisible 
-          ? "scale-100 opacity-100" 
-          : "scale-95 opacity-0";
-      default: // fade
-        return isVisible ? "opacity-100" : "opacity-0";
-    }
-  };
+    setIsVisible(true);
+  }, [routeKey]);
 
   return (
-    <div
-      className={cn(
-        "transition-all ease-out transform-gpu will-change-transform",
-        getTransitionClass(),
-        className
-      )}
-      style={{
-        transitionDuration: `${duration}ms`,
-        backfaceVisibility: 'hidden',
-      }}
-    >
-      {children}
-    </div>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={routeKey}
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariants}
+        transition={pageTransition}
+        className={`w-full h-full ${className}`}
+        onAnimationComplete={() => setIsVisible(true)}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 };

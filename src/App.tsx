@@ -54,48 +54,53 @@ function App() {
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/signin" element={<SignIn />} />
-                      <Route path="/signup" element={<SignUp />} />
-                      <Route
-                        path="/app"
-                        element={
-                          <ProtectedRoute>
-                            <AppPage />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/modules"
-                        element={
-                          <ProtectedRoute>
-                            <ModuleLibrary />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/settings"
-                        element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/profile"
-                        element={
-                          <ProtectedRoute>
-                            <Profile />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="/pricing" element={<Pricing />} />
-                      <Route path="/support" element={<Support />} />
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/about" element={<About />} />
-                    </Routes>
+                    <div className="min-h-screen bg-background">
+                      {/* PWA Titlebar area for window controls overlay */}
+                      <div className="titlebar-area" />
+                      
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/signin" element={<SignIn />} />
+                        <Route path="/signup" element={<SignUp />} />
+                        <Route
+                          path="/app"
+                          element={
+                            <ProtectedRoute>
+                              <AppPage />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/modules"
+                          element={
+                            <ProtectedRoute>
+                              <ModuleLibrary />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/settings"
+                          element={
+                            <ProtectedRoute>
+                              <Settings />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <ProtectedRoute>
+                              <Profile />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route path="/pricing" element={<Pricing />} />
+                        <Route path="/support" element={<Support />} />
+                        <Route path="/terms" element={<Terms />} />
+                        <Route path="/privacy" element={<Privacy />} />
+                        <Route path="/about" element={<About />} />
+                      </Routes>
+                    </div>
                   </BrowserRouter>
                 </TooltipProvider>
               </ExerciseShareProvider>

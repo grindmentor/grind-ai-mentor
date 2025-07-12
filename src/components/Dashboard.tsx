@@ -41,7 +41,7 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library'>('dashboard');
+  const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library' | 'direct'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
   const { currentTier, currentTierData } = useSubscription();
@@ -49,6 +49,11 @@ const Dashboard = () => {
   
   // Session caching for dashboard data
   const dashboardCache = useSessionCache('dashboard', 300000); // 5 minutes
+
+  // Helper function to get module by ID
+  const getModuleById = (moduleId: string) => {
+    return modules?.find(module => module.id === moduleId) || null;
+  };
 
   // Check if we should open notifications from navigation state or URL params
   useEffect(() => {
@@ -60,7 +65,25 @@ const Dashboard = () => {
         window.history.replaceState({}, document.title);
       }
     }
-  }, [location.state]);
+
+    // Handle module parameter for direct navigation to modules
+    const moduleParam = urlParams.get('module');
+    if (moduleParam && !selectedModule) {
+      const moduleData = getModuleById(moduleParam);
+      if (moduleData) {
+        setSelectedModule(moduleData);
+        setNavigationSource('direct');
+        
+        // Clear the module parameter from URL to prevent re-triggering
+        const newParams = new URLSearchParams(urlParams);
+        newParams.delete('module');
+        const newUrl = newParams.toString() 
+          ? `${window.location.pathname}?${newParams.toString()}`
+          : window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [location.state, selectedModule]);
 
   // Optimized module click handler with preloading
   const handleModuleClick = useMemo(() => {

@@ -456,6 +456,12 @@ async function handleProtocolOpen(request) {
         return Response.redirect('/app?module=food-log', 302);
       case 'progress':
         return Response.redirect('/app?module=progress-hub', 302);
+      case 'coach':
+        return Response.redirect('/app?module=coachgpt', 302);
+      case 'timer':
+        return Response.redirect('/app?module=timer', 302);
+      case 'training':
+        return Response.redirect('/app?module=smart-training', 302);
       default:
         return Response.redirect('/app', 302);
     }

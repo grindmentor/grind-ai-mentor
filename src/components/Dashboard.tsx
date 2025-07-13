@@ -17,6 +17,7 @@ import { useLocation } from 'react-router-dom';
 import NotificationCenter from '@/components/NotificationCenter';
 import { SmoothTransition } from '@/components/ui/smooth-transition';
 import { BrandedLoading } from '@/components/ui/branded-loading';
+import { EnhancedLoading } from '@/components/ui/enhanced-loading';
 import { useSessionCache } from '@/hooks/useSessionCache';
 import { useModulePreloader } from '@/hooks/usePreloadComponents';
 import { useSessionPersistence } from '@/hooks/useSessionPersistence';
@@ -204,7 +205,7 @@ const Dashboard = () => {
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
     console.log('Modules not loaded yet, showing loading screen');
-    return <BrandedLoading message="Loading Myotopia modules..." />;
+    return <EnhancedLoading type="dashboard" skeleton message="Loading Myotopia modules..." />;
   }
 
   // Show notifications with smooth transition

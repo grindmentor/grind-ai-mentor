@@ -416,9 +416,9 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   );
 
   return (
-    <div className="p-4 space-y-6 bg-gradient-to-br from-black via-orange-900/5 to-orange-800/10 min-h-screen">
+    <div className="p-4 space-y-6 bg-gradient-to-br from-black via-purple-900/20 to-purple-800/30 min-h-screen">
       {/* Header with Back Button */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center space-x-3">
           {/* Back Button - visible on all devices */}
           {onBack && (
@@ -432,24 +432,24 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               Back
             </Button>
           )}
-          <div className="w-12 h-12 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center border border-orange-500/30">
-            <TrendingUp className="w-6 h-6 text-orange-400" />
+          <div className="w-12 h-12 bg-gradient-to-r from-purple-500/30 to-purple-600/20 rounded-lg flex items-center justify-center border border-purple-500/30">
+            <TrendingUp className="w-6 h-6 text-purple-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Progress Hub</h1>
-            <p className="text-gray-400 text-sm">Elite performance tracking</p>
+            <p className="text-purple-200/80 text-sm">Elite performance tracking</p>
           </div>
         </div>
         <div className="flex items-center space-x-3 w-full sm:w-auto">
           {lastUpdated && (
-            <span className="text-xs text-gray-500 hidden sm:block">
+            <span className="text-xs text-purple-300/60 hidden sm:block">
               Updated {lastUpdated.toLocaleTimeString()}
             </span>
           )}
           <Button
             onClick={loadProgressData}
             size="sm"
-            className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border-orange-500/40 w-full sm:w-auto"
+            className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/40 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4 mr-1" />
             Refresh
@@ -457,19 +457,19 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Overall Score */}
-      <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30">
+      {/* Overall Score Card */}
+      <Card className="bg-gradient-to-r from-purple-500/20 to-purple-600/15 border-purple-500/30 mb-8">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl font-bold text-white mb-1">{metrics.overall}%</h2>
-              <p className="text-orange-300 font-medium">Overall Progress</p>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-purple-300 font-medium">Overall Progress</p>
+              <p className="text-sm text-purple-200/70 mt-1">
                 {getScoreLabel(metrics.overall)} • Elite threshold: 95%+
               </p>
             </div>
             <div className="text-right">
-              <Trophy className="w-12 h-12 text-orange-400 mb-2" />
+              <Trophy className="w-12 h-12 text-purple-400 mb-2" />
               <Badge className={`${getScoreColor(metrics.overall)} text-sm px-3 py-1`}>
                 {getScoreLabel(metrics.overall)}
               </Badge>
@@ -480,33 +480,33 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
       {/* Progress Overview Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
           <HexagonProgress score={metrics.strength} size="small" label="Strength" icon={Dumbbell} />
         </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
           <HexagonProgress score={metrics.endurance} size="small" label="Endurance" icon={Heart} />
         </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
           <HexagonProgress score={metrics.consistency} size="small" label="Consistency" icon={Target} />
         </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
           <HexagonProgress score={metrics.nutrition} size="small" label="Nutrition" icon={Scale} />
         </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg col-span-2 lg:col-span-1">
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg col-span-2 lg:col-span-1">
           <HexagonProgress score={metrics.recovery} size="small" label="Recovery" icon={Brain} />
         </div>
       </div>
 
       {/* Detailed Metrics Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-900/50 border border-gray-700/50">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-900/50 border border-purple-500/20">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-200">
             Overview
           </TabsTrigger>
-          <TabsTrigger value="metrics" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+          <TabsTrigger value="metrics" className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-200">
             Metrics
           </TabsTrigger>
-          <TabsTrigger value="achievements" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+          <TabsTrigger value="achievements" className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-200">
             Achievements
           </TabsTrigger>
         </TabsList>
@@ -549,10 +549,10 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
         <TabsContent value="metrics" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+            <Card className="bg-gray-900/40 backdrop-blur-sm border-purple-500/20">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
-                  <Activity className="w-5 h-5 text-orange-400 mr-2" />
+                  <Activity className="w-5 h-5 text-purple-400 mr-2" />
                   Training Metrics
                 </CardTitle>
               </CardHeader>
@@ -578,10 +578,10 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+            <Card className="bg-gray-900/40 backdrop-blur-sm border-purple-500/20">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
-                  <Zap className="w-5 h-5 text-orange-400 mr-2" />
+                  <Zap className="w-5 h-5 text-purple-400 mr-2" />
                   Lifestyle Metrics
                 </CardTitle>
               </CardHeader>
@@ -610,19 +610,19 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         </TabsContent>
 
         <TabsContent value="achievements" className="space-y-6 mt-6">
-          <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+          <Card className="bg-gray-900/40 backdrop-blur-sm border-purple-500/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <Award className="w-5 h-5 text-orange-400 mr-2" />
+                <Award className="w-5 h-5 text-purple-400 mr-2" />
                 Elite Performance Milestones
               </CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardDescription className="text-purple-200/70">
                 Reaching 95%+ in any category qualifies as Elite performance
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {Object.entries(metrics).filter(([key]) => key !== 'overall').map(([key, score]) => (
-                <div key={key} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                <div key={key} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-purple-500/10">
                   <div className="flex items-center space-x-3">
                     <Star className={`w-5 h-5 ${score >= 95 ? 'text-purple-400' : 'text-gray-500'}`} />
                     <span className="text-white capitalize">{key}</span>

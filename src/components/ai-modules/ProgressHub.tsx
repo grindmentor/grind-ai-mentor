@@ -478,80 +478,170 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         </CardContent>
       </Card>
 
-      {/* Hexagonal Progress Visualization */}
-      <div className="relative flex items-center justify-center mb-8">
-        {/* Central Hexagon */}
-        <div className="relative">
-          <HexagonProgress score={metrics.overall} size="large" label="Overall" />
+      {/* Progress Overview Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+          <HexagonProgress score={metrics.strength} size="small" label="Strength" icon={Dumbbell} />
         </div>
-        
-        {/* Surrounding Metric Hexagons */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-80 h-80">
-            {/* Strength - Top */}
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4">
-              <HexagonProgress score={metrics.strength} size="small" label="Strength" icon={Dumbbell} />
-            </div>
-            
-            {/* Endurance - Top Right */}
-            <div className="absolute top-8 right-4 transform translate-x-2 -translate-y-2">
-              <HexagonProgress score={metrics.endurance} size="small" label="Endurance" icon={Heart} />
-            </div>
-            
-            {/* Nutrition - Bottom Right */}
-            <div className="absolute bottom-8 right-4 transform translate-x-2 translate-y-2">
-              <HexagonProgress score={metrics.nutrition} size="small" label="Nutrition" icon={Scale} />
-            </div>
-            
-            {/* Recovery - Bottom */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-4">
-              <HexagonProgress score={metrics.recovery} size="small" label="Recovery" icon={Brain} />
-            </div>
-            
-            {/* Consistency - Bottom Left */}
-            <div className="absolute bottom-8 left-4 transform -translate-x-2 translate-y-2">
-              <HexagonProgress score={metrics.consistency} size="small" label="Consistency" icon={Calendar} />
-            </div>
-          </div>
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+          <HexagonProgress score={metrics.endurance} size="small" label="Endurance" icon={Heart} />
+        </div>
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+          <HexagonProgress score={metrics.consistency} size="small" label="Consistency" icon={Target} />
+        </div>
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg">
+          <HexagonProgress score={metrics.nutrition} size="small" label="Nutrition" icon={Scale} />
+        </div>
+        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg col-span-2 lg:col-span-1">
+          <HexagonProgress score={metrics.recovery} size="small" label="Recovery" icon={Brain} />
         </div>
       </div>
 
-      {/* Metrics Details Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <MetricCard
-          title="Strength"
-          icon={Dumbbell}
-          score={metrics.strength}
-          description="Training intensity & progression"
-        />
-        <MetricCard
-          title="Endurance"
-          icon={Heart}
-          score={metrics.endurance}
-          description="Cardiovascular performance"
-        />
-        <MetricCard
-          title="Consistency"
-          icon={Calendar}
-          score={metrics.consistency}
-          description="Training regularity"
-        />
-        <MetricCard
-          title="Nutrition"
-          icon={Scale}
-          score={metrics.nutrition}
-          description="Diet tracking & quality"
-        />
-        <MetricCard
-          title="Recovery"
-          icon={Brain}
-          score={metrics.recovery}
-          description="Sleep & stress management"
-        />
-      </div>
+      {/* Detailed Metrics Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-900/50 border border-gray-700/50">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="metrics" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+            Metrics
+          </TabsTrigger>
+          <TabsTrigger value="achievements" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+            Achievements
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MetricCard
+              title="Strength"
+              icon={Dumbbell}
+              score={metrics.strength}
+              description="Progressive overload & power development"
+            />
+            <MetricCard
+              title="Endurance"
+              icon={Heart}
+              score={metrics.endurance}
+              description="Cardiovascular fitness & stamina"
+            />
+            <MetricCard
+              title="Consistency"
+              icon={Target}
+              score={metrics.consistency}
+              description="Training frequency & adherence"
+            />
+            <MetricCard
+              title="Nutrition"
+              icon={Scale}
+              score={metrics.nutrition}
+              description="Macro tracking & dietary compliance"
+            />
+          </div>
+          
+          <MetricCard
+            title="Recovery"
+            icon={Brain}
+            score={metrics.recovery}
+            description="Sleep quality & stress management"
+          />
+        </TabsContent>
+
+        <TabsContent value="metrics" className="space-y-6 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Activity className="w-5 h-5 text-orange-400 mr-2" />
+                  Training Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Strength Score:</span>
+                  <Badge className={getScoreColor(metrics.strength)}>
+                    {metrics.strength}%
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Endurance Score:</span>
+                  <Badge className={getScoreColor(metrics.endurance)}>
+                    {metrics.endurance}%
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Consistency:</span>
+                  <Badge className={getScoreColor(metrics.consistency)}>
+                    {metrics.consistency}%
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Zap className="w-5 h-5 text-orange-400 mr-2" />
+                  Lifestyle Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Nutrition:</span>
+                  <Badge className={getScoreColor(metrics.nutrition)}>
+                    {metrics.nutrition}%
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Recovery:</span>
+                  <Badge className={getScoreColor(metrics.recovery)}>
+                    {metrics.recovery}%
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Overall Score:</span>
+                  <Badge className={getScoreColor(metrics.overall)}>
+                    {metrics.overall}%
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="achievements" className="space-y-6 mt-6">
+          <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Award className="w-5 h-5 text-orange-400 mr-2" />
+                Elite Performance Milestones
+              </CardTitle>
+              <CardDescription className="text-gray-400">
+                Reaching 95%+ in any category qualifies as Elite performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(metrics).filter(([key]) => key !== 'overall').map(([key, score]) => (
+                <div key={key} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Star className={`w-5 h-5 ${score >= 95 ? 'text-purple-400' : 'text-gray-500'}`} />
+                    <span className="text-white capitalize">{key}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Progress value={score} className="w-20 h-2" />
+                    <Badge className={getScoreColor(score)}>
+                      {score}%
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Elite Progress Info */}
-      <Card className="bg-purple-500/10 border-purple-500/30">
+      <Card className="bg-purple-500/10 border-purple-500/30 mt-6">
         <CardContent className="p-4">
           <div className="flex items-start space-x-3">
             <Star className="w-6 h-6 text-purple-400 mt-1" />

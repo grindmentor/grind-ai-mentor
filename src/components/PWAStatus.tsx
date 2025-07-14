@@ -83,7 +83,7 @@ export const PWAStatus: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-20 space-y-2">{/* Repositioned to bottom-right to avoid navigation overlap */}
+    <div className="fixed bottom-4 left-4 z-20 space-y-2">{/* Moved to bottom-left */}
       {/* Connection Status */}
       <div className="flex items-center space-x-2">
         <Badge 

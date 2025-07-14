@@ -10,8 +10,9 @@ export const useFavorites = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load favorites from Supabase
+  // Load favorites from Supabase with debugging
   const loadFavorites = async () => {
+    console.log('Loading favorites for user:', user?.id);
     if (!user) {
       setFavorites([]);
       setLoading(false);
@@ -25,24 +26,32 @@ export const useFavorites = () => {
         .eq('user_id', user.id)
         .single();
 
+      console.log('Favorites query result:', { data, error });
+
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading favorites:', error);
         // Fallback to localStorage
         const savedFavorites = localStorage.getItem('module-favorites');
         if (savedFavorites) {
-          setFavorites(JSON.parse(savedFavorites));
+          const parsedFavorites = JSON.parse(savedFavorites);
+          console.log('Using localStorage favorites:', parsedFavorites);
+          setFavorites(parsedFavorites);
         }
       } else if (data) {
-        setFavorites(data.favorite_modules || []);
+        const favoritesList = data.favorite_modules || [];
+        console.log('Loaded favorites from DB:', favoritesList);
+        setFavorites(favoritesList);
         // Sync to localStorage as backup
-        localStorage.setItem('module-favorites', JSON.stringify(data.favorite_modules || []));
+        localStorage.setItem('module-favorites', JSON.stringify(favoritesList));
       }
     } catch (error) {
       console.error('Error loading favorites:', error);
       // Fallback to localStorage
       const savedFavorites = localStorage.getItem('module-favorites');
       if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
+        const parsedFavorites = JSON.parse(savedFavorites);
+        console.log('Using localStorage favorites after error:', parsedFavorites);
+        setFavorites(parsedFavorites);
       }
     } finally {
       setLoading(false);
@@ -74,21 +83,32 @@ export const useFavorites = () => {
     }
   };
 
-  // Toggle favorite with optimistic updates
+  // Toggle favorite with optimistic updates and console logging
   const toggleFavorite = async (moduleId: string) => {
+    console.log('Toggle favorite called for module:', moduleId);
+    console.log('Current favorites:', favorites);
+    
     const newFavorites = favorites.includes(moduleId) 
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
+    
+    console.log('New favorites will be:', newFavorites);
     
     // Immediate UI update (optimistic)
     setFavorites(newFavorites);
     
     try {
       await saveFavorites(newFavorites);
+      console.log('Favorites saved successfully');
     } catch (error) {
       // Revert on error
       setFavorites(favorites);
       console.error('Failed to save favorites:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

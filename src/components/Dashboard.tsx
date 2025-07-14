@@ -205,7 +205,7 @@ const Dashboard = () => {
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
     console.log('Modules not loaded yet, showing loading screen');
-    return <EnhancedLoading type="dashboard" skeleton message="Loading Myotopia modules..." />;
+    return <EnhancedLoading type="dashboard" skeleton={true} message="Loading Myotopia modules..." />;
   }
 
   // Show notifications with smooth transition
@@ -226,7 +226,7 @@ const Dashboard = () => {
         <ErrorBoundary>
           <SmoothTransition transitionKey={selectedModule.id}>
             <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
-              <Suspense fallback={<BrandedLoading message={`Loading ${selectedModule.title}...`} />}>
+              <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
                 <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
                   <ModuleComponent 
                     onBack={handleBackToDashboard}
@@ -351,7 +351,7 @@ const Dashboard = () => {
                       Add More
                     </Button>
                   </div>
-                  <Suspense fallback={<BrandedLoading compact message="Loading favorites..." />}>
+                  <Suspense fallback={<EnhancedLoading type="module" size="sm" message="Loading favorites..." />}>
                     <ModuleGrid
                       modules={favoriteModules}
                       favorites={favorites}
@@ -420,12 +420,12 @@ const Dashboard = () => {
               {/* Dashboard Content Grid - Performance optimized */}
               {!lowDataMode && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                  <Suspense fallback={<BrandedLoading compact message="Loading achievements..." />}>
-                    <RealGoalsAchievements />
-                  </Suspense>
-                  <Suspense fallback={<BrandedLoading compact message="Loading research..." />}>
-                    <LatestResearch />
-                  </Suspense>
+              <Suspense fallback={<EnhancedLoading type="default" size="sm" message="Loading achievements..." />}>
+                <RealGoalsAchievements />
+              </Suspense>
+              <Suspense fallback={<EnhancedLoading type="default" size="sm" message="Loading research..." />}>
+                <LatestResearch />
+              </Suspense>
                 </div>
               )}
             </div>

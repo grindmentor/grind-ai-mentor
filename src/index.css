@@ -266,3 +266,77 @@
     transform: translateY(0) translateZ(0);
   }
 }
+
+/* Performance Optimizations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Smooth transitions with reduced animation for better performance */
+.ultra-performance-mode * {
+  animation-duration: 0.1s !important;
+  transition-duration: 0.1s !important;
+}
+
+.high-performance-mode * {
+  animation-duration: 0.2s !important;
+  transition-duration: 0.2s !important;
+}
+
+/* Skeleton loading animations to prevent blank screens */
+.skeleton {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.1) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Instant loading prevention - never show blank screens */
+body {
+  background: hsl(var(--background));
+  min-height: 100vh;
+}
+
+/* Navigation optimizations */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Smooth scrolling performance */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Loading state optimizations */
+.loading-container {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--background));
+}
+
+/* Module loading states */
+.module-loading {
+  background: radial-gradient(circle at center, hsl(var(--primary) / 0.1) 0%, hsl(var(--background)) 70%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Prevent layout shift during loading */
+.prevent-shift {
+  min-height: 200px;
+  contain: layout style paint;
+}

@@ -63,23 +63,32 @@ export const useFavorites = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      console.log('Saving favorites to Supabase:', newFavorites);
+      
+      const { data, error } = await supabase
         .from('user_preferences')
         .upsert({
           user_id: user.id,
           favorite_modules: newFavorites
-        });
+        }, {
+          onConflict: 'user_id'
+        })
+        .select();
 
       if (error) {
-        console.error('Error saving favorites:', error);
-        // Silent fallback - favorites still saved locally
+        console.error('Error saving favorites to Supabase:', error);
+        throw error;
       }
 
+      console.log('Successfully saved favorites to Supabase:', data);
+      
       // Always save to localStorage as backup
       localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
     } catch (error) {
       console.error('Error saving favorites:', error);
+      // Still save to localStorage as fallback
       localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+      throw error;
     }
   };
 
@@ -99,7 +108,17 @@ export const useFavorites = () => {
     
     try {
       await saveFavorites(newFavorites);
-      console.log('Favorites saved successfully');
+      console.log('Favorites saved successfully:', newFavorites);
+      
+      // Force a reload to ensure data consistency
+      setTimeout(() => {
+        loadFavorites();
+      }, 500);
+      
+      toast({
+        title: favorites.includes(moduleId) ? "Removed from Favorites" : "Added to Favorites",
+        description: `Module ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your favorites.`
+      });
     } catch (error) {
       // Revert on error
       setFavorites(favorites);

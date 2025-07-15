@@ -24,6 +24,18 @@ serve(async (req) => {
     });
   }
 
+  // Get the Authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    console.error('Missing Authorization header');
+    return new Response(JSON.stringify({ 
+      error: 'Authentication required' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 401,
+    });
+  }
+
   try {
     const { image, height, weight, bodyFat, goals } = await req.json();
 

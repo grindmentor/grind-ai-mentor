@@ -13,6 +13,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Check for OpenAI API key first
+  if (!openAIApiKey) {
+    console.error('OPENAI_API_KEY environment variable is not set');
+    return new Response(JSON.stringify({ 
+      error: 'AI analysis service not configured. Please contact support.' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+
   try {
     const { image, height, weight, bodyFat, goals } = await req.json();
 
@@ -71,7 +82,7 @@ Keep the analysis comprehensive but concise (400-600 words).`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'user',

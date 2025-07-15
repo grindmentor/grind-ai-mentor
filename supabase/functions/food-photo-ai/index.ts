@@ -13,6 +13,29 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Check for OpenAI API key first
+  if (!openAIApiKey) {
+    console.error('OPENAI_API_KEY environment variable is not set');
+    return new Response(JSON.stringify({ 
+      error: 'AI analysis service not configured. Please contact support.' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+
+  // Get the Authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    console.error('Missing Authorization header');
+    return new Response(JSON.stringify({ 
+      error: 'Authentication required' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 401,
+    });
+  }
+
   try {
     const { image, mealType } = await req.json();
 

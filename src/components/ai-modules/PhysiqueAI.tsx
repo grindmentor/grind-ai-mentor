@@ -139,31 +139,137 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
+      lastModified: file.lastModified,
       timestamp: new Date().toISOString()
     });
 
-    if (!file.type.startsWith('image/')) {
-      console.error('❌ [PhysiqueAI] Invalid file type:', file.type);
+    // Check if file is empty
+    if (file.size === 0) {
+      console.error('❌ [PhysiqueAI] Empty file detected');
       toast({
-        title: 'Invalid File',
-        description: 'Please select a valid image file.',
+        title: 'Empty File',
+        description: 'The selected file appears to be empty. Please choose a different image.',
         variant: 'destructive'
       });
       return;
     }
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      console.error('❌ [PhysiqueAI] File too large:', file.size);
+    // Check supported image formats
+    const supportedTypes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/webp',
+      'image/bmp',
+      'image/tiff',
+      'image/svg+xml'
+    ];
+    
+    if (!supportedTypes.includes(file.type.toLowerCase())) {
+      console.error('❌ [PhysiqueAI] Unsupported file type:', file.type);
+      toast({
+        title: 'Unsupported Format',
+        description: `Please select a JPEG, PNG, WebP, BMP, TIFF, or SVG image. Current type: ${file.type}`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Check file size (max 20MB)
+    const maxSize = 20 * 1024 * 1024;
+    if (file.size > maxSize) {
+      console.error('❌ [PhysiqueAI] File too large:', {
+        fileSize: file.size,
+        maxSize: maxSize,
+        fileSizeMB: (file.size / (1024 * 1024)).toFixed(2)
+      });
       toast({
         title: 'File Too Large',
-        description: 'Please select an image smaller than 10MB.',
+        description: `Please select an image smaller than 20MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
         variant: 'destructive'
       });
       return;
     }
 
-    console.log('✅ [PhysiqueAI] Photo validation passed, setting selected photo');
+    // Validate image dimensions and integrity
+    try {
+      const img = new Image();
+      const imageValidation = await new Promise<{valid: boolean, width: number, height: number, error?: string}>((resolve) => {
+        img.onload = () => {
+          console.log('✅ [PhysiqueAI] Image dimensions validated:', {
+            width: img.width,
+            height: img.height
+          });
+          
+          // Check minimum dimensions
+          if (img.width < 50 || img.height < 50) {
+            resolve({
+              valid: false,
+              width: img.width,
+              height: img.height,
+              error: 'Image too small (minimum 50x50 pixels)'
+            });
+            return;
+          }
+          
+          // Check maximum dimensions
+          if (img.width > 8192 || img.height > 8192) {
+            resolve({
+              valid: false,
+              width: img.width,
+              height: img.height,
+              error: 'Image too large (maximum 8192x8192 pixels)'
+            });
+            return;
+          }
+          
+          resolve({
+            valid: true,
+            width: img.width,
+            height: img.height
+          });
+        };
+        
+        img.onerror = (error) => {
+          console.error('❌ [PhysiqueAI] Image validation failed:', error);
+          resolve({
+            valid: false,
+            width: 0,
+            height: 0,
+            error: 'Invalid or corrupted image file'
+          });
+        };
+        
+        img.src = URL.createObjectURL(file);
+      });
+      
+      if (!imageValidation.valid) {
+        console.error('❌ [PhysiqueAI] Image validation failed:', imageValidation);
+        toast({
+          title: 'Invalid Image',
+          description: imageValidation.error || 'Unable to process this image file.',
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      console.log('✅ [PhysiqueAI] Photo validation passed:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        dimensions: `${imageValidation.width}x${imageValidation.height}`
+      });
+      
+    } catch (error) {
+      console.error('❌ [PhysiqueAI] Image validation error:', error);
+      toast({
+        title: 'Image Processing Error',
+        description: 'Unable to process this image file. Please try a different image.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setSelectedPhoto(file);
     
     // Create preview
@@ -171,9 +277,18 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
     reader.onload = (e) => {
       console.log('✅ [PhysiqueAI] Photo preview created successfully');
       setPhotoPreview(e.target?.result as string);
+      toast({
+        title: 'Photo Selected',
+        description: 'Photo uploaded successfully and ready for analysis.',
+      });
     };
     reader.onerror = (error) => {
       console.error('❌ [PhysiqueAI] Error creating photo preview:', error);
+      toast({
+        title: 'Preview Error',
+        description: 'Unable to create image preview. Please try again.',
+        variant: 'destructive'
+      });
     };
     reader.readAsDataURL(file);
   };

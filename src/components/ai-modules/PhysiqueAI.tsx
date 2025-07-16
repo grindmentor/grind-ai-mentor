@@ -37,7 +37,7 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<any>(null);
   const [userContext, setUserContext] = useState({
     height: '',
     weight: '',
@@ -158,7 +158,12 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      setAnalysis(data.analysis);
+      // Handle structured response
+      if (data.confidence === 'low' || data.error) {
+        throw new Error(data.error || 'Unable to analyze physique clearly');
+      }
+
+      setAnalysis(data);
       
       // Save to progress photos table
       try {
@@ -167,7 +172,7 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
           .insert({
             user_id: user.id,
             file_name: selectedPhoto.name,
-            analysis_result: data.analysis,
+            analysis_result: JSON.stringify(data),
             notes: `Height: ${userContext.height}, Weight: ${userContext.weight}, Goals: ${userContext.goals}`,
             weight_at_time: userContext.weight ? parseFloat(userContext.weight) : null
           });
@@ -413,12 +418,118 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
                   <p className="text-sm text-gray-400">This may take up to 30 seconds</p>
                 </div>
               ) : analysis ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                     Analysis Complete
                   </Badge>
-                  <div className="prose prose-invert max-w-none">
-                    <FormattedAIResponse content={analysis} />
+                  
+                  {/* Body Composition Overview */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                      <h4 className="text-sm font-medium text-gray-300 mb-2">Body Fat %</h4>
+                      <p className="text-2xl font-bold text-white">
+                        {analysis.bodyFatPercentage ? `${analysis.bodyFatPercentage}%` : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                      <h4 className="text-sm font-medium text-gray-300 mb-2">Muscle Mass</h4>
+                      <p className="text-lg font-semibold text-white capitalize">
+                        {analysis.muscleMass || 'Average'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                      <h4 className="text-sm font-medium text-gray-300 mb-2">FFMI</h4>
+                      <p className="text-2xl font-bold text-white">
+                        {analysis.ffmi ? analysis.ffmi.toFixed(1) : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                      <h4 className="text-sm font-medium text-gray-300 mb-2">Frame Size</h4>
+                      <p className="text-lg font-semibold text-white capitalize">
+                        {analysis.frameSize || 'Medium'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Overall Rating */}
+                  <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 p-4 rounded-lg border border-purple-500/30">
+                    <h4 className="text-sm font-medium text-purple-200 mb-2">Overall Physique Rating</h4>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-3xl font-bold text-white">
+                        {analysis.overallRating || 5}/10
+                      </div>
+                      <div className="flex-1 bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all"
+                          style={{ width: `${(analysis.overallRating || 5) * 10}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Muscle Groups Analysis */}
+                  {analysis.muscleGroups && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-green-900/20 p-4 rounded-lg border border-green-500/30">
+                        <h4 className="text-sm font-medium text-green-300 mb-3 flex items-center">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Strengths
+                        </h4>
+                        <div className="space-y-2">
+                          {analysis.muscleGroups.strengths?.map((strength: string, index: number) => (
+                            <Badge key={index} variant="outline" className="border-green-500/30 text-green-300">
+                              {strength}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-500/30">
+                        <h4 className="text-sm font-medium text-orange-300 mb-3 flex items-center">
+                          <AlertTriangle className="w-4 h-4 mr-2" />
+                          Areas to Improve
+                        </h4>
+                        <div className="space-y-2">
+                          {analysis.muscleGroups.weaknesses?.map((weakness: string, index: number) => (
+                            <Badge key={index} variant="outline" className="border-orange-500/30 text-orange-300">
+                              {weakness}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Improvement Suggestions */}
+                  {analysis.improvements && analysis.improvements.length > 0 && (
+                    <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/30">
+                      <h4 className="text-sm font-medium text-blue-300 mb-3 flex items-center">
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Recommendations
+                      </h4>
+                      <ul className="space-y-2">
+                        {analysis.improvements.map((improvement: string, index: number) => (
+                          <li key={index} className="text-blue-200 text-sm flex items-start">
+                            <span className="text-blue-400 mr-2">•</span>
+                            {improvement}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Confidence Level */}
+                  <div className="text-center">
+                    <Badge 
+                      variant="outline" 
+                      className={`
+                        ${analysis.confidence === 'high' ? 'border-green-500/30 text-green-300' : 
+                          analysis.confidence === 'medium' ? 'border-yellow-500/30 text-yellow-300' : 
+                          'border-red-500/30 text-red-300'}
+                      `}
+                    >
+                      Analysis Confidence: {analysis.confidence || 'Medium'}
+                    </Badge>
                   </div>
                 </div>
               ) : (

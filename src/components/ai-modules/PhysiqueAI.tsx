@@ -45,28 +45,16 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
     goals: ''
   });
 
-  const compressImage = (file: File, maxSizeMB: number = 1.5): Promise<string> => {
+  const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      console.log('🖼️ [PhysiqueAI] Starting image compression:', {
-        fileName: file.name,
-        fileSize: file.size,
-        maxSizeMB,
-        timestamp: new Date().toISOString()
-      });
-
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
       
       img.onload = () => {
-        console.log('✅ [PhysiqueAI] Image loaded successfully:', {
-          originalWidth: img.width,
-          originalHeight: img.height
-        });
-
-        // More aggressive resizing (max 800px like SmartFoodLog)
+        // Resize to max 512px (more aggressive than before)
         let { width, height } = img;
-        const maxSize = 800;
+        const maxSize = 512;
         
         if (width > height && width > maxSize) {
           height = (height * maxSize) / width;
@@ -75,196 +63,39 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
           width = (width * maxSize) / height;
           height = maxSize;
         }
-        
-        console.log('📐 [PhysiqueAI] Calculated new dimensions:', {
-          newWidth: width,
-          newHeight: height,
-          resized: width !== img.width || height !== img.height
-        });
 
         canvas.width = width;
         canvas.height = height;
-        
         ctx?.drawImage(img, 0, 0, width, height);
         
-        // More aggressive compression starting point
-        let quality = 0.7;
-        let attempts = 0;
-        const tryCompress = () => {
-          attempts++;
-          const base64 = canvas.toDataURL('image/jpeg', quality);
-          const sizeInMB = (base64.length * 0.75) / (1024 * 1024);
-          
-          console.log(`🔄 [PhysiqueAI] Compression attempt ${attempts}:`, {
-            quality: quality.toFixed(2),
-            sizeInMB: sizeInMB.toFixed(2),
-            targetMB: maxSizeMB,
-            base64Length: base64.length
-          });
-          
-          if (sizeInMB <= maxSizeMB || quality <= 0.1) {
-            console.log('✅ [PhysiqueAI] Compression completed:', {
-              finalQuality: quality.toFixed(2),
-              finalSizeInMB: sizeInMB.toFixed(2),
-              totalAttempts: attempts,
-              compressionRatio: ((1 - sizeInMB / (file.size / (1024 * 1024))) * 100).toFixed(1) + '%'
-            });
-            resolve(base64);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
           } else {
-            quality -= 0.1;
-            tryCompress();
+            reject(new Error('Failed to compress image'));
           }
-        };
-        
-        tryCompress();
+        }, 'image/jpeg', 0.8);
       };
       
-      img.onerror = (error) => {
-        console.error('❌ [PhysiqueAI] Image loading failed:', error);
-        reject(new Error('Failed to load image for compression'));
-      };
-      
-      try {
-        img.src = URL.createObjectURL(file);
-        console.log('🔄 [PhysiqueAI] Image object URL created, loading...');
-      } catch (error) {
-        console.error('❌ [PhysiqueAI] Error creating object URL:', error);
-        reject(new Error('Failed to process image'));
-      }
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
     });
   };
 
   const handlePhotoSelection = async (file: File) => {
-    console.log('🔍 [PhysiqueAI] Photo selection started:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      lastModified: file.lastModified,
-      timestamp: new Date().toISOString()
-    });
-
-    // Check if file is empty
-    if (file.size === 0) {
-      console.error('❌ [PhysiqueAI] Empty file detected');
+    if (!file.type.startsWith('image/')) {
       toast({
-        title: 'Empty File',
-        description: 'The selected file appears to be empty. Please choose a different image.',
+        title: 'Invalid File',
+        description: 'Please select an image file.',
         variant: 'destructive'
       });
       return;
     }
 
-    // Check supported image formats
-    const supportedTypes = [
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/webp',
-      'image/bmp',
-      'image/tiff',
-      'image/svg+xml'
-    ];
-    
-    if (!supportedTypes.includes(file.type.toLowerCase())) {
-      console.error('❌ [PhysiqueAI] Unsupported file type:', file.type);
-      toast({
-        title: 'Unsupported Format',
-        description: `Please select a JPEG, PNG, WebP, BMP, TIFF, or SVG image. Current type: ${file.type}`,
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Check file size (max 20MB)
-    const maxSize = 20 * 1024 * 1024;
-    if (file.size > maxSize) {
-      console.error('❌ [PhysiqueAI] File too large:', {
-        fileSize: file.size,
-        maxSize: maxSize,
-        fileSizeMB: (file.size / (1024 * 1024)).toFixed(2)
-      });
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: 'File Too Large',
-        description: `Please select an image smaller than 20MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Validate image dimensions and integrity
-    try {
-      const img = new Image();
-      const imageValidation = await new Promise<{valid: boolean, width: number, height: number, error?: string}>((resolve) => {
-        img.onload = () => {
-          console.log('✅ [PhysiqueAI] Image dimensions validated:', {
-            width: img.width,
-            height: img.height
-          });
-          
-          // Check minimum dimensions
-          if (img.width < 50 || img.height < 50) {
-            resolve({
-              valid: false,
-              width: img.width,
-              height: img.height,
-              error: 'Image too small (minimum 50x50 pixels)'
-            });
-            return;
-          }
-          
-          // Check maximum dimensions
-          if (img.width > 8192 || img.height > 8192) {
-            resolve({
-              valid: false,
-              width: img.width,
-              height: img.height,
-              error: 'Image too large (maximum 8192x8192 pixels)'
-            });
-            return;
-          }
-          
-          resolve({
-            valid: true,
-            width: img.width,
-            height: img.height
-          });
-        };
-        
-        img.onerror = (error) => {
-          console.error('❌ [PhysiqueAI] Image validation failed:', error);
-          resolve({
-            valid: false,
-            width: 0,
-            height: 0,
-            error: 'Invalid or corrupted image file'
-          });
-        };
-        
-        img.src = URL.createObjectURL(file);
-      });
-      
-      if (!imageValidation.valid) {
-        console.error('❌ [PhysiqueAI] Image validation failed:', imageValidation);
-        toast({
-          title: 'Invalid Image',
-          description: imageValidation.error || 'Unable to process this image file.',
-          variant: 'destructive'
-        });
-        return;
-      }
-      
-      console.log('✅ [PhysiqueAI] Photo validation passed:', {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        dimensions: `${imageValidation.width}x${imageValidation.height}`
-      });
-      
-    } catch (error) {
-      console.error('❌ [PhysiqueAI] Image validation error:', error);
-      toast({
-        title: 'Image Processing Error',
-        description: 'Unable to process this image file. Please try a different image.',
+        description: 'Please select an image smaller than 10MB.',
         variant: 'destructive'
       });
       return;
@@ -272,23 +103,9 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
 
     setSelectedPhoto(file);
     
-    // Create preview
     const reader = new FileReader();
     reader.onload = (e) => {
-      console.log('✅ [PhysiqueAI] Photo preview created successfully');
       setPhotoPreview(e.target?.result as string);
-      toast({
-        title: 'Photo Selected',
-        description: 'Photo uploaded successfully and ready for analysis.',
-      });
-    };
-    reader.onerror = (error) => {
-      console.error('❌ [PhysiqueAI] Error creating photo preview:', error);
-      toast({
-        title: 'Preview Error',
-        description: 'Unable to create image preview. Please try again.',
-        variant: 'destructive'
-      });
     };
     reader.readAsDataURL(file);
   };
@@ -301,22 +118,7 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
   };
 
   const analyzePhysique = async () => {
-    console.log('🚀 [PhysiqueAI] Starting physique analysis:', {
-      hasPhoto: !!selectedPhoto,
-      hasUser: !!user,
-      userId: user?.id,
-      photoName: selectedPhoto?.name,
-      photoSize: selectedPhoto?.size,
-      userContext,
-      timestamp: new Date().toISOString()
-    });
-
     if (!selectedPhoto || !user) {
-      console.error('❌ [PhysiqueAI] Missing requirements:', {
-        hasPhoto: !!selectedPhoto,
-        hasUser: !!user,
-        userId: user?.id
-      });
       toast({
         title: 'Missing Requirements',
         description: 'Please select a photo and ensure you are logged in.',
@@ -329,154 +131,66 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
     setAnalysis(null);
     
     try {
-      console.log('🔧 [PhysiqueAI] Starting image compression...');
-      // Compress image more aggressively for reliability
-      const base64Image = await compressImage(selectedPhoto, 1.5);
-      console.log('✅ [PhysiqueAI] Image compressed successfully:', {
-        originalSize: selectedPhoto.size,
-        compressedSize: base64Image.length,
-        compressionRatio: (base64Image.length / selectedPhoto.size * 100).toFixed(1) + '%'
+      // Compress image
+      const compressedBlob = await compressImage(selectedPhoto);
+      const reader = new FileReader();
+      
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(compressedBlob);
       });
       
-      // Ensure auth session is fresh
+      // Get fresh session
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.access_token) {
-        throw new Error('Authentication required - please sign in again');
+        throw new Error('Please sign in again');
       }
-      
-      console.log('📡 [PhysiqueAI] Calling analyze-photo edge function...');
-      const requestPayload = {
-        image: base64Image,
-        height: userContext.height || 'Not specified',
-        weight: userContext.weight || 'Not specified',
-        bodyFat: userContext.bodyFat || 'Unknown',
-        goals: userContext.goals || 'General fitness improvement'
-      };
-      
-      console.log('📤 [PhysiqueAI] Edge function request payload:', {
-        hasImage: !!requestPayload.image,
-        imageSize: requestPayload.image.length,
-        imageSizeMB: (requestPayload.image.length * 0.75 / (1024 * 1024)).toFixed(2),
-        height: requestPayload.height,
-        weight: requestPayload.weight,
-        bodyFat: requestPayload.bodyFat,
-        goals: requestPayload.goals,
-        hasAuth: !!session?.session?.access_token
-      });
 
       const { data, error } = await supabase.functions.invoke('analyze-photo', {
-        body: requestPayload,
-        headers: {
-          'Authorization': `Bearer ${session.session.access_token}`
+        body: {
+          image: base64Image,
+          height: userContext.height || 'Not specified',
+          weight: userContext.weight || 'Not specified',
+          bodyFat: userContext.bodyFat || 'Unknown',
+          goals: userContext.goals || 'General fitness improvement'
         }
-      });
-
-      console.log('📥 [PhysiqueAI] Edge function response:', {
-        hasData: !!data,
-        hasError: !!error,
-        error: error,
-        data: data
       });
 
       if (error) {
-        console.error('❌ [PhysiqueAI] Edge function error:', error);
-        
-        // Handle specific error types
-        if (error.message?.includes('Authorization') || error.message?.includes('401')) {
-          throw new Error('Authentication failed - please sign in again');
-        }
-        if (error.message?.includes('timeout') || error.message?.includes('502') || error.message?.includes('503')) {
-          throw new Error('Server temporarily unavailable - please try again');
-        }
-        if (error.message?.includes('too large') || error.message?.includes('payload')) {
-          throw new Error('Image too large to process - please use a smaller photo');
-        }
-        
-        throw new Error('Analysis failed - please try a different photo or try again later');
-      }
-      
-      if (data?.error) {
-        console.error('❌ [PhysiqueAI] Data error:', data.error);
-        throw new Error(data.error);
+        throw new Error(error.message || 'Analysis failed');
       }
 
-      // Handle structured response
-      if (data?.confidence === 'low' || !data) {
-        console.error('❌ [PhysiqueAI] Low confidence or invalid response:', {
-          confidence: data?.confidence,
-          hasData: !!data
-        });
-        throw new Error('Unable to analyze physique clearly from this image - try better lighting or pose');
+      if (!data || data.error) {
+        throw new Error(data?.error || 'Analysis failed');
       }
-
-      console.log('✅ [PhysiqueAI] Analysis successful:', {
-        confidence: data.confidence,
-        hasBodyFat: !!data.bodyFatPercentage,
-        hasMuscleMass: !!data.muscleMass,
-        hasFFMI: !!data.ffmi,
-        hasFrameSize: !!data.frameSize,
-        hasOverallRating: !!data.overallRating,
-        hasMuscleGroups: !!data.muscleGroups,
-        hasImprovements: !!data.improvements
-      });
 
       setAnalysis(data);
       
-      // Save to progress photos table
-      try {
-        console.log('💾 [PhysiqueAI] Saving analysis to database...');
-        const { error: photoError } = await supabase
-          .from('progress_photos')
-          .insert({
-            user_id: user.id,
-            file_name: selectedPhoto.name,
-            analysis_result: JSON.stringify(data),
-            notes: `Height: ${userContext.height}, Weight: ${userContext.weight}, Goals: ${userContext.goals}`,
-            weight_at_time: userContext.weight ? parseFloat(userContext.weight) : null
-          });
-
-        if (photoError) {
-          console.error('❌ [PhysiqueAI] Error saving photo record:', photoError);
-        } else {
-          console.log('✅ [PhysiqueAI] Photo record saved successfully');
-        }
-      } catch (saveError) {
-        console.error('❌ [PhysiqueAI] Error saving analysis:', saveError);
-      }
+      // Save to database
+      await supabase
+        .from('progress_photos')
+        .insert({
+          user_id: user.id,
+          file_name: selectedPhoto.name,
+          analysis_result: JSON.stringify(data),
+          notes: `Height: ${userContext.height}, Weight: ${userContext.weight}, Goals: ${userContext.goals}`,
+          weight_at_time: userContext.weight ? parseFloat(userContext.weight) : null
+        });
       
       toast({
-        title: 'Analysis Complete! 📸',
-        description: 'Your physique has been analyzed by our AI coach.'
+        title: 'Analysis Complete!',
+        description: 'Your physique has been analyzed.'
       });
       
     } catch (error) {
-      console.error('❌ [PhysiqueAI] Physique analysis error:', {
-        error: error,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        errorStack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString()
-      });
-      
-      const errorMsg = error instanceof Error ? error.message : 'Analysis failed';
-      let description = 'Please try again with a different photo or check your internet connection';
-      
-      if (errorMsg.includes('Authentication') || errorMsg.includes('sign in')) {
-        description = 'Please sign out and sign back in, then try again';
-      } else if (errorMsg.includes('too large') || errorMsg.includes('smaller')) {
-        description = 'Try using a smaller image file or take a new photo';
-      } else if (errorMsg.includes('timeout') || errorMsg.includes('unavailable')) {
-        description = 'Server temporarily busy - please wait a moment and try again';
-      } else if (errorMsg.includes('lighting') || errorMsg.includes('clearly')) {
-        description = 'Try better lighting, clearer pose, or different angle';
-      }
-      
+      console.error('Analysis error:', error);
       toast({
         title: 'Analysis Failed',
-        description: description,
+        description: error instanceof Error ? error.message : 'Please try again',
         variant: 'destructive'
       });
     } finally {
-      console.log('🏁 [PhysiqueAI] Analysis process completed');
       setIsAnalyzing(false);
     }
   };

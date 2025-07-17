@@ -154,6 +154,9 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
           weight: userContext.weight || 'Not specified',
           bodyFat: userContext.bodyFat || 'Unknown',
           goals: userContext.goals || 'General fitness improvement'
+        },
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`
         }
       });
 

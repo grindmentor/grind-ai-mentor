@@ -45,7 +45,7 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
     goals: ''
   });
 
-  const compressImage = (file: File, maxSizeMB: number = 2): Promise<string> => {
+  const compressImage = (file: File, maxSizeMB: number = 1.5): Promise<string> => {
     return new Promise((resolve, reject) => {
       console.log('🖼️ [PhysiqueAI] Starting image compression:', {
         fileName: file.name,
@@ -64,9 +64,9 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
           originalHeight: img.height
         });
 
-        // Calculate new dimensions (max 1024px)
+        // More aggressive resizing (max 800px like SmartFoodLog)
         let { width, height } = img;
-        const maxSize = 1024;
+        const maxSize = 800;
         
         if (width > height && width > maxSize) {
           height = (height * maxSize) / width;
@@ -87,8 +87,8 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
         
         ctx?.drawImage(img, 0, 0, width, height);
         
-        // Try different quality levels until under size limit
-        let quality = 0.8;
+        // More aggressive compression starting point
+        let quality = 0.7;
         let attempts = 0;
         const tryCompress = () => {
           attempts++;
@@ -121,7 +121,7 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
       
       img.onerror = (error) => {
         console.error('❌ [PhysiqueAI] Image loading failed:', error);
-        reject(error);
+        reject(new Error('Failed to load image for compression'));
       };
       
       try {
@@ -129,7 +129,7 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
         console.log('🔄 [PhysiqueAI] Image object URL created, loading...');
       } catch (error) {
         console.error('❌ [PhysiqueAI] Error creating object URL:', error);
-        reject(error);
+        reject(new Error('Failed to process image'));
       }
     });
   };
@@ -330,13 +330,19 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
     
     try {
       console.log('🔧 [PhysiqueAI] Starting image compression...');
-      // Compress image if needed
-      const base64Image = await compressImage(selectedPhoto, 2);
+      // Compress image more aggressively for reliability
+      const base64Image = await compressImage(selectedPhoto, 1.5);
       console.log('✅ [PhysiqueAI] Image compressed successfully:', {
         originalSize: selectedPhoto.size,
         compressedSize: base64Image.length,
         compressionRatio: (base64Image.length / selectedPhoto.size * 100).toFixed(1) + '%'
       });
+      
+      // Ensure auth session is fresh
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) {
+        throw new Error('Authentication required - please sign in again');
+      }
       
       console.log('📡 [PhysiqueAI] Calling analyze-photo edge function...');
       const requestPayload = {
@@ -350,14 +356,19 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
       console.log('📤 [PhysiqueAI] Edge function request payload:', {
         hasImage: !!requestPayload.image,
         imageSize: requestPayload.image.length,
+        imageSizeMB: (requestPayload.image.length * 0.75 / (1024 * 1024)).toFixed(2),
         height: requestPayload.height,
         weight: requestPayload.weight,
         bodyFat: requestPayload.bodyFat,
-        goals: requestPayload.goals
+        goals: requestPayload.goals,
+        hasAuth: !!session?.session?.access_token
       });
 
       const { data, error } = await supabase.functions.invoke('analyze-photo', {
-        body: requestPayload
+        body: requestPayload,
+        headers: {
+          'Authorization': `Bearer ${session.session.access_token}`
+        }
       });
 
       console.log('📥 [PhysiqueAI] Edge function response:', {
@@ -369,20 +380,33 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
 
       if (error) {
         console.error('❌ [PhysiqueAI] Edge function error:', error);
-        throw error;
+        
+        // Handle specific error types
+        if (error.message?.includes('Authorization') || error.message?.includes('401')) {
+          throw new Error('Authentication failed - please sign in again');
+        }
+        if (error.message?.includes('timeout') || error.message?.includes('502') || error.message?.includes('503')) {
+          throw new Error('Server temporarily unavailable - please try again');
+        }
+        if (error.message?.includes('too large') || error.message?.includes('payload')) {
+          throw new Error('Image too large to process - please use a smaller photo');
+        }
+        
+        throw new Error('Analysis failed - please try a different photo or try again later');
       }
-      if (data.error) {
+      
+      if (data?.error) {
         console.error('❌ [PhysiqueAI] Data error:', data.error);
         throw new Error(data.error);
       }
 
       // Handle structured response
-      if (data.confidence === 'low' || data.error) {
-        console.error('❌ [PhysiqueAI] Low confidence or error in response:', {
-          confidence: data.confidence,
-          error: data.error
+      if (data?.confidence === 'low' || !data) {
+        console.error('❌ [PhysiqueAI] Low confidence or invalid response:', {
+          confidence: data?.confidence,
+          hasData: !!data
         });
-        throw new Error(data.error || 'Unable to analyze physique clearly');
+        throw new Error('Unable to analyze physique clearly from this image - try better lighting or pose');
       }
 
       console.log('✅ [PhysiqueAI] Analysis successful:', {
@@ -434,12 +458,21 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
       });
       
       const errorMsg = error instanceof Error ? error.message : 'Analysis failed';
+      let description = 'Please try again with a different photo or check your internet connection';
+      
+      if (errorMsg.includes('Authentication') || errorMsg.includes('sign in')) {
+        description = 'Please sign out and sign back in, then try again';
+      } else if (errorMsg.includes('too large') || errorMsg.includes('smaller')) {
+        description = 'Try using a smaller image file or take a new photo';
+      } else if (errorMsg.includes('timeout') || errorMsg.includes('unavailable')) {
+        description = 'Server temporarily busy - please wait a moment and try again';
+      } else if (errorMsg.includes('lighting') || errorMsg.includes('clearly')) {
+        description = 'Try better lighting, clearer pose, or different angle';
+      }
       
       toast({
         title: 'Analysis Failed',
-        description: errorMsg.includes('too large') ? 
-          'Image too large - please use a smaller photo' : 
-          'Analysis failed - try a clearer, well-lit photo',
+        description: description,
         variant: 'destructive'
       });
     } finally {

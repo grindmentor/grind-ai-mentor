@@ -6,7 +6,6 @@ import { Star, Crown, Sparkles, Grid, List, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PerformanceOptimizedCard } from "@/components/ui/performance-optimized-card";
-
 interface Module {
   id: string;
   title: string;
@@ -17,7 +16,6 @@ interface Module {
   isNew?: boolean;
   component: React.ComponentType<any>;
 }
-
 interface ModuleGridProps {
   modules: Module[];
   favorites: string[];
@@ -28,7 +26,15 @@ interface ModuleGridProps {
 
 // Updated function to get module-specific background colors that match AIModuleCard exactly
 const getModuleTheme = (title: string) => {
-  const moduleThemes: { [key: string]: { bg: string; border: string; iconBg: string; iconColor: string; accent: string } } = {
+  const moduleThemes: {
+    [key: string]: {
+      bg: string;
+      border: string;
+      iconBg: string;
+      iconColor: string;
+      accent: string;
+    };
+  } = {
     // CoachGPT - Cyan theme
     'CoachGPT': {
       bg: 'bg-gradient-to-br from-cyan-900/50 to-blue-900/50',
@@ -155,7 +161,7 @@ const getModuleTheme = (title: string) => {
       accent: 'text-white/90'
     }
   };
-  
+
   // Return specific theme or fallback to default black theme
   return moduleThemes[title] || {
     bg: 'bg-gradient-to-br from-gray-900/50 to-gray-900/50',
@@ -165,7 +171,6 @@ const getModuleTheme = (title: string) => {
     accent: 'text-gray-300'
   };
 };
-
 export const ModuleGrid: React.FC<ModuleGridProps> = ({
   modules,
   favorites,
@@ -174,22 +179,16 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
   viewMode = 'grid'
 }) => {
   const isMobile = useIsMobile();
-  const { isSubscribed } = useSubscription();
-
+  const {
+    isSubscribed
+  } = useSubscription();
   if (viewMode === 'list') {
-    return (
-      <div className="space-y-3">
-        {modules.map((module) => {
-          const IconComponent = module.icon;
-          const isFavorited = favorites.includes(module.id);
-          const theme = getModuleTheme(module.title);
-          
-          return (
-            <Card 
-              key={module.id}
-              className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`}
-              onClick={() => onModuleClick(module)}
-            >
+    return <div className="space-y-3">
+        {modules.map(module => {
+        const IconComponent = module.icon;
+        const isFavorited = favorites.includes(module.id);
+        const theme = getModuleTheme(module.title);
+        return <Card key={module.id} className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`} onClick={() => onModuleClick(module)}>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
                   <div className={`w-12 h-12 rounded-xl ${theme.iconBg} flex items-center justify-center flex-shrink-0 border`}>
@@ -201,87 +200,48 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                       <h3 className="font-semibold text-white text-lg w-full truncate">
                         {module.title}
                       </h3>
-                      {module.isNew && (
-                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs flex-shrink-0">
+                      {module.isNew && <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs flex-shrink-0">
                           <Sparkles className="w-3 h-3 mr-1" />
                           New
-                        </Badge>
-                      )}
-                      {module.isPremium && (
-                        <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs flex-shrink-0">
+                        </Badge>}
+                      {module.isPremium && <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs flex-shrink-0">
                           <Crown className="w-3 h-3 mr-1" />
                           Pro
-                        </Badge>
-                      )}
+                        </Badge>}
                     </div>
                     <p className={`text-sm line-clamp-2 ${theme.accent}`}>
                       {module.description}
                     </p>
                   </div>
                   
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleFavorite(module.id);
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className={`flex-shrink-0 transition-colors ${
-                      isFavorited 
-                        ? 'text-orange-400 hover:text-orange-300' 
-                        : 'text-gray-400 hover:text-orange-400'
-                    }`}
-                  >
+                  <Button onClick={e => {
+                e.stopPropagation();
+                onToggleFavorite(module.id);
+              }} variant="ghost" size="sm" className={`flex-shrink-0 transition-colors ${isFavorited ? 'text-orange-400 hover:text-orange-300' : 'text-gray-400 hover:text-orange-400'}`}>
                     <Star className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
                   </Button>
                 </div>
               </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    );
+            </Card>;
+      })}
+      </div>;
   }
-
-  return (
-    <div className={`grid gap-4 sm:gap-6 ${
-      isMobile 
-        ? 'grid-cols-1' 
-        : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-    }`}>
-      {modules.map((module) => {
-        const IconComponent = module.icon;
-        const isFavorited = favorites.includes(module.id);
-        const theme = getModuleTheme(module.title);
-        
-        return (
-          <PerformanceOptimizedCard
-            key={module.id}
-            className={`group ${theme.bg} ${theme.border}`}
-            gradient={`${theme.bg} ${theme.border}`}
-            hoverEffect={true}
-            clickable={true}
-            onClick={() => onModuleClick(module)}
-          >
+  return <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
+      {modules.map(module => {
+      const IconComponent = module.icon;
+      const isFavorited = favorites.includes(module.id);
+      const theme = getModuleTheme(module.title);
+      return <PerformanceOptimizedCard key={module.id} className={`group ${theme.bg} ${theme.border}`} gradient={`${theme.bg} ${theme.border}`} hoverEffect={true} clickable={true} onClick={() => onModuleClick(module)}>
             
             <CardHeader className="relative z-10 pb-2">
               <div className="flex items-start justify-between mb-3">
                 <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${theme.iconBg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border`}>
                   <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${theme.iconColor} drop-shadow-lg`} />
                 </div>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleFavorite(module.id);
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className={`transition-colors flex-shrink-0 ${
-                    isFavorited 
-                      ? 'text-orange-400 hover:text-orange-300' 
-                      : 'text-gray-400 hover:text-orange-400'
-                  }`}
-                >
+                <Button onClick={e => {
+              e.stopPropagation();
+              onToggleFavorite(module.id);
+            }} variant="ghost" size="sm" className={`transition-colors flex-shrink-0 ${isFavorited ? 'text-orange-400 hover:text-orange-300' : 'text-gray-400 hover:text-orange-400'}`}>
                   <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
                 </Button>
               </div>
@@ -292,23 +252,15 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                     {module.title}
                   </CardTitle>
                   <div className="flex flex-col space-y-1 flex-shrink-0">
-                    {module.title === 'Physique AI' && (
-                      <Badge className="bg-gradient-to-r from-orange-500/30 to-amber-500/30 text-orange-200 border border-orange-400/40 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm animate-pulse">
+                    {module.title === 'Physique AI' && <Badge className="bg-gradient-to-r from-orange-500/30 to-amber-500/30 text-orange-200 border border-orange-400/40 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm animate-pulse">
                         <Zap className="w-3 h-3 mr-1" />
                         BETA
-                      </Badge>
-                    )}
-                    {module.isNew && (
-                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs animate-pulse">
-                        <Sparkles className="w-3 h-3 mr-1" />New
-                      </Badge>
-                    )}
-                    {module.isPremium && (
-                      <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
+                      </Badge>}
+                    {module.isNew}
+                    {module.isPremium && <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
                         <Crown className="w-3 h-3 mr-1" />
                         Premium
-                      </Badge>
-                    )}
+                      </Badge>}
                   </div>
                 </div>
               </div>
@@ -319,11 +271,9 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                 {module.description}
               </CardDescription>
             </CardContent>
-          </PerformanceOptimizedCard>
-        );
-      })}
-    </div>
-  );
+          </PerformanceOptimizedCard>;
+    })}
+    </div>;
 };
 
 // Add default export for lazy loading

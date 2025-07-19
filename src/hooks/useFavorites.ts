@@ -1,127 +1,87 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserPreferences } from './useOptimizedDataLoader';
 
 export const useFavorites = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: favorites = [], loading, error } = useUserPreferences(user?.id);
+  const [optimisticFavorites, setOptimisticFavorites] = useState<string[] | null>(null);
+  const savingRef = useRef<boolean>(false);
 
-  // Load favorites from Supabase with debugging
-  const loadFavorites = async () => {
-    console.log('Loading favorites for user:', user?.id);
-    if (!user) {
-      setFavorites([]);
-      setLoading(false);
-      return;
-    }
+  // Use optimistic favorites when available, otherwise use cached data
+  const currentFavorites = useMemo(() => 
+    optimisticFavorites !== null ? optimisticFavorites : favorites,
+    [optimisticFavorites, favorites]
+  );
 
-    try {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('favorite_modules')
-        .eq('user_id', user.id)
-        .single();
-
-      console.log('Favorites query result:', { data, error });
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading favorites:', error);
-        // Fallback to localStorage
-        const savedFavorites = localStorage.getItem('module-favorites');
-        if (savedFavorites) {
-          const parsedFavorites = JSON.parse(savedFavorites);
-          console.log('Using localStorage favorites:', parsedFavorites);
-          setFavorites(parsedFavorites);
-        }
-      } else if (data) {
-        const favoritesList = data.favorite_modules || [];
-        console.log('Loaded favorites from DB:', favoritesList);
-        setFavorites(favoritesList);
-        // Sync to localStorage as backup
-        localStorage.setItem('module-favorites', JSON.stringify(favoritesList));
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-      // Fallback to localStorage
-      const savedFavorites = localStorage.getItem('module-favorites');
-      if (savedFavorites) {
-        const parsedFavorites = JSON.parse(savedFavorites);
-        console.log('Using localStorage favorites after error:', parsedFavorites);
-        setFavorites(parsedFavorites);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Save favorites to Supabase
-  const saveFavorites = async (newFavorites: string[]) => {
-    if (!user) return;
-
+  // Save favorites to Supabase with optimized updates
+  const saveFavorites = useCallback(async (newFavorites: string[]) => {
+    if (!user || savingRef.current) return;
+    
+    savingRef.current = true;
+    
     try {
       console.log('Saving favorites to Supabase:', newFavorites);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('user_preferences')
         .upsert({
           user_id: user.id,
           favorite_modules: newFavorites
         }, {
           onConflict: 'user_id'
-        })
-        .select();
+        });
 
       if (error) {
         console.error('Error saving favorites to Supabase:', error);
         throw error;
       }
 
-      console.log('Successfully saved favorites to Supabase:', data);
+      console.log('Successfully saved favorites to Supabase');
       
-      // Always save to localStorage as backup
+      // Clear optimistic state since real data will be refetched
+      setOptimisticFavorites(null);
+      
+      // Save to localStorage as backup
       localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
     } catch (error) {
       console.error('Error saving favorites:', error);
       // Still save to localStorage as fallback
       localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
       throw error;
+    } finally {
+      savingRef.current = false;
     }
-  };
+  }, [user]);
 
-  // Toggle favorite with optimistic updates and console logging
-  const toggleFavorite = async (moduleId: string) => {
+  // Toggle favorite with optimistic updates
+  const toggleFavorite = useCallback(async (moduleId: string) => {
     console.log('Toggle favorite called for module:', moduleId);
-    console.log('Current favorites:', favorites);
+    console.log('Current favorites:', currentFavorites);
     
-    const newFavorites = favorites.includes(moduleId) 
-      ? favorites.filter(id => id !== moduleId)
-      : [...favorites, moduleId];
+    const newFavorites = currentFavorites.includes(moduleId) 
+      ? currentFavorites.filter(id => id !== moduleId)
+      : [...currentFavorites, moduleId];
     
     console.log('New favorites will be:', newFavorites);
     
     // Immediate UI update (optimistic)
-    setFavorites(newFavorites);
+    setOptimisticFavorites(newFavorites);
     
     try {
       await saveFavorites(newFavorites);
       console.log('Favorites saved successfully:', newFavorites);
       
-      // Force a reload to ensure data consistency
-      setTimeout(() => {
-        loadFavorites();
-      }, 500);
-      
       toast({
-        title: favorites.includes(moduleId) ? "Removed from Favorites" : "Added to Favorites",
-        description: `Module ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your favorites.`
+        title: currentFavorites.includes(moduleId) ? "Removed from Favorites" : "Added to Favorites",
+        description: `Module ${currentFavorites.includes(moduleId) ? 'removed from' : 'added to'} your favorites.`
       });
     } catch (error) {
-      // Revert on error
-      setFavorites(favorites);
+      // Revert optimistic update on error
+      setOptimisticFavorites(null);
       console.error('Failed to save favorites:', error);
       toast({
         title: "Error",
@@ -129,16 +89,19 @@ export const useFavorites = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [currentFavorites, saveFavorites, toast]);
 
-  useEffect(() => {
-    loadFavorites();
-  }, [user]);
+  // Reload function for manual refresh
+  const reload = useCallback(() => {
+    setOptimisticFavorites(null);
+    // The useUserPreferences hook will handle the actual reload
+  }, []);
 
   return {
-    favorites,
+    favorites: currentFavorites,
     loading,
+    error,
     toggleFavorite,
-    reload: loadFavorites
+    reload
   };
 };

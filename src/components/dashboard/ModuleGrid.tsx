@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Crown, Sparkles, Grid, List } from "lucide-react";
+import { Star, Crown, Sparkles, Grid, List, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PerformanceOptimizedCard } from "@/components/ui/performance-optimized-card";
@@ -293,7 +293,8 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                   </CardTitle>
                   <div className="flex flex-col space-y-1 flex-shrink-0">
                     {module.title === 'Physique AI' && (
-                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">
+                      <Badge className="bg-gradient-to-r from-orange-500/30 to-amber-500/30 text-orange-200 border border-orange-400/40 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm animate-pulse">
+                        <Zap className="w-3 h-3 mr-1" />
                         BETA
                       </Badge>
                     )}

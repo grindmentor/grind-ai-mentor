@@ -252,7 +252,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                     {module.title}
                   </CardTitle>
                   <div className="flex flex-col space-y-1 flex-shrink-0">
-                    {module.title === 'Physique AI' && <Badge className="bg-gradient-to-r from-orange-500/30 to-amber-500/30 text-orange-200 border border-orange-400/40 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm animate-pulse">
+                    {module.title === 'Physique AI' && <Badge className="bg-gradient-to-r from-orange-500/50 to-amber-500/50 text-white border border-orange-400/60 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm">
                         <Zap className="w-3 h-3 mr-1" />
                         BETA
                       </Badge>}

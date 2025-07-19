@@ -292,6 +292,11 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
                     {module.title}
                   </CardTitle>
                   <div className="flex flex-col space-y-1 flex-shrink-0">
+                    {module.title === 'Physique AI' && (
+                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">
+                        BETA
+                      </Badge>
+                    )}
                     {module.isNew && (
                       <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs animate-pulse">
                         <Sparkles className="w-3 h-3 mr-1" />New

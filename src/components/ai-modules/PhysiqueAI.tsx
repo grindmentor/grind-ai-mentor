@@ -224,6 +224,14 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
             </CardHeader>
             
             <CardContent className="space-y-6">
+              {/* Beta Warning */}
+              <div className="flex justify-center mb-6">
+                <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 px-4 py-2">
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  BETA - Photo analysis may not work consistently
+                </Badge>
+              </div>
+              
               {/* User Context Form */}
               <div className="space-y-4 p-4 bg-purple-900/20 rounded-lg border border-purple-500/20">
                 <h3 className="text-lg font-semibold text-purple-200 flex items-center">

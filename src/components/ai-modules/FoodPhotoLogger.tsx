@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Upload, Utensils, Zap, ArrowLeft, Sparkles, Target, Clock, CheckCircle, Award } from "lucide-react";
+import { Camera, Upload, Utensils, Zap, ArrowLeft, Sparkles, Target, Clock, CheckCircle, Award, AlertTriangle } from "lucide-react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { aiService } from "@/services/aiService";
@@ -234,9 +234,9 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
 
           {/* Status Badge */}
           <div className="flex justify-center">
-            <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30 px-6 py-3 text-base">
-              <Award className="w-5 h-5 mr-2" />
-              AI Photo Recognition
+            <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 px-6 py-3 text-base">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              BETA - Photo analysis may not work consistently
             </Badge>
           </div>
 

@@ -19,7 +19,7 @@ const DashboardHeader = memo(() => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-800/50 bg-black/80 backdrop-blur-md supports-[backdrop-filter]:bg-black/60">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 items-center justify-between">
           {/* Logo/Brand - Left Side */}
@@ -38,7 +38,7 @@ const DashboardHeader = memo(() => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors duration-200"
                 onClick={() => navigate('/modules')}
                 aria-label="Module Library"
               >
@@ -55,7 +55,7 @@ const DashboardHeader = memo(() => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="mobile-nav-button p-2 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 onClick={() => navigate('/modules')}
                 aria-label="Module Library"
               >
@@ -74,7 +74,7 @@ const DashboardHeader = memo(() => {
             <Button
               variant="ghost"
               size="sm"
-              className="mobile-nav-button relative p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="mobile-nav-button relative p-2 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Notifications"
               onClick={() => setIsNotificationOpen(true)}
             >
@@ -86,7 +86,7 @@ const DashboardHeader = memo(() => {
             <Button
               variant="ghost"
               size="sm"
-              className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="mobile-nav-button p-2 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
               onClick={() => navigate('/profile')}
               aria-label="Profile"
             >
@@ -97,7 +97,7 @@ const DashboardHeader = memo(() => {
             <Button
               variant="ghost"
               size="sm"
-              className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="mobile-nav-button p-2 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
               onClick={() => navigate('/settings')}
               aria-label="Settings"
             >
@@ -109,7 +109,7 @@ const DashboardHeader = memo(() => {
 
       {/* Notification Center Sheet */}
       <Sheet open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-4xl bg-black/95 backdrop-blur-md border-l border-gray-800/50 p-0">
+        <SheetContent side="right" className="w-full sm:max-w-4xl bg-background/95 backdrop-blur-md border-l border-border p-0">
           <div className="h-full">
             <NotificationCenter onBack={() => setIsNotificationOpen(false)} />
           </div>

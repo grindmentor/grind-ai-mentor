@@ -273,11 +273,11 @@ const Dashboard = () => {
       <SmoothTransition transitionKey="dashboard">
         <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
           {/* Enhanced header with notifications, profile, and settings */}
-          <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+          <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <h1 className="text-xl sm:text-2xl font-bold text-white">
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                     Myotopia
                   </h1>
                   {/* Subscription tier indicator */}
@@ -285,7 +285,7 @@ const Dashboard = () => {
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                       currentTier === 'premium' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
                       
-                      'bg-gray-600 text-gray-300'
+                      'bg-muted text-muted-foreground'
                     }`}>
                       {currentTier.toUpperCase()}
                     </span>
@@ -298,7 +298,7 @@ const Dashboard = () => {
                     onClick={() => navigate('/modules')}
                     variant="ghost"
                     size="sm"
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 hidden sm:flex"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 hidden sm:flex"
                     title="Module Library"
                   >
                     <span className="text-xs sm:text-sm">Library</span>
@@ -309,7 +309,7 @@ const Dashboard = () => {
                     onClick={handleNotificationsClick}
                     variant="ghost"
                     size="sm"
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2"
                     title="Notifications"
                   >
                     <Bell className="w-5 h-5" />
@@ -320,7 +320,7 @@ const Dashboard = () => {
                     onClick={handleProfileClick}
                     variant="ghost"
                     size="sm"
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2"
                     title="Profile"
                   >
                     <User className="w-5 h-5" />
@@ -331,7 +331,7 @@ const Dashboard = () => {
                     onClick={handleSettingsClick}
                     variant="ghost"
                     size="sm"
-                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2"
                     title="Settings"
                   >
                     <Settings className="w-5 h-5" />
@@ -366,7 +366,7 @@ const Dashboard = () => {
                       onClick={() => navigate('/modules')}
                       variant="ghost"
                       size="sm"
-                      className="text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center"
+                      className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center"
                     >
                       <Plus className="w-4 h-4 mr-1" />
                       Add More
@@ -387,7 +387,7 @@ const Dashboard = () => {
                 <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
                   <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
                     <Star className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500 mx-auto mb-4" />
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-3 sm:mb-4">No Favorites Yet</h2>
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-3 sm:mb-4">No Favorites Yet</h2>
                     <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base px-2">
                       Visit the Module Library to explore and favorite modules you'd like to see here.
                     </p>

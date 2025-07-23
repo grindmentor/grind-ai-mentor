@@ -8,11 +8,11 @@ interface AppBackgroundProps {
 export const AppBackground: React.FC<AppBackgroundProps> = ({ children }) => {
   return (
     <div className="min-h-screen relative">
-      {/* Base black background */}
-      <div className="fixed inset-0 bg-black z-0" />
+      {/* Base background */}
+      <div className="fixed inset-0 bg-background z-0" />
       
       {/* Orange gradient overlay - subtle like Habit Tracker */}
-      <div className="fixed inset-0 bg-gradient-to-br from-black via-orange-900/20 to-orange-800/30 z-0" />
+      <div className="fixed inset-0 bg-gradient-to-br from-background via-orange-900/20 to-orange-800/30 z-0" />
       
       {/* Optional subtle pattern overlay */}
       <div className="fixed inset-0 opacity-5 z-0">

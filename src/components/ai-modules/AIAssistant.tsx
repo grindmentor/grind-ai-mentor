@@ -253,53 +253,53 @@ What would you like to tackle first? 🎯`
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="text-white hover:bg-gray-800">
+        <Button variant="ghost" onClick={onBack} className="text-foreground hover:bg-accent">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Button>
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center">
-            <MessageSquare className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+            <MessageSquare className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">AI Assistant</h1>
-            <p className="text-gray-400">Your personal fitness coach & friend</p>
+            <h1 className="text-3xl font-bold text-foreground">AI Assistant</h1>
+            <p className="text-muted-foreground">Your personal fitness coach & friend</p>
           </div>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+        <Badge className="bg-accent/50 text-accent-foreground border-accent">
           <BookOpen className="w-3 h-3 mr-1" />
           Personalized advice
         </Badge>
-        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+        <Badge className="bg-accent/50 text-accent-foreground border-accent">
           Ask me anything
         </Badge>
-        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+        <Badge className="bg-accent/50 text-accent-foreground border-accent">
           Conversational & friendly
         </Badge>
-        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+        <Badge className="bg-accent/50 text-accent-foreground border-accent">
           Progress photo analysis
         </Badge>
       </div>
 
       <div className="grid gap-6">
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white">Chat with Your AI Coach</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-card-foreground">Chat with Your AI Coach</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Tell me about your goals, challenges, and lifestyle. Upload progress photos for personalized feedback!
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="h-96 overflow-y-auto space-y-4 p-4 bg-gray-800 rounded-lg">
+            <div className="h-96 overflow-y-auto space-y-4 p-4 bg-muted rounded-lg">
               {messages.map((message, index) => (
                 <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] p-4 rounded-lg ${
                     message.role === 'user' 
-                      ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' 
-                      : 'bg-gray-700 text-gray-100'
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-accent text-accent-foreground'
                   }`}>
                     {message.image && (
                       <img 
@@ -314,7 +314,7 @@ What would you like to tackle first? 🎯`
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-700 text-gray-100 p-4 rounded-lg max-w-[85%]">
+                  <div className="bg-accent text-accent-foreground p-4 rounded-lg max-w-[85%]">
                     <div className="flex items-center space-x-2">
                       <div className="animate-pulse">Let me think about this... 🤔</div>
                     </div>
@@ -329,7 +329,7 @@ What would you like to tackle first? 🎯`
                 <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
                 <button
                   onClick={removeImage}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -348,7 +348,7 @@ What would you like to tackle first? 🎯`
                 type="button"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                className="bg-card border-border text-card-foreground hover:bg-accent"
                 title="Upload progress photo"
               >
                 <ImagePlus className="w-4 h-4" />
@@ -357,12 +357,12 @@ What would you like to tackle first? 🎯`
                 placeholder="Tell me about your goals, ask questions, share your challenges... anything!"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="bg-gray-800 border-gray-700 text-white flex-1"
+                className="bg-input border-border text-foreground flex-1"
               />
               <Button 
                 type="submit" 
                 disabled={(!input.trim() && !selectedImage) || isLoading}
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Send className="w-4 h-4" />
               </Button>
@@ -370,10 +370,10 @@ What would you like to tackle first? 🎯`
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white">Not sure what to ask?</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-card-foreground">Not sure what to ask?</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Try one of these conversation starters
             </CardDescription>
           </CardHeader>
@@ -383,7 +383,7 @@ What would you like to tackle first? 🎯`
                 <Button
                   key={index}
                   variant="ghost"
-                  className="text-left justify-start text-gray-300 hover:bg-gray-800 hover:text-white"
+                  className="text-left justify-start text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   onClick={() => setInput(question)}
                 >
                   {question}

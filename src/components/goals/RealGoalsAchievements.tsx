@@ -47,18 +47,22 @@ const RealGoalsAchievements = () => {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [activeTab, setActiveTab] = useState<'goals' | 'achievements'>('goals');
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && !initialLoadComplete) {
       loadGoalsAndAchievements();
     }
-  }, [user]);
+  }, [user, initialLoadComplete]);
 
   const loadGoalsAndAchievements = async () => {
     if (!user) return;
 
     try {
-      setLoading(true);
+      // Only show loading state for initial load, not refreshes
+      if (!initialLoadComplete) {
+        setLoading(true);
+      }
       
       // Load goals with better error handling
       const { data: goalsData, error: goalsError } = await supabase
@@ -93,6 +97,7 @@ const RealGoalsAchievements = () => {
       setAchievements([]);
     } finally {
       setLoading(false);
+      setInitialLoadComplete(true);
     }
   };
 
@@ -191,14 +196,14 @@ const RealGoalsAchievements = () => {
     }
   };
 
-  if (loading) {
+  if (loading && !initialLoadComplete) {
     return (
-      <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+      <Card className="bg-card border-border">
         <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-700 rounded w-1/4"></div>
-            <div className="h-8 bg-gray-700 rounded"></div>
-            <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-muted rounded w-1/4"></div>
+            <div className="h-8 bg-muted rounded"></div>
+            <div className="h-4 bg-muted rounded w-3/4"></div>
           </div>
         </CardContent>
       </Card>
@@ -218,7 +223,8 @@ const RealGoalsAchievements = () => {
 
   return (
     <>
-      <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+      <Card className="bg-card border-border"
+            style={{ transition: 'all 0.3s ease' }}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center">

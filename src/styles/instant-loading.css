@@ -1,15 +1,76 @@
-/* Instant loading optimizations */
+/* Instant loading optimizations with smooth animations */
 .instant-load {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: instant-appear 0.15s ease-out forwards;
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
-@keyframes instant-appear {
-  to {
-    opacity: 1;
-    transform: translateY(0);
+.instant-skeleton {
+  background: linear-gradient(90deg, 
+    rgba(55, 65, 81, 0.5) 25%, 
+    rgba(75, 85, 99, 0.6) 50%, 
+    rgba(55, 65, 81, 0.5) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.module-enter {
+  animation: moduleEnter 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.module-exit {
+  animation: moduleExit 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.loading-pulse {
+  animation: loadingPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes moduleEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
   }
+  50% {
+    opacity: 0.7;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes moduleExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+
+@keyframes loadingPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes progressPulse {
+  0%, 100% { width: 40%; }
+  50% { width: 80%; }
 }
 
 /* Ultra-fast transitions */
@@ -24,26 +85,10 @@
   backface-visibility: hidden;
 }
 
-/* Instant skeleton animations */
-.instant-skeleton {
-  background: linear-gradient(90deg, 
-    var(--muted) 25%, 
-    var(--muted-foreground/10) 50%, 
-    var(--muted) 75%
-  );
-  background-size: 200% 100%;
-  animation: instant-shimmer 1s infinite;
-}
-
-@keyframes instant-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
 /* Connection-aware optimizations */
 .connection-slow .instant-skeleton {
   animation: none;
-  background: var(--muted);
+  background: rgba(55, 65, 81, 0.5);
 }
 
 .connection-slow .ultra-fast-transition {
@@ -62,7 +107,7 @@
 .virtualized-list {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--muted) transparent;
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
 }
 
 .virtualized-list::-webkit-scrollbar {
@@ -74,7 +119,7 @@
 }
 
 .virtualized-list::-webkit-scrollbar-thumb {
-  background: var(--muted);
+  background: rgba(75, 85, 99, 0.5);
   border-radius: 3px;
 }
 
@@ -87,7 +132,7 @@
 .ultra-performance .backdrop-blur-sm,
 .ultra-performance .backdrop-blur-md {
   backdrop-filter: none !important;
-  background: var(--background/80) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Instant loading states */
@@ -97,7 +142,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--background);
+  background: rgba(0, 0, 0, 0.95);
   z-index: 9999;
   display: flex;
   align-items: center;

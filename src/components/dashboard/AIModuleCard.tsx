@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AIModuleCardProps {
   id: string;
@@ -122,7 +123,11 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
 
   return (
     <Card 
-      className={`bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor} ${isPremium && !isSubscribed ? 'opacity-75' : ''}`}
+      className={cn(
+        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`,
+        "animate-fade-in hover-scale transform-gpu",
+        isPremium && !isSubscribed ? 'opacity-75' : ''
+      )}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
     >

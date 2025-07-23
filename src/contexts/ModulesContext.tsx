@@ -45,17 +45,36 @@ export const useModules = () => {
   return context;
 };
 
-// Enhanced placeholder component with better loading states
+// Enhanced placeholder component with engaging animations
 const PlaceholderComponent = ({ title, onBack }: { title?: string; onBack?: () => void }) => (
-  <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center p-6">
-    <div className="text-center max-w-md">
-      <div className="w-16 h-16 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto mb-6"></div>
-      <h2 className="text-2xl font-bold mb-4">{title || 'Module'}</h2>
-      <p className="text-gray-400 mb-6">This module is loading...</p>
+  <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center p-6 animate-fade-in">
+    <div className="text-center max-w-md space-y-6">
+      {/* Multi-layered loading spinner */}
+      <div className="relative mx-auto">
+        <div className="w-20 h-20 border-4 border-orange-500/20 border-t-orange-500 border-r-orange-400 rounded-full animate-spin" />
+        <div className="absolute inset-2 w-16 h-16 border-3 border-orange-400/30 border-b-orange-400 border-l-orange-300 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+        <div className="absolute inset-4 w-12 h-12 border-2 border-orange-300/40 border-t-orange-300 rounded-full animate-spin" style={{ animationDuration: '1s' }} />
+      </div>
+      
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold animate-pulse">{title || 'Module'}</h2>
+        <p className="text-orange-300/70 mb-6 animate-pulse" style={{ animationDelay: '200ms' }}>
+          Powered by science-based training
+        </p>
+        
+        {/* Animated dots */}
+        <div className="flex space-x-2 justify-center">
+          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-3 h-3 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-3 h-3 bg-orange-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+      
       {onBack && (
         <button 
           onClick={onBack} 
-          className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+          className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all duration-200 hover:scale-105 animate-fade-in"
+          style={{ animationDelay: '500ms' }}
         >
           Back to Dashboard
         </button>

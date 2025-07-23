@@ -246,7 +246,7 @@ const Dashboard = () => {
       return (
         <ErrorBoundary>
           <SmoothTransition transitionKey={selectedModule.id}>
-            <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
+            <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
               <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
                 <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
                   <ModuleComponent 
@@ -271,7 +271,7 @@ const Dashboard = () => {
   return (
     <ErrorBoundary>
       <SmoothTransition transitionKey="dashboard">
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white overflow-x-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
           {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
             <div className="px-4 py-3 sm:px-6 sm:py-4">

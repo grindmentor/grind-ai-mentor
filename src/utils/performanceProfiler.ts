@@ -26,9 +26,10 @@ class PerformanceProfiler {
       // Monitor Layout Shifts
       const clsObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (!entry.hadRecentInput && entry.value > 0.1) {
-            console.warn(`[Performance] Layout shift detected: ${entry.value.toFixed(4)}`);
-            this.recordMetric('layout-shifts', entry.value);
+          const layoutShiftEntry = entry as any; // Type assertion for layout shift entries
+          if (!layoutShiftEntry.hadRecentInput && layoutShiftEntry.value > 0.1) {
+            console.warn(`[Performance] Layout shift detected: ${layoutShiftEntry.value.toFixed(4)}`);
+            this.recordMetric('layout-shifts', layoutShiftEntry.value);
           }
         }
       });
@@ -38,7 +39,7 @@ class PerformanceProfiler {
       // Monitor LCP
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
-        const lastEntry = entries[entries.length - 1];
+        const lastEntry = entries[entries.length - 1] as any; // Type assertion for LCP entries
         console.info(`[Performance] LCP: ${lastEntry.startTime.toFixed(0)}ms`);
         this.recordMetric('lcp', lastEntry.startTime);
       });

@@ -12,6 +12,7 @@ import { usePreloadComponents } from '@/hooks/usePreloadComponents';
 import PWAHandler from '@/components/PWAHandler';
 import { OptimizedSuspense } from '@/components/ui/optimized-suspense';
 import { ComprehensiveErrorBoundary } from '@/components/ui/comprehensive-error-boundary';
+import { NativeAppWrapper } from '@/components/ui/native-app-wrapper';
 
 // Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
@@ -68,25 +69,27 @@ export default function App() {
   }, []);
 
   return (
-    <AppBackground>
-      <AppShell
-        title="Myotopia"
-        showBackButton={false}
-        showNotificationButton={true}
-        className="h-full"
-      >
-        <OptimizedSuspense 
-          loadingType="screen"
-          message={lowDataMode ? "Loading (Performance Mode)" : "Loading Myotopia..."} 
+    <NativeAppWrapper enableHaptics={true} enableGestures={true}>
+      <AppBackground>
+        <AppShell
+          title="Myotopia"
+          showBackButton={false}
+          showNotificationButton={true}
+          className="h-full"
         >
-          <PWAHandler />
-          <ComprehensiveErrorBoundary showHomeButton={false}>
-            {measurePerformance('Dashboard Render', () => (
-              <Dashboard />
-            ))}
-          </ComprehensiveErrorBoundary>
-        </OptimizedSuspense>
-      </AppShell>
-    </AppBackground>
+          <OptimizedSuspense 
+            loadingType="screen"
+            message={lowDataMode ? "Loading (Performance Mode)" : "Loading Myotopia..."} 
+          >
+            <PWAHandler />
+            <ComprehensiveErrorBoundary showHomeButton={false}>
+              {measurePerformance('Dashboard Render', () => (
+                <Dashboard />
+              ))}
+            </ComprehensiveErrorBoundary>
+          </OptimizedSuspense>
+        </AppShell>
+      </AppBackground>
+    </NativeAppWrapper>
   );
 }

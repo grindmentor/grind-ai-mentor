@@ -28,6 +28,8 @@ import PremiumPromoCard from '@/components/PremiumPromoCard';
 import { toast } from 'sonner';
 import { useInstantLoading } from '@/hooks/useInstantLoading';
 import { useAggressiveModulePreloader } from '@/hooks/useAggressiveModulePreloader';
+import { NativeTransition, NativePageTransition } from '@/components/ui/native-transitions';
+import { NativeButton } from '@/components/ui/native-button';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -229,23 +231,27 @@ const Dashboard = () => {
     return <EnhancedLoading type="dashboard" skeleton={true} message="Loading Myotopia modules..." />;
   }
 
-  // Show notifications with smooth transition
+  // Show notifications with native transition
   if (showNotifications) {
     return (
-      <SmoothTransition transitionKey="notifications">
+      <NativeTransition routeKey="notifications" type="slide" direction="forward">
         <NotificationCenter onBack={handleBackToDashboard} />
-      </SmoothTransition>
+      </NativeTransition>
     );
   }
 
-  // Show selected module with smooth transition
+  // Show selected module with native transition
   if (selectedModule) {
     console.log('Rendering selected module:', selectedModule.id);
     try {
       const ModuleComponent = selectedModule.component;
       return (
         <ErrorBoundary>
-          <SmoothTransition transitionKey={selectedModule.id}>
+          <NativeTransition 
+            routeKey={selectedModule.id} 
+            type="slide" 
+            direction={navigationSource === 'dashboard' ? 'forward' : 'backward'}
+          >
             <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
               <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
                 <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
@@ -257,7 +263,7 @@ const Dashboard = () => {
                 </ModuleErrorBoundary>
               </Suspense>
             </div>
-          </SmoothTransition>
+          </NativeTransition>
         </ErrorBoundary>
       );
     } catch (error) {
@@ -270,8 +276,8 @@ const Dashboard = () => {
 
   return (
     <ErrorBoundary>
-      <SmoothTransition transitionKey="dashboard">
-        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
+      <NativeTransition routeKey="dashboard" type="fade">
+        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden" ref={gestureRef as React.RefObject<HTMLDivElement>}>
           {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
@@ -391,12 +397,15 @@ const Dashboard = () => {
                     <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base px-2">
                       Visit the Module Library to explore and favorite modules you'd like to see here.
                     </p>
-                    <Button
+                    <NativeButton
                       onClick={() => navigate('/modules')}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto touch-manipulation"
+                      variant="primary"
+                      size="lg"
+                      haptic="medium"
+                      className="w-full sm:w-auto"
                     >
                       Browse Module Library
-                    </Button>
+                    </NativeButton>
                   </div>
                 </div>
               ) : null}
@@ -404,10 +413,15 @@ const Dashboard = () => {
               {/* Progress Hub - Optimized */}
               {progressHubModule && (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
-                  <Button
+                  <NativeButton
                     onClick={() => handleModuleClick(progressHubModule)}
-                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-foreground rounded-xl group touch-manipulation gpu-accelerated"
+                    variant="native"
+                    size="xl"
+                    haptic="medium"
+                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 text-foreground rounded-xl group"
+                    asChild
                   >
+                    <div>
                     <div className="flex items-center justify-between w-full px-4 sm:px-6">
                       <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r from-purple-800/80 to-purple-900/90 border border-purple-700/40 flex items-center justify-center flex-shrink-0">
@@ -427,7 +441,8 @@ const Dashboard = () => {
                         <span className="text-xs sm:text-sm text-purple-200/90 hidden sm:inline">View Progress</span>
                       </div>
                     </div>
-                  </Button>
+                  </div>
+                  </NativeButton>
                 </div>
               )}
 
@@ -454,7 +469,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </SmoothTransition>
+      </NativeTransition>
     </ErrorBoundary>
   );
 };

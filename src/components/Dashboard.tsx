@@ -25,6 +25,7 @@ import { useMobileGestures } from '@/hooks/useMobileGestures';
 import { SmoothPageTransition } from '@/components/ui/smooth-page-transition';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
 import { toast } from 'sonner';
+import { useInstantLoading } from '@/hooks/useInstantLoading';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -51,6 +52,13 @@ const Dashboard = () => {
   const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
   const { currentTier, currentTierData } = useSubscription();
   const { preloadModule } = useModulePreloader();
+  
+  // Instant loading optimization
+  const { isShellReady, trackInteraction, warmupRoute } = useInstantLoading({
+    preloadModules: ['CoachGPT', 'SmartTraining', 'WorkoutLoggerAI'],
+    enablePredictiveLoading: true,
+    aggressiveCaching: !lowDataMode
+  });
   
   // Session persistence for smooth navigation
   const {

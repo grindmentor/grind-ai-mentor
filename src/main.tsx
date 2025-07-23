@@ -4,6 +4,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { PerformanceProvider } from '@/components/ui/performance-provider'
+import { loadAppShell } from '@/utils/appShellCache'
+
+// Instant app shell initialization
+loadAppShell();
 
 // Ultra-optimized PWA registration with performance monitoring
 if ('serviceWorker' in navigator) {

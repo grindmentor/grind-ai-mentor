@@ -1,0 +1,128 @@
+/* Instant loading optimizations */
+.instant-load {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: instant-appear 0.15s ease-out forwards;
+}
+
+@keyframes instant-appear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ultra-fast transitions */
+.ultra-fast-transition {
+  transition: all 0.1s ease-out !important;
+}
+
+/* Performance-critical elements */
+.performance-critical {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Instant skeleton animations */
+.instant-skeleton {
+  background: linear-gradient(90deg, 
+    var(--muted) 25%, 
+    var(--muted-foreground/10) 50%, 
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: instant-shimmer 1s infinite;
+}
+
+@keyframes instant-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Connection-aware optimizations */
+.connection-slow .instant-skeleton {
+  animation: none;
+  background: var(--muted);
+}
+
+.connection-slow .ultra-fast-transition {
+  transition: none !important;
+}
+
+/* Memory-efficient grid */
+.instant-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  contain: layout style;
+}
+
+/* Virtualized list optimization */
+.virtualized-list {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+
+.virtualized-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.virtualized-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.virtualized-list::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 3px;
+}
+
+/* Ultra-performance mode */
+.ultra-performance * {
+  animation-duration: 0.05s !important;
+  transition-duration: 0.05s !important;
+}
+
+.ultra-performance .backdrop-blur-sm,
+.ultra-performance .backdrop-blur-md {
+  backdrop-filter: none !important;
+  background: var(--background/80) !important;
+}
+
+/* Instant loading states */
+.instant-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--background);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.1s ease-out;
+}
+
+.instant-loading-overlay.loaded {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Battery-optimized animations */
+@media (prefers-reduced-motion: reduce) {
+  .instant-load,
+  .ultra-fast-transition,
+  .instant-skeleton {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* High-DPI optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .instant-skeleton {
+    background-size: 400% 100%;
+  }
+}

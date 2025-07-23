@@ -1,8 +1,11 @@
-const CACHE_NAME = 'myotopia-v4-optimized';
-const STATIC_CACHE = 'myotopia-static-v4';
-const DYNAMIC_CACHE = 'myotopia-dynamic-v4';
-const AI_CACHE = 'myotopia-ai-responses-v2';
-const IMAGE_CACHE = 'myotopia-images-v2';
+const CACHE_NAME = 'myotopia-v5-ultrafast';
+const STATIC_CACHE = 'myotopia-static-v5';
+const DYNAMIC_CACHE = 'myotopia-dynamic-v5';
+const AI_CACHE = 'myotopia-ai-responses-v3';
+const IMAGE_CACHE = 'myotopia-images-v3';
+const INSTANT_CACHE = 'myotopia-instant-v1';
+
+let aggressiveCacheEnabled = false;
 
 // Critical assets for immediate caching (reduced for faster install)
 const CRITICAL_ASSETS = [
@@ -18,35 +21,36 @@ const STATIC_ASSETS = [
   '/apple-touch-icon.png'
 ];
 
-// Install with ultra-fast caching strategy
+// Ultra-fast install with instant cache initialization
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing ultra-optimized service worker...');
+  console.log('[SW] Installing ultra-fast service worker...');
   
   event.waitUntil(
     Promise.all([
-      // Cache only absolutely critical assets immediately
-      caches.open(STATIC_CACHE).then((cache) => {
-        console.log('[SW] Caching critical assets');
-        return cache.addAll(CRITICAL_ASSETS);
+      // Instant shell cache
+      caches.open(INSTANT_CACHE).then((cache) => {
+        return cache.addAll(['/']);
       }),
-      // Initialize other caches
+      // Initialize all caches simultaneously
+      caches.open(STATIC_CACHE),
       caches.open(DYNAMIC_CACHE),
       caches.open(AI_CACHE),
       caches.open(IMAGE_CACHE)
     ]).then(() => {
-      console.log('[SW] Critical installation complete');
+      console.log('[SW] Instant installation complete');
       return self.skipWaiting();
     })
   );
   
-  // Background cache non-critical assets without blocking install
-  setTimeout(() => {
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch(err => {
-        console.log('[SW] Background caching completed with some skips');
-      });
+  // Aggressive background preloading without blocking
+  if ('requestIdleCallback' in self) {
+    requestIdleCallback(() => {
+      Promise.all([
+        caches.open(STATIC_CACHE).then(cache => cache.addAll(CRITICAL_ASSETS)),
+        caches.open(STATIC_CACHE).then(cache => cache.addAll(STATIC_ASSETS))
+      ]).catch(() => console.log('[SW] Background preload completed'));
     });
-  }, 1000);
+  }
 });
 
 // Activate with aggressive cleanup

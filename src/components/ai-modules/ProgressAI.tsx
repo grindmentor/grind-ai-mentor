@@ -83,6 +83,12 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
 
     setIsAnalyzing(true);
     try {
+      // Ensure we have a valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Authentication required. Please sign in again.');
+      }
+
       // Convert photo to base64 for API
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve, reject) => {
@@ -96,34 +102,48 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
       // Get user profile data for context
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('weight, height')
+        .select('weight, height, goal')
         .eq('id', user.id)
         .single();
 
-      // Call Supabase edge function for photo analysis
+      // Call Supabase edge function for photo analysis with explicit headers
       const { data, error } = await supabase.functions.invoke('analyze-photo', {
         body: {
           image: base64Image,
           weight: profileData?.weight || null,
-          height: profileData?.height || null
+          height: profileData?.height || null,
+          goals: profileData?.goal || null
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Analysis failed');
+      }
       
-      if (data.error) {
+      if (data?.error) {
         throw new Error(data.error);
       }
 
-      // Process analysis result
+      // Process analysis result - match the edge function response structure
       const result = {
-        bodyFat: data.bodyFat || 15,
-        muscleMass: data.muscleMass || 60,
-        recommendations: data.analysis ? data.analysis.split('•').filter(item => item.trim()).map(item => item.trim()) : [
+        bodyFat: data.bodyFatPercentage || 15,
+        muscleMass: data.muscleMass === 'low' ? 45 : 
+                   data.muscleMass === 'average' ? 60 : 
+                   data.muscleMass === 'above average' ? 75 : 
+                   data.muscleMass === 'high' ? 90 : 60,
+        recommendations: data.improvements || [
           'Analysis complete',
           'Continue tracking progress with regular photos'
         ],
-        progressScore: Math.min(10, Math.max(1, (100 - data.bodyFat) / 10))
+        progressScore: data.overallRating || 5,
+        ffmi: data.ffmi,
+        frameSize: data.frameSize,
+        muscleGroups: data.muscleGroups,
+        confidence: data.confidence
       };
 
       setAnalysisResult(result);

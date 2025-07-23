@@ -46,14 +46,26 @@ serve(async (req) => {
       });
     }
 
-    // Enhanced Physique AI analysis prompt for structured data
-    const analysisPrompt = `You are an expert fitness coach and body composition analyzer. Analyze this physique photo with scientific precision.
+    // EVIDENCE-BASED Physique AI analysis using 2020-2025 research
+    const analysisPrompt = `You are an expert exercise physiologist specializing in evidence-based body composition analysis using the latest research from 2020-2025.
 
 USER CONTEXT:
 - Height: ${height || 'Not specified'}
 - Weight: ${weight || 'Not specified'}  
 - Current Body Fat: ${bodyFat || 'Unknown'}%
 - Goals: ${goals || 'General fitness improvement'}
+
+EVIDENCE-BASED ANALYSIS PRINCIPLES:
+- Body fat assessment: Use validated visual methods, acknowledge ±3-5% accuracy limitation
+- Muscle development: Assess symmetry and proportional development
+- Recommendations: ONLY evidence-based advice from peer-reviewed research 2020-2025
+
+MANDATORY - REJECT THESE OUTDATED MYTHS:
+❌ "Train light weights for muscle definition" - load progression drives adaptations regardless of body fat
+❌ "Do cardio for spot reduction" - localized fat loss is physiologically impossible  
+❌ "Eat 6 small meals to boost metabolism" - meal frequency has minimal metabolic impact
+❌ "Avoid carbs to get shredded" - caloric deficit drives fat loss, not macronutrient restriction
+❌ "High reps for cutting, low reps for bulking" - rep ranges should match training goals
 
 CRITICAL RULES:
 1. Return ONLY valid JSON - no additional text

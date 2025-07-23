@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, TrendingUp, Calendar, ExternalLink, RefreshCw, Zap } from 'lucide-react';
+import { BookOpen, TrendingUp, Calendar, ExternalLink, RefreshCw, Zap, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ResearchManager } from '@/services/researchService';
 
 const ScientificStudies = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -141,6 +142,35 @@ const ScientificStudies = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Evidence-Based Principles & Myth Busting */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Outdated Myths Warning */}
+          <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+            <h3 className="flex items-center text-red-400 font-semibold text-sm mb-3">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Outdated Fitness Myths (Rejected by 2020-2025 Research)
+            </h3>
+            <div className="space-y-2">
+              {ResearchManager.getOutdatedAdviceWarnings().slice(0, 4).map((warning, idx) => (
+                <p key={idx} className="text-xs text-red-200/90">{warning}</p>
+              ))}
+            </div>
+          </div>
+          
+          {/* Evidence-Based Principles */}
+          <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
+            <h3 className="flex items-center text-green-400 font-semibold text-sm mb-3">
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Evidence-Based Training Principles
+            </h3>
+            <div className="space-y-2">
+              {ResearchManager.getEvidenceBasedPrinciples()[0]?.principles.slice(0, 3).map((principle, idx) => (
+                <p key={idx} className="text-xs text-green-200/90">{principle}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2 mb-4">
           {categories.map((category) => (

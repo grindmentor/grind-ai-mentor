@@ -167,7 +167,7 @@ const Dashboard = () => {
   // Memoized computed values with caching - Fixed favorites update issue
   const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
     // Include favorites in cache key to invalidate when favorites change
-    const cacheKey = `computed-modules-${favorites.join(',')}-${modules?.length || 0}`;
+    const cacheKey = `computed-modules-${(favorites || []).join(',')}-${modules?.length || 0}`;
     const cached = dashboardCache.get(cacheKey);
     
     // Consistent return type structure

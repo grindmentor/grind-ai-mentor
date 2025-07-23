@@ -42,8 +42,10 @@ export const useFavorites = () => {
 
       console.log('Successfully saved favorites to Supabase');
       
-      // Clear optimistic state since real data will be refetched
-      setOptimisticFavorites(null);
+      // Clear optimistic state after a delay to allow UI to settle
+      setTimeout(() => {
+        setOptimisticFavorites(null);
+      }, 100);
       
       // Save to localStorage as backup
       localStorage.setItem('module-favorites', JSON.stringify(newFavorites));

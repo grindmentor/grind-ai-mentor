@@ -60,6 +60,8 @@ export const useOptimizedDataLoader = <T>(
   useEffect(() => {
     if (!enabled) return;
 
+    let isMounted = true;
+
     const loadData = async () => {
       // Check cache first
       const cachedData = cache.get(key);
@@ -67,37 +69,50 @@ export const useOptimizedDataLoader = <T>(
 
       // If we have fresh cached data, use it
       if (cachedData && (now - lastFetchRef.current) < staleTime) {
-        setState({ data: cachedData, loading: false, error: null });
+        if (isMounted) {
+          setState({ data: cachedData, loading: false, error: null });
+        }
         return;
       }
 
       // If we have stale cached data, show it while fetching fresh data
       if (cachedData) {
-        setState(prev => ({ ...prev, data: cachedData, loading: true }));
+        if (isMounted) {
+          setState(prev => ({ ...prev, data: cachedData, loading: true }));
+        }
       } else {
-        setState(prev => ({ ...prev, loading: true, error: null }));
+        if (isMounted) {
+          setState(prev => ({ ...prev, loading: true, error: null }));
+        }
       }
 
       try {
         // Use deduplicator to prevent duplicate requests
         const data = await deduplicator.request(key, fetcher);
         
-        // Cache the result
-        setWithCleanup(key, data, cacheTime);
-        lastFetchRef.current = now;
-        
-        setState({ data, loading: false, error: null });
+        if (isMounted) {
+          // Cache the result
+          setWithCleanup(key, data, cacheTime);
+          lastFetchRef.current = now;
+          setState({ data, loading: false, error: null });
+        }
       } catch (error) {
         console.error(`Failed to fetch data for ${key}:`, error);
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: error as Error
-        }));
+        if (isMounted) {
+          setState(prev => ({
+            ...prev,
+            loading: false,
+            error: error as Error
+          }));
+        }
       }
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [key, enabled, fetcher, cache, setWithCleanup, cacheTime, staleTime, deduplicator]);
 
   return state;

@@ -100,12 +100,21 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
         .eq('id', user.id)
         .single();
 
+      // Get fresh session for authentication
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) {
+        throw new Error('Please sign in again');
+      }
+
       // Call Supabase edge function for photo analysis
       const { data, error } = await supabase.functions.invoke('analyze-photo', {
         body: {
           image: base64Image,
           weight: profileData?.weight || null,
           height: profileData?.height || null
+        },
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`
         }
       });
 

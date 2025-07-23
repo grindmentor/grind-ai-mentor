@@ -106,10 +106,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         checkOnboardingStatus(session.user.id);
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
         
-        // For logged-in users, redirect to dashboard immediately
+        // For logged-in users, redirect immediately without delay
         if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          // Use replace to avoid back button issues
-          window.history.replaceState(null, '', '/app');
+          // Use replace to avoid back button issues and immediate redirect
+          window.location.replace('/app');
         }
       } else if (event === 'SIGNED_OUT') {
         setIsNewUser(false);
@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Redirect to home on sign out
         if (window.location.pathname === '/app' || window.location.pathname.startsWith('/app')) {
-          window.history.replaceState(null, '', '/');
+          window.location.replace('/');
         }
       }
       
@@ -139,9 +139,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
         checkOnboardingStatus(session.user.id);
         
-        // Instant redirect for existing sessions
+        // Instant redirect for existing sessions - use location.replace for fastest redirect
         if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          window.history.replaceState(null, '', '/app');
+          window.location.replace('/app');
         }
       }
       

@@ -14,6 +14,7 @@ import AvailableAchievements from "@/components/homepage/AvailableAchievements";
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -21,14 +22,24 @@ const Index = () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       
-      // Redirect authenticated users to dashboard immediately to avoid flash
+      // Instantly redirect authenticated users without showing homepage content
       if (user) {
         navigate('/app', { replace: true });
-        return;
+        return; // Don't set loading to false if redirecting
       }
+      
+      // Only show homepage content if user is not authenticated
+      setIsCheckingAuth(false);
     };
     checkUser();
   }, [navigate]);
+
+  // Show nothing while checking authentication to prevent flash
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20" />
+    );
+  }
 
   const features = [
     {

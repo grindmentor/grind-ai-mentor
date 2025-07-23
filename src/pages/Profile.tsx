@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Crown, Star, Calendar, Mail } from 'lucide-react';
+import { ArrowLeft, User, Crown, Star, Calendar, Mail, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,7 @@ const Profile = () => {
   const { userData, updateUserData } = useUserData();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
   const [preferences, setPreferences] = useState({
     weight_unit: 'lbs',
     height_unit: 'ft-in'
@@ -144,6 +145,32 @@ const Profile = () => {
     return userData.height ? `${userData.height}` : '';
   };
 
+  // Handle manage subscription
+  const handleManageSubscription = async () => {
+    try {
+      setIsManagingSubscription(true);
+      
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) {
+        console.error('Error opening customer portal:', error);
+        toast.error('Failed to open subscription management');
+        return;
+      }
+      
+      if (data?.url) {
+        // Open in new tab to avoid losing app state
+        window.open(data.url, '_blank');
+        toast.success('Opening subscription management...');
+      }
+    } catch (error) {
+      console.error('Error invoking customer portal:', error);
+      toast.error('Failed to open subscription management');
+    } finally {
+      setIsManagingSubscription(false);
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'info', label: 'Basic Info' }
@@ -259,6 +286,22 @@ const Profile = () => {
                           >
                             Upgrade to Premium
                           </Button>
+                        </div>
+                      )}
+
+                      {currentTier === 'premium' && (
+                        <div className="pt-4 border-t border-gray-700/50 space-y-3">
+                          <Button
+                            onClick={handleManageSubscription}
+                            disabled={isManagingSubscription}
+                            className="w-full bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 flex items-center justify-center"
+                          >
+                            <Settings className="w-4 h-4 mr-2" />
+                            {isManagingSubscription ? 'Opening...' : 'Manage Subscription'}
+                          </Button>
+                          <p className="text-xs text-gray-400 text-center">
+                            Update payment method, billing, or cancel subscription
+                          </p>
                         </div>
                       )}
                     </CardContent>

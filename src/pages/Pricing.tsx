@@ -7,53 +7,66 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import SubscriptionCard from "@/components/SubscriptionCard";
-import { supabase } from "@/integrations/supabase/client";
+import EnhancedPaymentMethods from "@/components/subscription/EnhancedPaymentMethods";
 import { useToast } from "@/hooks/use-toast";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { currentTier, refreshSubscription } = useSubscription();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaymentMethods, setShowPaymentMethods] = useState(false);
   const { toast } = useToast();
 
-  const handleSelectPlan = async (tierKey: string) => {
+  const handleSelectPlan = (tierKey: string) => {
     if (tierKey === 'free' || tierKey === currentTier) return;
     
-    setIsProcessing(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('create-subscription', {
-        body: { tier: tierKey, billing: billingPeriod }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        // Better mobile handling
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-        
-        if (isMobile || isPWA) {
-          // Mobile/PWA: redirect in same tab
-          window.location.href = data.url;
-        } else {
-          // Desktop: new tab
-          window.open(data.url, '_blank');
-          setTimeout(refreshSubscription, 3000);
-        }
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast({
-        title: "Payment Error",
-        description: "Unable to process payment. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
+    if (tierKey === 'premium') {
+      setShowPaymentMethods(true);
     }
   };
+
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "Welcome to Premium!",
+      description: "Your subscription has been activated. Enjoy unlimited access to all features.",
+    });
+    setTimeout(() => {
+      refreshSubscription();
+      navigate('/app');
+    }, 2000);
+  };
+
+  if (showPaymentMethods) {
+    return (
+      <div className="min-h-screen bg-black text-white p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center space-x-4 mb-8">
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowPaymentMethods(false)} 
+              className="text-white hover:bg-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Plans
+            </Button>
+          </div>
+          
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Complete Your Subscription</h1>
+            <p className="text-gray-400">
+              {billingPeriod === 'annual' ? 'Annual' : 'Monthly'} Premium Plan
+            </p>
+          </div>
+
+          <EnhancedPaymentMethods 
+            tier="premium"
+            billingPeriod={billingPeriod}
+            onSuccess={handlePaymentSuccess}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -121,7 +134,7 @@ const Pricing = () => {
               isPopular={key === 'premium'}
               onSelect={() => handleSelectPlan(key)}
               billingPeriod={billingPeriod}
-              isProcessing={isProcessing}
+              isProcessing={false}
             />
           ))}
         </div>

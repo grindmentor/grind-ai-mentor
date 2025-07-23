@@ -70,7 +70,7 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
         </div>
 
         {/* Loading Text */}
-        <p className="text-gray-400 text-sm">
+        <p className="text-muted-foreground text-sm">
           Loading...
         </p>
       </div>

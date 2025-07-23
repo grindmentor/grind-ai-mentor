@@ -283,9 +283,9 @@ const Dashboard = () => {
                   {/* Subscription tier indicator */}
                   <div className="hidden sm:block">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      currentTier === 'premium' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
-                      
-                      'bg-muted text-muted-foreground'
+                        currentTier === 'premium' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
+                        
+                        'bg-muted text-muted-foreground'
                     }`}>
                       {currentTier.toUpperCase()}
                     </span>
@@ -349,7 +349,7 @@ const Dashboard = () => {
                 <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight">
                   Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
                 </h1>
-                <p className="text-gray-400 text-sm sm:text-base lg:text-lg px-4">
+                <p className="text-muted-foreground text-sm sm:text-base lg:text-lg px-4">
                   Ready to achieve your fitness goals with science-backed training?
                 </p>
               </div>
@@ -385,10 +385,10 @@ const Dashboard = () => {
                 </div>
               ) : !favoritesLoading ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
-                  <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
-                    <Star className="w-12 h-12 sm:w-16 sm:h-16 text-gray-500 mx-auto mb-4" />
+                  <div className="bg-card border-border rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
+                    <Star className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-4" />
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-3 sm:mb-4">No Favorites Yet</h2>
-                    <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base px-2">
+                    <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base px-2">
                       Visit the Module Library to explore and favorite modules you'd like to see here.
                     </p>
                     <Button
@@ -406,7 +406,7 @@ const Dashboard = () => {
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <Button
                     onClick={() => handleModuleClick(progressHubModule)}
-                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-white rounded-xl group touch-manipulation gpu-accelerated"
+                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 transition-all duration-200 text-foreground rounded-xl group touch-manipulation gpu-accelerated"
                   >
                     <div className="flex items-center justify-between w-full px-4 sm:px-6">
                       <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">

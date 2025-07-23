@@ -43,7 +43,7 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center space-x-2 mb-8">
@@ -53,10 +53,10 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
           <span className="text-2xl font-bold">Myotopia</span>
         </div>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader className="text-center">
-            <CardTitle className="text-white">Verify Your Email</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-foreground">Verify Your Email</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Check your inbox to activate your account
             </CardDescription>
           </CardHeader>
@@ -66,23 +66,23 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
                 <Mail className="w-8 h-8 text-orange-400" />
               </div>
               
-              <h3 className="text-lg font-semibold text-white mb-3">
+              <h3 className="text-lg font-semibold text-foreground mb-3">
                 Almost there!
               </h3>
               
-              <p className="text-gray-300 mb-6 leading-relaxed">
+              <p className="text-muted-foreground mb-6 leading-relaxed">
                 We've sent a verification email to{" "}
-                <strong className="text-white">{userEmail}</strong>
+                <strong className="text-foreground">{userEmail}</strong>
               </p>
               
-              <div className="bg-gray-800/50 p-4 rounded-lg mb-6 border border-gray-700">
+              <div className="bg-muted/50 p-4 rounded-lg mb-6 border border-border">
                 <div className="flex items-start space-x-3">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm text-gray-300 mb-2">
+                    <p className="text-sm text-foreground mb-2">
                       <strong>Next steps:</strong>
                     </p>
-                    <ol className="text-sm text-gray-400 space-y-1">
+                    <ol className="text-sm text-muted-foreground space-y-1">
                       <li>1. Check your email inbox</li>
                       <li>2. Click the verification link</li>
                       <li>3. Return here to start using Myotopia</li>
@@ -109,7 +109,7 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
                   onClick={handleResendEmail}
                   disabled={authPending || !canResendEmail || countdown > 0}
                   variant="outline"
-                  className="w-full border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+                  className="w-full border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 >
                   {authPending ? (
                     <div className="flex items-center space-x-2">
@@ -131,7 +131,7 @@ const EmailVerificationPrompt = ({ userEmail, onContinue }: EmailVerificationPro
                 </Button>
               </div>
 
-              <p className="text-xs text-gray-500 mt-6">
+              <p className="text-xs text-muted-foreground mt-6">
                 Can't find the email? Check your spam folder or try resending.
               </p>
             </div>

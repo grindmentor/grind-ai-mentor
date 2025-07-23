@@ -10,6 +10,8 @@ import { initializePreloading } from '@/utils/componentPreloader';
 import { BrandedLoading } from '@/components/ui/branded-loading';
 import { usePreloadComponents } from '@/hooks/usePreloadComponents';
 import PWAHandler from '@/components/PWAHandler';
+import { OptimizedSuspense } from '@/components/ui/optimized-suspense';
+import { ComprehensiveErrorBoundary } from '@/components/ui/comprehensive-error-boundary';
 
 // Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
@@ -73,19 +75,17 @@ export default function App() {
         showNotificationButton={true}
         className="h-full"
       >
-        <Suspense 
-          fallback={
-            <BrandedLoading
-              message={lowDataMode ? "Loading (Power Saver Mode)" : "Loading Myotopia..."} 
-              showLogo={true}
-            />
-          }
+        <OptimizedSuspense 
+          loadingType="screen"
+          message={lowDataMode ? "Loading (Performance Mode)" : "Loading Myotopia..."} 
         >
           <PWAHandler />
-          {measurePerformance('Dashboard Render', () => (
-            <Dashboard />
-          ))}
-        </Suspense>
+          <ComprehensiveErrorBoundary showHomeButton={false}>
+            {measurePerformance('Dashboard Render', () => (
+              <Dashboard />
+            ))}
+          </ComprehensiveErrorBoundary>
+        </OptimizedSuspense>
       </AppShell>
     </AppBackground>
   );

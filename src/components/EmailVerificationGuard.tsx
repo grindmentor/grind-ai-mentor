@@ -58,27 +58,27 @@ const EmailVerificationGuard: React.FC<EmailVerificationGuardProps> = ({ childre
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-card border-border">
         <CardHeader className="text-center">
           <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Mail className="w-8 h-8 text-blue-400" />
           </div>
-          <CardTitle className="text-2xl text-white">Verify Your Email</CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardTitle className="text-2xl text-foreground">Verify Your Email</CardTitle>
+          <CardDescription className="text-muted-foreground">
             We've sent a verification link to your email address
           </CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-6">
           <div className="text-center">
-            <Badge variant="secondary" className="bg-gray-800 text-gray-300">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground">
               {userEmail}
             </Badge>
           </div>
 
           <div className="space-y-4">
-            <p className="text-sm text-gray-400 text-center">
+            <p className="text-sm text-muted-foreground text-center">
               Please check your inbox and click the verification link to continue using Myotopia.
             </p>
 
@@ -95,7 +95,7 @@ const EmailVerificationGuard: React.FC<EmailVerificationGuardProps> = ({ childre
                 onClick={handleResendEmail}
                 disabled={!canResendEmail || isResending}
                 variant="outline"
-                className="w-full border-gray-700 text-gray-300 hover:bg-gray-800"
+                className="w-full border-border text-muted-foreground hover:bg-accent"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${isResending ? 'animate-spin' : ''}`} />
                 {isResending ? 'Sending...' : 'Resend Verification Email'}
@@ -109,7 +109,7 @@ const EmailVerificationGuard: React.FC<EmailVerificationGuardProps> = ({ childre
             )}
           </div>
 
-          <div className="text-xs text-gray-500 text-center">
+          <div className="text-xs text-muted-foreground text-center">
             <p>Didn't receive the email? Check your spam folder or try resending.</p>
           </div>
         </CardContent>

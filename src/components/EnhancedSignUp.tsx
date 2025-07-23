@@ -107,15 +107,15 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
   };
 
   return (
-    <Card className="bg-gray-900 border-gray-800 max-w-md mx-auto">
+    <Card className="bg-card border-border max-w-md mx-auto">
       <CardHeader className="text-center space-y-4">
         <div className="flex justify-center">
           <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
             <Heart className="w-8 h-8 text-white" />
           </div>
         </div>
-        <CardTitle className="text-white text-2xl">Join Myotopia</CardTitle>
-        <CardDescription className="text-gray-400">
+        <CardTitle className="text-foreground text-2xl">Join Myotopia</CardTitle>
+        <CardDescription className="text-muted-foreground">
           Start your science-backed fitness journey today
         </CardDescription>
       </CardHeader>
@@ -130,7 +130,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white">Email Address</Label>
+              <Label htmlFor="email" className="text-foreground">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -138,30 +138,30 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="bg-gray-800 border-gray-700 text-white focus:border-orange-500 transition-colors"
+                className="bg-input border-border text-foreground focus:border-orange-500 transition-colors"
                 disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="birthDate" className="text-white">Date of Birth</Label>
+              <Label htmlFor="birthDate" className="text-foreground">Date of Birth</Label>
               <Input
                 id="birthDate"
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
                 required
-                className="bg-gray-800 border-gray-700 text-white focus:border-orange-500 transition-colors"
+                className="bg-input border-border text-foreground focus:border-orange-500 transition-colors"
                 disabled={isLoading}
                 max={new Date().toISOString().split('T')[0]} // Prevent future dates
               />
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 You must be 18 years or older to use Myotopia
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -169,13 +169,13 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a strong password"
                 required
-                className="bg-gray-800 border-gray-700 text-white focus:border-orange-500 transition-colors"
+                className="bg-input border-border text-foreground focus:border-orange-500 transition-colors"
                 disabled={isLoading}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -183,14 +183,14 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
                 required
-                className="bg-gray-800 border-gray-700 text-white focus:border-orange-500 transition-colors"
+                className="bg-input border-border text-foreground focus:border-orange-500 transition-colors"
                 disabled={isLoading}
               />
             </div>
           </div>
 
           {/* Enhanced Terms and Privacy Agreement */}
-          <div className="space-y-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+          <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border">
             <div className="flex items-start space-x-3">
               <Checkbox
                 id="terms"
@@ -202,10 +202,10 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 className="mt-1"
               />
               <div className="space-y-1">
-                <Label htmlFor="terms" className="text-white text-sm leading-relaxed cursor-pointer">
+                <Label htmlFor="terms" className="text-foreground text-sm leading-relaxed cursor-pointer">
                   I agree to the <a href="/terms" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Terms of Service</a>
                 </Label>
-                <p className="text-gray-400 text-xs">
+                <p className="text-muted-foreground text-xs">
                   By agreeing, you accept our terms for using Myotopia's fitness services.
                 </p>
               </div>
@@ -222,10 +222,10 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 className="mt-1"
               />
               <div className="space-y-1">
-                <Label htmlFor="privacy" className="text-white text-sm leading-relaxed cursor-pointer">
+                <Label htmlFor="privacy" className="text-foreground text-sm leading-relaxed cursor-pointer">
                   I agree to the <a href="/privacy" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Privacy Policy</a>
                 </Label>
-                <p className="text-gray-400 text-xs">
+                <p className="text-muted-foreground text-xs">
                   We protect your data and will never share it without your consent.
                 </p>
               </div>
@@ -242,10 +242,10 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 className="mt-1"
               />
               <div className="space-y-1">
-                <Label htmlFor="marketing" className="text-white text-sm leading-relaxed cursor-pointer">
+                <Label htmlFor="marketing" className="text-foreground text-sm leading-relaxed cursor-pointer">
                   Send me fitness tips and updates (optional)
                 </Label>
-                <p className="text-gray-400 text-xs">
+                <p className="text-muted-foreground text-xs">
                   Get science-backed fitness insights and feature updates.
                 </p>
               </div>

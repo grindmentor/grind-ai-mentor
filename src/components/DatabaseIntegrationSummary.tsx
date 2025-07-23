@@ -76,7 +76,7 @@ import React from 'react';
 
 const DatabaseIntegrationSummary = () => {
   return (
-    <div className="p-6 bg-gray-900 text-white">
+    <div className="p-6 bg-card text-foreground">
       <h2 className="text-2xl font-bold mb-4">🗄️ Database Integration Complete</h2>
       <p className="text-gray-300">
         All user data is now properly tracked and persisted. See component comments for mobile conversion steps.

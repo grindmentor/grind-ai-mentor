@@ -11,17 +11,12 @@ import { BrandedLoading } from '@/components/ui/branded-loading';
 import { usePreloadComponents } from '@/hooks/usePreloadComponents';
 import PWAHandler from '@/components/PWAHandler';
 
-// Optimized lazy loading with aggressive preloading
+// Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
   import('@/components/Dashboard').then(module => {
-    // Aggressively preload critical components in parallel
-    Promise.all([
-      import('@/components/goals/RealGoalsAchievements').catch(() => {}),
-      import('@/components/homepage/LatestResearch').catch(() => {}),
-      import('@/components/dashboard/ModuleGrid').catch(() => {}),
-      import('@/components/ai-modules/CoachGPT').catch(() => {}),
-      import('@/components/ai-modules/WorkoutLoggerAI').catch(() => {}),
-    ]);
+    // Preload related components while Dashboard is loading
+    import('@/components/goals/RealGoalsAchievements').catch(() => {});
+    import('@/components/homepage/LatestResearch').catch(() => {});
     return module;
   })
 );

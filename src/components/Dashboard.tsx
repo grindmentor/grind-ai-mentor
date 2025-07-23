@@ -25,7 +25,6 @@ import { useMobileGestures } from '@/hooks/useMobileGestures';
 import { SmoothPageTransition } from '@/components/ui/smooth-page-transition';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
 import { toast } from 'sonner';
-import { ConnectionStatus } from '@/components/ui/connection-status';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -165,8 +164,12 @@ const Dashboard = () => {
     return createDebouncedFunction(handler, 200) as (data: any) => void;
   }, [createDebouncedFunction]);
 
-  // Memoized computed values with better cache invalidation
+  // Memoized computed values with caching - Fixed favorites update issue
   const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
+    // Include favorites in cache key to invalidate when favorites change
+    const cacheKey = `computed-modules-${favorites.join(',')}-${modules?.length || 0}`;
+    const cached = dashboardCache.get(cacheKey);
+    
     // Consistent return type structure
     const defaultResult: ComputedModules = {
       regularModules: [] as any[],
@@ -174,13 +177,17 @@ const Dashboard = () => {
       favoriteModules: [] as any[]
     };
 
+    if (cached && modules && modules.length > 0 && !favoritesLoading) {
+      return cached as ComputedModules;
+    }
+
     if (!modules || modules.length === 0) {
       return defaultResult;
     }
     
     const regular = modules.filter(m => m.id !== 'progress-hub');
     const progressHub = modules.find(m => m.id === 'progress-hub') || null;
-    const favoritesList = regular.filter(module => (favorites || []).includes(module.id));
+    const favoritesList = regular.filter(module => favorites.includes(module.id));
     
     const result: ComputedModules = {
       regularModules: regular,
@@ -188,8 +195,12 @@ const Dashboard = () => {
       favoriteModules: favoritesList
     };
 
+    // Cache the computed result only when favorites are loaded
+    if (!favoritesLoading) {
+      dashboardCache.set(cacheKey, result);
+    }
     return result;
-  }, [modules, favorites]);
+  }, [modules, favorites, favoritesLoading, dashboardCache]);
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
@@ -261,6 +272,16 @@ const Dashboard = () => {
                 </div>
                 
                 <div className="flex items-center space-x-1 sm:space-x-2">
+                  {/* Module Library */}
+                  <Button
+                    onClick={() => window.location.href = '/modules'}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 hidden sm:flex"
+                    title="Module Library"
+                  >
+                    <span className="text-xs sm:text-sm">Library</span>
+                  </Button>
 
                   {/* Notifications */}
                   <Button
@@ -320,13 +341,14 @@ const Dashboard = () => {
                       <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
                       Your Favorites
                     </h2>
-                     <Button
+                    <Button
                       onClick={() => window.location.href = '/modules'}
                       variant="ghost"
                       size="sm"
                       className="text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center"
                     >
-                      Manage
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add More
                     </Button>
                   </div>
                   <Suspense fallback={<EnhancedLoading type="module" size="sm" message="Loading favorites..." />}>
@@ -408,9 +430,6 @@ const Dashboard = () => {
               )}
             </div>
           </div>
-          
-          {/* Non-intrusive connection status */}
-          <ConnectionStatus />
         </div>
       </SmoothTransition>
     </ErrorBoundary>

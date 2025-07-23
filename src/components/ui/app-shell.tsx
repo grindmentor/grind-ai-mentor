@@ -75,9 +75,9 @@ export const AppShell: React.FC<AppShellProps> = ({
       document.removeEventListener('touchend', handleTouchEnd);
     };
   }, [canGoBack, handleBack]);
-  return <div className="min-h-screen bg-background flex flex-col relative">
+  return <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
       {/* Persistent Top Navigation */}
-      <motion.header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/40" initial={{
+      <motion.header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/40 safe-area-top" initial={{
       y: -100
     }} animate={{
       y: 0
@@ -90,9 +90,9 @@ export const AppShell: React.FC<AppShellProps> = ({
       </motion.header>
 
       {/* Main Content Area with Smooth Transitions */}
-      <main className={`flex-1 overflow-hidden ${className}`}>
+      <main className={`flex-1 overflow-hidden ${className} safe-area-bottom`}>
         <SmoothPageTransition routeKey={location.pathname + location.search}>
-          <div className="h-full overflow-auto">
+          <div className="h-full overflow-auto px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </SmoothPageTransition>

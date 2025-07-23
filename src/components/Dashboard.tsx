@@ -187,7 +187,7 @@ const Dashboard = () => {
     
     const regular = modules.filter(m => m.id !== 'progress-hub');
     const progressHub = modules.find(m => m.id === 'progress-hub') || null;
-    const favoritesList = regular.filter(module => favorites.includes(module.id));
+    const favoritesList = regular.filter(module => (favorites || []).includes(module.id));
     
     const result: ComputedModules = {
       regularModules: regular,

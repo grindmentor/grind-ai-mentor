@@ -50,16 +50,37 @@ serve(async (req) => {
     logStep("Found Stripe customer", { customerId });
 
     const origin = req.headers.get("origin") || "https://druwyttcxnfpwgyrmt.supabase.co";
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${origin}/app`,
-    });
-    logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
+    
+    try {
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${origin}/app`,
+      });
+      logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 
-    return new Response(JSON.stringify({ url: portalSession.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+      return new Response(JSON.stringify({ url: portalSession.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } catch (portalError: any) {
+      logStep("Portal creation error", { error: portalError.message });
+      
+      // If no configuration exists, redirect to billing page directly
+      if (portalError.message?.includes("configuration")) {
+        const billingUrl = `https://billing.stripe.com/p/login/test_fZeeVu4GmgHMcCY144`;
+        logStep("Redirecting to direct billing URL", { url: billingUrl });
+        
+        return new Response(JSON.stringify({ 
+          url: billingUrl,
+          message: "Redirecting to billing management..." 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
+      throw portalError;
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in customer-portal", { message: errorMessage });

@@ -47,18 +47,18 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
   }, [minDuration, onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
       {/* Black background with subtle orange fade */}
-      <div className="fixed inset-0 bg-black z-0" />
+      <div className="fixed inset-0 bg-background z-0" />
       <div className="fixed inset-0 bg-gradient-to-br from-black via-orange-900/20 to-orange-800/30 z-0" />
       
       <div className="text-center space-y-6 relative z-10">
         {/* Logo */}
         <div className="flex items-center justify-center space-x-3 mb-8">
           <div className="w-16 h-16 bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-xl flex items-center justify-center">
-            <Dumbbell className="w-8 h-8 text-white animate-pulse" />
+            <Dumbbell className="w-8 h-8 text-foreground animate-pulse" />
           </div>
-          <span className="text-3xl font-bold text-white">Myotopia</span>
+          <span className="text-3xl font-bold text-foreground">Myotopia</span>
         </div>
 
         {/* Progress Bar */}

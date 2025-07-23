@@ -42,16 +42,16 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-4">
-          <Card className="bg-gray-900 border-gray-800 max-w-md w-full">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="bg-card border-border max-w-md w-full">
             <CardHeader className="text-center">
               <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-400" />
               </div>
-              <CardTitle className="text-white">Something went wrong</CardTitle>
+              <CardTitle className="text-foreground">Something went wrong</CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 We encountered an unexpected error. This has been logged and we'll look into it.
               </p>
               
@@ -67,7 +67,7 @@ class ErrorBoundary extends Component<Props, State> {
                 <Button
                   onClick={this.handleReload}
                   variant="outline"
-                  className="w-full border-gray-700 hover:bg-gray-800"
+                  className="w-full border-border hover:bg-accent"
                 >
                   Reload Page
                 </Button>
@@ -75,10 +75,10 @@ class ErrorBoundary extends Component<Props, State> {
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mt-4 text-left">
-                  <summary className="text-sm text-gray-500 cursor-pointer">
+                  <summary className="text-sm text-muted-foreground cursor-pointer">
                     Error Details (Dev Mode)
                   </summary>
-                  <pre className="mt-2 text-xs text-red-400 bg-gray-800 p-2 rounded overflow-auto">
+                  <pre className="mt-2 text-xs text-red-400 bg-muted p-2 rounded overflow-auto">
                     {this.state.error.message}
                     {'\n'}
                     {this.state.error.stack}

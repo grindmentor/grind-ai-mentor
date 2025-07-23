@@ -239,7 +239,7 @@ Format your response with clear headings and structure. Be encouraging and cite 
 
   return (
     <UsageLimitGuard featureKey="coach_gpt_queries" featureName="CoachGPT">
-      <div className="min-h-screen bg-gradient-to-br from-black via-cyan-900/10 to-cyan-800/20">
+      <div className="min-h-screen bg-gradient-to-br from-background via-cyan-900/10 to-cyan-800/20">
         <MobileHeader 
           title="CoachGPT" 
           onBack={onBack}
@@ -253,7 +253,7 @@ Format your response with clear headings and structure. Be encouraging and cite 
                   <MessageSquare className="w-5 h-5 text-cyan-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-white text-xl">CoachGPT</CardTitle>
+                  <CardTitle className="text-foreground text-xl">CoachGPT</CardTitle>
                   <CardDescription className="text-cyan-200/80">
                     Your AI fitness coach with research-based guidance
                   </CardDescription>

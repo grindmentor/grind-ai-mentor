@@ -26,6 +26,7 @@ import { SmoothPageTransition } from '@/components/ui/smooth-page-transition';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
 import { toast } from 'sonner';
 import { useInstantLoading } from '@/hooks/useInstantLoading';
+import { useAggressiveModulePreloader } from '@/hooks/useAggressiveModulePreloader';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -59,6 +60,16 @@ const Dashboard = () => {
     enablePredictiveLoading: true,
     aggressiveCaching: !lowDataMode
   });
+
+  const { 
+    preloadOnHover, 
+    preloadOnInteraction, 
+    isModuleReady 
+  } = useAggressiveModulePreloader();
+
+  const handleModuleHover = (moduleId: string) => {
+    preloadOnHover(moduleId);
+  };
   
   // Session persistence for smooth navigation
   const {
@@ -365,6 +376,8 @@ const Dashboard = () => {
                       favorites={favorites}
                       onModuleClick={handleModuleClick}
                       onToggleFavorite={toggleFavorite}
+                      onModuleHover={handleModuleHover}
+                      onModuleInteraction={preloadOnInteraction}
                     />
                   </Suspense>
                 </div>

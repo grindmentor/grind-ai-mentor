@@ -261,6 +261,8 @@ const ModuleLibrary = () => {
                 favorites={favorites}
                 onModuleClick={handleModuleClick}
                 onToggleFavorite={toggleFavorite}
+                onModuleHover={() => {}} // Empty for library - preloading handled by Dashboard
+                onModuleInteraction={() => {}} // Empty for library - preloading handled by Dashboard
                 viewMode={viewMode}
                 />
               </div>

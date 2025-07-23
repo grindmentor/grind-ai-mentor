@@ -19,9 +19,11 @@ interface Module {
 interface ModuleGridProps {
   modules: Module[];
   favorites: string[];
-  onModuleClick: (module: Module) => void;
-  onToggleFavorite: (moduleId: string) => void;
-  viewMode?: 'grid' | 'list';
+    onModuleClick: (module: Module) => void;
+    onToggleFavorite: (moduleId: string) => void;
+    onModuleHover?: (moduleId: string) => void;
+    onModuleInteraction?: (moduleId: string) => void;
+    viewMode?: 'grid' | 'list';
 }
 
 // Updated function to get module-specific background colors that match AIModuleCard exactly
@@ -176,6 +178,8 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
   favorites,
   onModuleClick,
   onToggleFavorite,
+  onModuleHover,
+  onModuleInteraction,
   viewMode = 'grid'
 }) => {
   const isMobile = useIsMobile();
@@ -188,7 +192,15 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         const IconComponent = module.icon;
         const isFavorited = favorites.includes(module.id);
         const theme = getModuleTheme(module.title);
-        return <Card key={module.id} className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`} onClick={() => onModuleClick(module)}>
+        return <Card 
+          key={module.id} 
+          className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`} 
+          onClick={() => {
+            onModuleInteraction?.(module.id);
+            onModuleClick(module);
+          }}
+          onMouseEnter={() => onModuleHover?.(module.id)}
+        >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-4">
                   <div className={`w-12 h-12 rounded-xl ${theme.iconBg} flex items-center justify-center flex-shrink-0 border`}>
@@ -231,7 +243,18 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
       const IconComponent = module.icon;
       const isFavorited = favorites.includes(module.id);
       const theme = getModuleTheme(module.title);
-      return <PerformanceOptimizedCard key={module.id} className={`group ${theme.bg} ${theme.border}`} gradient={`${theme.bg} ${theme.border}`} hoverEffect={true} clickable={true} onClick={() => onModuleClick(module)}>
+      return <PerformanceOptimizedCard 
+        key={module.id} 
+        className={`group ${theme.bg} ${theme.border}`} 
+        gradient={`${theme.bg} ${theme.border}`} 
+        hoverEffect={true} 
+        clickable={true} 
+        onClick={() => {
+          onModuleInteraction?.(module.id);
+          onModuleClick(module);
+        }}
+        onMouseEnter={() => onModuleHover?.(module.id)}
+      >
             
             <CardHeader className="relative z-10 pb-2">
               <div className="flex items-start justify-between mb-3">

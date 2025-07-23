@@ -1,6 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
 import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
+import { InstantModuleLoader, useModuleLoadPerformance } from '@/components/ui/instant-module-loader';
 
 type ModuleId =
   | 'dashboard'
@@ -63,11 +64,12 @@ const PlaceholderComponent = ({ title, onBack }: { title?: string; onBack?: () =
   </div>
 );
 
-// Enhanced safe component loader with better error handling and logging
+// Enhanced safe component loader with instant loading and better error handling
 const SafeComponent = ({ moduleName, onBack }: { 
   moduleName: string; 
   onBack?: () => void;
 }) => {
+  const { loadMetrics, recordLoadComplete } = useModuleLoadPerformance(moduleName);
   console.log(`Loading module: ${moduleName}`);
   
   try {
@@ -86,11 +88,17 @@ const SafeComponent = ({ moduleName, onBack }: {
             })
         );
         return (
-          <ModuleErrorBoundary moduleName="Blueprint AI" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Blueprint AI" onBack={onBack} />}>
-              <BlueprintAI onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
+          <InstantModuleLoader 
+            moduleId="blueprint-ai"
+            fallback={<PlaceholderComponent title="Blueprint AI" onBack={onBack} />}
+            onLoadComplete={() => recordLoadComplete(true)}
+          >
+            <ModuleErrorBoundary moduleName="Blueprint AI" onBack={onBack}>
+              <React.Suspense fallback={<PlaceholderComponent title="Blueprint AI" onBack={onBack} />}>
+                <BlueprintAI onBack={onBack || (() => {})} />
+              </React.Suspense>
+            </ModuleErrorBoundary>
+          </InstantModuleLoader>
         );
       
       case 'smart-training':

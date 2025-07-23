@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
+import { useNavigate } from 'react-router-dom';
 import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
@@ -45,6 +46,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -169,11 +171,11 @@ const Dashboard = () => {
   };
 
   const handleProfileClick = () => {
-    window.location.href = '/profile';
+    navigate('/profile');
   };
 
   const handleSettingsClick = () => {
-    window.location.href = '/settings';
+    navigate('/settings');
   };
 
   const handleFoodLogged = useMemo(() => {
@@ -293,7 +295,7 @@ const Dashboard = () => {
                 <div className="flex items-center space-x-1 sm:space-x-2">
                   {/* Module Library */}
                   <Button
-                    onClick={() => window.location.href = '/modules'}
+                    onClick={() => navigate('/modules')}
                     variant="ghost"
                     size="sm"
                     className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 hidden sm:flex"
@@ -361,7 +363,7 @@ const Dashboard = () => {
                       Your Favorites
                     </h2>
                     <Button
-                      onClick={() => window.location.href = '/modules'}
+                      onClick={() => navigate('/modules')}
                       variant="ghost"
                       size="sm"
                       className="text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center"
@@ -390,7 +392,7 @@ const Dashboard = () => {
                       Visit the Module Library to explore and favorite modules you'd like to see here.
                     </p>
                     <Button
-                      onClick={() => window.location.href = '/modules'}
+                      onClick={() => navigate('/modules')}
                       className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 w-full sm:w-auto touch-manipulation"
                     >
                       Browse Module Library

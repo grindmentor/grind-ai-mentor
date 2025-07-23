@@ -87,7 +87,7 @@ const DashboardHeader = memo(() => {
               variant="ghost"
               size="sm"
               className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              onClick={() => window.location.href = '/profile'}
+              onClick={() => navigate('/profile')}
               aria-label="Profile"
             >
               <User className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -98,7 +98,7 @@ const DashboardHeader = memo(() => {
               variant="ghost"
               size="sm"
               className="mobile-nav-button p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              onClick={() => window.location.href = '/settings'}
+              onClick={() => navigate('/settings')}
               aria-label="Settings"
             >
               <Settings className="w-4 h-4 sm:w-5 sm:h-5" />

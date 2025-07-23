@@ -9,36 +9,29 @@ import { loadAppShell } from '@/utils/appShellCache'
 // Instant app shell initialization
 loadAppShell();
 
-// Ultra-optimized PWA registration with performance monitoring
-if ('serviceWorker' in navigator) {
+// Mobile-optimized PWA registration
+if ('serviceWorker' in navigator && !window.matchMedia('(display-mode: standalone)').matches) {
+  // Only register service worker if not in Capacitor/standalone mode
   window.addEventListener('load', async () => {
     try {
-      // Start performance timer
-      const swStart = performance.now();
-      
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
         updateViaCache: 'none'
       });
       
-      console.log(`SW registered in ${(performance.now() - swStart).toFixed(2)}ms:`, registration);
+      console.log('SW registered:', registration);
       
-      // Ultra-optimized update handling
+      // Simplified update handling for mobile
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Auto-update without user prompt for better UX
               newWorker.postMessage({ type: 'SKIP_WAITING' });
               setTimeout(() => window.location.reload(), 1000);
             }
           });
         }
-      });
-      
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
       });
       
     } catch (error) {
@@ -47,10 +40,14 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Ultra-optimized install prompts with performance considerations
+// Mobile-optimized install prompts
 let deferredPrompt: any;
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
+const isCapacitor = !!(window as any).Capacitor;
+
+// Don't show install prompts if running in Capacitor
+if (!isCapacitor) {
 
 // Optimized iOS install prompt with better performance
 function createIOSInstallPrompt() {
@@ -135,16 +132,19 @@ window.addEventListener('beforeinstallprompt', (e) => {
   }
 });
 
-window.addEventListener('appinstalled', () => {
-  console.log('Myotopia PWA installed successfully');
-  deferredPrompt = null;
-});
+  window.addEventListener('appinstalled', () => {
+    console.log('Myotopia PWA installed successfully');
+    deferredPrompt = null;
+  });
 
-// iOS optimizations with better performance
-if (isIOS) {
-  setTimeout(() => createIOSInstallPrompt(), 1000);
-  
-  // Prevent double-tap zoom (optimized)
+  if (isIOS) {
+    setTimeout(createIOSInstallPrompt, 1000);
+  }
+}
+
+
+if (isIOS && !isCapacitor) {
+  // Prevent double-tap zoom
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (event) => {
     const now = Date.now();
@@ -154,7 +154,7 @@ if (isIOS) {
     lastTouchEnd = now;
   }, { passive: false });
   
-  // Optimized safe area handling
+  // Safe area handling
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.getElementById('root');
     if (root) {
@@ -166,23 +166,16 @@ if (isIOS) {
   });
 }
 
-// Ultra-optimized network status monitoring
+// Network status monitoring
 function updateOnlineStatus() {
   const isOnline = navigator.onLine;
   window.dispatchEvent(new CustomEvent('networkstatus', { 
     detail: { online: isOnline } 
   }));
-  
-  if (!isOnline) {
-    console.log('App offline - using cached content');
-  } else {
-    console.log('App online - syncing data');
-  }
 }
 
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
-updateOnlineStatus();
 
 // Ultra-optimized font preloading with performance monitoring
 const criticalFonts = [

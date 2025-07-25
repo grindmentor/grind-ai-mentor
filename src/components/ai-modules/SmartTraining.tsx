@@ -467,7 +467,9 @@ ${isMinimalist ? `
                   >
                     {isGenerating ? (
                       <>
-                        <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        <div className="w-4 h-4 mr-2 bg-orange-500/30 rounded flex items-center justify-center animate-pulse">
+                          <div className="w-1.5 h-1.5 bg-orange-500 rounded animate-bounce"></div>
+                        </div>
                         Generating Evidence-Based Program...
                       </>
                     ) : (

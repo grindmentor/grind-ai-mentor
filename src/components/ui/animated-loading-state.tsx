@@ -28,8 +28,9 @@ export const AnimatedLoadingState: React.FC<AnimatedLoadingStateProps> = ({
       )}>
         {/* Animated logo/icon */}
         <div className="relative">
-          <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-          <div className="absolute inset-2 w-12 h-12 border-2 border-orange-400/30 border-b-orange-400 rounded-full animate-spin animate-pulse" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+          <div className="w-16 h-16 bg-gradient-to-r from-orange-500/30 to-orange-600/20 rounded-xl flex items-center justify-center animate-pulse">
+            <div className="text-orange-400 font-bold text-xl animate-bounce">MYO</div>
+          </div>
         </div>
         
         {/* Animated text */}
@@ -77,9 +78,9 @@ export const AnimatedLoadingState: React.FC<AnimatedLoadingStateProps> = ({
       <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 flex items-center justify-center animate-fade-in">
         <div className="text-center space-y-8">
           <div className="relative">
-            <div className="w-24 h-24 border-4 border-orange-500/20 border-t-orange-500 border-r-orange-400 rounded-full animate-spin" />
-            <div className="absolute inset-3 w-18 h-18 border-2 border-orange-400/30 border-b-orange-400 border-l-orange-300 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '2s' }} />
-            <div className="absolute inset-6 w-12 h-12 border border-orange-300/40 border-t-orange-300 rounded-full animate-spin" style={{ animationDuration: '1s' }} />
+            <div className="w-24 h-24 bg-gradient-to-r from-orange-500/30 to-orange-600/20 rounded-xl flex items-center justify-center animate-pulse">
+              <div className="text-orange-400 font-bold text-2xl animate-bounce">MYO</div>
+            </div>
           </div>
           <div className="space-y-4">
             <h2 className="text-3xl font-bold text-white animate-pulse">Myotopia</h2>
@@ -93,7 +94,9 @@ export const AnimatedLoadingState: React.FC<AnimatedLoadingStateProps> = ({
   // Inline loading
   return (
     <div className="flex items-center space-x-3 animate-fade-in">
-      <div className="w-5 h-5 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+      <div className="w-5 h-5 bg-orange-500/30 rounded flex items-center justify-center animate-pulse">
+        <div className="w-2 h-2 bg-orange-500 rounded animate-bounce"></div>
+      </div>
       <span className="text-orange-300 animate-pulse">{message}</span>
     </div>
   );

@@ -54,7 +54,9 @@ const CustomerMemoryDemo = () => {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            <div className="w-8 h-8 bg-orange-500/30 rounded flex items-center justify-center animate-pulse">
+              <div className="w-3 h-3 bg-orange-500 rounded animate-bounce"></div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -286,7 +286,9 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
           >
             {isLoading ? (
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 bg-white/30 rounded flex items-center justify-center animate-pulse">
+                  <div className="w-1.5 h-1.5 bg-white rounded animate-bounce"></div>
+                </div>
                 <span>Creating Account...</span>
               </div>
             ) : (

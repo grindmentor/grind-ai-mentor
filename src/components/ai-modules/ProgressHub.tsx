@@ -526,50 +526,185 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Key Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="bg-card border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <Dumbbell className="w-5 h-5 text-primary" />
-                  <span className="font-semibold text-foreground">Strength</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground mb-2">{metrics.strength}%</div>
-                <Progress value={metrics.strength} className="h-2 mb-2" />
-                <Badge className={`${getScoreColor(metrics.strength)} text-xs`}>
-                  {getScoreLabel(metrics.strength)}
-                </Badge>
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/20 border-blue-500/30">
+              <CardContent className="p-4 text-center">
+                <Activity className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / (24 * 60 * 60 * 1000)) : 0}</div>
+                <div className="text-xs text-blue-200">Days Tracked</div>
               </CardContent>
             </Card>
-
-            <Card className="bg-card border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <Activity className="w-5 h-5 text-primary" />
-                  <span className="font-semibold text-foreground">Consistency</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground mb-2">{metrics.consistency}%</div>
-                <Progress value={metrics.consistency} className="h-2 mb-2" />
-                <Badge className={`${getScoreColor(metrics.consistency)} text-xs`}>
-                  {getScoreLabel(metrics.consistency)}
-                </Badge>
+            
+            <Card className="bg-gradient-to-br from-green-500/10 to-green-600/20 border-green-500/30">
+              <CardContent className="p-4 text-center">
+                <Flame className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{metrics.consistency}</div>
+                <div className="text-xs text-green-200">Consistency %</div>
               </CardContent>
             </Card>
-
-            <Card className="bg-card border-border">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <Heart className="w-5 h-5 text-primary" />
-                  <span className="font-semibold text-foreground">Recovery</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground mb-2">{metrics.recovery}%</div>
-                <Progress value={metrics.recovery} className="h-2 mb-2" />
-                <Badge className={`${getScoreColor(metrics.recovery)} text-xs`}>
-                  {getScoreLabel(metrics.recovery)}
-                </Badge>
+            
+            <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/20 border-purple-500/30">
+              <CardContent className="p-4 text-center">
+                <Trophy className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{getScoreLabel(metrics.overall)}</div>
+                <div className="text-xs text-purple-200">Current Level</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/20 border-yellow-500/30">
+              <CardContent className="p-4 text-center">
+                <Star className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-white">{Math.max(95 - metrics.overall, 0)}</div>
+                <div className="text-xs text-yellow-200">Points to Elite</div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Performance Radar Chart Visual */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Target className="w-5 h-5 text-primary" />
+                <span>Performance Overview</span>
+              </CardTitle>
+              <CardDescription>
+                Your comprehensive fitness profile across all metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column - Metrics */}
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Dumbbell className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium text-foreground">Strength</span>
+                      </div>
+                      <span className="text-lg font-bold text-foreground">{metrics.strength}%</span>
+                    </div>
+                    <Progress value={metrics.strength} className="h-3" />
+                    <Badge className={`${getScoreColor(metrics.strength)} text-xs w-fit`}>
+                      {getScoreLabel(metrics.strength)}
+                    </Badge>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Heart className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-foreground">Endurance</span>
+                      </div>
+                      <span className="text-lg font-bold text-foreground">{metrics.endurance}%</span>
+                    </div>
+                    <Progress value={metrics.endurance} className="h-3" />
+                    <Badge className={`${getScoreColor(metrics.endurance)} text-xs w-fit`}>
+                      {getScoreLabel(metrics.endurance)}
+                    </Badge>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Activity className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm font-medium text-foreground">Consistency</span>
+                      </div>
+                      <span className="text-lg font-bold text-foreground">{metrics.consistency}%</span>
+                    </div>
+                    <Progress value={metrics.consistency} className="h-3" />
+                    <Badge className={`${getScoreColor(metrics.consistency)} text-xs w-fit`}>
+                      {getScoreLabel(metrics.consistency)}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Right Column - Additional Stats */}
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg border border-primary/20">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Brain className="w-5 h-5 text-primary" />
+                      <span className="font-semibold text-foreground">Mental Strength</span>
+                    </div>
+                    <div className="text-2xl font-bold text-foreground mb-1">{metrics.discipline}%</div>
+                    <p className="text-sm text-muted-foreground">Discipline & consistency combined</p>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-green-500/10 to-green-600/5 p-4 rounded-lg border border-green-500/20">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Scale className="w-5 h-5 text-green-400" />
+                      <span className="font-semibold text-foreground">Nutrition</span>
+                    </div>
+                    <div className="text-2xl font-bold text-foreground mb-1">{metrics.nutrition}%</div>
+                    <p className="text-sm text-muted-foreground">Diet tracking & compliance</p>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-500/10 to-purple-600/5 p-4 rounded-lg border border-purple-500/20">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Shield className="w-5 h-5 text-purple-400" />
+                      <span className="font-semibold text-foreground">Recovery</span>
+                    </div>
+                    <div className="text-2xl font-bold text-foreground mb-1">{metrics.recovery}%</div>
+                    <p className="text-sm text-muted-foreground">Sleep & stress management</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Progress Timeline */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                <span>Recent Progress</span>
+              </CardTitle>
+              <CardDescription>
+                Your fitness journey milestones and achievements
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <Trophy className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-foreground">Current Level: {getScoreLabel(metrics.overall)}</div>
+                    <div className="text-sm text-muted-foreground">Overall progress score: {metrics.overall}%</div>
+                  </div>
+                </div>
+
+                {metrics.strength >= 70 && (
+                  <div className="flex items-center space-x-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Dumbbell className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground">Strength Milestone</div>
+                      <div className="text-sm text-muted-foreground">Achieved {getScoreLabel(metrics.strength)} level in strength training</div>
+                    </div>
+                  </div>
+                )}
+
+                {metrics.consistency >= 80 && (
+                  <div className="flex items-center space-x-4 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                      <Flame className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground">Consistency Master</div>
+                      <div className="text-sm text-muted-foreground">Exceptional dedication to training routine</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="physique" className="space-y-6">

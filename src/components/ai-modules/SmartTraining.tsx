@@ -346,7 +346,7 @@ ${isMinimalist ? `
                         <SelectContent className="bg-blue-900 border-blue-500">
                           <SelectItem value="strength">Build Strength</SelectItem>
                           <SelectItem value="cut">Cut (Lose Weight)</SelectItem>
-                          <SelectItem value="bulk">Bulk (Gain Muscle)</SelectItem>
+                          <SelectItem value="bulk">Weight Gain/Bulk</SelectItem>
                           <SelectItem value="maintenance">Maintenance</SelectItem>
                           <SelectItem value="hybrid">Hybrid Athlete</SelectItem>
                           <SelectItem value="recomp">Body Recomp</SelectItem>

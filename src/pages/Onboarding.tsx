@@ -240,7 +240,7 @@ const Onboarding = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
                       <SelectItem value="maintain">Maintain Weight</SelectItem>
-                      <SelectItem value="bulk">Bulk (Gain Muscle)</SelectItem>
+                      <SelectItem value="bulk">Weight Gain/Bulk</SelectItem>
                       <SelectItem value="cut">Cut (Lose Fat)</SelectItem>
                     </SelectContent>
                   </Select>

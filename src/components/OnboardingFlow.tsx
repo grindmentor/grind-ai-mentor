@@ -29,7 +29,7 @@ interface GoalOption {
 
 const goalOptions: GoalOption[] = [
   // Physique Goals
-  { id: 'muscle_gain', title: 'Build Muscle', description: 'Increase lean muscle mass and strength', icon: '💪', color: 'bg-red-500/20 border-red-500/30 text-red-400', category: 'physique' },
+  { id: 'weight_gain_bulk', title: 'Weight Gain/Bulk', description: 'Increase lean muscle mass and strength', icon: '💪', color: 'bg-red-500/20 border-red-500/30 text-red-400', category: 'physique' },
   { id: 'fat_loss', title: 'Lose Fat', description: 'Reduce body fat while preserving muscle', icon: '🔥', color: 'bg-orange-500/20 border-orange-500/30 text-orange-400', category: 'physique' },
   { id: 'body_recomp', title: 'Body Recomposition', description: 'Build muscle while losing fat simultaneously', icon: '⚖️', color: 'bg-purple-500/20 border-purple-500/30 text-purple-400', category: 'physique' },
   { id: 'lean_bulk', title: 'Lean Bulk', description: 'Gain muscle with minimal fat gain', icon: '📈', color: 'bg-green-500/20 border-green-500/30 text-green-400', category: 'physique' },

@@ -29,7 +29,7 @@ const FitnessGoalSelector: React.FC<FitnessGoalSelectorProps> = ({
     },
     {
       value: 'bulk',
-      label: 'Bulk',
+      label: 'Weight Gain/Bulk',
       description: 'Gain weight and build muscle mass',
       icon: <TrendingUp className="w-4 h-4" />
     }

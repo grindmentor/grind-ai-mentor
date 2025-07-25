@@ -252,10 +252,10 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       'lose_weight': 'Weight loss',
       'maintain_weight': 'Weight maintenance',
       'gain_weight': 'Weight gain',
-      'build_muscle': 'Muscle building',
+      'build_muscle': 'Weight gain/bulk building',
       'improve_fitness': 'General fitness improvement',
       'cut': 'Cutting (fat loss while preserving muscle)',
-      'bulk': 'Bulking (muscle gain)',
+      'bulk': 'Weight gain/bulk',
       'recomp': 'Body recomposition'
     };
 

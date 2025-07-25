@@ -15,6 +15,7 @@ import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FeatureGate from '@/components/FeatureGate';
+import { DietCuesDisplay } from './DietCuesDisplay';
 
 interface MealPlanAIProps {
   onBack: () => void;
@@ -214,7 +215,7 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
                         </SelectTrigger>
                         <SelectContent className="bg-green-900 border-green-500">
                           <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                          <SelectItem value="muscle-gain">Muscle Gain</SelectItem>
+                          <SelectItem value="weight-gain-bulk">Weight Gain/Bulk</SelectItem>
                           <SelectItem value="maintenance">Maintenance</SelectItem>
                           <SelectItem value="performance">Athletic Performance</SelectItem>
                         </SelectContent>
@@ -228,16 +229,24 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
                           <SelectValue placeholder="Select diet type" />
                         </SelectTrigger>
                         <SelectContent className="bg-green-900 border-green-500">
-                          <SelectItem value="balanced">Balanced</SelectItem>
-                          <SelectItem value="high-protein">High Protein</SelectItem>
-                          <SelectItem value="keto">Ketogenic</SelectItem>
-                          <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                          <SelectItem value="vegan">Vegan</SelectItem>
-                          <SelectItem value="paleo">Paleo</SelectItem>
+                          <SelectItem value="balanced">Balanced (High Protein)</SelectItem>
+                          <SelectItem value="keto">Ketogenic (High Protein)</SelectItem>
+                          <SelectItem value="vegetarian">Vegetarian (High Protein)</SelectItem>
+                          <SelectItem value="vegan">Vegan (High Protein)</SelectItem>
+                          <SelectItem value="paleo">Paleo (High Protein)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
+
+                  {/* Display diet cues */}
+                  {(planData.goal || planData.dietType) && (
+                    <DietCuesDisplay 
+                      goal={planData.goal} 
+                      dietType={planData.dietType}
+                      className="mt-4"
+                    />
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">

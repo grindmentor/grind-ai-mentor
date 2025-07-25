@@ -44,9 +44,9 @@ export class FlickerPrevention {
 }
 
 // Stable loading hook to prevent flicker
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const useStableLoading = (isLoading: boolean, minDisplayTime = 500) => {
+export const useStableLoading = (isLoading: boolean, minDisplayTime = 300) => {
   const [stableLoading, setStableLoading] = useState(isLoading);
   const timerRef = useRef<NodeJS.Timeout>();
   const mountTimeRef = useRef(Date.now());
@@ -78,4 +78,17 @@ export const useStableLoading = (isLoading: boolean, minDisplayTime = 500) => {
   }, [isLoading, minDisplayTime]);
   
   return stableLoading;
+};
+
+// Component wrapper to prevent flickering
+export const withStableLoading = <P extends object>(
+  Component: React.ComponentType<P>,
+  minDisplayTime = 300
+) => {
+  return React.forwardRef<any, P & { isLoading?: boolean }>((props, ref) => {
+    const { isLoading = false, ...otherProps } = props;
+    const stableLoading = useStableLoading(isLoading, minDisplayTime);
+    
+    return React.createElement(Component, { ...(otherProps as P), isLoading: stableLoading, ref });
+  });
 };

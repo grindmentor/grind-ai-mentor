@@ -13,6 +13,7 @@ import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useSubscription } from '@/hooks/useSubscription';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
+import { useStableLoading } from '@/utils/flickerPrevention';
 
 type ViewMode = 'grid' | 'list';
 
@@ -28,7 +29,8 @@ const ModuleLibrary = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('name');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingModules, setIsLoadingModules] = useState(true);
+  const stableLoading = useStableLoading(isLoadingModules, 300);
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -40,11 +42,13 @@ const ModuleLibrary = () => {
     } catch (error) {
       console.error('Error loading view mode:', error);
       setViewMode('grid');
-    } finally {
-      // Simulate loading delay for smooth transition
-      setTimeout(() => setIsLoading(false), 500);
     }
-  }, []);
+    
+    // Check if modules are available
+    if (modules && modules.length > 0) {
+      setIsLoadingModules(false);
+    }
+  }, [modules]);
 
   // Save view mode preference
   const handleViewModeChange = (mode: ViewMode) => {
@@ -106,7 +110,7 @@ const ModuleLibrary = () => {
     );
   }
 
-  if (isLoading) {
+  if (stableLoading) {
     return (
       <PageTransition>
         <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">

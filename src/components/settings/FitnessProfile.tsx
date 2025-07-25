@@ -100,7 +100,7 @@ const FitnessProfile: React.FC<FitnessProfileProps> = ({
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
               <SelectItem value="cut">Cut - Lose fat while preserving muscle mass</SelectItem>
-              <SelectItem value="bulk">Bulk - Gain muscle mass with controlled weight gain</SelectItem>
+              <SelectItem value="bulk">Weight Gain/Bulk - Gain muscle mass with controlled weight gain</SelectItem>
               <SelectItem value="maintain">Maintain - Keep current weight and body composition</SelectItem>
             </SelectContent>
           </Select>

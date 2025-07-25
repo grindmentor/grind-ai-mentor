@@ -21,7 +21,9 @@ import {
   Trophy,
   Star,
   RefreshCw,
-  ArrowLeft
+  ArrowLeft,
+  Flame,
+  Shield
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,6 +39,13 @@ interface ProgressMetrics {
   nutrition: number;
   recovery: number;
   overall: number;
+  discipline: number;
+}
+
+interface MuscleGroup {
+  name: string;
+  score: number;
+  exercises: string[];
 }
 
 interface WorkoutData {
@@ -75,37 +84,46 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     consistency: 0,
     nutrition: 0,
     recovery: 0,
-    overall: 0
+    overall: 0,
+    discipline: 0
   });
+  const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([
+    { name: 'Chest', score: 0, exercises: [] },
+    { name: 'Back', score: 0, exercises: [] },
+    { name: 'Shoulders', score: 0, exercises: [] },
+    { name: 'Arms', score: 0, exercises: [] },
+    { name: 'Core', score: 0, exercises: [] },
+    { name: 'Legs', score: 0, exercises: [] },
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Elite-level thresholds that make 100% extremely difficult
+  // Elite-level thresholds
   const ELITE_THRESHOLDS = {
     strength: {
-      sessions: 200,    // 200+ workout sessions
-      progression: 50,  // 50+ progressive overload entries
-      consistency: 90   // 90+ day streak
+      sessions: 200,
+      progression: 50,
+      consistency: 90
     },
     endurance: {
       cardio_sessions: 100,
-      total_duration: 5000, // 83+ hours of cardio
-      intensity_variety: 20  // 20+ different cardio types
+      total_duration: 5000,
+      intensity_variety: 20
     },
     consistency: {
-      workout_streak: 100,   // 100-day workout streak
-      weekly_frequency: 6,   // 6 workouts per week average
-      months_active: 12      // 12+ months of activity
+      workout_streak: 100,
+      weekly_frequency: 6,
+      months_active: 12
     },
     nutrition: {
-      log_streak: 60,        // 60-day logging streak
-      protein_consistency: 90, // 90% of days hitting protein
-      macro_balance: 80      // 80% balanced macro days
+      log_streak: 60,
+      protein_consistency: 90,
+      macro_balance: 80
     },
     recovery: {
-      sleep_consistency: 50,  // 50+ sleep logs
-      stress_management: 80,  // 80% low stress days
-      recovery_tracking: 90   // 90+ recovery entries
+      sleep_consistency: 50,
+      stress_management: 80,
+      recovery_tracking: 90
     }
   };
 
@@ -120,12 +138,10 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     
     let score;
     if (curve === 'exponential') {
-      // Exponential curve that makes reaching 100% extremely difficult
       score = (1 - Math.exp(-3 * value / threshold)) * 100;
-      // Apply diminishing returns after 70%
       if (score > 70) {
         const excess = score - 70;
-        score = 70 + excess * 0.3; // Severely limit progress after 70%
+        score = 70 + excess * 0.3;
       }
     } else {
       score = Math.min((value / threshold) * 100, 100);
@@ -212,6 +228,8 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         ELITE_THRESHOLDS.recovery.recovery_tracking + 20
       );
 
+      const disciplineScore = Math.round((consistencyScore + nutritionScore + recoveryScore) / 3);
+
       const overallScore = Math.round(
         (strengthScore + enduranceScore + consistencyScore + nutritionScore + recoveryScore) / 5
       );
@@ -222,8 +240,12 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         consistency: consistencyScore,
         nutrition: nutritionScore,
         recovery: recoveryScore,
-        overall: overallScore
+        overall: overallScore,
+        discipline: disciplineScore
       });
+
+      // Calculate muscle group scores based on exercises
+      calculateMuscleGroupScores(progressEntries || []);
 
       setLastUpdated(new Date());
     } catch (error) {
@@ -232,6 +254,36 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const calculateMuscleGroupScores = (progressEntries: any[]) => {
+    const muscleMapping: { [key: string]: string[] } = {
+      'Chest': ['bench press', 'push up', 'chest fly', 'dips', 'incline', 'decline'],
+      'Back': ['pull up', 'row', 'lat', 'deadlift', 'chin up', 'pulldown'],
+      'Shoulders': ['shoulder press', 'lateral raise', 'overhead', 'shrug', 'upright row'],
+      'Arms': ['curl', 'tricep', 'arm', 'bicep', 'hammer', 'preacher'],
+      'Core': ['plank', 'crunch', 'sit up', 'ab', 'core', 'russian twist'],
+      'Legs': ['squat', 'leg', 'calf', 'lunge', 'thigh', 'quad', 'hamstring']
+    };
+
+    const updatedMuscleGroups = muscleGroups.map(group => {
+      const relevantExercises = progressEntries.filter(entry => 
+        muscleMapping[group.name]?.some(keyword => 
+          entry.exercise_name?.toLowerCase().includes(keyword)
+        )
+      );
+
+      const score = Math.min(relevantExercises.length * 5, 100); // 5 points per exercise, max 100
+      const exercises = relevantExercises.map(e => e.exercise_name);
+
+      return {
+        ...group,
+        score,
+        exercises: [...new Set(exercises)].slice(0, 5) // Unique exercises, max 5
+      };
+    });
+
+    setMuscleGroups(updatedMuscleGroups);
   };
 
   const calculateWorkoutStreak = (sessions: any[]): number => {
@@ -297,6 +349,14 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     return 'Beginner';
   };
 
+  const getMuscleColor = (score: number): string => {
+    if (score >= 80) return '#a855f7'; // Purple
+    if (score >= 60) return '#10b981'; // Green
+    if (score >= 40) return '#3b82f6'; // Blue
+    if (score >= 20) return '#f59e0b'; // Orange
+    return '#ef4444'; // Red
+  };
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -305,151 +365,131 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     );
   }
 
-  // Hexagonal Progress Component
-  const HexagonProgress = ({ score, size, label, icon: Icon }: { 
-    score: number; 
-    size: 'small' | 'large'; 
-    label: string; 
-    icon?: any;
-  }) => {
-    const isLarge = size === 'large';
-    const hexSize = isLarge ? 120 : 80;
-    const strokeWidth = isLarge ? 8 : 6;
-    const circumference = hexSize * 0.6 * 6; // Approximate hexagon perimeter
-    const strokeDasharray = circumference;
-    const strokeDashoffset = circumference * (1 - score / 100);
-    
-    return (
-      <div className="relative flex flex-col items-center">
-        <div className={`relative ${isLarge ? 'w-32 h-32' : 'w-20 h-20'}`}>
-          {/* Hexagon SVG */}
-          <svg 
-            className="absolute inset-0 transform -rotate-90" 
-            width={hexSize + 20} 
-            height={hexSize + 20}
-            viewBox={`0 0 ${hexSize + 20} ${hexSize + 20}`}
-          >
-            {/* Background hexagon */}
-            <polygon
-              points={`${(hexSize + 20) / 2},${10} ${hexSize - 5},${(hexSize + 20) / 4} ${hexSize - 5},${3 * (hexSize + 20) / 4} ${(hexSize + 20) / 2},${hexSize + 10} ${15},${3 * (hexSize + 20) / 4} ${15},${(hexSize + 20) / 4}`}
-              fill="none"
-              stroke="rgb(55, 65, 81)"
-              strokeWidth={strokeWidth}
-            />
-            {/* Progress hexagon */}
-            <polygon
-              points={`${(hexSize + 20) / 2},${10} ${hexSize - 5},${(hexSize + 20) / 4} ${hexSize - 5},${3 * (hexSize + 20) / 4} ${(hexSize + 20) / 2},${hexSize + 10} ${15},${3 * (hexSize + 20) / 4} ${15},${(hexSize + 20) / 4}`}
-              fill="none"
-              stroke={score < 50 ? '#ef4444' : score < 70 ? '#3b82f6' : score < 80 ? '#10b981' : score < 90 ? '#f59e0b' : '#a855f7'}
-              strokeWidth={strokeWidth}
-              strokeDasharray={strokeDasharray}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              className="transition-all duration-1000 ease-out"
-            />
-          </svg>
-          
-          {/* Center content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            {Icon && !isLarge && <Icon className="w-4 h-4 text-orange-400 mb-1" />}
-            <span className={`font-bold text-white ${isLarge ? 'text-2xl' : 'text-sm'}`}>
-              {score}%
-            </span>
-            {isLarge && (
-              <Badge className={`${getScoreColor(score)} text-xs mt-2`}>
-                {getScoreLabel(score)}
-              </Badge>
-            )}
+  // Human Body Component
+  const HumanBodyVisualizer = () => (
+    <div className="relative w-full max-w-md mx-auto">
+      <svg viewBox="0 0 300 500" className="w-full h-auto">
+        {/* Head */}
+        <circle cx="150" cy="50" r="30" fill="#374151" stroke="#6b7280" strokeWidth="2"/>
+        
+        {/* Shoulders */}
+        <ellipse cx="150" cy="100" rx="60" ry="20" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Shoulders')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+        
+        {/* Chest */}
+        <ellipse cx="150" cy="130" rx="45" ry="25" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Chest')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+        
+        {/* Arms */}
+        <ellipse cx="90" cy="140" rx="15" ry="40" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+        <ellipse cx="210" cy="140" rx="15" ry="40" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+        
+        {/* Core */}
+        <ellipse cx="150" cy="180" rx="35" ry="30" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Core')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+        
+        {/* Back (shown as outline behind) */}
+        <ellipse cx="150" cy="150" rx="50" ry="50" fill="none" stroke={getMuscleColor(muscleGroups.find(m => m.name === 'Back')?.score || 0)} strokeWidth="3" opacity="0.6" strokeDasharray="5,5"/>
+        
+        {/* Legs */}
+        <ellipse cx="130" cy="280" rx="20" ry="60" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+        <ellipse cx="170" cy="280" rx="20" ry="60" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+        
+        {/* Lower legs */}
+        <ellipse cx="130" cy="380" rx="15" ry="40" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.6"/>
+        <ellipse cx="170" cy="380" rx="15" ry="40" fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} stroke="#ffffff" strokeWidth="1" opacity="0.6"/>
+      </svg>
+      
+      {/* Legend */}
+      <div className="mt-4 text-center">
+        <div className="flex justify-center space-x-2 text-xs">
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ef4444' }}></div>
+            <span className="text-gray-400">0-20%</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#f59e0b' }}></div>
+            <span className="text-gray-400">20-40%</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#3b82f6' }}></div>
+            <span className="text-gray-400">40-60%</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#10b981' }}></div>
+            <span className="text-gray-400">60-80%</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#a855f7' }}></div>
+            <span className="text-gray-400">80%+</span>
           </div>
         </div>
-        
-        <span className={`text-center font-medium mt-2 ${isLarge ? 'text-lg text-white' : 'text-xs text-gray-300'}`}>
-          {label}
-        </span>
       </div>
-    );
-  };
+    </div>
+  );
 
-  const MetricCard = ({ 
-    title, 
-    icon: Icon, 
-    score, 
-    description 
-  }: { 
-    title: string; 
+  // Mental Performance Component
+  const MentalPerformanceCard = ({ icon: Icon, title, score, description, color }: { 
     icon: any; 
+    title: string; 
     score: number; 
-    description: string;
+    description: string; 
+    color: string;
   }) => (
     <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:border-orange-500/30 transition-all duration-300">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <Icon className="w-5 h-5 text-orange-400" />
-            <h3 className="font-semibold text-white text-sm">{title}</h3>
-          </div>
-          <Badge className={`${getScoreColor(score)} text-xs font-bold px-2 py-1`}>
-            {score}%
-          </Badge>
+      <CardContent className="p-6 text-center">
+        <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${color}`}>
+          <Icon className="w-8 h-8 text-white" />
         </div>
+        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <div className="text-3xl font-bold text-white mb-2">{score}%</div>
+        <Badge className={`${getScoreColor(score)} text-xs mb-3`}>
+          {getScoreLabel(score)}
+        </Badge>
+        <p className="text-sm text-gray-400">{description}</p>
         
-        <Progress 
-          value={score} 
-          className="h-2 mb-2 bg-gray-800/50"
-          style={{
-            background: `linear-gradient(to right, 
-              ${score < 50 ? '#ef4444' : score < 70 ? '#3b82f6' : score < 80 ? '#10b981' : score < 90 ? '#f59e0b' : '#a855f7'} 0%, 
-              ${score < 50 ? '#ef4444' : score < 70 ? '#3b82f6' : score < 80 ? '#10b981' : score < 90 ? '#f59e0b' : '#a855f7'} ${score}%, 
-              #374151 ${score}%, 
-              #374151 100%)`
-          }}
-        />
-        
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-400">{description}</span>
-          <span className="text-xs font-medium text-orange-300">
-            {getScoreLabel(score)}
-          </span>
+        <div className="mt-4">
+          <Progress 
+            value={score} 
+            className="h-2 bg-gray-800/50"
+          />
         </div>
       </CardContent>
     </Card>
   );
 
   return (
-    <div className="p-4 space-y-6 bg-gradient-to-br from-black via-purple-900/20 to-purple-800/30 min-h-screen">
+    <div className="p-4 space-y-6 bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 min-h-screen">
       {/* Header with Back Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center space-x-3">
-          {/* Back Button - visible on all devices */}
           {onBack && (
             <Button
               onClick={onBack}
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors mr-2"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted transition-colors mr-2"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
               Back
             </Button>
           )}
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-500/30 to-purple-600/20 rounded-lg flex items-center justify-center border border-purple-500/30">
-            <TrendingUp className="w-6 h-6 text-purple-400" />
+          <div className="w-12 h-12 bg-gradient-to-r from-primary/30 to-primary/20 rounded-lg flex items-center justify-center border border-primary/30">
+            <TrendingUp className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Progress Hub</h1>
-            <p className="text-purple-200/80 text-sm">Elite performance tracking</p>
+            <h1 className="text-2xl font-bold text-foreground">Progress Hub</h1>
+            <p className="text-muted-foreground text-sm">Elite performance tracking</p>
           </div>
         </div>
         <div className="flex items-center space-x-3 w-full sm:w-auto">
           {lastUpdated && (
-            <span className="text-xs text-purple-300/60 hidden sm:block">
+            <span className="text-xs text-muted-foreground hidden sm:block">
               Updated {lastUpdated.toLocaleTimeString()}
             </span>
           )}
           <Button
             onClick={loadProgressData}
             size="sm"
-            className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/40 w-full sm:w-auto"
+            variant="outline"
+            className="w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4 mr-1" />
             Refresh
@@ -458,18 +498,18 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       </div>
 
       {/* Overall Score Card */}
-      <Card className="bg-gradient-to-r from-purple-500/20 to-purple-600/15 border-purple-500/30 mb-8">
+      <Card className="bg-gradient-to-r from-primary/20 to-primary/15 border-primary/30 mb-8">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-white mb-1">{metrics.overall}%</h2>
-              <p className="text-purple-300 font-medium">Overall Progress</p>
-              <p className="text-sm text-purple-200/70 mt-1">
+              <h2 className="text-3xl font-bold text-foreground mb-1">{metrics.overall}%</h2>
+              <p className="text-foreground/80 font-medium">Overall Progress</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 {getScoreLabel(metrics.overall)} • Elite threshold: 95%+
               </p>
             </div>
             <div className="text-right">
-              <Trophy className="w-12 h-12 text-purple-400 mb-2" />
+              <Trophy className="w-12 h-12 text-primary mb-2" />
               <Badge className={`${getScoreColor(metrics.overall)} text-sm px-3 py-1`}>
                 {getScoreLabel(metrics.overall)}
               </Badge>
@@ -478,189 +518,157 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         </CardContent>
       </Card>
 
-      {/* Progress Overview Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
-          <HexagonProgress score={metrics.strength} size="small" label="Strength" icon={Dumbbell} />
-        </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
-          <HexagonProgress score={metrics.endurance} size="small" label="Endurance" icon={Heart} />
-        </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
-          <HexagonProgress score={metrics.consistency} size="small" label="Consistency" icon={Target} />
-        </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg">
-          <HexagonProgress score={metrics.nutrition} size="small" label="Nutrition" icon={Scale} />
-        </div>
-        <div className="flex flex-col items-center p-4 bg-gray-900/40 backdrop-blur-sm border border-purple-500/20 rounded-lg col-span-2 lg:col-span-1">
-          <HexagonProgress score={metrics.recovery} size="small" label="Recovery" icon={Brain} />
-        </div>
-      </div>
-
-      {/* Detailed Metrics Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-900/50 border border-purple-500/20">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-200">
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="metrics" className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-200">
-            Metrics
-          </TabsTrigger>
-          <TabsTrigger value="achievements" className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-200">
-            Achievements
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-muted">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="physique">Physique</TabsTrigger>
+          <TabsTrigger value="mental">Mental</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <MetricCard
-              title="Strength"
-              icon={Dumbbell}
-              score={metrics.strength}
-              description="Progressive overload & power development"
-            />
-            <MetricCard
-              title="Endurance"
-              icon={Heart}
-              score={metrics.endurance}
-              description="Cardiovascular fitness & stamina"
-            />
-            <MetricCard
-              title="Consistency"
-              icon={Target}
-              score={metrics.consistency}
-              description="Training frequency & adherence"
-            />
-            <MetricCard
-              title="Nutrition"
-              icon={Scale}
-              score={metrics.nutrition}
-              description="Macro tracking & dietary compliance"
-            />
+        <TabsContent value="overview" className="space-y-6">
+          {/* Key Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Dumbbell className="w-5 h-5 text-primary" />
+                  <span className="font-semibold text-foreground">Strength</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground mb-2">{metrics.strength}%</div>
+                <Progress value={metrics.strength} className="h-2 mb-2" />
+                <Badge className={`${getScoreColor(metrics.strength)} text-xs`}>
+                  {getScoreLabel(metrics.strength)}
+                </Badge>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Activity className="w-5 h-5 text-primary" />
+                  <span className="font-semibold text-foreground">Consistency</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground mb-2">{metrics.consistency}%</div>
+                <Progress value={metrics.consistency} className="h-2 mb-2" />
+                <Badge className={`${getScoreColor(metrics.consistency)} text-xs`}>
+                  {getScoreLabel(metrics.consistency)}
+                </Badge>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Heart className="w-5 h-5 text-primary" />
+                  <span className="font-semibold text-foreground">Recovery</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground mb-2">{metrics.recovery}%</div>
+                <Progress value={metrics.recovery} className="h-2 mb-2" />
+                <Badge className={`${getScoreColor(metrics.recovery)} text-xs`}>
+                  {getScoreLabel(metrics.recovery)}
+                </Badge>
+              </CardContent>
+            </Card>
           </div>
-          
-          <MetricCard
-            title="Recovery"
-            icon={Brain}
-            score={metrics.recovery}
-            description="Sleep quality & stress management"
-          />
         </TabsContent>
 
-        <TabsContent value="metrics" className="space-y-6 mt-6">
+        <TabsContent value="physique" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-purple-500/20">
+            {/* Human Body Visualizer */}
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Activity className="w-5 h-5 text-purple-400 mr-2" />
-                  Training Metrics
+                <CardTitle className="flex items-center space-x-2">
+                  <Dumbbell className="w-5 h-5 text-primary" />
+                  <span>Muscle Development</span>
                 </CardTitle>
+                <CardDescription>
+                  Visual representation of your muscle group training progress
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Strength Score:</span>
-                  <Badge className={getScoreColor(metrics.strength)}>
-                    {metrics.strength}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Endurance Score:</span>
-                  <Badge className={getScoreColor(metrics.endurance)}>
-                    {metrics.endurance}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Consistency:</span>
-                  <Badge className={getScoreColor(metrics.consistency)}>
-                    {metrics.consistency}%
-                  </Badge>
-                </div>
+              <CardContent>
+                <HumanBodyVisualizer />
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-purple-500/20">
+            {/* Muscle Groups Breakdown */}
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <Zap className="w-5 h-5 text-purple-400 mr-2" />
-                  Lifestyle Metrics
-                </CardTitle>
+                <CardTitle>Muscle Groups</CardTitle>
+                <CardDescription>
+                  Detailed breakdown of your training progress by muscle group
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Nutrition:</span>
-                  <Badge className={getScoreColor(metrics.nutrition)}>
-                    {metrics.nutrition}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Recovery:</span>
-                  <Badge className={getScoreColor(metrics.recovery)}>
-                    {metrics.recovery}%
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Overall Score:</span>
-                  <Badge className={getScoreColor(metrics.overall)}>
-                    {metrics.overall}%
-                  </Badge>
-                </div>
+                {muscleGroups.map((muscle) => (
+                  <div key={muscle.name} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">{muscle.name}</span>
+                      <Badge className={`${getScoreColor(muscle.score)} text-xs`}>
+                        {muscle.score}%
+                      </Badge>
+                    </div>
+                    <Progress value={muscle.score} className="h-2" />
+                    {muscle.exercises.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Recent: {muscle.exercises.slice(0, 3).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="achievements" className="space-y-6 mt-6">
-          <Card className="bg-gray-900/40 backdrop-blur-sm border-purple-500/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Award className="w-5 h-5 text-purple-400 mr-2" />
-                Elite Performance Milestones
-              </CardTitle>
-              <CardDescription className="text-purple-200/70">
-                Reaching 95%+ in any category qualifies as Elite performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Object.entries(metrics).filter(([key]) => key !== 'overall').map(([key, score]) => (
-                <div key={key} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg border border-purple-500/10">
-                  <div className="flex items-center space-x-3">
-                    <Star className={`w-5 h-5 ${score >= 95 ? 'text-purple-400' : 'text-gray-500'}`} />
-                    <span className="text-white capitalize">{key}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Progress value={score} className="w-20 h-2" />
-                    <Badge className={getScoreColor(score)}>
-                      {score}%
-                    </Badge>
-                  </div>
+        <TabsContent value="mental" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Endurance */}
+            <MentalPerformanceCard
+              icon={Heart}
+              title="Endurance"
+              score={metrics.endurance}
+              description="Cardiovascular fitness and stamina development"
+              color="bg-gradient-to-br from-red-500/20 to-red-600/30"
+            />
+
+            {/* Discipline */}
+            <MentalPerformanceCard
+              icon={Brain}
+              title="Discipline"
+              score={metrics.discipline}
+              description="Mental strength and consistency in training"
+              color="bg-gradient-to-br from-purple-500/20 to-purple-600/30"
+            />
+          </div>
+
+          {/* Additional Mental Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Target className="w-5 h-5 text-primary" />
+                  <span className="font-semibold text-foreground">Focus</span>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                <div className="text-2xl font-bold text-foreground mb-2">{metrics.nutrition}%</div>
+                <Progress value={metrics.nutrition} className="h-2 mb-2" />
+                <p className="text-sm text-muted-foreground">Nutrition tracking consistency</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Shield className="w-5 h-5 text-primary" />
+                  <span className="font-semibold text-foreground">Resilience</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground mb-2">{metrics.recovery}%</div>
+                <Progress value={metrics.recovery} className="h-2 mb-2" />
+                <p className="text-sm text-muted-foreground">Recovery and stress management</p>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
-
-      {/* Elite Progress Info */}
-      <Card className="bg-purple-500/10 border-purple-500/30 mt-6">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <Star className="w-6 h-6 text-purple-400 mt-1" />
-            <div>
-              <h3 className="text-purple-300 font-semibold mb-2">Elite Performance Standards</h3>
-              <p className="text-purple-200/80 text-sm mb-3">
-                Myotopia uses scientifically-backed elite performance standards. Reaching 100% represents 
-                the top 1% of fitness enthusiasts and requires exceptional dedication and consistency.
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="text-purple-300">• 90%+: Elite performer</div>
-                <div className="text-yellow-300">• 80%+: Advanced athlete</div>
-                <div className="text-green-300">• 70%+: Strong intermediate</div>
-                <div className="text-blue-300">• 50%+: Developing fitness</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

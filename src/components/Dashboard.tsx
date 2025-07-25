@@ -419,9 +419,7 @@ const Dashboard = () => {
                     size="xl"
                     haptic="medium"
                     className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 text-foreground rounded-xl group"
-                    asChild
                   >
-                    <div>
                     <div className="flex items-center justify-between w-full px-4 sm:px-6">
                       <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r from-purple-800/80 to-purple-900/90 border border-purple-700/40 flex items-center justify-center flex-shrink-0">
@@ -441,7 +439,6 @@ const Dashboard = () => {
                         <span className="text-xs sm:text-sm text-purple-200/90 hidden sm:inline">View Progress</span>
                       </div>
                     </div>
-                  </div>
                   </NativeButton>
                 </div>
               )}

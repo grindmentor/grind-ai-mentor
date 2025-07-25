@@ -70,10 +70,6 @@ interface MuscleGroupData {
 }
 
 interface BiometricData {
-  heartRateVariability: number;
-  restingHeartRate: number;
-  sleepEfficiency: number;
-  stressIndex: number;
   recoveryScore: number;
 }
 
@@ -126,10 +122,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   ]);
   
   const [biometrics, setBiometrics] = useState<BiometricData>({
-    heartRateVariability: 0,
-    restingHeartRate: 0,
-    sleepEfficiency: 0,
-    stressIndex: 0,
     recoveryScore: 0
   });
   
@@ -222,27 +214,27 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       if (!hasAnyData) {
         // Set demo/default metrics for new users
         setMetrics({
-          overall: 25,
-          strength: 15,
-          endurance: 20,
-          power: 10,
-          flexibility: 30,
-          consistency: 5,
-          nutrition: 35,
-          recovery: 40,
-          discipline: 20,
-          adaptation: 15,
-          technique: 25,
-          volumeLoad: 10
+          overall: 0,
+          strength: 0,
+          endurance: 0,
+          power: 0,
+          flexibility: 0,
+          consistency: 0,
+          nutrition: 0,
+          recovery: 0,
+          discipline: 0,
+          adaptation: 0,
+          technique: 0,
+          volumeLoad: 0
         });
         
-        // Set sample muscle groups for demo
+        // Keep muscle groups at 0 for new users
         setMuscleGroups(prev => prev.map(group => ({
           ...group,
-          score: Math.floor(Math.random() * 30) + 10, // 10-40% for new users
-          volume: Math.floor(Math.random() * 500),
-          frequency: Math.floor(Math.random() * 3) + 1,
-          intensity: 6 + Math.random() * 2,
+          score: 0,
+          volume: 0,
+          frequency: 0,
+          intensity: 0,
           progressTrend: 'stable' as const
         })));
         
@@ -277,30 +269,24 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
         const consistencyScore = calculateConsistencyScore(workoutData, nutritionData);
         const disciplineScore = Math.round((consistencyScore + nutritionScore + recoveryScore) / 3);
         
-        // Advanced metrics
-        const powerScore = calculatePowerScore(progressData);
-        const adaptationScore = calculateAdaptationScore(progressData);
-        const techniqueScore = calculateTechniqueScore(progressData);
-        const volumeLoadScore = calculateVolumeLoadScore(totalVolume);
-        
+        // Calculate overall score from main metrics only
         const overallScore = Math.round(
-          (strengthScore + enduranceScore + nutritionScore + recoveryScore + 
-           consistencyScore + powerScore + adaptationScore) / 7
+          (strengthScore + enduranceScore + nutritionScore + recoveryScore + consistencyScore) / 5
         );
 
         setMetrics({
           overall: overallScore,
           strength: strengthScore,
           endurance: enduranceScore,
-          power: powerScore,
-          flexibility: calculateFlexibilityScore(),
+          power: 0,
+          flexibility: 0,
           consistency: consistencyScore,
           nutrition: nutritionScore,
           recovery: recoveryScore,
           discipline: disciplineScore,
-          adaptation: adaptationScore,
-          technique: techniqueScore,
-          volumeLoad: volumeLoadScore
+          adaptation: 0,
+          technique: 0,
+          volumeLoad: 0
         });
 
         setMuscleGroups(enhancedMuscleGroups);
@@ -318,11 +304,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       }
 
       setBiometrics({
-        heartRateVariability: 45 + Math.random() * 20, // Simulated for demo
-        restingHeartRate: 60 + Math.random() * 20,
-        sleepEfficiency: 75 + Math.random() * 20,
-        stressIndex: Math.random() * 5,
-        recoveryScore: hasAnyData ? calculateRecoveryScore(recoveryData) : 40
+        recoveryScore: hasAnyData ? calculateRecoveryScore(recoveryData) : 0
       });
 
       setLastUpdated(new Date());
@@ -464,53 +446,6 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     return calculateAdvancedScore(workoutStreak * 5 + nutritionStreak * 3, 500 + 180);
   };
 
-  const calculatePowerScore = (progressData: any[]): number => {
-    const explosiveExercises = progressData.filter(e => 
-      ['jump', 'explosive', 'power', 'clean', 'snatch', 'jerk'].some(keyword =>
-        e.exercise_name?.toLowerCase().includes(keyword)
-      )
-    );
-    
-    if (explosiveExercises.length === 0) return Math.max(0, 50 - progressData.length * 2);
-    
-    const powerVolume = explosiveExercises.reduce((sum, e) => sum + (e.weight * e.sets * e.reps), 0);
-    return calculateAdvancedScore(powerVolume, 2000);
-  };
-
-  const calculateAdaptationScore = (progressData: any[]): number => {
-    if (progressData.length < 10) return progressData.length * 10;
-    
-    const progressions = progressData
-      .sort((a, b) => new Date(a.workout_date).getTime() - new Date(b.workout_date).getTime())
-      .reduce((acc, entry, index) => {
-        if (index === 0) return acc;
-        const prev = progressData[index - 1];
-        if (entry.exercise_name === prev.exercise_name && entry.weight > prev.weight) {
-          acc++;
-        }
-        return acc;
-      }, 0);
-    
-    return calculateAdvancedScore(progressions, 20);
-  };
-
-  const calculateTechniqueScore = (progressData: any[]): number => {
-    const avgRpe = progressData.length > 0 ? 
-      progressData.reduce((sum, e) => sum + (e.rpe || 7), 0) / progressData.length : 7;
-    
-    // Better technique = lower RPE for same weight over time
-    const techniqueScore = Math.max(0, 100 - (avgRpe - 6) * 10);
-    return Math.round(techniqueScore);
-  };
-
-  const calculateVolumeLoadScore = (totalVolume: number): number => {
-    return calculateAdvancedScore(totalVolume, 50000);
-  };
-
-  const calculateFlexibilityScore = (): number => {
-    // Placeholder - in real implementation, this would use flexibility data
-    return 65 + Math.random() * 20;
-  };
 
   const calculateConsistencyStreak = (workoutData: any[]): number => {
     if (workoutData.length === 0) return 0;
@@ -659,117 +594,111 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     return '#6b7280'; // Gray
   };
 
-  // Memoized components for performance
+  // Enhanced and better-looking body map
   const ScientificHumanBody = useMemo(() => (
-    <div className="relative w-full max-w-lg mx-auto">
-      <svg viewBox="0 0 400 600" className="w-full h-auto">
-        {/* Enhanced human body with detailed muscle groups */}
+    <div className="relative w-full max-w-md mx-auto">
+      <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/30 rounded-2xl p-6 border border-purple-500/20">
+        <svg viewBox="0 0 300 500" className="w-full h-auto">
+          {/* Enhanced human body with better proportions */}
+          
+          {/* Head */}
+          <circle cx="150" cy="45" r="25" fill="rgba(139, 92, 246, 0.3)" stroke="#a855f7" strokeWidth="2"/>
+          
+          {/* Neck */}
+          <rect x="140" y="70" width="20" height="12" fill="rgba(139, 92, 246, 0.2)" rx="6"/>
+          
+          {/* Shoulders */}
+          <ellipse cx="150" cy="100" rx="60" ry="18" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Shoulders')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <text x="150" y="105" textAnchor="middle" className="fill-white text-xs font-medium">
+            Shoulders
+          </text>
+          
+          {/* Chest */}
+          <ellipse cx="150" cy="130" rx="40" ry="22" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Chest')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <text x="150" y="135" textAnchor="middle" className="fill-white text-xs font-medium">
+            Chest
+          </text>
+          
+          {/* Arms */}
+          <ellipse cx="95" cy="145" rx="15" ry="40" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <ellipse cx="205" cy="145" rx="15" ry="40" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <text x="95" y="150" textAnchor="middle" className="fill-white text-xs font-medium">Arms</text>
+          
+          {/* Core */}
+          <ellipse cx="150" cy="180" rx="35" ry="28" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Core')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <text x="150" y="185" textAnchor="middle" className="fill-white text-xs font-medium">
+            Core
+          </text>
+          
+          {/* Back (outline) */}
+          <ellipse cx="150" cy="155" rx="50" ry="50" fill="none" 
+            stroke={getMuscleColor(muscleGroups.find(m => m.name === 'Back')?.score || 0)} 
+            strokeWidth="3" opacity="0.6" strokeDasharray="6,3"/>
+          <text x="150" y="160" textAnchor="middle" className="fill-purple-300 text-xs font-medium">
+            Back
+          </text>
+          
+          {/* Glutes */}
+          <ellipse cx="150" cy="230" rx="30" ry="15" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Glutes')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <text x="150" y="235" textAnchor="middle" className="fill-white text-xs font-medium">
+            Glutes
+          </text>
+          
+          {/* Legs */}
+          <ellipse cx="130" cy="310" rx="20" ry="60" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <ellipse cx="170" cy="310" rx="20" ry="60" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <text x="150" y="315" textAnchor="middle" className="fill-white text-xs font-medium">
+            Legs
+          </text>
+          
+          {/* Calves */}
+          <ellipse cx="130" cy="410" rx="15" ry="35" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Calves')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <ellipse cx="170" cy="410" rx="15" ry="35" 
+            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Calves')?.score || 0)} 
+            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
+          <text x="150" y="415" textAnchor="middle" className="fill-white text-xs font-medium">
+            Calves
+          </text>
+        </svg>
         
-        {/* Head */}
-        <circle cx="200" cy="60" r="35" fill="#374151" stroke="#6b7280" strokeWidth="2"/>
-        <text x="200" y="66" textAnchor="middle" className="fill-white text-xs font-medium">Brain</text>
-        
-        {/* Neck */}
-        <rect x="185" y="95" width="30" height="15" fill="#4b5563" rx="5"/>
-        
-        {/* Shoulders - Enhanced */}
-        <ellipse cx="200" cy="130" rx="80" ry="25" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Shoulders')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <text x="200" y="136" textAnchor="middle" className="fill-white text-xs font-medium">
-          Shoulders {muscleGroups.find(m => m.name === 'Shoulders')?.score || 0}%
-        </text>
-        
-        {/* Chest - Enhanced */}
-        <ellipse cx="200" cy="165" rx="55" ry="30" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Chest')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <text x="200" y="171" textAnchor="middle" className="fill-white text-xs font-medium">
-          Chest {muscleGroups.find(m => m.name === 'Chest')?.score || 0}%
-        </text>
-        
-        {/* Arms - Enhanced */}
-        <ellipse cx="120" cy="180" rx="20" ry="50" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <ellipse cx="280" cy="180" rx="20" ry="50" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        
-        {/* Core - Enhanced */}
-        <ellipse cx="200" cy="220" rx="45" ry="35" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Core')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <text x="200" y="226" textAnchor="middle" className="fill-white text-xs font-medium">
-          Core {muscleGroups.find(m => m.name === 'Core')?.score || 0}%
-        </text>
-        
-        {/* Back - Enhanced (shown as outline) */}
-        <ellipse cx="200" cy="190" rx="65" ry="60" fill="none" 
-          stroke={getMuscleColor(muscleGroups.find(m => m.name === 'Back')?.score || 0)} 
-          strokeWidth="4" opacity="0.7" strokeDasharray="8,4"/>
-        <text x="200" y="196" textAnchor="middle" className="fill-gray-300 text-xs font-medium">
-          Back {muscleGroups.find(m => m.name === 'Back')?.score || 0}%
-        </text>
-        
-        {/* Glutes */}
-        <ellipse cx="200" cy="280" rx="40" ry="20" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Glutes')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <text x="200" y="286" textAnchor="middle" className="fill-white text-xs font-medium">
-          Glutes {muscleGroups.find(m => m.name === 'Glutes')?.score || 0}%
-        </text>
-        
-        {/* Legs - Enhanced */}
-        <ellipse cx="170" cy="350" rx="25" ry="70" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <ellipse cx="230" cy="350" rx="25" ry="70" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <text x="200" y="356" textAnchor="middle" className="fill-white text-xs font-medium">
-          Legs {muscleGroups.find(m => m.name === 'Legs')?.score || 0}%
-        </text>
-        
-        {/* Calves */}
-        <ellipse cx="170" cy="460" rx="18" ry="45" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Calves')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <ellipse cx="230" cy="460" rx="18" ry="45" 
-          fill={getMuscleColor(muscleGroups.find(m => m.name === 'Calves')?.score || 0)} 
-          stroke="#ffffff" strokeWidth="2" opacity="0.9"/>
-        <text x="200" y="466" textAnchor="middle" className="fill-white text-xs font-medium">
-          Calves {muscleGroups.find(m => m.name === 'Calves')?.score || 0}%
-        </text>
-      </svg>
-      
-      {/* Enhanced Legend */}
-      <div className="mt-6 space-y-2">
-        <h4 className="text-sm font-medium text-center text-foreground mb-3">Muscle Development Scale</h4>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#6b7280' }}></div>
-            <span className="text-muted-foreground">0-30%</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }}></div>
-            <span className="text-muted-foreground">30-50%</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f59e0b' }}></div>
-            <span className="text-muted-foreground">50-60%</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#3b82f6' }}></div>
-            <span className="text-muted-foreground">60-70%</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10b981' }}></div>
-            <span className="text-muted-foreground">70-80%</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#a855f7' }}></div>
-            <span className="text-muted-foreground">80%+</span>
+        {/* Enhanced Legend */}
+        <div className="mt-6 space-y-3">
+          <h4 className="text-sm font-medium text-center text-foreground mb-3">Development Intensity</h4>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#6b7280' }}></div>
+              <span className="text-muted-foreground">Untrained</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#4c1d95' }}></div>
+              <span className="text-muted-foreground">Beginner</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#6d28d9' }}></div>
+              <span className="text-muted-foreground">Intermediate</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#a855f7' }}></div>
+              <span className="text-muted-foreground">Advanced</span>
+            </div>
           </div>
         </div>
       </div>
@@ -942,11 +871,10 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
         <TabsContent value="overview" className="space-y-6">
           {/* Core Performance Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
               { key: 'strength', icon: Dumbbell, label: 'Strength', color: 'text-red-400' },
               { key: 'endurance', icon: Heart, label: 'Endurance', color: 'text-pink-400' },
-              { key: 'power', icon: Zap, label: 'Power', color: 'text-yellow-400' },
               { key: 'consistency', icon: Activity, label: 'Consistency', color: 'text-green-400' },
               { key: 'nutrition', icon: Scale, label: 'Nutrition', color: 'text-blue-400' },
               { key: 'recovery', icon: Shield, label: 'Recovery', color: 'text-purple-400' }
@@ -1168,35 +1096,15 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             </Card>
           </div>
 
-          {/* Biometric Data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <BiometricCard
-              icon={Heart}
-              title="Heart Rate Variability"
-              value={biometrics.heartRateVariability}
-              unit="ms"
-              description="Autonomic nervous system balance"
-              color="bg-gradient-to-br from-red-500/20 to-red-600/30"
-              target={50}
-            />
-            
-            <BiometricCard
-              icon={Activity}
-              title="Resting Heart Rate"
-              value={biometrics.restingHeartRate}
-              unit="bpm"
-              description="Cardiovascular fitness indicator"
-              color="bg-gradient-to-br from-blue-500/20 to-blue-600/30"
-              target={60}
-            />
-            
+          {/* Recovery Data */}
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             <BiometricCard
               icon={Shield}
               title="Recovery Score"
               value={biometrics.recoveryScore}
               unit="%"
-              description="Overall physiological readiness"
-              color="bg-gradient-to-br from-green-500/20 to-green-600/30"
+              description="Based on sleep and stress tracking data"
+              color="bg-gradient-to-br from-purple-500/20 to-purple-600/30"
               target={80}
             />
           </div>
@@ -1213,23 +1121,12 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Focus & Concentration</span>
-                    <span className="text-lg font-bold text-foreground">{Math.round(metrics.technique)}%</span>
+                    <span className="text-sm font-medium text-foreground">Mental Discipline</span>
+                    <span className="text-lg font-bold text-foreground">{metrics.discipline}%</span>
                   </div>
-                  <Progress value={metrics.technique} className="h-3" />
+                  <Progress value={metrics.discipline} className="h-3" />
                   <p className="text-sm text-muted-foreground">
-                    Mind-muscle connection and exercise execution quality
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Stress Management</span>
-                    <span className="text-lg font-bold text-foreground">{Math.round(100 - biometrics.stressIndex * 20)}%</span>
-                  </div>
-                  <Progress value={100 - biometrics.stressIndex * 20} className="h-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Ability to manage training and life stress
+                    Consistency in training, nutrition and recovery habits
                   </p>
                 </div>
               </div>
@@ -1242,56 +1139,45 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Beaker className="w-5 h-5 text-primary" />
-                <span>Scientific Analysis</span>
+                <span>Training Analytics</span>
               </CardTitle>
               <CardDescription>
-                Evidence-based insights and exercise science principles
+                Data-driven insights from your actual workout data
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Scientific Metrics Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Real Metrics Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-muted/30 p-4 rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Atom className="w-5 h-5 text-blue-400" />
-                    <span className="text-sm font-medium text-foreground">Adaptation Score</span>
+                    <BarChart3 className="w-5 h-5 text-purple-400" />
+                    <span className="text-sm font-medium text-foreground">Total Volume</span>
                   </div>
-                  <div className="text-2xl font-bold text-foreground">{metrics.adaptation}%</div>
+                  <div className="text-2xl font-bold text-foreground">{analytics.totalVolume.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Progressive overload response
+                    Total weight lifted (kg)
                   </p>
                 </div>
 
                 <div className="bg-muted/30 p-4 rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Zap className="w-5 h-5 text-yellow-400" />
-                    <span className="text-sm font-medium text-foreground">Power Output</span>
+                    <Activity className="w-5 h-5 text-green-400" />
+                    <span className="text-sm font-medium text-foreground">Workouts Completed</span>
                   </div>
-                  <div className="text-2xl font-bold text-foreground">{metrics.power}%</div>
+                  <div className="text-2xl font-bold text-foreground">{analytics.totalWorkouts}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Explosive movement capacity
+                    Training sessions logged
                   </p>
                 </div>
 
                 <div className="bg-muted/30 p-4 rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
-                    <BarChart3 className="w-5 h-5 text-green-400" />
-                    <span className="text-sm font-medium text-foreground">Volume Load</span>
+                    <Flame className="w-5 h-5 text-orange-400" />
+                    <span className="text-sm font-medium text-foreground">Avg Intensity</span>
                   </div>
-                  <div className="text-2xl font-bold text-foreground">{metrics.volumeLoad}%</div>
+                  <div className="text-2xl font-bold text-foreground">{analytics.averageIntensity}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Training volume optimization
-                  </p>
-                </div>
-
-                <div className="bg-muted/30 p-4 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Eye className="w-5 h-5 text-purple-400" />
-                    <span className="text-sm font-medium text-foreground">Technique</span>
-                  </div>
-                  <div className="text-2xl font-bold text-foreground">{metrics.technique}%</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Movement quality score
+                    Average RPE rating
                   </p>
                 </div>
               </div>

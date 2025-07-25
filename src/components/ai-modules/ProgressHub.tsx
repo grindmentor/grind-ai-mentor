@@ -191,92 +191,138 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
     setIsLoading(true);
     try {
-      // Parallel data fetching for performance
+      // Optimized parallel data fetching with smaller queries
       const [
-        workoutSessions,
-        progressEntries,
-        foodEntries,
-        recoveryEntries,
-        habitCompletions
+        { data: workoutSessions, error: workoutError },
+        { data: progressEntries, error: progressError },
+        { data: foodEntries, error: foodError },
+        { data: recoveryEntries, error: recoveryError }
       ] = await Promise.all([
-        supabase.from('workout_sessions').select('*').eq('user_id', user.id),
-        supabase.from('progressive_overload_entries').select('*').eq('user_id', user.id),
-        supabase.from('food_log_entries').select('*').eq('user_id', user.id),
-        supabase.from('recovery_data').select('*').eq('user_id', user.id),
-        supabase.from('habit_completions').select('*').eq('user_id', user.id)
+        supabase.from('workout_sessions').select('session_date, duration_minutes, workout_type, workout_name, created_at').eq('user_id', user.id).limit(100),
+        supabase.from('progressive_overload_entries').select('exercise_name, weight, sets, reps, workout_date, rpe, created_at').eq('user_id', user.id).limit(200),
+        supabase.from('food_log_entries').select('logged_date, protein, calories, created_at').eq('user_id', user.id).limit(100),
+        supabase.from('recovery_data').select('sleep_hours, stress_level, recorded_date, created_at').eq('user_id', user.id).limit(50)
       ]);
 
-      // Calculate comprehensive analytics
-      const workoutData = workoutSessions.data || [];
-      const progressData = progressEntries.data || [];
-      const nutritionData = foodEntries.data || [];
-      const recoveryData = recoveryEntries.data || [];
-      
-      // Calculate performance analytics
-      const totalVolume = progressData.reduce((sum, entry) => 
-        sum + (entry.weight * entry.sets * entry.reps), 0
-      );
-      
-      const consistencyStreak = calculateConsistencyStreak(workoutData);
-      const weeklyTrend = calculateWeeklyTrend(workoutData);
-      const monthlyTrend = calculateMonthlyTrend(workoutData);
-      
-      // Enhanced muscle group analysis
-      const enhancedMuscleGroups = calculateEnhancedMuscleGroups(progressData, workoutData);
-      
-      // Scientific metric calculations
-      const strengthScore = calculateStrengthScore(progressData, workoutData);
-      const enduranceScore = calculateEnduranceScore(workoutData);
-      const nutritionScore = calculateNutritionScore(nutritionData);
-      const recoveryScore = calculateRecoveryScore(recoveryData);
-      const consistencyScore = calculateConsistencyScore(workoutData, nutritionData);
-      const disciplineScore = Math.round((consistencyScore + nutritionScore + recoveryScore) / 3);
-      
-      // Advanced metrics
-      const powerScore = calculatePowerScore(progressData);
-      const adaptationScore = calculateAdaptationScore(progressData);
-      const techniqueScore = calculateTechniqueScore(progressData);
-      const volumeLoadScore = calculateVolumeLoadScore(totalVolume);
-      
-      const overallScore = Math.round(
-        (strengthScore + enduranceScore + nutritionScore + recoveryScore + 
-         consistencyScore + powerScore + adaptationScore) / 7
-      );
+      // Handle errors
+      if (workoutError) console.warn('Workout data error:', workoutError);
+      if (progressError) console.warn('Progress data error:', progressError);
+      if (foodError) console.warn('Food data error:', foodError);
+      if (recoveryError) console.warn('Recovery data error:', recoveryError);
 
-      setMetrics({
-        overall: overallScore,
-        strength: strengthScore,
-        endurance: enduranceScore,
-        power: powerScore,
-        flexibility: calculateFlexibilityScore(),
-        consistency: consistencyScore,
-        nutrition: nutritionScore,
-        recovery: recoveryScore,
-        discipline: disciplineScore,
-        adaptation: adaptationScore,
-        technique: techniqueScore,
-        volumeLoad: volumeLoadScore
-      });
+      // Use fallback data if queries fail
+      const workoutData = workoutSessions || [];
+      const progressData = progressEntries || [];
+      const nutritionData = foodEntries || [];
+      const recoveryData = recoveryEntries || [];
 
-      setMuscleGroups(enhancedMuscleGroups);
+      // Show some default data even if user has no data yet
+      const hasAnyData = workoutData.length > 0 || progressData.length > 0 || nutritionData.length > 0;
       
-      setAnalytics({
-        weeklyTrend,
-        monthlyTrend,
-        strengthProgression: calculateStrengthProgression(progressData),
-        enduranceProgression: calculateEnduranceProgression(workoutData),
-        consistencyStreak,
-        totalWorkouts: workoutData.length,
-        totalVolume,
-        averageIntensity: calculateAverageIntensity(progressData)
-      });
+      if (!hasAnyData) {
+        // Set demo/default metrics for new users
+        setMetrics({
+          overall: 25,
+          strength: 15,
+          endurance: 20,
+          power: 10,
+          flexibility: 30,
+          consistency: 5,
+          nutrition: 35,
+          recovery: 40,
+          discipline: 20,
+          adaptation: 15,
+          technique: 25,
+          volumeLoad: 10
+        });
+        
+        // Set sample muscle groups for demo
+        setMuscleGroups(prev => prev.map(group => ({
+          ...group,
+          score: Math.floor(Math.random() * 30) + 10, // 10-40% for new users
+          volume: Math.floor(Math.random() * 500),
+          frequency: Math.floor(Math.random() * 3) + 1,
+          intensity: 6 + Math.random() * 2,
+          progressTrend: 'stable' as const
+        })));
+        
+        setAnalytics({
+          weeklyTrend: 0,
+          monthlyTrend: 0,
+          strengthProgression: 0,
+          enduranceProgression: 0,
+          consistencyStreak: 0,
+          totalWorkouts: 0,
+          totalVolume: 0,
+          averageIntensity: 0
+        });
+      } else {
+        // Calculate comprehensive analytics with actual data
+        const totalVolume = progressData.reduce((sum, entry) => 
+          sum + (entry.weight * entry.sets * entry.reps), 0
+        );
+        
+        const consistencyStreak = calculateConsistencyStreak(workoutData);
+        const weeklyTrend = calculateWeeklyTrend(workoutData);
+        const monthlyTrend = calculateMonthlyTrend(workoutData);
+        
+        // Enhanced muscle group analysis
+        const enhancedMuscleGroups = calculateEnhancedMuscleGroups(progressData, workoutData);
+        
+        // Scientific metric calculations
+        const strengthScore = calculateStrengthScore(progressData, workoutData);
+        const enduranceScore = calculateEnduranceScore(workoutData);
+        const nutritionScore = calculateNutritionScore(nutritionData);
+        const recoveryScore = calculateRecoveryScore(recoveryData);
+        const consistencyScore = calculateConsistencyScore(workoutData, nutritionData);
+        const disciplineScore = Math.round((consistencyScore + nutritionScore + recoveryScore) / 3);
+        
+        // Advanced metrics
+        const powerScore = calculatePowerScore(progressData);
+        const adaptationScore = calculateAdaptationScore(progressData);
+        const techniqueScore = calculateTechniqueScore(progressData);
+        const volumeLoadScore = calculateVolumeLoadScore(totalVolume);
+        
+        const overallScore = Math.round(
+          (strengthScore + enduranceScore + nutritionScore + recoveryScore + 
+           consistencyScore + powerScore + adaptationScore) / 7
+        );
+
+        setMetrics({
+          overall: overallScore,
+          strength: strengthScore,
+          endurance: enduranceScore,
+          power: powerScore,
+          flexibility: calculateFlexibilityScore(),
+          consistency: consistencyScore,
+          nutrition: nutritionScore,
+          recovery: recoveryScore,
+          discipline: disciplineScore,
+          adaptation: adaptationScore,
+          technique: techniqueScore,
+          volumeLoad: volumeLoadScore
+        });
+
+        setMuscleGroups(enhancedMuscleGroups);
+        
+        setAnalytics({
+          weeklyTrend,
+          monthlyTrend,
+          strengthProgression: calculateStrengthProgression(progressData),
+          enduranceProgression: calculateEnduranceProgression(workoutData),
+          consistencyStreak,
+          totalWorkouts: workoutData.length,
+          totalVolume,
+          averageIntensity: calculateAverageIntensity(progressData)
+        });
+      }
 
       setBiometrics({
         heartRateVariability: 45 + Math.random() * 20, // Simulated for demo
         restingHeartRate: 60 + Math.random() * 20,
         sleepEfficiency: 75 + Math.random() * 20,
         stressIndex: Math.random() * 5,
-        recoveryScore: recoveryScore
+        recoveryScore: hasAnyData ? calculateRecoveryScore(recoveryData) : 40
       });
 
       setLastUpdated(new Date());
@@ -581,10 +627,10 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   // Helper functions for display
   const getScoreColor = (score: number): string => {
     if (score >= 95) return 'text-purple-400 bg-purple-500/20 border-purple-500/40';
-    if (score >= 85) return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/40';
-    if (score >= 70) return 'text-green-400 bg-green-500/20 border-green-500/40';
-    if (score >= 50) return 'text-blue-400 bg-blue-500/20 border-blue-500/40';
-    return 'text-red-400 bg-red-500/20 border-red-500/40';
+    if (score >= 85) return 'text-purple-300 bg-purple-400/20 border-purple-400/40';
+    if (score >= 70) return 'text-violet-400 bg-violet-500/20 border-violet-500/40';
+    if (score >= 50) return 'text-indigo-400 bg-indigo-500/20 border-indigo-500/40';
+    return 'text-gray-400 bg-gray-500/20 border-gray-500/40';
   };
 
   const getScoreLabel = (score: number): string => {
@@ -604,12 +650,12 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   };
 
   const getMuscleColor = (score: number): string => {
-    if (score >= 90) return '#8b5cf6'; // Violet
-    if (score >= 80) return '#a855f7'; // Purple
-    if (score >= 70) return '#10b981'; // Green
-    if (score >= 60) return '#3b82f6'; // Blue
-    if (score >= 50) return '#f59e0b'; // Orange
-    if (score >= 30) return '#ef4444'; // Red
+    if (score >= 90) return '#a855f7'; // Purple
+    if (score >= 80) return '#8b5cf6'; // Violet
+    if (score >= 70) return '#7c3aed'; // Purple-600
+    if (score >= 60) return '#6d28d9'; // Purple-700
+    if (score >= 50) return '#5b21b6'; // Purple-800
+    if (score >= 30) return '#4c1d95'; // Purple-900
     return '#6b7280'; // Gray
   };
 
@@ -780,7 +826,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="p-4 space-y-6 bg-gradient-to-br from-background via-primary/5 to-primary/10 min-h-screen">
+    <div className="p-4 space-y-6 bg-gradient-to-br from-purple-900/20 via-violet-900/10 to-purple-800/20 min-h-screen">
       {/* Enhanced Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center space-x-4">
@@ -795,8 +841,8 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
               Back
             </Button>
           )}
-          <div className="w-16 h-16 bg-gradient-to-r from-primary/30 to-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
-            <Microscope className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-500/30 to-violet-600/20 rounded-xl flex items-center justify-center border border-purple-500/30">
+            <Microscope className="w-8 h-8 text-purple-400" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">Scientific Progress Hub</h1>
@@ -826,7 +872,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
       {/* Elite Performance Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Card className="lg:col-span-2 bg-gradient-to-r from-primary/20 to-primary/15 border-primary/30">
+        <Card className="lg:col-span-2 bg-gradient-to-r from-purple-500/20 to-violet-600/15 border-purple-500/30">
           <CardContent className="p-8">
             <div className="flex items-center justify-between">
               <div>
@@ -845,7 +891,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 </div>
               </div>
               <div className="text-center">
-                <Trophy className="w-16 h-16 text-primary mb-2 mx-auto" />
+                <Trophy className="w-16 h-16 text-purple-400 mb-2 mx-auto" />
                 <div className="text-sm text-muted-foreground">
                   Rank #{Math.max(1, Math.floor((100 - metrics.overall) * 100 / 15))}
                 </div>

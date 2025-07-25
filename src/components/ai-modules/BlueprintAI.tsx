@@ -55,8 +55,11 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
 
   useEffect(() => {
     loadUserProfile();
-    loadWorkouts();
   }, [user]);
+
+  useEffect(() => {
+    loadWorkouts();
+  }, []);
 
   const loadUserProfile = async () => {
     if (!user) return;

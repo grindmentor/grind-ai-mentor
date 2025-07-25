@@ -28,8 +28,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <Logo size="xl" />
         </div>
         
-        {/* Dimmed loading indicator */}
-        <div className="flex items-center justify-center space-x-3">
+        {/* Centered loading indicator */}
+        <div className="flex flex-col items-center justify-center space-y-3">
           <Loader2 className="w-6 h-6 animate-spin text-orange-500/80" />
           <span className="text-foreground/90 text-lg font-medium">{message}</span>
         </div>

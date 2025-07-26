@@ -21,29 +21,56 @@ const AuthCallback = () => {
       try {
         console.log('Processing auth callback, iOS PWA:', isIOSPWA());
         
-        // Get the session from the URL hash
-        const { data, error } = await supabase.auth.getSession();
+        // Check URL params for auth tokens (email confirmation)
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
         
-        if (error) {
-          console.error('Auth callback error:', error);
-          setError(error.message);
-          // Redirect to signin on error
-          setTimeout(() => navigate('/signin'), 2000);
-          return;
-        }
+        if (accessToken && refreshToken) {
+          // Set the session using the tokens from URL
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (error) {
+            console.error('Auth callback error:', error);
+            setError(error.message);
+            setTimeout(() => navigate('/signin'), 2000);
+            return;
+          }
 
-        if (data.session) {
-          console.log('Auth callback successful, user:', data.session.user.email);
-          
-          // For iOS PWA, add extra delay to ensure proper state management
-          const redirectDelay = isIOSPWA() ? 1500 : 500;
-          
-          setTimeout(() => {
-            navigate('/app', { replace: true });
-          }, redirectDelay);
+          if (data.session) {
+            console.log('Auth callback successful, user:', data.session.user.email);
+            
+            // For iOS PWA, add extra delay to ensure proper state management
+            const redirectDelay = isIOSPWA() ? 1500 : 500;
+            
+            setTimeout(() => {
+              navigate('/app', { replace: true });
+            }, redirectDelay);
+          } else {
+            console.log('No session created from tokens');
+            navigate('/signin', { replace: true });
+          }
         } else {
-          console.log('No session found in auth callback');
-          navigate('/signin', { replace: true });
+          // Check for existing session if no URL tokens
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('Auth session error:', error);
+            setError(error.message);
+            setTimeout(() => navigate('/signin'), 2000);
+            return;
+          }
+
+          if (session) {
+            console.log('Existing session found, redirecting to app');
+            navigate('/app', { replace: true });
+          } else {
+            console.log('No session found in auth callback');
+            navigate('/signin', { replace: true });
+          }
         }
       } catch (err) {
         console.error('Unexpected auth callback error:', err);

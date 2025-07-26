@@ -11,7 +11,7 @@ import { playSuccessSound, playErrorSound, playClickSound } from "@/utils/soundE
 import { Shield, Heart, Zap, Check } from "lucide-react";
 
 interface EnhancedSignUpProps {
-  onSuccess: () => void;
+  onSuccess: (email: string) => void;
   onSwitchToSignIn: () => void;
 }
 
@@ -96,7 +96,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
         playErrorSound();
       } else {
         playSuccessSound();
-        onSuccess();
+        onSuccess(email);
       }
     } catch (err) {
       setError("An unexpected error occurred");

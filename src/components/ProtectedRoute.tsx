@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );

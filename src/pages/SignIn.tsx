@@ -27,12 +27,17 @@ const SignIn = () => {
     try {
       const { error } = await signIn(email, password);
       if (error) {
-        setError(error.message);
-      } else {
-        navigate('/app');
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Please check your email and click the verification link before signing in.');
+        } else {
+          setError(error.message);
+        }
       }
+      // Navigation handled by AuthContext
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

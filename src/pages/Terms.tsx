@@ -7,7 +7,7 @@ import Logo from "@/components/ui/logo";
 
 const Terms = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/20 to-orange-700 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/20 to-orange-700 text-foreground">
       {/* Mobile-Optimized Header */}
       <nav 
         className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800 px-4 py-3"

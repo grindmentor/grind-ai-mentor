@@ -108,8 +108,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // For logged-in users, redirect immediately without delay
         if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          // Use replace to avoid back button issues and immediate redirect
-          window.location.replace('/app');
+          // Use navigate instead of location.replace for better UX
+          setTimeout(() => {
+            if (window.location.pathname !== '/app') {
+              window.location.replace('/app');
+            }
+          }, 100);
         }
       } else if (event === 'SIGNED_OUT') {
         setIsNewUser(false);
@@ -139,9 +143,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
         checkOnboardingStatus(session.user.id);
         
-        // Instant redirect for existing sessions - use location.replace for fastest redirect
+        // Instant redirect for existing sessions
         if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          window.location.replace('/app');
+          setTimeout(() => {
+            if (window.location.pathname !== '/app') {
+              window.location.replace('/app');
+            }
+          }, 50);
         }
       }
       

@@ -18,6 +18,7 @@ import ModuleLibrary from "./pages/ModuleLibrary";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import AuthCallback from "./pages/AuthCallback";
+import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
@@ -25,6 +26,7 @@ import ModulesProvider from "@/contexts/ModulesContext";
 import { ExerciseShareProvider } from "@/contexts/ExerciseShareContext";
 import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { AppOptimizations } from "@/components/AppOptimizations";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,7 @@ function App() {
             <ModulesProvider>
               <ExerciseShareProvider>
                 <TooltipProvider>
+                  <AppOptimizations />
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
@@ -101,6 +104,7 @@ function App() {
                         <Route path="/terms" element={<Terms />} />
                         <Route path="/privacy" element={<Privacy />} />
                         <Route path="/about" element={<About />} />
+                        <Route path="*" element={<NotFound />} />
                       </Routes>
                     </div>
                   </BrowserRouter>

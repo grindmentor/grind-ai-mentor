@@ -2,9 +2,7 @@
 const CACHE_NAME = 'myotopia-shell-v1';
 const CRITICAL_RESOURCES = [
   '/',
-  '/app',
-  '/static/js/main.js',
-  '/static/css/main.css'
+  '/app'
 ];
 
 export class AppShellCache {
@@ -22,14 +20,14 @@ export class AppShellCache {
       try {
         const cache = await caches.open(CACHE_NAME);
         
-        // Cache critical shell resources
-        await cache.addAll(CRITICAL_RESOURCES);
-        
-        // Preload fonts instantly
-        const fontLinks = document.querySelectorAll('link[rel="preload"][as="font"]');
-        const fontUrls = Array.from(fontLinks).map(link => (link as HTMLLinkElement).href);
-        if (fontUrls.length > 0) {
-          await cache.addAll(fontUrls);
+        // Cache only essential routes, not static assets
+        for (const resource of CRITICAL_RESOURCES) {
+          try {
+            await cache.add(resource);
+          } catch (error) {
+            console.warn(`Failed to cache ${resource}:`, error);
+            // Continue with other resources even if one fails
+          }
         }
         
         console.log('App shell cached successfully');

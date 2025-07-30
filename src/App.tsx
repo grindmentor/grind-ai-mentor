@@ -34,10 +34,10 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Instant app initialization - eliminate artificial delays
+    // Instant app initialization for production
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 50); // Reduced to minimal delay for smooth transition
+    }, 25); // Minimal delay for smooth transition
 
     return () => clearTimeout(timer);
   }, []);

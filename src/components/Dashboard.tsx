@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { useNavigate } from 'react-router-dom';
@@ -136,37 +136,28 @@ const Dashboard = () => {
   }, [location.state, selectedModule]);
 
   // Optimized module click handler with preloading
-  const handleModuleClick = useMemo(() => {
-    const handler = (module: any) => {
-      console.log('Module clicked:', module.id, 'at', new Date().toISOString());
-      
-      // Preload the module if not already loaded
-      if (module.id && !lowDataMode) {
-        preloadModule(module.id);
-      }
-      
-      try {
-        setSelectedModule(module);
-        setNavigationSource('dashboard');
-      } catch (error) {
-        console.error('Error setting selected module:', error);
-      }
-    };
-    return createDebouncedFunction(handler, 150) as (module: any) => void;
-  }, [createDebouncedFunction, preloadModule, lowDataMode]);
+  const handleModuleClick = useCallback((module: any) => {
+    // Preload the module if not already loaded
+    if (module.id && !lowDataMode) {
+      preloadModule(module.id);
+    }
+    
+    try {
+      setSelectedModule(module);
+      setNavigationSource('dashboard');
+    } catch (error) {
+      console.error('Error setting selected module:', error);
+    }
+  }, [preloadModule, lowDataMode]);
 
-  const handleBackToDashboard = useMemo(() => {
-    const handler = () => {
-      console.log('Returning to dashboard at', new Date().toISOString());
-      try {
-        setSelectedModule(null);
-        setShowNotifications(false);
-      } catch (error) {
-        console.error('Error returning to dashboard:', error);
-      }
-    };
-    return createDebouncedFunction(handler, 100) as () => void;
-  }, [createDebouncedFunction]);
+  const handleBackToDashboard = useCallback(() => {
+    try {
+      setSelectedModule(null);
+      setShowNotifications(false);
+    } catch (error) {
+      console.error('Error returning to dashboard:', error);
+    }
+  }, []);
 
   const handleNotificationsClick = () => {
     setShowNotifications(true);
@@ -180,12 +171,9 @@ const Dashboard = () => {
     navigate('/settings');
   };
 
-  const handleFoodLogged = useMemo(() => {
-    const handler = (data: any) => {
-      console.log('Food logged:', data);
-    };
-    return createDebouncedFunction(handler, 200) as (data: any) => void;
-  }, [createDebouncedFunction]);
+  const handleFoodLogged = useCallback((data: any) => {
+    console.log('Food logged:', data);
+  }, []);
 
   // Memoized computed values with caching - Fixed favorites update issue
   const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
@@ -272,7 +260,7 @@ const Dashboard = () => {
     }
   }
 
-  console.log('Rendering dashboard with', modules.length, 'total modules');
+  // Remove excessive console logs that cause performance issues
 
   return (
     <ErrorBoundary>

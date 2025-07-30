@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,13 +9,19 @@ export const useFavorites = () => {
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const loadingRef = useRef(false);
 
-  // Load favorites from Supabase with debugging
-  const loadFavorites = async () => {
+  // Load favorites from Supabase with debugging and deduplication
+  const loadFavorites = useCallback(async () => {
+    if (loadingRef.current) return; // Prevent concurrent loads
+    
+    loadingRef.current = true;
     console.log('Loading favorites for user:', user?.id);
+    
     if (!user) {
       setFavorites([]);
       setLoading(false);
+      loadingRef.current = false;
       return;
     }
 
@@ -55,8 +61,9 @@ export const useFavorites = () => {
       }
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
-  };
+  }, [user]);
 
   // Save favorites to Supabase
   const saveFavorites = async (newFavorites: string[]) => {
@@ -93,7 +100,7 @@ export const useFavorites = () => {
   };
 
   // Toggle favorite with optimistic updates and console logging
-  const toggleFavorite = async (moduleId: string) => {
+  const toggleFavorite = useCallback(async (moduleId: string) => {
     console.log('Toggle favorite called for module:', moduleId);
     console.log('Current favorites:', favorites);
     
@@ -110,11 +117,6 @@ export const useFavorites = () => {
       await saveFavorites(newFavorites);
       console.log('Favorites saved successfully:', newFavorites);
       
-      // Force a reload to ensure data consistency
-      setTimeout(() => {
-        loadFavorites();
-      }, 500);
-      
       toast({
         title: favorites.includes(moduleId) ? "Removed from Favorites" : "Added to Favorites",
         description: `Module ${favorites.includes(moduleId) ? 'removed from' : 'added to'} your favorites.`
@@ -129,7 +131,7 @@ export const useFavorites = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [favorites, saveFavorites, toast]);
 
   useEffect(() => {
     loadFavorites();

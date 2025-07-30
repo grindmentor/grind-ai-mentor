@@ -1,8 +1,15 @@
 
+// Performance monitor initialization
+import { performanceMonitor } from '@/utils/performanceMonitor';
+
+// Start app loading measurement
+performanceMonitor.startMeasure('app-startup');
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import "./utils/prodOptimizations.ts"
 import { PerformanceProvider } from '@/components/ui/performance-provider'
 import { loadAppShell } from '@/utils/appShellCache'
 
@@ -228,7 +235,9 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
-// Log total app initialization time
+// End app loading measurement and log total app initialization time
+performanceMonitor.endMeasure('app-startup');
+
 window.addEventListener('load', () => {
   const totalTime = performance.now() - appStart;
   console.log(`[Performance] Total app initialization: ${totalTime.toFixed(2)}ms`);

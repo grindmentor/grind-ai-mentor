@@ -58,11 +58,11 @@ const Dashboard = () => {
   const { currentTier, currentTierData } = useSubscription();
   const { preloadModule } = useModulePreloader();
   
-  // Instant loading optimization
+  // Ultra-aggressive instant loading
   const { isShellReady, trackInteraction, warmupRoute } = useInstantLoading({
-    preloadModules: ['CoachGPT', 'SmartTraining', 'WorkoutLoggerAI'],
+    preloadModules: ['CoachGPT', 'SmartTraining', 'WorkoutLoggerAI', 'TDEECalculator', 'ProgressHub', 'BlueprintAI'],
     enablePredictiveLoading: true,
-    aggressiveCaching: !lowDataMode
+    aggressiveCaching: true
   });
 
   const { 

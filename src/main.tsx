@@ -204,24 +204,33 @@ criticalFonts.forEach((fontUrl, index) => {
   }, index * 50);
 });
 
-// Ultra-optimized critical component preloading
-if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-  window.requestIdleCallback(() => {
-    // Preload critical components in order of importance
-    const criticalImports = [
-      () => import('./components/Dashboard'),
-      () => import('./components/ui/loading-screen'),
-      () => import('./components/ai-modules/CoachGPT'),
-      () => import('./components/ai-modules/SmartTraining'),
-      () => import('./components/ai-modules/WorkoutLoggerAI')
-    ];
+// Ultra-aggressive critical component preloading
+if (typeof window !== 'undefined') {
+  // Immediate preloading without waiting for idle
+  const criticalImports = [
+    () => import('./components/Dashboard'),
+    () => import('./components/ui/loading-screen'),
+    () => import('./components/ai-modules/CoachGPT'),
+    () => import('./components/ai-modules/SmartTraining'),
+    () => import('./components/ai-modules/WorkoutLoggerAI'),
+    () => import('./components/ai-modules/TDEECalculator'),
+    () => import('./components/ai-modules/ProgressHub'),
+    () => import('./components/ai-modules/BlueprintAI')
+  ];
 
-    criticalImports.forEach((importFn, index) => {
-      setTimeout(() => {
-        importFn().catch(() => {});
-      }, index * 100);
-    });
+  // Load all critical components immediately in parallel
+  criticalImports.forEach((importFn, index) => {
+    setTimeout(() => {
+      importFn().catch(() => {});
+    }, index * 10); // Minimal 10ms stagger
   });
+
+  // Preload remaining modules after critical ones
+  setTimeout(() => {
+    import('./utils/instantCache').then(({ instantCache }) => {
+      instantCache.preloadAll();
+    });
+  }, 100);
 }
 
 // Performance measurement

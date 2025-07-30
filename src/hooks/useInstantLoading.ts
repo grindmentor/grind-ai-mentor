@@ -18,27 +18,29 @@ export const useInstantLoading = (options: InstantLoadingOptions = {}) => {
       // Instantly mark shell as ready for immediate UI render
       setIsShellReady(true);
       
-      // Background shell caching
-      await shellCache.current.preloadCriticalResources();
+      // Ultra-fast background loading
+      setTimeout(() => {
+        shellCache.current.preloadCriticalResources();
+      }, 10);
       
       if (options.preloadModules) {
-        // Predictive module preloading
+        // Immediate aggressive preloading
         const preloadPromises = options.preloadModules.map(async (moduleName) => {
           try {
-            // Dynamic import with prefetch
-            await import(/* webpackPrefetch: true */ `@/components/ai-modules/${moduleName}.tsx`);
+            // Dynamic import with immediate execution
+            const module = await import(/* webpackPrefetch: true */ `@/components/ai-modules/${moduleName}.tsx`);
             setPreloadedModules(prev => new Set([...prev, moduleName]));
+            return module;
           } catch (error) {
             console.warn(`Failed to preload module ${moduleName}:`, error);
+            return null;
           }
         });
         
-        // Staggered loading to avoid blocking
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(() => Promise.all(preloadPromises));
-        } else {
-          setTimeout(() => Promise.all(preloadPromises), 100);
-        }
+        // Execute all preloads immediately in parallel
+        Promise.all(preloadPromises).then(() => {
+          console.log(`[InstantLoading] Preloaded ${options.preloadModules?.length} modules instantly`);
+        });
       }
     };
 

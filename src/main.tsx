@@ -225,12 +225,7 @@ if (typeof window !== 'undefined') {
     }, index * 10); // Minimal 10ms stagger
   });
 
-  // Preload remaining modules after critical ones
-  setTimeout(() => {
-    import('./utils/instantCache').then(({ instantCache }) => {
-      instantCache.preloadAll();
-    });
-  }, 100);
+  // Simple module loading - no aggressive preloading
 }
 
 // Performance measurement

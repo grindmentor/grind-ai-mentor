@@ -27,7 +27,6 @@ import { SmoothPageTransition } from '@/components/ui/smooth-page-transition';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
 import { toast } from 'sonner';
 import { useInstantLoading } from '@/hooks/useInstantLoading';
-import { useAggressiveModulePreloader } from '@/hooks/useAggressiveModulePreloader';
 import { NativeTransition, NativePageTransition } from '@/components/ui/native-transitions';
 import { NativeButton } from '@/components/ui/native-button';
 
@@ -58,22 +57,8 @@ const Dashboard = () => {
   const { currentTier, currentTierData } = useSubscription();
   const { preloadModule } = useModulePreloader();
   
-  // Ultra-aggressive instant loading
-  const { isShellReady, trackInteraction, warmupRoute } = useInstantLoading({
-    preloadModules: ['CoachGPT', 'SmartTraining', 'WorkoutLoggerAI', 'TDEECalculator', 'ProgressHub', 'BlueprintAI'],
-    enablePredictiveLoading: true,
-    aggressiveCaching: true
-  });
-
-  const { 
-    preloadOnHover, 
-    preloadOnInteraction, 
-    isModuleReady 
-  } = useAggressiveModulePreloader();
-
-  const handleModuleHover = (moduleId: string) => {
-    preloadOnHover(moduleId);
-  };
+  // Simple loading without aggressive preloading
+  const { isShellReady } = useInstantLoading();
   
   // Session persistence for smooth navigation
   const {
@@ -372,8 +357,6 @@ const Dashboard = () => {
                       favorites={favorites}
                       onModuleClick={handleModuleClick}
                       onToggleFavorite={toggleFavorite}
-                      onModuleHover={handleModuleHover}
-                      onModuleInteraction={preloadOnInteraction}
                     />
                   </Suspense>
                 </div>

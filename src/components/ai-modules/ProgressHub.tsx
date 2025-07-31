@@ -37,6 +37,7 @@ import {
   Cpu
 } from 'lucide-react';
 import { RealisticMuscleMap, MuscleMapLegend } from '@/components/ui/realistic-muscle-map';
+import muscleAnatomyImage from '@/assets/realistic-muscle-anatomy.jpg';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/contexts/UserDataContext';
@@ -880,32 +881,28 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
         <TabsContent value="physique" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Realistic Human Body Visualization */}
+            {/* Professional Anatomical Reference */}
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    <span>Muscle Development Map</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setViewMode(viewMode === 'front' ? 'back' : 'front')}
-                      className="text-xs"
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      {viewMode === 'front' ? 'Back View' : 'Front View'}
-                    </Button>
-                  </div>
+                <CardTitle className="flex items-center space-x-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  <span>Anatomical Muscle Reference</span>
                 </CardTitle>
                 <CardDescription>
-                  Scientific analysis of muscle group training progress and development
+                  Professional anatomical reference showing human muscle system
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RealisticMuscleMap muscleGroups={muscleGroups} viewMode={viewMode} />
+                <div className="relative w-full max-w-2xl mx-auto">
+                  <img 
+                    src={muscleAnatomyImage} 
+                    alt="Human Muscle Anatomy - Front and Back View" 
+                    className="w-full h-auto rounded-lg border border-border/50"
+                  />
+                  <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-muted-foreground">
+                    Professional Reference
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

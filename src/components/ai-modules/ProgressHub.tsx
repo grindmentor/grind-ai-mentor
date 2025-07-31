@@ -28,13 +28,15 @@ import {
   LineChart,
   Users,
   Atom,
+  Eye,
+  RotateCcw,
   Beaker,
   Microscope,
   TrendingDown,
   ChevronUp,
-  Eye,
   Cpu
 } from 'lucide-react';
+import { RealisticMuscleMap, MuscleMapLegend } from '@/components/ui/realistic-muscle-map';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/contexts/UserDataContext';
@@ -138,6 +140,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<'front' | 'back'>('front');
 
   // Scientific calculation thresholds based on exercise science
   const SCIENTIFIC_THRESHOLDS = {
@@ -594,116 +597,7 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
     return '#6b7280'; // Gray
   };
 
-  // Enhanced and better-looking body map
-  const ScientificHumanBody = useMemo(() => (
-    <div className="relative w-full max-w-md mx-auto">
-      <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/30 rounded-2xl p-6 border border-purple-500/20">
-        <svg viewBox="0 0 300 500" className="w-full h-auto">
-          {/* Enhanced human body with better proportions */}
-          
-          {/* Head */}
-          <circle cx="150" cy="45" r="25" fill="rgba(139, 92, 246, 0.3)" stroke="#a855f7" strokeWidth="2"/>
-          
-          {/* Neck */}
-          <rect x="140" y="70" width="20" height="12" fill="rgba(139, 92, 246, 0.2)" rx="6"/>
-          
-          {/* Shoulders */}
-          <ellipse cx="150" cy="100" rx="60" ry="18" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Shoulders')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="150" y="105" textAnchor="middle" className="fill-white text-xs font-medium">
-            Shoulders
-          </text>
-          
-          {/* Chest */}
-          <ellipse cx="150" cy="130" rx="40" ry="22" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Chest')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="150" y="135" textAnchor="middle" className="fill-white text-xs font-medium">
-            Chest
-          </text>
-          
-          {/* Arms */}
-          <ellipse cx="95" cy="145" rx="15" ry="40" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <ellipse cx="205" cy="145" rx="15" ry="40" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Arms')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="95" y="150" textAnchor="middle" className="fill-white text-xs font-medium">Arms</text>
-          
-          {/* Core */}
-          <ellipse cx="150" cy="180" rx="35" ry="28" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Core')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="150" y="185" textAnchor="middle" className="fill-white text-xs font-medium">
-            Core
-          </text>
-          
-          {/* Back (outline) */}
-          <ellipse cx="150" cy="155" rx="50" ry="50" fill="none" 
-            stroke={getMuscleColor(muscleGroups.find(m => m.name === 'Back')?.score || 0)} 
-            strokeWidth="3" opacity="0.6" strokeDasharray="6,3"/>
-          <text x="150" y="160" textAnchor="middle" className="fill-purple-300 text-xs font-medium">
-            Back
-          </text>
-          
-          {/* Glutes */}
-          <ellipse cx="150" cy="230" rx="30" ry="15" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Glutes')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="150" y="235" textAnchor="middle" className="fill-white text-xs font-medium">
-            Glutes
-          </text>
-          
-          {/* Legs */}
-          <ellipse cx="130" cy="310" rx="20" ry="60" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <ellipse cx="170" cy="310" rx="20" ry="60" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Legs')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="150" y="315" textAnchor="middle" className="fill-white text-xs font-medium">
-            Legs
-          </text>
-          
-          {/* Calves */}
-          <ellipse cx="130" cy="410" rx="15" ry="35" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Calves')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <ellipse cx="170" cy="410" rx="15" ry="35" 
-            fill={getMuscleColor(muscleGroups.find(m => m.name === 'Calves')?.score || 0)} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="150" y="415" textAnchor="middle" className="fill-white text-xs font-medium">
-            Calves
-          </text>
-        </svg>
-        
-        {/* Enhanced Legend */}
-        <div className="mt-6 space-y-3">
-          <h4 className="text-sm font-medium text-center text-foreground mb-3">Development Intensity</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#6b7280' }}></div>
-              <span className="text-muted-foreground">Untrained</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#4c1d95' }}></div>
-              <span className="text-muted-foreground">Beginner</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#6d28d9' }}></div>
-              <span className="text-muted-foreground">Intermediate</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#a855f7' }}></div>
-              <span className="text-muted-foreground">Advanced</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  ), [muscleGroups]);
+  // Component removed - now using RealisticMuscleMap
 
   const BiometricCard = ({ icon: Icon, title, value, unit, description, color, target }: {
     icon: any;
@@ -986,19 +880,32 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
         <TabsContent value="physique" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Enhanced Human Body Visualization */}
+            {/* Realistic Human Body Visualization */}
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  <span>Muscle Development Map</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    <span>Muscle Development Map</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setViewMode(viewMode === 'front' ? 'back' : 'front')}
+                      className="text-xs"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      {viewMode === 'front' ? 'Back View' : 'Front View'}
+                    </Button>
+                  </div>
                 </CardTitle>
                 <CardDescription>
                   Scientific analysis of muscle group training progress and development
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {ScientificHumanBody}
+                <RealisticMuscleMap muscleGroups={muscleGroups} viewMode={viewMode} />
               </CardContent>
             </Card>
 
@@ -1053,6 +960,22 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                     )}
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+
+            {/* Muscle Development Legend */}
+            <Card className="bg-card border-border lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Eye className="w-5 h-5 text-primary" />
+                  <span>Development Scale Reference</span>
+                </CardTitle>
+                <CardDescription>
+                  Understanding muscle development levels based on training data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MuscleMapLegend />
               </CardContent>
             </Card>
           </div>

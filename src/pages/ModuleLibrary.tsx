@@ -113,15 +113,14 @@ const ModuleLibrary = () => {
   if (stableLoading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <div className="p-4 sm:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-8 h-8 bg-orange-500/20 rounded animate-pulse" />
-                <div className="h-8 w-48 bg-orange-500/20 rounded animate-pulse" />
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
+          <div className="text-center space-y-6">
+            <div className="w-16 h-16 bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-xl flex items-center justify-center animate-pulse mx-auto">
+              <div className="text-white animate-bounce font-bold tracking-wider font-mono text-lg">
+                MYO
               </div>
-              <LoadingSkeleton type="card" count={6} />
             </div>
+            <p className="text-orange-300 text-lg font-medium">Loading Modules...</p>
           </div>
         </div>
       </PageTransition>

@@ -90,6 +90,7 @@ const ModuleLibrary = () => {
 
   const handleModuleClick = (module) => {
     setSelectedModule(module);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToLibrary = () => {

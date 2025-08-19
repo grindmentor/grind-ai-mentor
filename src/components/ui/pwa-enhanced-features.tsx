@@ -8,7 +8,7 @@ import {
   Bell, 
   Wifi, 
   WifiOff, 
-  Sync, 
+  RefreshCw, 
   ExternalLink,
   FileText,
   Camera,
@@ -316,7 +316,7 @@ export const PWAEnhancedFeatures: React.FC = () => {
                 variant="outline"
                 className="text-xs"
               >
-                <Sync className="w-3 h-3 mr-1" />
+                <RefreshCw className="w-3 h-3 mr-1" />
                 Force Sync
               </Button>
             </div>

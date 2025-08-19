@@ -43,14 +43,16 @@ export const BackgroundSync: React.FC = () => {
     window.addEventListener('offline', handleOffline);
 
     // Register service worker for background sync
-    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Register background sync events
-        registration.sync.register('workout-sync');
-        registration.sync.register('food-log-sync');
-        registration.sync.register('progress-sync');
-        registration.sync.register('goal-sync');
-        registration.sync.register('preference-sync');
+        // Register background sync events (checking for sync support)
+        if ('sync' in registration) {
+          (registration as any).sync.register('workout-sync');
+          (registration as any).sync.register('food-log-sync');
+          (registration as any).sync.register('progress-sync');
+          (registration as any).sync.register('goal-sync');
+          (registration as any).sync.register('preference-sync');
+        }
       });
     }
 

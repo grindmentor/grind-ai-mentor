@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import SubscriptionCard from '../SubscriptionCard';
-import { PaymentMethods } from '../PaymentMethods';
+import PaymentMethods from '../PaymentMethods';
 
 export const EnhancedSubscriptionManager: React.FC = () => {
   const { user } = useAuth();
@@ -235,7 +235,19 @@ export const EnhancedSubscriptionManager: React.FC = () => {
               'Basic progress photos',
               'Community access',
               'Standard exercise library'
-            ]
+            ],
+            limits: {
+              coach_gpt_queries: 5,
+              meal_plan_generations: 0,
+              food_log_analyses: 3,
+              tdee_calculations: 2,
+              habit_checks: 10,
+              training_programs: 0,
+              progress_analyses: 1,
+              cut_calc_uses: 2,
+              workout_timer_sessions: 5,
+              food_photo_analyses: 0
+            }
           }}
           isCurrentTier={currentTier === 'free'}
           onSelect={() => handleTierSelect('free')}
@@ -257,7 +269,19 @@ export const EnhancedSubscriptionManager: React.FC = () => {
               'Priority support',
               'Advanced recovery insights',
               'Detailed body composition analysis'
-            ]
+            ],
+            limits: {
+              coach_gpt_queries: -1,
+              meal_plan_generations: -1,
+              food_log_analyses: -1,
+              tdee_calculations: -1,
+              habit_checks: -1,
+              training_programs: -1,
+              progress_analyses: -1,
+              cut_calc_uses: -1,
+              workout_timer_sessions: -1,
+              food_photo_analyses: 30
+            }
           }}
           isCurrentTier={currentTier === 'premium'}
           isPopular={true}

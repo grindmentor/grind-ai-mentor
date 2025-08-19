@@ -116,44 +116,22 @@ export const PaymentIntegration: React.FC<PaymentIntegrationProps> = ({
     setPaymentMethod('ios');
     
     try {
-      // Capacitor In-App Purchase integration
-      const { PurchasesPlugin } = await import('@capacitor-community/purchases');
+      // iOS In-App Purchase placeholder - will be implemented when app is published to App Store
+      toast.info('iOS in-app purchases will be available in the App Store version');
       
-      // Configure Purchases with RevenueCat
-      await PurchasesPlugin.configure({
-        apiKey: process.env.REACT_APP_REVENUECAT_API_KEY || '',
-        appUserID: null, // Use anonymous ID initially
-      });
-      
-      const productId = `myotopia_premium_${billingPeriod}`;
-      
-      // Make purchase
-      const purchaseResult = await PurchasesPlugin.purchaseProduct({
-        product: productId
-      });
-      
-      if (purchaseResult.customerInfo.activeSubscriptions.includes(productId)) {
-        // Sync with backend
-        await supabase.functions.invoke('sync-ios-purchase', {
-          body: { 
-            receipt: purchaseResult.customerInfo.originalPurchaseDate,
-            productId,
-            tier
-          }
-        });
-        
-        await refreshSubscription();
+      // For now, fallback to Stripe payment
+      setTimeout(() => {
         setIsProcessing(false);
-        
-        if (onSuccess) onSuccess();
-        toast.success('Premium subscription activated!');
-      }
+        setPaymentMethod(null);
+        handleStripePayment();
+      }, 1000);
+      
     } catch (error: any) {
       console.error('iOS purchase error:', error);
       setIsProcessing(false);
       setPaymentMethod(null);
       
-      const errorMessage = error?.message || 'In-app purchase failed';
+      const errorMessage = 'In-app purchase not available';
       if (onError) {
         onError(errorMessage);
       } else {

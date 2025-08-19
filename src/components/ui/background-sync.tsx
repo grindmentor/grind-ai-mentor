@@ -45,14 +45,21 @@ export const BackgroundSync: React.FC = () => {
     // Register service worker for background sync
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Register background sync events (checking for sync support)
+        // Check if background sync is supported
         if ('sync' in registration) {
-          (registration as any).sync.register('workout-sync');
-          (registration as any).sync.register('food-log-sync');
-          (registration as any).sync.register('progress-sync');
-          (registration as any).sync.register('goal-sync');
-          (registration as any).sync.register('preference-sync');
+          try {
+            // Register background sync events with shorter, valid tags
+            (registration as any).sync.register('workout');
+            (registration as any).sync.register('food');
+            (registration as any).sync.register('progress');
+            (registration as any).sync.register('goals');
+            (registration as any).sync.register('prefs');
+          } catch (error) {
+            console.log('Background sync registration failed:', error);
+          }
         }
+      }).catch(error => {
+        console.log('Service worker not ready:', error);
       });
     }
 

@@ -89,72 +89,82 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     console.log('Initializing auth context');
     
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        const userCreatedAt = new Date(session.user.created_at);
-        const now = new Date();
-        const timeDiff = now.getTime() - userCreatedAt.getTime();
-        const minutesDiff = timeDiff / (1000 * 60);
-        
-        setIsNewUser(minutesDiff < 5);
-        checkOnboardingStatus(session.user.id);
-        setIsEmailUnconfirmed(!session.user.email_confirmed_at);
-        
-        // For logged-in users, redirect immediately without delay
-        if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          // Use navigate instead of location.replace for better UX
-          setTimeout(() => {
-            if (window.location.pathname !== '/app') {
-              window.location.replace('/app');
-            }
-          }, 100);
+      // Set up auth state listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Auth state changed:', event, session?.user?.email);
         }
-      } else if (event === 'SIGNED_OUT') {
-        setIsNewUser(false);
-        setIsEmailUnconfirmed(false);
-        setHasCompletedOnboarding(false);
         
-        // Redirect to home on sign out
-        if (window.location.pathname === '/app' || window.location.pathname.startsWith('/app')) {
-          window.location.replace('/');
-        }
-      }
-      
-      setAuthPending(false);
-      setLoading(false);
-    });
-
-    // Check for existing session immediately
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Error getting session:', error);
-      }
-      
-      if (session?.user) {
-        console.log('Initial session found:', session.user.email);
         setSession(session);
-        setUser(session.user);
-        setIsEmailUnconfirmed(!session.user.email_confirmed_at);
-        checkOnboardingStatus(session.user.id);
+        setUser(session?.user ?? null);
         
-        // Instant redirect for existing sessions
-        if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          setTimeout(() => {
-            if (window.location.pathname !== '/app') {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const userCreatedAt = new Date(session.user.created_at);
+          const now = new Date();
+          const timeDiff = now.getTime() - userCreatedAt.getTime();
+          const minutesDiff = timeDiff / (1000 * 60);
+          
+          setIsNewUser(minutesDiff < 5);
+          checkOnboardingStatus(session.user.id);
+          setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+          
+          // Smooth redirect for better UX
+          if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+            // Use a more reliable navigation approach
+            requestAnimationFrame(() => {
+              if (window.location.pathname !== '/app') {
+                window.history.replaceState(null, '', '/app');
+                window.location.reload();
+              }
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setIsNewUser(false);
+          setIsEmailUnconfirmed(false);
+          setHasCompletedOnboarding(false);
+          
+          // Smooth redirect to home on sign out
+          if (window.location.pathname.startsWith('/app') || window.location.pathname.startsWith('/profile') || window.location.pathname.startsWith('/settings')) {
+            requestAnimationFrame(() => {
+              window.history.replaceState(null, '', '/');
+              window.location.reload();
+            });
+          }
+        }
+        
+        setAuthPending(false);
+        setLoading(false);
+      });
+
+      // Check for existing session immediately
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (session?.user) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Initial session found:', session.user.email);
+          }
+          setSession(session);
+          setUser(session.user);
+          setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+          checkOnboardingStatus(session.user.id);
+          
+          // Instant redirect for existing sessions with better error handling
+          if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+            try {
+              window.history.replaceState(null, '', '/app');
+              window.location.reload();
+            } catch (error) {
+              console.warn('Navigation error, falling back to location replace:', error);
               window.location.replace('/app');
             }
-          }, 50);
+          }
         }
-      }
-      
-      setLoading(false);
-    });
+        
+        setLoading(false);
+      });
     
     return () => {
       subscription.unsubscribe();

@@ -28,6 +28,9 @@ import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppOptimizations } from "@/components/AppOptimizations";
 import BackgroundSync from "@/components/ui/background-sync";
+import DataPersistence from "@/components/ui/data-persistence";
+import AppPerformance from "@/components/ui/app-performance";
+import FinalLaunchChecks from "@/components/ui/final-launch-checks";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +56,9 @@ function App() {
                 <TooltipProvider>
                   <AppOptimizations />
                   <BackgroundSync />
+                  <DataPersistence />
+                  <AppPerformance />
+                  <FinalLaunchChecks />
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>

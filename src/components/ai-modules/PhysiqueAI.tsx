@@ -17,13 +17,19 @@ import {
   Loader2,
   AlertTriangle,
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  RotateCcw,
+  Eye,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MobileHeader } from '@/components/MobileHeader';
 import { FormattedAIResponse } from '@/components/FormattedAIResponse';
+import { HexagonProgress } from '@/components/ui/hexagon-progress';
+import { RealisticMuscleMap, MuscleMapLegend } from '@/components/ui/realistic-muscle-map';
 
 interface PhysiqueAIProps {
   onBack: () => void;
@@ -37,7 +43,8 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
+const [analysis, setAnalysis] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'front' | 'back'>('front');
   const [userContext, setUserContext] = useState({
     height: '',
     weight: '',
@@ -426,31 +433,132 @@ export const PhysiqueAI: React.FC<PhysiqueAIProps> = ({ onBack }) => {
                     Analysis Complete
                   </Badge>
                   
-                  {/* Body Composition Overview */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
-                      <h4 className="text-sm font-medium text-gray-300 mb-2">Body Fat %</h4>
+                  {/* Enhanced Body Composition Stats */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 p-4 rounded-xl border border-purple-500/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-purple-200">Body Fat %</h4>
+                        <Scale className="w-4 h-4 text-purple-400" />
+                      </div>
                       <p className="text-2xl font-bold text-white">
                         {analysis.bodyFatPercentage ? `${analysis.bodyFatPercentage}%` : 'N/A'}
                       </p>
+                      <p className="text-xs text-purple-300/70 mt-1">
+                        {analysis.bodyFatPercentage && analysis.bodyFatPercentage < 15 ? 'Athletic' : 
+                         analysis.bodyFatPercentage && analysis.bodyFatPercentage < 20 ? 'Fit' : 'Average'}
+                      </p>
                     </div>
-                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
-                      <h4 className="text-sm font-medium text-gray-300 mb-2">Muscle Mass</h4>
+                    <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 p-4 rounded-xl border border-blue-500/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-blue-200">Muscle Mass</h4>
+                        <Activity className="w-4 h-4 text-blue-400" />
+                      </div>
                       <p className="text-lg font-semibold text-white capitalize">
                         {analysis.muscleMass || 'Average'}
                       </p>
+                      <p className="text-xs text-blue-300/70 mt-1">Development</p>
                     </div>
-                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
-                      <h4 className="text-sm font-medium text-gray-300 mb-2">FFMI</h4>
+                    <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 p-4 rounded-xl border border-green-500/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-green-200">FFMI</h4>
+                        <Target className="w-4 h-4 text-green-400" />
+                      </div>
                       <p className="text-2xl font-bold text-white">
                         {analysis.ffmi ? analysis.ffmi.toFixed(1) : 'N/A'}
                       </p>
+                      <p className="text-xs text-green-300/70 mt-1">
+                        {analysis.ffmi && analysis.ffmi > 20 ? 'Advanced' : 
+                         analysis.ffmi && analysis.ffmi > 18 ? 'Intermediate' : 'Developing'}
+                      </p>
                     </div>
-                    <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
-                      <h4 className="text-sm font-medium text-gray-300 mb-2">Frame Size</h4>
+                    <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 p-4 rounded-xl border border-orange-500/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-orange-200">Frame Size</h4>
+                        <User className="w-4 h-4 text-orange-400" />
+                      </div>
                       <p className="text-lg font-semibold text-white capitalize">
                         {analysis.frameSize || 'Medium'}
                       </p>
+                      <p className="text-xs text-orange-300/70 mt-1">Build</p>
+                    </div>
+                  </div>
+
+                  {/* Physique Development Radar Chart */}
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Zap className="w-5 h-5 mr-2 text-yellow-400" />
+                      Physique Development Overview
+                    </h4>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
+                      <HexagonProgress 
+                        score={analysis.muscleSymmetry || 75}
+                        size="medium"
+                        label="Symmetry"
+                        icon={Target}
+                      />
+                      <HexagonProgress 
+                        score={analysis.muscleDevelopment || 65}
+                        size="medium"
+                        label="Development"
+                        icon={Activity}
+                      />
+                      <HexagonProgress 
+                        score={analysis.frameRating || 70}
+                        size="medium"
+                        label="Frame"
+                        icon={User}
+                      />
+                      <HexagonProgress 
+                        score={analysis.overallRating ? analysis.overallRating * 10 : 60}
+                        size="medium"
+                        label="Overall"
+                        icon={TrendingUp}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Enhanced Muscle Group Visualization */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-white flex items-center">
+                        <Eye className="w-5 h-5 mr-2 text-blue-400" />
+                        Muscle Development Map
+                      </h4>
+                      <div className="flex bg-gray-800/50 rounded-lg p-1">
+                        <Button
+                          onClick={() => setViewMode('front')}
+                          variant={viewMode === 'front' ? 'default' : 'ghost'}
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Front
+                        </Button>
+                        <Button
+                          onClick={() => setViewMode('back')}
+                          variant={viewMode === 'back' ? 'default' : 'ghost'}
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Back
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <RealisticMuscleMap 
+                        muscleGroups={analysis.muscleGroups?.detailed || [
+                          { name: 'chest', score: analysis.chestDevelopment || 60, progressTrend: 'up' },
+                          { name: 'shoulders', score: analysis.shoulderDevelopment || 65, progressTrend: 'stable' },
+                          { name: 'arms', score: analysis.armDevelopment || 55, progressTrend: 'up' },
+                          { name: 'back', score: analysis.backDevelopment || 70, progressTrend: 'up' },
+                          { name: 'core', score: analysis.coreDevelopment || 50, progressTrend: 'stable' },
+                          { name: 'legs', score: analysis.legDevelopment || 75, progressTrend: 'up' },
+                          { name: 'glutes', score: analysis.gluteDevelopment || 65, progressTrend: 'stable' },
+                          { name: 'calves', score: analysis.calfDevelopment || 45, progressTrend: 'down' },
+                        ]}
+                        viewMode={viewMode}
+                      />
+                      <MuscleMapLegend />
                     </div>
                   </div>
 

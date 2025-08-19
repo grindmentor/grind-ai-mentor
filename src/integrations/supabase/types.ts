@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1238,36 +1238,36 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: {
           coach_gpt_queries: number
-          meal_plan_generations: number
-          food_log_analyses: number
-          tdee_calculations: number
-          habit_checks: number
-          training_programs: number
-          progress_analyses: number
           cut_calc_uses: number
-          workout_timer_sessions: number
+          food_log_analyses: number
           food_photo_analyses: number
+          habit_checks: number
+          meal_plan_generations: number
           photo_uploads: number
+          progress_analyses: number
+          tdee_calculations: number
+          training_programs: number
+          workout_timer_sessions: number
         }[]
       }
       get_user_profile_data: {
         Args: { p_user_id: string }
         Returns: {
+          activity: string
+          age: number
+          display_name: string
+          experience: string
+          goal: string
           height: number
           weight: number
-          age: number
-          experience: string
-          activity: string
-          goal: string
-          display_name: string
         }[]
       }
       search_exercises: {
         Args: {
-          search_query: string
-          muscle_filter?: string[]
           equipment_filter?: string
           limit_count?: number
+          muscle_filter?: string[]
+          search_query: string
         }
         Returns: {
           category: string
@@ -1297,30 +1297,30 @@ export type Database = {
       }
       search_exercises_optimized: {
         Args: {
-          search_query?: string
-          muscle_filter?: string[]
           equipment_filter?: string
           limit_count?: number
+          muscle_filter?: string[]
+          search_query?: string
           search_user_id?: string
         }
         Returns: {
-          id: string
-          name: string
-          description: string
-          primary_muscles: string[]
-          secondary_muscles: string[]
-          equipment: string
-          difficulty_level: string
           category: string
+          description: string
+          difficulty_level: string
+          equipment: string
           force_type: string
+          form_cues: string
+          id: string
+          is_bodyweight: boolean
+          is_custom: boolean
+          is_weighted: boolean
           mechanics: string
           movement_type: string
-          is_bodyweight: boolean
-          is_weighted: boolean
-          technique_notes: string
-          form_cues: string
-          is_custom: boolean
+          name: string
+          primary_muscles: string[]
           relevance_score: number
+          secondary_muscles: string[]
+          technique_notes: string
         }[]
       }
       verify_user_age: {

@@ -250,14 +250,60 @@
       .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
     </style>
     
-    <!-- Defer main CSS bundle to load after critical content renders -->
-    <link rel="preload" href="/assets/css/index-V2OB3Tvb.css" as="style" onload="this.onload=null;this.rel='stylesheet'" media="print">
+    <!-- Completely defer main CSS bundle to avoid render blocking -->
+    <script>
+      // Load CSS asynchronously after initial render to prevent blocking
+      function loadCSS() {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/assets/css/index-V2OB3Tvb.css';
+        link.media = 'print';
+        link.onload = function() {
+          this.media = 'all';
+        };
+        document.head.appendChild(link);
+      }
+      
+      // Load after critical path completes
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadCSS);
+      } else {
+        setTimeout(loadCSS, 0);
+      }
+    </script>
     <noscript><link rel="stylesheet" href="/assets/css/index-V2OB3Tvb.css"></noscript>
     
     
-    <!-- Optimized font loading with font-display: swap -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" media="print">
+    <!-- Defer all font loading to prevent render blocking -->
+    <script>
+      // Load fonts asynchronously after critical content renders
+      function loadFonts() {
+        const fonts = [
+          'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+          'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap'
+        ];
+        
+        fonts.forEach((fontUrl, index) => {
+          setTimeout(() => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = fontUrl;
+            link.media = 'print';
+            link.onload = function() {
+              this.media = 'all';
+            };
+            document.head.appendChild(link);
+          }, index * 50);
+        });
+      }
+      
+      // Load fonts after DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(loadFonts, 100));
+      } else {
+        setTimeout(loadFonts, 100);
+      }
+    </script>
     
     <!-- Fallback for no-JS font loading -->
     <noscript>

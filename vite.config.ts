@@ -73,8 +73,10 @@ export default defineConfig(({ mode }) => ({
     sourcemap: false,
     // Increase inline limit to reduce requests
     assetsInlineLimit: 16384,
-    // Disable CSS code splitting to reduce critical requests
+    // Keep CSS inlined to prevent render blocking
     cssCodeSplit: false,
+    // Ensure CSS doesn't block rendering
+    cssMinify: 'esbuild',
   },
   // Ultra-optimized dependencies
   optimizeDeps: {

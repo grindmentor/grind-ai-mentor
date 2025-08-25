@@ -1,35 +1,54 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Brain, Target, Zap, Star, Users, Trophy, Shield } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { PageTransition } from "@/components/ui/page-transition";
-import { AnimatedCard } from "@/components/ui/animated-card";
-import Logo from "@/components/ui/logo";
-import AvailableAchievements from "@/components/homepage/AvailableAchievements";
+
+// Lazy load heavy dependencies that aren't critical for initial render
+const Card = lazy(() => import("@/components/ui/card").then(m => ({ default: m.Card })));
+const CardContent = lazy(() => import("@/components/ui/card").then(m => ({ default: m.CardContent })));
+const CardDescription = lazy(() => import("@/components/ui/card").then(m => ({ default: m.CardDescription })));
+const CardHeader = lazy(() => import("@/components/ui/card").then(m => ({ default: m.CardHeader })));
+const CardTitle = lazy(() => import("@/components/ui/card").then(m => ({ default: m.CardTitle })));
+const Badge = lazy(() => import("@/components/ui/badge").then(m => ({ default: m.Badge })));
+const PageTransition = lazy(() => import("@/components/ui/page-transition").then(m => ({ default: m.PageTransition })));
+const AnimatedCard = lazy(() => import("@/components/ui/animated-card").then(m => ({ default: m.AnimatedCard })));
+const Logo = lazy(() => import("@/components/ui/logo"));
+const AvailableAchievements = lazy(() => import("@/components/homepage/AvailableAchievements"));
+
+// Defer Supabase import until actually needed
+const getSupabase = () => import("@/integrations/supabase/client").then(m => m.supabase);
+const getIsMobile = () => import("@/hooks/use-mobile").then(m => m.useIsMobile);
 
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const isMobile = useIsMobile();
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Check mobile state immediately
+    if (typeof window !== 'undefined') {
+      setIsMobile(window.innerWidth < 768);
+    }
+
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      
-      // Instantly redirect authenticated users without showing homepage content
-      if (user) {
-        navigate('/app', { replace: true });
-        return; // Don't set loading to false if redirecting
+      try {
+        const supabase = await getSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+        
+        // Instantly redirect authenticated users without showing homepage content
+        if (user) {
+          navigate('/app', { replace: true });
+          return; // Don't set loading to false if redirecting
+        }
+        
+        // Only show homepage content if user is not authenticated
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsCheckingAuth(false);
       }
-      
-      // Only show homepage content if user is not authenticated
-      setIsCheckingAuth(false);
     };
     checkUser();
   }, [navigate]);
@@ -87,22 +106,27 @@ const Index = () => {
   ];
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground">
-        {/* Hero Section */}
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20" />}>
+      <PageTransition>
+        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground">
+          {/* Hero Section */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-transparent to-orange-600/10" />
           <div className="relative px-4 sm:px-6 pt-8 sm:pt-12 md:pt-20 pb-12 sm:pb-16 mx-auto max-w-7xl lg:px-8">
             <div className="mx-auto max-w-4xl text-center animate-fade-in">
               {/* Logo */}
               <div className="mb-6 sm:mb-8">
-                <Logo size={isMobile ? "lg" : "xl"} />
+                <Suspense fallback={<div className="w-12 h-12 mx-auto mb-6 bg-orange-500 rounded-lg"></div>}>
+                  <Logo size={isMobile ? "lg" : "xl"} />
+                </Suspense>
               </div>
               
-              <Badge className="mb-4 sm:mb-6 md:mb-8 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 transition-colors">
+              <Suspense fallback={<div className="inline-block px-4 py-2 mb-6 bg-orange-500/20 rounded-full">Science-Powered Fitness AI</div>}>
+                <Badge className="mb-4 sm:mb-6 md:mb-8 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 transition-colors">
                 <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 Science-Powered Fitness AI
-              </Badge>
+                </Badge>
+              </Suspense>
               
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-6 leading-tight">
                 <span className="bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent">
@@ -157,27 +181,36 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {features.map((feature, index) => (
-              <AnimatedCard 
-                key={index}
-                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300"
-                delay={feature.delay}
-              >
-                <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 flex items-center justify-center ${feature.color}`}>
-                    {feature.icon}
-                  </div>
-                  <CardTitle className="text-base sm:text-lg md:text-xl text-white mb-2">{feature.title}</CardTitle>
-                  <CardDescription className="text-gray-400 leading-relaxed text-xs sm:text-sm md:text-base">
-                    {feature.description}
-                  </CardDescription>
-                </CardHeader>
-              </AnimatedCard>
+              <Suspense key={index} fallback={<div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-6 h-48"></div>}>
+                <AnimatedCard 
+                  className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300"
+                  delay={feature.delay}
+                >
+                  <Suspense fallback={<div className="p-6 text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-700 rounded-2xl"></div>
+                    <div className="h-6 bg-gray-700 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-700 rounded"></div>
+                  </div>}>
+                    <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 flex items-center justify-center ${feature.color}`}>
+                        {feature.icon}
+                      </div>
+                      <CardTitle className="text-base sm:text-lg md:text-xl text-white mb-2">{feature.title}</CardTitle>
+                      <CardDescription className="text-gray-400 leading-relaxed text-xs sm:text-sm md:text-base">
+                        {feature.description}
+                      </CardDescription>
+                    </CardHeader>
+                  </Suspense>
+                </AnimatedCard>
+              </Suspense>
             ))}
           </div>
         </div>
 
         {/* Available Achievements Section */}
-        <AvailableAchievements />
+        <Suspense fallback={<div className="py-12 sm:py-16 md:py-24"></div>}>
+          <AvailableAchievements />
+        </Suspense>
 
         {/* Benefits Section */}
         <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
@@ -270,6 +303,7 @@ const Index = () => {
         </footer>
       </div>
     </PageTransition>
+    </Suspense>
   );
 };
 

@@ -85,7 +85,7 @@
         contain: layout style paint;
       }
       
-      /* Critical loading state */
+      /* Critical loading state with immediate visibility */
       .app-loading {
         position: fixed;
         inset: 0;
@@ -93,7 +93,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 9999;
+        z-index: 9998;
+        opacity: 1;
+        visibility: visible;
       }
       
       .loading-spinner {
@@ -103,6 +105,7 @@
         border-top: 2px solid #f97316;
         border-radius: 50%;
         animation: spin 1s linear infinite;
+        opacity: 1;
       }
       
       @keyframes spin {
@@ -320,44 +323,46 @@
     </noscript>
   </head>
   <body>
-    <!-- Immediate loading indicator -->
-    <div id="app-loading" class="app-loading">
+    <!-- Immediate visible content for FCP optimization -->
+    <div id="app-loading" class="app-loading" style="position: fixed; inset: 0; z-index: 9998;">
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Static hero content for LCP optimization with critical styles -->
-    <div id="hero-skeleton" class="hero-container" style="position: fixed; inset: 0; z-index: 1000;">
-      <!-- Hero Section -->
-      <div class="hero-content">
-        <div class="hero-logo">🏋️</div>
-        <div class="hero-badge">
+    <!-- Critical above-the-fold content for immediate FCP -->
+    <div id="hero-skeleton" class="hero-container" style="position: fixed; inset: 0; z-index: 9999; display: block;">
+      <!-- Immediate visible hero content -->
+      <div class="hero-content" style="opacity: 1; visibility: visible;">
+        <!-- Inline logo for immediate rendering -->
+        <div class="hero-logo" style="background: linear-gradient(135deg, #f97316, #dc2626); color: white; font-weight: bold;">
+          🏋️
+        </div>
+        <div class="hero-badge" style="opacity: 1;">
           ⚡ Science-Powered Fitness AI
         </div>
-        <h1 class="hero-title">
+        <h1 class="hero-title" style="opacity: 1;">
           <span class="hero-title-gradient-1">Transform Your</span>
           <br>
           <span class="hero-title-gradient-2">Fitness Journey</span>
         </h1>
-        <p class="hero-description">
+        <p class="hero-description" style="opacity: 1;">
           Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. Based on the latest scientific research for optimal results.
         </p>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center;">
-          <button id="hero-cta" class="hero-button">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center; opacity: 1;">
+          <button id="hero-cta" class="hero-button" style="opacity: 1;">
             Start for Free →
           </button>
         </div>
       </div>
       
-      <!-- Features Section with LCP Element -->
-      <div class="features-section">
+      <!-- Features section -->
+      <div class="features-section" style="opacity: 1;">
         <div class="features-header">
-          <h2 class="features-title">
+          <h2 class="features-title" style="opacity: 1;">
             <span class="hero-title-gradient-2">
               Powered by Science
             </span>
           </h2>
-          <!-- This is the LCP element causing the issue -->
-          <p class="features-description" data-lcp-element="true">
+          <p class="features-description" data-lcp-element="true" style="opacity: 1;">
             Experience the future of fitness with AI that understands your unique needs
           </p>
         </div>

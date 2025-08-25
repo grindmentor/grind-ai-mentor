@@ -46,9 +46,12 @@
     <meta property="twitter:description" content="Transform your physique with personalized, science-based AI fitness coaching" />
     <meta property="twitter:image" content="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" />
 
-    <!-- Preconnect to external resources -->
+    <!-- Enhanced Preconnect for critical resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://druwytttcxnfpwgyrvmt.supabase.co">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     
     <!-- Critical CSS inline for immediate rendering -->
     <style>
@@ -146,7 +149,73 @@
     <div id="app-loading" class="app-loading">
       <div class="loading-spinner"></div>
     </div>
+    
+    <!-- Static hero content for LCP optimization -->
+    <div id="hero-skeleton" style="position: fixed; inset: 0; background: linear-gradient(135deg, #000000 0%, rgba(249, 115, 22, 0.1) 50%, rgba(220, 38, 38, 0.2) 100%); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem;">
+      <div style="max-width: 56rem; margin: 0 auto;">
+        <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #f97316, #dc2626); border-radius: 0.75rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏋️</div>
+        <div style="background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border: 1px solid rgba(249, 115, 22, 0.3); padding: 0.25rem 0.75rem; border-radius: 9999px; display: inline-flex; align-items: center; margin-bottom: 1.5rem; font-size: 0.875rem;">
+          ⚡ Science-Powered Fitness AI
+        </div>
+        <h1 style="font-size: clamp(1.5rem, 4vw, 3.75rem); font-weight: 700; color: white; margin-bottom: 1rem; line-height: 1.2;">
+          <span style="background: linear-gradient(to right, white, rgb(254, 237, 204), white); -webkit-background-clip: text; background-clip: text; color: transparent;">Transform Your</span>
+          <br>
+          <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">Fitness Journey</span>
+        </h1>
+        <p style="font-size: clamp(0.875rem, 2vw, 1.125rem); color: rgb(209, 213, 219); margin-bottom: 2rem; max-width: 48rem; line-height: 1.6;">
+          Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. Based on the latest scientific research for optimal results.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center;">
+          <button id="hero-cta" style="background: linear-gradient(to right, #f97316, #dc2626); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            Start for Free →
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <div id="root"></div>
+    
+    <!-- Optimized script loading -->
+    <script>
+      // Hide skeleton when React takes over
+      document.addEventListener('DOMContentLoaded', function() {
+        const heroSkeleton = document.getElementById('hero-skeleton');
+        const heroButton = document.getElementById('hero-cta');
+        
+        if (heroButton) {
+          heroButton.onclick = function() {
+            window.location.href = '/signin';
+          };
+        }
+        
+        // Hide skeleton once React content loads
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length > 0) {
+              const hasReactContent = document.querySelector('[data-reactroot]') || 
+                                    document.querySelector('.min-h-screen:not(.app-loading)') ||
+                                    document.querySelector('h1');
+              if (hasReactContent && heroSkeleton) {
+                heroSkeleton.style.display = 'none';
+                observer.disconnect();
+              }
+            }
+          });
+        });
+        
+        observer.observe(document.getElementById('root'), {
+          childList: true,
+          subtree: true
+        });
+        
+        // Fallback timeout
+        setTimeout(function() {
+          if (heroSkeleton) {
+            heroSkeleton.style.display = 'none';
+          }
+        }, 3000);
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
     
     <!-- Performance monitoring -->

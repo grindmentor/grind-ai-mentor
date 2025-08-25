@@ -34,11 +34,9 @@ const Index = () => {
     checkUser();
   }, [navigate]);
 
-  // Show nothing while checking authentication to prevent flash
+  // Show minimal loading state while checking authentication
   if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20" />
-    );
+    return null; // Let the static skeleton handle the initial render
   }
 
   const features = [

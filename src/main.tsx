@@ -10,6 +10,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import "./utils/prodOptimizations.ts"
+import './utils/lcp-optimization.ts'
 import { PerformanceProvider } from '@/components/ui/performance-provider'
 import { loadAppShell } from '@/utils/appShellCache'
 
@@ -265,10 +266,17 @@ if (typeof window !== 'undefined') {
 // Performance measurement
 const appStart = performance.now();
 
-// Hide loading indicator immediately when React starts
+// Hide loading indicator and skeleton immediately when React starts
 const loadingElement = document.getElementById('app-loading');
+const heroSkeleton = document.getElementById('hero-skeleton');
+
 if (loadingElement) {
   loadingElement.style.display = 'none';
+}
+
+// Keep skeleton visible until React content renders
+if (heroSkeleton) {
+  // Will be hidden by the observer in index.html once React content appears
 }
 
 createRoot(document.getElementById('root')!).render(

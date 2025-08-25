@@ -38,7 +38,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Instant app initialization - zero artificial delay
+    // Instant app initialization - remove preloader immediately
     setIsLoading(false);
   }, []);
 

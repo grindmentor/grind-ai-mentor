@@ -9,7 +9,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -417,6 +417,33 @@ const Dashboard = () => {
                   </NativeButton>
                 </div>
               )}
+
+              {/* All Modules Section */}
+              <div className="mb-6 sm:mb-8 lg:mb-12">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-orange-500" />
+                    AI Modules
+                  </h2>
+                  <Button
+                    onClick={() => navigate('/modules')}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center"
+                  >
+                    View All
+                  </Button>
+                </div>
+                <Suspense fallback={<EnhancedLoading type="module" size="sm" message="Loading modules..." />}>
+                  <ModuleGrid
+                    modules={regularModules}
+                    favorites={favorites}
+                    onModuleClick={handleModuleClick}
+                    onToggleFavorite={toggleFavorite}
+                    viewMode="grid"
+                  />
+                </Suspense>
+              </div>
 
               {/* Premium Promotion for Free Users - Moved to sidebar */}
               {currentTier === 'free' && (

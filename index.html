@@ -303,25 +303,40 @@
     
     <!-- Optimized critical hero for instant LCP -->
     <div id="hero-skeleton" style="position: fixed; inset: 0; z-index: 9999; background: linear-gradient(to bottom right, rgb(0 0 0), rgba(249, 115, 22, 0.1), rgba(220, 38, 38, 0.2)); color: white; overflow-y: auto;">
+      <!-- Hero Section -->
       <div style="max-width: 56rem; margin: 0 auto; text-align: center; padding: 2rem 1rem 3rem 1rem;">
-        <!-- Immediate LCP element -->
-        <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #f97316, #dc2626); border-radius: 0.75rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; opacity: 1; visibility: visible;">
+        <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #f97316, #dc2626); border-radius: 0.75rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
           🏋️
         </div>
-        <div style="background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border: 1px solid rgba(249, 115, 22, 0.3); padding: 0.25rem 0.75rem; border-radius: 9999px; display: inline-flex; align-items: center; margin-bottom: 1.5rem; font-size: 0.875rem; font-weight: 500; opacity: 1;">
+        <div style="background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border: 1px solid rgba(249, 115, 22, 0.3); padding: 0.25rem 0.75rem; border-radius: 9999px; display: inline-flex; align-items: center; margin-bottom: 1.5rem; font-size: 0.875rem; font-weight: 500;">
           ⚡ Science-Powered Fitness AI
         </div>
-        <h1 style="font-size: clamp(1.5rem, 4vw, 3.75rem); font-weight: 700; color: white; margin-bottom: 1rem; line-height: 1.2; opacity: 1;">
+        <h1 style="font-size: clamp(1.5rem, 4vw, 3.75rem); font-weight: 700; color: white; margin-bottom: 1rem; line-height: 1.2;">
           <span style="background: linear-gradient(to right, white, rgb(254, 237, 204), white); -webkit-background-clip: text; background-clip: text; color: transparent;">Transform Your</span>
           <br>
           <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">Fitness Journey</span>
         </h1>
-        <p style="font-size: clamp(0.875rem, 2vw, 1.125rem); color: rgb(209, 213, 219); margin-bottom: 2rem; max-width: 48rem; line-height: 1.6; margin-left: auto; margin-right: auto; opacity: 1;">
+        <p style="font-size: clamp(0.875rem, 2vw, 1.125rem); color: rgb(209, 213, 219); margin-bottom: 2rem; max-width: 48rem; line-height: 1.6; margin-left: auto; margin-right: auto;">
           Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. Based on the latest scientific research for optimal results.
         </p>
-        <button id="hero-cta" style="background: linear-gradient(to right, #f97316, #dc2626); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit; opacity: 1;">
+        <button id="hero-cta" style="background: linear-gradient(to right, #f97316, #dc2626); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit;">
           Start for Free →
         </button>
+      </div>
+      
+      <!-- Features Section with immediate LCP element -->
+      <div style="padding: 3rem 1rem; max-width: 56rem; margin: 0 auto;">
+        <div style="max-width: 32rem; margin: 0 auto; text-align: center; margin-bottom: 3rem;">
+          <h2 style="font-size: clamp(1.25rem, 3vw, 2.25rem); font-weight: 700; margin-bottom: 0.75rem;">
+            <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">
+              Powered by Science
+            </span>
+          </h2>
+          <!-- Critical LCP element - rendered immediately -->
+          <p style="color: rgb(156, 163, 175); font-size: clamp(0.875rem, 2vw, 1.125rem); line-height: 1.6; opacity: 1; visibility: visible;" class="text-gray-400 text-sm sm:text-base md:text-lg">
+            Experience the future of fitness with AI that understands your unique needs
+          </p>
+        </div>
       </div>
     </div>
     

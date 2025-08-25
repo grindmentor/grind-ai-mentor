@@ -211,9 +211,9 @@ const Dashboard = () => {
   // Show notifications with native transition
   if (showNotifications) {
     return (
-      <NativeTransition routeKey="notifications" type="slide" direction="forward">
+      <div className="min-h-screen">
         <NotificationCenter onBack={handleBackToDashboard} />
-      </NativeTransition>
+      </div>
     );
   }
 
@@ -226,25 +226,19 @@ const Dashboard = () => {
       const ModuleComponent = selectedModule.component;
       return (
         <ErrorBoundary>
-          <NativeTransition 
-            routeKey={selectedModule.id} 
-            type="slide" 
-            direction={navigationSource === 'dashboard' ? 'forward' : 'backward'}
-          >
-            <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
-              <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
-                <ModuleScrollHandler moduleId={selectedModule.id}>
-                  <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
-                    <ModuleComponent 
-                      onBack={handleBackToDashboard}
-                      onFoodLogged={handleFoodLogged}
-                      navigationSource={navigationSource}
-                    />
-                  </ModuleErrorBoundary>
-                </ModuleScrollHandler>
-              </Suspense>
-            </div>
-          </NativeTransition>
+          <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
+            <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
+              <ModuleScrollHandler moduleId={selectedModule.id}>
+                <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
+                  <ModuleComponent 
+                    onBack={handleBackToDashboard}
+                    onFoodLogged={handleFoodLogged}
+                    navigationSource={navigationSource}
+                  />
+                </ModuleErrorBoundary>
+              </ModuleScrollHandler>
+            </Suspense>
+          </div>
         </ErrorBoundary>
       );
     } catch (error) {
@@ -260,9 +254,8 @@ const Dashboard = () => {
 
   return (
     <ErrorBoundary>
-      <NativeTransition routeKey="dashboard" type="fade">
-        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden" ref={gestureRef as React.RefObject<HTMLDivElement>}>
-          {/* Enhanced header with notifications, profile, and settings */}
+      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden" ref={gestureRef as React.RefObject<HTMLDivElement>}>
+        {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between">
@@ -448,10 +441,8 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </NativeTransition>
-    </ErrorBoundary>
-  );
+      </ErrorBoundary>
+    );
 };
 
 export default Dashboard;
-

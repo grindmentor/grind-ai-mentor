@@ -21,7 +21,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
+    <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
       <div className="px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0 flex-1">

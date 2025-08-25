@@ -24,7 +24,7 @@ const WelcomeBack = ({ userEmail, onContinue }: WelcomeBackProps) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6">
+    <div className="fixed inset-0 bg-background/90 flex items-center justify-center z-60 p-6">
       <Card className="bg-gray-900 border-gray-800 max-w-md w-full mx-4 animate-fade-in">
         <CardContent className="text-center p-8">
           <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">

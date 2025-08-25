@@ -42,8 +42,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Instant app initialization - remove preloader immediately
-    setIsLoading(false);
+    // Remove the immediate setIsLoading(false) to prevent conflicts
+    // Let AppPreloader handle the completion timing
   }, []);
 
   if (isLoading) {

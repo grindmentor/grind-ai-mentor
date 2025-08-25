@@ -26,31 +26,31 @@ const AppPreloader: React.FC<AppPreloaderProps> = ({
   };
 
   useEffect(() => {
-    // Minimal duration for all devices
-    const baseDuration = 50; // Very fast
-    const adjustedDuration = isIOSPWA() ? 100 : baseDuration;
-    
+    // Ensure minimum display time, then complete
+    const adjustedDuration = Math.max(minDuration, 800); // Minimum 800ms
+
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          // Immediate completion
-          setTimeout(onComplete, 0);
+          // Call onComplete after a short delay to ensure smooth transition
+          setTimeout(() => {
+            onComplete?.();
+          }, 200);
           return 100;
         }
-        // Very fast progress increments
-        return prev + 50;
+        return prev + 25; // Faster progress increments
       });
-    }, adjustedDuration / 2);
+    }, adjustedDuration / 4);
 
     return () => clearInterval(interval);
   }, [minDuration, onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-background flex items-center justify-center z-[100]">
       {/* Black background with subtle orange fade */}
       <div className="fixed inset-0 bg-background z-0" />
-      <div className="fixed inset-0 bg-gradient-to-br from-black via-orange-900/20 to-orange-800/30 z-0" />
+      <div className="fixed inset-0 bg-gradient-to-br from-background via-orange-900/20 to-orange-800/30 z-0" />
       
       <div className="text-center space-y-6 relative z-10">
         {/* Logo */}

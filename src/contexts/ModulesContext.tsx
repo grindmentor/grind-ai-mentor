@@ -344,10 +344,10 @@ const SafeComponent = ({ moduleName, onBack }: {
       
       case 'physique-ai':
         const PhysiqueAI = React.lazy(() => 
-          import('@/components/ai-modules/ProgressAI')
+          import('@/components/ai-modules/PhysiqueAI')
             .then(module => {
-              console.log(`Successfully loaded PhysiqueAI module`);
-              return module;
+              // Cast to any to align with fallback shape
+              return module as any;
             })
             .catch(error => {
               console.error(`Failed to load PhysiqueAI module:`, error);
@@ -366,9 +366,9 @@ const SafeComponent = ({ moduleName, onBack }: {
         console.error(`[SafeComponent] Unknown module requested: ${moduleName}`);
         console.error(`[SafeComponent] Available modules:`, [
           'blueprint-ai', 'smart-training', 'coach-gpt', 'tdee-calculator', 
-          'meal-plan-generator', 'smart-food-log', 'workout-logger-ai', 
-          'progress-hub', 'recovery-coach-ai', 'physique-ai', 'cardio-ai', 
-          'cut-calc-pro', 'progress-ai', 'habit-tracker'
+          'meal-plan-generator', 'smart-food-log', 'workout-logger', 
+          'progress-hub', 'recovery-coach', 'physique-ai', 'workout-timer', 
+          'cut-calc-pro', 'habit-tracker'
         ]);
         return (
           <ModuleErrorBoundary moduleName={moduleName} onBack={onBack}>

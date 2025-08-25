@@ -206,39 +206,47 @@ function updateOnlineStatus() {
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
-// Optimized font preloading - defer to prevent blocking FCP
+// Optimize font loading to reduce critical path blocking
 if (typeof window !== 'undefined') {
   const optimizedFontLoad = () => {
-    const criticalFonts = [
-      'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-      'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap'
-    ];
+    // Only load Inter for critical text, defer Orbitron
+    const criticalFont = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
+    const decorativeFont = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap';
 
-    criticalFonts.forEach((fontUrl, index) => {
-      setTimeout(() => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = fontUrl;
-        link.media = 'print';
-        link.onload = () => {
-          link.media = 'all';
-        };
-        document.head.appendChild(link);
-      }, index * 100); // Stagger font loading
-    });
+    // Load critical font immediately
+    const criticalLink = document.createElement('link');
+    criticalLink.rel = 'stylesheet';
+    criticalLink.href = criticalFont;
+    document.head.appendChild(criticalLink);
+
+    // Defer decorative font to avoid blocking
+    setTimeout(() => {
+      const decorativeLink = document.createElement('link');
+      decorativeLink.rel = 'stylesheet';
+      decorativeLink.href = decorativeFont;
+      decorativeLink.media = 'print';
+      decorativeLink.onload = () => {
+        decorativeLink.media = 'all';
+      };
+      document.head.appendChild(decorativeLink);
+    }, 1000);
   };
 
-  // Load fonts after initial render
-  setTimeout(optimizedFontLoad, 200);
+  // Load fonts after critical path
+  setTimeout(optimizedFontLoad, 300);
 }
 
-// Defer non-critical component preloading until after first paint
+// Defer all non-critical component preloading until after critical path
 if (typeof window !== 'undefined') {
-  // Defer preloading to after initial render
+  // Only preload after the page is fully interactive to avoid blocking critical requests
   const deferredPreload = () => {
+    // Only load the most critical components, defer the rest
     const criticalImports = [
-      () => import('./components/Dashboard'),
-      () => import('./components/ui/loading-screen'),
+      () => import('./components/ui/loading-screen'), // Essential for UX
+      () => import('./components/Dashboard'), // Main app component
+    ];
+
+    const nonCriticalImports = [
       () => import('./components/ai-modules/CoachGPT'),
       () => import('./components/ai-modules/SmartTraining'),
       () => import('./components/ai-modules/WorkoutLoggerAI'),
@@ -247,19 +255,26 @@ if (typeof window !== 'undefined') {
       () => import('./components/ai-modules/BlueprintAI')
     ];
 
-    // Load components after initial paint
+    // Load critical components first
     criticalImports.forEach((importFn, index) => {
       setTimeout(() => {
         importFn().catch(() => {});
-      }, 100 + (index * 50)); // Start after 100ms, stagger by 50ms
+      }, 500 + (index * 100)); // Start after 500ms
+    });
+
+    // Load non-critical components much later to avoid interfering with critical path
+    nonCriticalImports.forEach((importFn, index) => {
+      setTimeout(() => {
+        importFn().catch(() => {});
+      }, 2000 + (index * 200)); // Start after 2 seconds
     });
   };
 
-  // Wait for first paint before preloading
+  // Wait much longer before any preloading to ensure critical path completes
   if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(deferredPreload, { timeout: 500 });
+    window.requestIdleCallback(deferredPreload, { timeout: 2000 });
   } else {
-    setTimeout(deferredPreload, 300);
+    setTimeout(deferredPreload, 1500);
   }
 }
 

@@ -38,46 +38,43 @@ export default defineConfig(({ mode }) => ({
     } : undefined,
     rollupOptions: {
       output: {
-        // Ultra-optimized manual chunk splitting for better caching
-        manualChunks: {
-          // Core vendor chunks
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-utils': ['clsx', 'tailwind-merge', 'date-fns', 'lodash'],
+        // Optimized chunk splitting to reduce critical request chains
+        manualChunks: (id) => {
+          // Critical vendor chunks that should load first
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'vendor-react';
+            if (id.includes('@supabase')) return 'vendor-supabase';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            return 'vendor-other';
+          }
           
-          // AI modules (most performance critical)
-          'ai-coach': ['./src/components/ai-modules/CoachGPT.tsx'],
-          'ai-training': ['./src/components/ai-modules/SmartTraining.tsx'],
-          'ai-logger': ['./src/components/ai-modules/WorkoutLoggerAI.tsx'],
-          'ai-food': ['./src/components/ai-modules/SmartFoodLog.tsx'],
-          'ai-blueprint': ['./src/components/ai-modules/BlueprintAI.tsx'],
+          // Defer AI modules to prevent them from being in critical path
+          if (id.includes('ai-modules')) {
+            if (id.includes('CoachGPT')) return 'ai-coach';
+            if (id.includes('SmartTraining')) return 'ai-training';
+            return 'ai-other';
+          }
           
-          // Dashboard and core components
-          'dashboard': ['./src/components/Dashboard.tsx'],
-          'progress': ['./src/components/ai-modules/ProgressHub.tsx'],
+          // Keep dashboard separate but not critical
+          if (id.includes('Dashboard')) return 'dashboard';
           
-          // Less frequently used modules
-          'secondary-modules': [
-            './src/components/ai-modules/MealPlanAI.tsx',
-            './src/components/ai-modules/RecoveryCoach.tsx',
-            './src/components/ai-modules/HabitTracker.tsx'
-          ]
+          // Group everything else as main
+          return 'main';
         },
-        // Optimize asset naming
-        chunkFileNames: mode === 'production' ? 'assets/js/[name]-[hash].js' : 'assets/js/[name].js',
-        entryFileNames: mode === 'production' ? 'assets/js/[name]-[hash].js' : 'assets/js/[name].js',
-        assetFileNames: mode === 'production' ? 'assets/[ext]/[name]-[hash].[ext]' : 'assets/[ext]/[name].[ext]',
+        // Optimize asset naming for better caching
+        chunkFileNames: mode === 'production' ? 'js/[name]-[hash:8].js' : 'js/[name].js',
+        entryFileNames: mode === 'production' ? 'js/[name]-[hash:8].js' : 'js/[name].js',
+        assetFileNames: mode === 'production' ? '[ext]/[name]-[hash:8].[ext]' : '[ext]/[name].[ext]',
       },
     },
-    // Optimize chunk size (reduced for faster loading)
-    chunkSizeWarningLimit: 800,
-    // Enable source maps for production debugging (hidden)
-    sourcemap: mode === 'production' ? 'hidden' : true,
-    // Optimize assets (increased for better performance)
-    assetsInlineLimit: 8192,
-    // Enable CSS code splitting
-    cssCodeSplit: true,
+    // Optimize chunk size for faster loading and reduce request chains
+    chunkSizeWarningLimit: 500,
+    // Disable source maps in production to reduce requests
+    sourcemap: false,
+    // Increase inline limit to reduce requests
+    assetsInlineLimit: 16384,
+    // Disable CSS code splitting to reduce critical requests
+    cssCodeSplit: false,
   },
   // Ultra-optimized dependencies
   optimizeDeps: {

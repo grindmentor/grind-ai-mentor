@@ -5,17 +5,20 @@ export const optimizeLCP = () => {
   if (typeof window !== 'undefined') {
     // Use requestIdleCallback to perform non-critical optimizations
     const optimizeLCPElement = () => {
-      // Find the main heading element once it's rendered
-      const heroHeading = document.querySelector('h1');
-      if (heroHeading && 'performance' in window) {
+      // Find the LCP element - the specific paragraph causing the issue
+      const lcpElement = document.querySelector('p.text-gray-400:contains("Experience the future")') || 
+                        document.querySelector('[data-lcp-element]') ||
+                        document.querySelector('h1'); // fallback to h1
+      
+      if (lcpElement && 'performance' in window) {
         // Mark as LCP element for browser optimization
         try {
           // Add explicit LCP hint to the browser
-          heroHeading.setAttribute('data-lcp-element', 'true');
+          lcpElement.setAttribute('data-lcp-element', 'true');
           
           // Ensure the element is visible and properly styled
-          const style = heroHeading.style;
-          style.containIntrinsicSize = 'auto';
+          const style = (lcpElement as HTMLElement).style;
+          style.contain = 'layout style paint';
           style.contentVisibility = 'visible';
           
           // Log LCP timing if available

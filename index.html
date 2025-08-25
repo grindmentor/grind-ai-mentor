@@ -255,28 +255,32 @@
       .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
     </style>
     
-    <!-- Completely defer main CSS bundle to avoid render blocking -->
+    <!-- Aggressively defer main CSS bundle to completely eliminate render blocking -->
     <script>
-      // Load CSS asynchronously after initial render to prevent blocking
+      // Load CSS with zero render blocking using requestIdleCallback
       function loadCSS() {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = '/assets/css/index-V2OB3Tvb.css';
-        link.media = 'print';
+        link.media = 'print'; // Initially set to print to avoid blocking
         link.onload = function() {
-          this.media = 'all';
+          // Change to all after load completes
+          requestAnimationFrame(() => {
+            this.media = 'all';
+          });
         };
+        // Add to head with lowest priority
         document.head.appendChild(link);
       }
       
-      // Load after critical path completes
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadCSS);
+      // Use requestIdleCallback to defer until browser is idle
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadCSS, { timeout: 100 });
       } else {
+        // Fallback for browsers without requestIdleCallback
         setTimeout(loadCSS, 0);
       }
     </script>
-    <noscript><link rel="stylesheet" href="/assets/css/index-V2OB3Tvb.css"></noscript>
     
     
     <!-- Defer all font loading to prevent render blocking -->

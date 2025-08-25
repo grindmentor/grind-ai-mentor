@@ -1,12 +1,13 @@
-const CACHE_NAME = 'myotopia-v6-longcache';
-const STATIC_CACHE = 'myotopia-static-v6';
-const DYNAMIC_CACHE = 'myotopia-dynamic-v6';
-const AI_CACHE = 'myotopia-ai-responses-v4';
-const IMAGE_CACHE = 'myotopia-images-v4';
-const INSTANT_CACHE = 'myotopia-instant-v2';
-const ASSETS_CACHE = 'myotopia-assets-v2';
+// Enhanced Service Worker v7 - Aggressive Caching for SEO
+const CACHE_NAME = 'myotopia-v7-longcache';
+const STATIC_CACHE = 'myotopia-static-v7';
+const DYNAMIC_CACHE = 'myotopia-dynamic-v7';
+const AI_CACHE = 'myotopia-ai-responses-v7';
+const IMAGE_CACHE = 'myotopia-images-v7';
+const INSTANT_CACHE = 'myotopia-instant-v7';
+const ASSETS_CACHE = 'myotopia-assets-v7';
 
-// Cache expiration times (in milliseconds)
+// Enhanced cache expiration times (in milliseconds)
 const CACHE_EXPIRATION = {
   STATIC_ASSETS: 365 * 24 * 60 * 60 * 1000, // 1 year for JS/CSS/fonts
   IMAGES: 30 * 24 * 60 * 60 * 1000, // 30 days for images
@@ -15,20 +16,25 @@ const CACHE_EXPIRATION = {
   NAVIGATION: 60 * 60 * 1000 // 1 hour for navigation requests
 };
 
-let aggressiveCacheEnabled = false;
+let aggressiveCacheEnabled = true; // Enable aggressive caching by default
 
-// Critical assets for immediate caching (reduced for faster install)
+// Critical assets for immediate caching
 const CRITICAL_ASSETS = [
   '/',
-  '/manifest.json'
+  '/manifest.json',
+  '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png',
+  '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.webp'
 ];
 
-// Static assets for background caching
+// Enhanced static assets for aggressive background caching
 const STATIC_ASSETS = [
   '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png',
+  '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.webp',
   '/favicon-32x32.png',
   '/favicon-16x16.png',
-  '/apple-touch-icon.png'
+  '/apple-touch-icon.png',
+  '/icon.svg',
+  '/browserconfig.xml'
 ];
 
 // Ultra-fast install with instant cache initialization

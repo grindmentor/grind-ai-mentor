@@ -53,9 +53,9 @@
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     
-    <!-- Critical CSS inline for immediate rendering -->
+    <!-- Critical CSS inline for homepage above-the-fold -->
     <style>
-      /* Critical CSS for immediate rendering - prevents layout shift */
+      /* Critical CSS for immediate rendering - homepage specific */
       html { 
         scroll-behavior: smooth; 
         font-size: 16px;
@@ -65,7 +65,7 @@
       body { 
         margin: 0; 
         padding: 0; 
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
         background: linear-gradient(135deg, #000000 0%, rgba(249, 115, 22, 0.1) 50%, rgba(220, 38, 38, 0.2) 100%);
         color: white;
         overflow-x: hidden;
@@ -80,7 +80,7 @@
         contain: layout style paint;
       }
       
-      /* Critical loading state to prevent flash */
+      /* Critical loading state */
       .app-loading {
         position: fixed;
         inset: 0;
@@ -104,26 +104,142 @@
         to { transform: rotate(360deg); }
       }
       
-      /* Critical mobile optimizations */
+      /* Critical homepage layout styles */
+      .hero-container {
+        min-height: 100vh;
+        background: linear-gradient(to bottom right, rgb(0 0 0), rgba(249, 115, 22, 0.1), rgba(220, 38, 38, 0.2));
+        color: rgb(255 255 255 / 1);
+        padding: 1rem;
+        overflow-y: auto;
+      }
+      
+      .hero-content {
+        max-width: 56rem;
+        margin: 0 auto;
+        text-align: center;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+      }
+      
+      .hero-logo {
+        width: 3rem;
+        height: 3rem;
+        background: linear-gradient(135deg, #f97316, #dc2626);
+        border-radius: 0.75rem;
+        margin: 0 auto 1.5rem auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+      }
+      
+      .hero-badge {
+        background: rgba(249, 115, 22, 0.2);
+        color: rgb(251, 146, 60);
+        border: 1px solid rgba(249, 115, 22, 0.3);
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+      
+      .hero-title {
+        font-size: clamp(1.5rem, 4vw, 3.75rem);
+        font-weight: 700;
+        color: white;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+      }
+      
+      .hero-title-gradient-1 {
+        background: linear-gradient(to right, white, rgb(254, 237, 204), white);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      
+      .hero-title-gradient-2 {
+        background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      
+      .hero-description {
+        font-size: clamp(0.875rem, 2vw, 1.125rem);
+        color: rgb(209, 213, 219);
+        margin-bottom: 2rem;
+        max-width: 48rem;
+        line-height: 1.6;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      
+      .hero-button {
+        background: linear-gradient(to right, #f97316, #dc2626);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 0.5rem;
+        border: none;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: inherit;
+        touch-action: manipulation;
+      }
+      
+      .hero-button:hover {
+        background: linear-gradient(to right, #ea580c, #b91c1c);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.2);
+      }
+      
+      .features-section {
+        padding: 3rem 1rem;
+        max-width: 56rem;
+        margin: 0 auto;
+      }
+      
+      .features-header {
+        max-width: 32rem;
+        margin: 0 auto;
+        text-align: center;
+        margin-bottom: 3rem;
+      }
+      
+      .features-title {
+        font-size: clamp(1.25rem, 3vw, 2.25rem);
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+      }
+      
+      .features-description {
+        color: rgb(156, 163, 175);
+        font-size: clamp(0.875rem, 2vw, 1.125rem);
+        line-height: 1.6;
+      }
+      
+      /* Mobile optimizations */
       @media (max-width: 768px) {
         html { font-size: 14px; }
         * { -webkit-tap-highlight-color: transparent; }
         input, textarea, select { font-size: 16px !important; }
+        .hero-content { padding-top: 1rem; }
+        .features-section { padding: 2rem 1rem; }
       }
       
-      /* Critical button styles to prevent layout shift */
-      button {
-        font-family: inherit;
-        cursor: pointer;
-        touch-action: manipulation;
-      }
-      
-      /* Critical layout containers */
-      .container { 
-        width: 100%; 
-        max-width: 1200px; 
-        margin: 0 auto; 
-        padding: 0 1rem;
+      /* Animation for skeleton removal */
+      .fade-out {
+        opacity: 0;
+        transition: opacity 0.2s ease-out;
       }
       
       /* Slide up animation for install prompts */
@@ -133,6 +249,10 @@
       }
       .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
     </style>
+    
+    <!-- Defer main CSS bundle to load after critical content renders -->
+    <link rel="preload" href="/assets/css/index-V2OB3Tvb.css" as="style" onload="this.onload=null;this.rel='stylesheet'" media="print">
+    <noscript><link rel="stylesheet" href="/assets/css/index-V2OB3Tvb.css"></noscript>
     
     
     <!-- Optimized font loading with font-display: swap -->
@@ -150,39 +270,39 @@
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Static hero content for LCP optimization -->
-    <div id="hero-skeleton" style="position: fixed; inset: 0; background: linear-gradient(135deg, #000000 0%, rgba(249, 115, 22, 0.1) 50%, rgba(220, 38, 38, 0.2) 100%); z-index: 1000; overflow-y: auto; padding: 1rem;">
+    <!-- Static hero content for LCP optimization with critical styles -->
+    <div id="hero-skeleton" class="hero-container" style="position: fixed; inset: 0; z-index: 1000;">
       <!-- Hero Section -->
-      <div style="max-width: 56rem; margin: 0 auto; text-align: center; padding-top: 2rem; padding-bottom: 3rem;">
-        <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #f97316, #dc2626); border-radius: 0.75rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🏋️</div>
-        <div style="background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border: 1px solid rgba(249, 115, 22, 0.3); padding: 0.25rem 0.75rem; border-radius: 9999px; display: inline-flex; align-items: center; margin-bottom: 1.5rem; font-size: 0.875rem;">
+      <div class="hero-content">
+        <div class="hero-logo">🏋️</div>
+        <div class="hero-badge">
           ⚡ Science-Powered Fitness AI
         </div>
-        <h1 style="font-size: clamp(1.5rem, 4vw, 3.75rem); font-weight: 700; color: white; margin-bottom: 1rem; line-height: 1.2;">
-          <span style="background: linear-gradient(to right, white, rgb(254, 237, 204), white); -webkit-background-clip: text; background-clip: text; color: transparent;">Transform Your</span>
+        <h1 class="hero-title">
+          <span class="hero-title-gradient-1">Transform Your</span>
           <br>
-          <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">Fitness Journey</span>
+          <span class="hero-title-gradient-2">Fitness Journey</span>
         </h1>
-        <p style="font-size: clamp(0.875rem, 2vw, 1.125rem); color: rgb(209, 213, 219); margin-bottom: 2rem; max-width: 48rem; line-height: 1.6;">
+        <p class="hero-description">
           Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. Based on the latest scientific research for optimal results.
         </p>
         <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center;">
-          <button id="hero-cta" style="background: linear-gradient(to right, #f97316, #dc2626); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <button id="hero-cta" class="hero-button">
             Start for Free →
           </button>
         </div>
       </div>
       
       <!-- Features Section with LCP Element -->
-      <div style="padding: 3rem 1rem; max-width: 56rem; margin: 0 auto;">
-        <div style="max-width: 32rem; margin: 0 auto; text-align: center; margin-bottom: 3rem;">
-          <h2 style="font-size: clamp(1.25rem, 3vw, 2.25rem); font-weight: 700; margin-bottom: 0.75rem;">
-            <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">
+      <div class="features-section">
+        <div class="features-header">
+          <h2 class="features-title">
+            <span class="hero-title-gradient-2">
               Powered by Science
             </span>
           </h2>
           <!-- This is the LCP element causing the issue -->
-          <p style="color: rgb(156, 163, 175); font-size: clamp(0.875rem, 2vw, 1.125rem); line-height: 1.6;" data-lcp-element="true">
+          <p class="features-description" data-lcp-element="true">
             Experience the future of fitness with AI that understands your unique needs
           </p>
         </div>
@@ -204,7 +324,7 @@
           };
         }
         
-        // Hide skeleton when React takes over
+        // Hide skeleton when React takes over with smooth transition
         const observer = new MutationObserver(function(mutations) {
           mutations.forEach(function(mutation) {
             if (mutation.addedNodes.length > 0) {
@@ -213,8 +333,7 @@
                                     document.querySelector('main') ||
                                     document.querySelector('[role="main"]');
               if (hasReactContent && heroSkeleton) {
-                heroSkeleton.style.opacity = '0';
-                heroSkeleton.style.transition = 'opacity 0.2s ease-out';
+                heroSkeleton.classList.add('fade-out');
                 setTimeout(function() {
                   if (heroSkeleton) {
                     heroSkeleton.style.display = 'none';

@@ -260,25 +260,40 @@
       .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
     </style>
     
-    <!-- Zero render-blocking CSS loading -->
+    <!-- Ultra-deferred CSS loading to eliminate unused CSS blocking -->
     <script>
-      // Completely non-blocking CSS loading using media trick
-      const cssLink = document.createElement('link');
-      cssLink.rel = 'stylesheet';
-      cssLink.href = '/assets/css/index-V2OB3Tvb.css';
-      cssLink.media = 'print'; // Non-blocking initial load
-      cssLink.onload = function() {
-        this.media = 'all'; // Apply styles after load
-      };
-      // Add to document immediately but won't block rendering
-      document.head.appendChild(cssLink);
+      // Only load full CSS bundle when React takes over or user interacts
+      let cssLoaded = false;
       
-      // Fallback for browsers that don't support onload
-      setTimeout(function() {
-        if (cssLink.media === 'print') {
-          cssLink.media = 'all';
-        }
-      }, 1000);
+      function loadFullCSS() {
+        if (cssLoaded) return;
+        cssLoaded = true;
+        
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = '/assets/css/index-V2OB3Tvb.css';
+        cssLink.media = 'print';
+        cssLink.onload = function() {
+          this.media = 'all';
+        };
+        document.head.appendChild(cssLink);
+      }
+      
+      // Load CSS on user interaction (when they actually need the full UI)
+      const interactionEvents = ['click', 'touchstart', 'keydown', 'scroll'];
+      const handleInteraction = () => {
+        interactionEvents.forEach(event => {
+          document.removeEventListener(event, handleInteraction, { passive: true });
+        });
+        loadFullCSS();
+      };
+      
+      interactionEvents.forEach(event => {
+        document.addEventListener(event, handleInteraction, { passive: true });
+      });
+      
+      // Fallback - load CSS after 3 seconds for non-interactive users
+      setTimeout(loadFullCSS, 3000);
     </script>
     
     

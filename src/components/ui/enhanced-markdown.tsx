@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
 
 interface EnhancedMarkdownProps {
   content: string;
@@ -37,11 +38,19 @@ export const EnhancedMarkdown: React.FC<EnhancedMarkdownProps> = ({
       .replace(/\n/g, '<br>');
   };
 
+  // Sanitize HTML before rendering
+  const sanitizedHTML = DOMPurify.sanitize(processMarkdown(content), {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'code'],
+    ALLOWED_ATTR: ['class'],
+    FORBID_TAGS: ['script', 'object', 'embed', 'link', 'style', 'img', 'iframe'],
+    USE_PROFILES: { html: true }
+  });
+
   return (
     <div 
       className={cn('prose prose-invert max-w-none', className)}
       dangerouslySetInnerHTML={{ 
-        __html: processMarkdown(content) 
+        __html: sanitizedHTML 
       }}
     />
   );

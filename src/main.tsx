@@ -59,20 +59,41 @@ if (!isCapacitor) {
 // Optimized iOS install prompt with better performance
 function createIOSInstallPrompt() {
   if (isIOS && !isInStandaloneMode) {
-    // Use requestIdleCallback for non-critical UI
-    const createPrompt = () => {
-      const iosPrompt = document.createElement('div');
-      iosPrompt.className = 'fixed bottom-4 left-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-3 rounded-xl shadow-2xl flex items-center justify-between transform transition-all duration-300 animate-slide-up';
-      iosPrompt.innerHTML = `
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm">📱</div>
-          <div class="min-w-0 flex-1">
-            <div class="font-semibold text-sm">Install Myotopia</div>
-            <div class="text-xs opacity-90 truncate">Tap Share → Add to Home Screen</div>
-          </div>
-        </div>
-        <button class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs font-medium transition-colors shrink-0" onclick="this.parentElement.remove()">✕</button>
-      `;
+  // Use requestIdleCallback for non-critical UI
+  const createPrompt = () => {
+    const iosPrompt = document.createElement('div');
+    iosPrompt.className = 'fixed bottom-4 left-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-3 rounded-xl shadow-2xl flex items-center justify-between transform transition-all duration-300 animate-slide-up';
+    
+    // Create elements safely without innerHTML
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'flex items-center gap-3';
+    
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm';
+    iconDiv.textContent = '📱';
+    
+    const textContainer = document.createElement('div');
+    textContainer.className = 'min-w-0 flex-1';
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'font-semibold text-sm';
+    titleDiv.textContent = 'Install Myotopia';
+    
+    const subtitleDiv = document.createElement('div');
+    subtitleDiv.className = 'text-xs opacity-90 truncate';
+    subtitleDiv.textContent = 'Tap Share → Add to Home Screen';
+    
+    const closeButton = document.createElement('button');
+    closeButton.className = 'bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs font-medium transition-colors shrink-0';
+    closeButton.textContent = '✕';
+    closeButton.onclick = () => iosPrompt.remove();
+    
+    textContainer.appendChild(titleDiv);
+    textContainer.appendChild(subtitleDiv);
+    contentDiv.appendChild(iconDiv);
+    contentDiv.appendChild(textContainer);
+    iosPrompt.appendChild(contentDiv);
+    iosPrompt.appendChild(closeButton);
       
       document.body.appendChild(iosPrompt);
       
@@ -108,7 +129,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   const createInstallButton = () => {
     const installButton = document.createElement('button');
     installButton.className = 'fixed bottom-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-3 py-2 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 touch-manipulation animate-slide-up';
-    installButton.innerHTML = '📱 Install App';
+    installButton.textContent = '📱 Install App';
     
     installButton.onclick = async () => {
       if (deferredPrompt) {

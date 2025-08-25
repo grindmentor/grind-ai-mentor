@@ -327,7 +327,7 @@
     </div>
     
     <!-- Optimized critical hero for instant LCP -->
-    <div id="hero-skeleton" style="position: fixed; inset: 0; z-index: 9999; background: linear-gradient(to bottom right, rgb(0 0 0), rgba(249, 115, 22, 0.1), rgba(220, 38, 38, 0.2)); color: white; overflow-y: auto;">
+    <div id="hero-skeleton" style="position: fixed; inset: 0; z-index: 9999; background: linear-gradient(to bottom right, rgb(0 0 0), rgba(249, 115, 22, 0.1), rgba(220, 38, 38, 0.2)); color: white; overflow-y: auto; display: none;">
       <!-- Hero Section -->
       <div style="max-width: 56rem; margin: 0 auto; text-align: center; padding: 2rem 1rem 3rem 1rem;">
         <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #f97316, #dc2626); border-radius: 0.75rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
@@ -369,6 +369,30 @@
     
     <!-- Optimized script loading with deferred React initialization -->
     <script>
+      // Immediately hide skeleton on page load for all pages except homepage
+      document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const heroSkeleton = document.getElementById('hero-skeleton');
+        const appLoading = document.getElementById('app-loading');
+        
+        // Only show skeleton on homepage
+        if (currentPath === '/') {
+          if (heroSkeleton) {
+            heroSkeleton.style.display = 'block';
+          }
+        } else {
+          // Hide skeleton immediately on all other pages
+          if (heroSkeleton) {
+            heroSkeleton.style.display = 'none';
+          }
+        }
+        
+        // Always hide loading spinner
+        if (appLoading) {
+          appLoading.style.display = 'none';
+        }
+      });
+      
       // Defer React initialization until user interaction or timeout
       let reactInitialized = false;
       
@@ -420,12 +444,6 @@
               window.location.href = '/signin';
             }, 100);
           };
-        }
-        
-        // Hide loading spinner immediately
-        const appLoading = document.getElementById('app-loading');
-        if (appLoading) {
-          appLoading.style.display = 'none';
         }
       });
     </script>

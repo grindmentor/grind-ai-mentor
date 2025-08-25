@@ -20,14 +20,20 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
   return (
     <div className={`flex items-center justify-center space-x-3 ${className}`}>
       <div className={`${sizes.logo} shadow-2xl shadow-orange-500/25 rounded-xl overflow-hidden`}>
-        <OptimizedImage
-          src="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" 
-          alt="Myotopia Logo"
-          width={sizes.pixels}
-          height={sizes.pixels}
-          className="w-full h-full object-cover"
-          priority={size === "lg" || size === "xl"}
-        />
+        <picture>
+          <source 
+            srcSet="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.webp" 
+            type="image/webp" 
+          />
+          <OptimizedImage
+            src="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" 
+            alt="Myotopia Logo"
+            width={sizes.pixels}
+            height={sizes.pixels}
+            className="w-full h-full object-cover"
+            priority={size === "lg" || size === "xl"}
+          />
+        </picture>
       </div>
       {showText && (
         <span className={`${sizes.text} font-bold text-transparent bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text font-orbitron tracking-wide`}>

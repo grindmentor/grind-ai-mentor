@@ -352,54 +352,69 @@
     
     <div id="root"></div>
     
-    <!-- Optimized script loading -->
+    <!-- Optimized script loading with deferred React initialization -->
     <script>
-      // Hide skeleton when React takes over
-      document.addEventListener('DOMContentLoaded', function() {
+      // Defer React initialization until user interaction or timeout
+      let reactInitialized = false;
+      
+      function initializeReact() {
+        if (reactInitialized) return;
+        reactInitialized = true;
+        
+        // Remove skeleton content
         const heroSkeleton = document.getElementById('hero-skeleton');
+        const appLoading = document.getElementById('app-loading');
+        
+        if (heroSkeleton) {
+          heroSkeleton.style.opacity = '0';
+          setTimeout(() => {
+            heroSkeleton.style.display = 'none';
+          }, 300);
+        }
+        
+        if (appLoading) {
+          appLoading.style.display = 'none';
+        }
+      }
+      
+      // Initialize React on user interaction (much faster than waiting for full load)
+      const interactionEvents = ['click', 'touchstart', 'keydown', 'scroll'];
+      const handleUserInteraction = () => {
+        interactionEvents.forEach(event => {
+          document.removeEventListener(event, handleUserInteraction, { passive: true });
+        });
+        initializeReact();
+      };
+      
+      interactionEvents.forEach(event => {
+        document.addEventListener(event, handleUserInteraction, { passive: true });
+      });
+      
+      // Fallback initialization after short delay for non-interactive users
+      setTimeout(initializeReact, 2000);
+      
+      // Enhanced hero button functionality
+      document.addEventListener('DOMContentLoaded', function() {
         const heroButton = document.getElementById('hero-cta');
         
         if (heroButton) {
           heroButton.onclick = function() {
-            window.location.href = '/signin';
+            // Initialize React immediately on CTA click
+            initializeReact();
+            setTimeout(() => {
+              window.location.href = '/signin';
+            }, 100);
           };
         }
         
-        // Hide skeleton when React takes over with smooth transition
-        const observer = new MutationObserver(function(mutations) {
-          mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length > 0) {
-              const hasReactContent = document.querySelector('[data-reactroot]') || 
-                                    document.querySelector('.min-h-screen:not(.app-loading)') ||
-                                    document.querySelector('main') ||
-                                    document.querySelector('[role="main"]');
-              if (hasReactContent && heroSkeleton) {
-                heroSkeleton.classList.add('fade-out');
-                setTimeout(function() {
-                  if (heroSkeleton) {
-                    heroSkeleton.style.display = 'none';
-                  }
-                }, 200);
-                observer.disconnect();
-              }
-            }
-          });
-        });
-        
-        observer.observe(document.getElementById('root'), {
-          childList: true,
-          subtree: true
-        });
-        
-        // Fallback timeout to ensure skeleton is hidden
-        setTimeout(function() {
-          if (heroSkeleton) {
-            heroSkeleton.style.display = 'none';
-          }
-        }, 5000);
+        // Hide loading spinner immediately
+        const appLoading = document.getElementById('app-loading');
+        if (appLoading) {
+          appLoading.style.display = 'none';
+        }
       });
     </script>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx" defer></script>
     
     <!-- Performance monitoring -->
     <script>

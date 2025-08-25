@@ -49,18 +49,18 @@ class ModuleErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center p-4">
-          <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 max-w-md w-full">
+        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground flex items-center justify-center p-4">
+          <Card className="bg-card/40 backdrop-blur-sm border-border max-w-md w-full">
             <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-8 h-8 text-red-400" />
+              <div className="w-16 h-16 bg-destructive/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
               </div>
-              <CardTitle className="text-white">
+              <CardTitle className="text-foreground">
                 {this.props.moduleName ? `${this.props.moduleName} Error` : 'Module Error'}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Something went wrong while loading this module. This error has been logged.
               </p>
               
@@ -78,7 +78,7 @@ class ModuleErrorBoundary extends Component<Props, State> {
                 <Button
                   onClick={this.handleReset}
                   variant="outline"
-                  className="w-full border-gray-700 hover:bg-gray-800"
+                  className="w-full"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
@@ -87,7 +87,7 @@ class ModuleErrorBoundary extends Component<Props, State> {
                 <Button
                   onClick={this.handleReload}
                   variant="outline"
-                  className="w-full border-gray-700 hover:bg-gray-800"
+                  className="w-full"
                 >
                   Reload Page
                 </Button>
@@ -95,10 +95,10 @@ class ModuleErrorBoundary extends Component<Props, State> {
 
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mt-4 text-left">
-                  <summary className="text-sm text-gray-500 cursor-pointer">
+                  <summary className="text-sm text-muted-foreground cursor-pointer">
                     Error Details (Dev Mode)
                   </summary>
-                  <pre className="mt-2 text-xs text-red-400 bg-gray-800 p-2 rounded overflow-auto max-h-40">
+                  <pre className="mt-2 text-xs text-destructive bg-muted p-2 rounded overflow-auto max-h-40">
                     {this.state.error.message}
                     {this.state.error.stack && '\n' + this.state.error.stack}
                     {this.state.errorInfo && '\n\nComponent Stack:' + this.state.errorInfo.componentStack}

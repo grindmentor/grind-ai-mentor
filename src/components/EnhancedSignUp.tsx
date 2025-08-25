@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { SoundButton } from "@/components/SoundButton";
 import { playSuccessSound, playErrorSound, playClickSound } from "@/utils/soundEffects";
@@ -203,7 +204,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
               />
               <div className="space-y-1">
                 <Label htmlFor="terms" className="text-foreground text-sm leading-relaxed cursor-pointer">
-                  I agree to the <a href="/terms" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Terms of Service</a>
+                  I agree to the <Link to="/terms" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Terms of Service</Link>
                 </Label>
                 <p className="text-muted-foreground text-xs">
                   By agreeing, you accept our terms for using Myotopia's fitness services.
@@ -223,7 +224,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
               />
               <div className="space-y-1">
                 <Label htmlFor="privacy" className="text-foreground text-sm leading-relaxed cursor-pointer">
-                  I agree to the <a href="/privacy" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Privacy Policy</a>
+                  I agree to the <Link to="/privacy" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Privacy Policy</Link>
                 </Label>
                 <p className="text-muted-foreground text-xs">
                   We protect your data and will never share it without your consent.

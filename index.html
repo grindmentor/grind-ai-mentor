@@ -258,64 +258,37 @@
       .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
     </style>
     
-    <!-- Aggressively defer main CSS bundle to completely eliminate render blocking -->
+    <!-- Ultra-fast CSS loading for immediate LCP -->
     <script>
-      // Load CSS with zero render blocking using requestIdleCallback
-      function loadCSS() {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/assets/css/index-V2OB3Tvb.css';
-        link.media = 'print'; // Initially set to print to avoid blocking
-        link.onload = function() {
-          // Change to all after load completes
-          requestAnimationFrame(() => {
-            this.media = 'all';
-          });
-        };
-        // Add to head with lowest priority
-        document.head.appendChild(link);
-      }
-      
-      // Use requestIdleCallback to defer until browser is idle
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(loadCSS, { timeout: 100 });
-      } else {
-        // Fallback for browsers without requestIdleCallback
-        setTimeout(loadCSS, 0);
-      }
+      // Preload CSS for instant availability
+      const cssLink = document.createElement('link');
+      cssLink.rel = 'preload';
+      cssLink.href = '/assets/css/index-V2OB3Tvb.css';
+      cssLink.as = 'style';
+      cssLink.onload = function() {
+        this.rel = 'stylesheet';
+      };
+      document.head.appendChild(cssLink);
     </script>
     
     
-    <!-- Defer all font loading to prevent render blocking -->
-    <script>
-      // Load fonts asynchronously after critical content renders
-      function loadFonts() {
-        const fonts = [
-          'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-          'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap'
-        ];
-        
-        fonts.forEach((fontUrl, index) => {
-          setTimeout(() => {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = fontUrl;
-            link.media = 'print';
-            link.onload = function() {
-              this.media = 'all';
-            };
-            document.head.appendChild(link);
-          }, index * 50);
-        });
+    <!-- Inline critical fonts for immediate LCP -->
+    <style>
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyeMZhrib2Bg-4.woff2') format('woff2');
       }
-      
-      // Load fonts after DOM is ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(loadFonts, 100));
-      } else {
-        setTimeout(loadFonts, 100);
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+        src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYMZhrib2Bg-4.woff2') format('woff2');
       }
-    </script>
+    </style>
     
     <!-- Fallback for no-JS font loading -->
     <noscript>
@@ -328,44 +301,27 @@
       <div class="loading-spinner"></div>
     </div>
     
-    <!-- Critical above-the-fold content for immediate FCP -->
-    <div id="hero-skeleton" class="hero-container" style="position: fixed; inset: 0; z-index: 9999; display: block;">
-      <!-- Immediate visible hero content -->
-      <div class="hero-content" style="opacity: 1; visibility: visible;">
-        <!-- Inline logo for immediate rendering -->
-        <div class="hero-logo" style="background: linear-gradient(135deg, #f97316, #dc2626); color: white; font-weight: bold;">
+    <!-- Optimized critical hero for instant LCP -->
+    <div id="hero-skeleton" style="position: fixed; inset: 0; z-index: 9999; background: linear-gradient(to bottom right, rgb(0 0 0), rgba(249, 115, 22, 0.1), rgba(220, 38, 38, 0.2)); color: white; overflow-y: auto;">
+      <div style="max-width: 56rem; margin: 0 auto; text-align: center; padding: 2rem 1rem 3rem 1rem;">
+        <!-- Immediate LCP element -->
+        <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #f97316, #dc2626); border-radius: 0.75rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; opacity: 1; visibility: visible;">
           🏋️
         </div>
-        <div class="hero-badge" style="opacity: 1;">
+        <div style="background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border: 1px solid rgba(249, 115, 22, 0.3); padding: 0.25rem 0.75rem; border-radius: 9999px; display: inline-flex; align-items: center; margin-bottom: 1.5rem; font-size: 0.875rem; font-weight: 500; opacity: 1;">
           ⚡ Science-Powered Fitness AI
         </div>
-        <h1 class="hero-title" style="opacity: 1;">
-          <span class="hero-title-gradient-1">Transform Your</span>
+        <h1 style="font-size: clamp(1.5rem, 4vw, 3.75rem); font-weight: 700; color: white; margin-bottom: 1rem; line-height: 1.2; opacity: 1;">
+          <span style="background: linear-gradient(to right, white, rgb(254, 237, 204), white); -webkit-background-clip: text; background-clip: text; color: transparent;">Transform Your</span>
           <br>
-          <span class="hero-title-gradient-2">Fitness Journey</span>
+          <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">Fitness Journey</span>
         </h1>
-        <p class="hero-description" style="opacity: 1;">
+        <p style="font-size: clamp(0.875rem, 2vw, 1.125rem); color: rgb(209, 213, 219); margin-bottom: 2rem; max-width: 48rem; line-height: 1.6; margin-left: auto; margin-right: auto; opacity: 1;">
           Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. Based on the latest scientific research for optimal results.
         </p>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center; opacity: 1;">
-          <button id="hero-cta" class="hero-button" style="opacity: 1;">
-            Start for Free →
-          </button>
-        </div>
-      </div>
-      
-      <!-- Features section -->
-      <div class="features-section" style="opacity: 1;">
-        <div class="features-header">
-          <h2 class="features-title" style="opacity: 1;">
-            <span class="hero-title-gradient-2">
-              Powered by Science
-            </span>
-          </h2>
-          <p class="features-description" data-lcp-element="true" style="opacity: 1;">
-            Experience the future of fitness with AI that understands your unique needs
-          </p>
-        </div>
+        <button id="hero-cta" style="background: linear-gradient(to right, #f97316, #dc2626); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit; opacity: 1;">
+          Start for Free →
+        </button>
       </div>
     </div>
     

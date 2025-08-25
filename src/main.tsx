@@ -205,52 +205,71 @@ function updateOnlineStatus() {
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
-// Ultra-optimized font preloading with performance monitoring
-const criticalFonts = [
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-  'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap'
-];
-
-criticalFonts.forEach((fontUrl, index) => {
-  // Stagger font loading to avoid blocking
-  setTimeout(() => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'style';
-    link.href = fontUrl;
-    link.onload = () => {
-      link.rel = 'stylesheet';
-    };
-    document.head.appendChild(link);
-  }, index * 50);
-});
-
-// Ultra-aggressive critical component preloading
+// Optimized font preloading - defer to prevent blocking FCP
 if (typeof window !== 'undefined') {
-  // Immediate preloading without waiting for idle
-  const criticalImports = [
-    () => import('./components/Dashboard'),
-    () => import('./components/ui/loading-screen'),
-    () => import('./components/ai-modules/CoachGPT'),
-    () => import('./components/ai-modules/SmartTraining'),
-    () => import('./components/ai-modules/WorkoutLoggerAI'),
-    () => import('./components/ai-modules/TDEECalculator'),
-    () => import('./components/ai-modules/ProgressHub'),
-    () => import('./components/ai-modules/BlueprintAI')
-  ];
+  const optimizedFontLoad = () => {
+    const criticalFonts = [
+      'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+      'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap'
+    ];
 
-  // Load all critical components immediately in parallel
-  criticalImports.forEach((importFn, index) => {
-    setTimeout(() => {
-      importFn().catch(() => {});
-    }, index * 10); // Minimal 10ms stagger
-  });
+    criticalFonts.forEach((fontUrl, index) => {
+      setTimeout(() => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = fontUrl;
+        link.media = 'print';
+        link.onload = () => {
+          link.media = 'all';
+        };
+        document.head.appendChild(link);
+      }, index * 100); // Stagger font loading
+    });
+  };
 
-  // Simple module loading - no aggressive preloading
+  // Load fonts after initial render
+  setTimeout(optimizedFontLoad, 200);
+}
+
+// Defer non-critical component preloading until after first paint
+if (typeof window !== 'undefined') {
+  // Defer preloading to after initial render
+  const deferredPreload = () => {
+    const criticalImports = [
+      () => import('./components/Dashboard'),
+      () => import('./components/ui/loading-screen'),
+      () => import('./components/ai-modules/CoachGPT'),
+      () => import('./components/ai-modules/SmartTraining'),
+      () => import('./components/ai-modules/WorkoutLoggerAI'),
+      () => import('./components/ai-modules/TDEECalculator'),
+      () => import('./components/ai-modules/ProgressHub'),
+      () => import('./components/ai-modules/BlueprintAI')
+    ];
+
+    // Load components after initial paint
+    criticalImports.forEach((importFn, index) => {
+      setTimeout(() => {
+        importFn().catch(() => {});
+      }, 100 + (index * 50)); // Start after 100ms, stagger by 50ms
+    });
+  };
+
+  // Wait for first paint before preloading
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(deferredPreload, { timeout: 500 });
+  } else {
+    setTimeout(deferredPreload, 300);
+  }
 }
 
 // Performance measurement
 const appStart = performance.now();
+
+// Hide loading indicator immediately when React starts
+const loadingElement = document.getElementById('app-loading');
+if (loadingElement) {
+  loadingElement.style.display = 'none';
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -89,7 +89,8 @@ const SafeComponent = ({ moduleName, onBack }: {
   onBack?: () => void;
 }) => {
   const { loadMetrics, recordLoadComplete } = useModuleLoadPerformance(moduleName);
-  console.log(`Loading module: ${moduleName}`);
+  console.log(`[SafeComponent] Attempting to load module: ${moduleName}`);
+  console.log(`[SafeComponent] Available props:`, { moduleName, onBack });
   
   try {
     // Dynamically import components with enhanced error handling
@@ -362,10 +363,16 @@ const SafeComponent = ({ moduleName, onBack }: {
         );
       
       default:
-        console.warn(`Unknown module: ${moduleName}`);
+        console.error(`[SafeComponent] Unknown module requested: ${moduleName}`);
+        console.error(`[SafeComponent] Available modules:`, [
+          'blueprint-ai', 'smart-training', 'coach-gpt', 'tdee-calculator', 
+          'meal-plan-generator', 'smart-food-log', 'workout-logger-ai', 
+          'progress-hub', 'recovery-coach-ai', 'physique-ai', 'cardio-ai', 
+          'cut-calc-pro', 'progress-ai', 'habit-tracker'
+        ]);
         return (
           <ModuleErrorBoundary moduleName={moduleName} onBack={onBack}>
-            <PlaceholderComponent title={moduleName} onBack={onBack} />
+            <PlaceholderComponent title={`Unknown: ${moduleName}`} onBack={onBack} />
           </ModuleErrorBoundary>
         );
     }

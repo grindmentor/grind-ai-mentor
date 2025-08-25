@@ -23,6 +23,8 @@ class ModuleErrorBoundary extends Component<Props, State> {
 
   public static getDerivedStateFromError(error: Error): State {
     console.error('Module Error Boundary caught error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
     return { hasError: true, error };
   }
 

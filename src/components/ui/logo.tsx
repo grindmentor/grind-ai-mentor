@@ -25,13 +25,14 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
             srcSet="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.webp" 
             type="image/webp" 
           />
-          <OptimizedImage
+          <img
             src="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" 
             alt="Myotopia Logo"
             width={sizes.pixels}
             height={sizes.pixels}
             className="w-full h-full object-cover"
-            priority={size === "lg" || size === "xl"}
+            loading={size === "lg" || size === "xl" ? "eager" : "lazy"}
+            decoding="async"
           />
         </picture>
       </div>

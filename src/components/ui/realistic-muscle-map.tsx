@@ -81,6 +81,8 @@ export const RealisticMuscleMap: React.FC<RealisticMuscleMapProps> = ({
             src={viewMode === 'front' ? '/lovable-uploads/a2f0ea8c-f9d9-4353-a43f-af6cc4628401.png' : backAnatomyImage}
             alt={viewMode === 'front' ? 'Myotopia realistic muscle anatomy map (anterior view)' : 'Myotopia realistic muscle anatomy map (posterior view)'}
             className="w-full h-full object-contain rounded-lg"
+            loading="eager"
+            decoding="async"
           />
           
           {/* Color overlays for muscle development */}

@@ -21,7 +21,7 @@ import WorkoutLoggerAI from '@/components/ai-modules/WorkoutLoggerAI';
 import TDEECalculator from '@/components/ai-modules/TDEECalculator';
 import WorkoutTimer from '@/components/ai-modules/WorkoutTimer';
 import MealPlanAI from '@/components/ai-modules/MealPlanAI';
-import ProgressHub from '@/components/ai-modules/ProgressHub';
+import OptimizedProgressHub from '@/components/ai-modules/OptimizedProgressHub';
 import RecoveryCoach from '@/components/ai-modules/RecoveryCoach';
 import HabitTracker from '@/components/ai-modules/HabitTracker';
 import ProgressAI from '@/components/ai-modules/ProgressAI';
@@ -111,7 +111,7 @@ export const aiModules: AIModule[] = [
     description: 'Track your fitness journey with detailed analytics',
     icon: TrendingUp,
     gradient: 'from-purple-600/80 to-purple-800/90 border-purple-500/60',
-    component: ProgressHub,
+    component: OptimizedProgressHub,
     isPremium: false
   },
   {

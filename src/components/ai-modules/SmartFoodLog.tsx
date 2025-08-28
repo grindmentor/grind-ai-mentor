@@ -433,17 +433,31 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                 
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <Label className="text-orange-200">Search Food (type 3+ characters)</Label>
-                    <div className="relative">
-                      <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="e.g., semolina flour, chicken breast, apple"
-                        className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50 pr-10"
-                      />
-                      {isSearching && (
-                        <Loader2 className="absolute right-3 top-3 w-4 h-4 animate-spin text-orange-400" />
-                      )}
+                    <Label className="text-orange-200">Search Food</Label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="e.g., semolina flour, chicken breast, apple"
+                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && searchQuery.length >= 3) {
+                              performUSDASearch(searchQuery);
+                            }
+                          }}
+                        />
+                        {isSearching && (
+                          <Loader2 className="absolute right-3 top-3 w-4 h-4 animate-spin text-orange-400" />
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => performUSDASearch(searchQuery)}
+                        disabled={searchQuery.length < 3 || isSearching}
+                        className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
+                      >
+                        <Search className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
 

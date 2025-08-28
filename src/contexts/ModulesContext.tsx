@@ -53,8 +53,9 @@ const SimpleLoader = ({ title }: { title: string }) => (
   </div>
 );
 
-// Simplified module component without complex fallbacks
+// Fixed component that avoids the "rendered fewer hooks" error
 const SafeComponent = ({ moduleName, onBack, ...props }: { moduleName: string; onBack?: () => void }) => {
+  // Always call hooks in the same order, regardless of state
   const [Component, setComponent] = React.useState<React.ComponentType<any> | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -112,17 +113,12 @@ const SafeComponent = ({ moduleName, onBack, ...props }: { moduleName: string; o
             throw new Error(`Unknown module: ${moduleName}`);
         }
 
-        if (mounted) {
+        if (mounted && moduleImport?.default) {
           setComponent(() => moduleImport.default);
           setLoading(false);
         }
       } catch (err) {
         console.error(`Failed to load module ${moduleName}:`, err);
-        console.error('Module error details:', {
-          moduleName,
-          error: err,
-          stack: err instanceof Error ? err.stack : undefined
-        });
         if (mounted) {
           setError(`Failed to load ${moduleName}: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
@@ -131,41 +127,39 @@ const SafeComponent = ({ moduleName, onBack, ...props }: { moduleName: string; o
     };
 
     loadModule();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [moduleName]);
 
-  if (loading) {
-    return <SimpleLoader title={moduleName} />;
-  }
-
-  if (error || !Component) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] p-8">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
-            <Target className="w-8 h-8 text-red-500" />
+  // Always render the same component structure to avoid hook count changes
+  return (
+    <React.Fragment>
+      {loading ? (
+        <SimpleLoader title={moduleName} />
+      ) : error || !Component ? (
+        <div className="flex items-center justify-center min-h-[400px] p-8">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
+              <Target className="w-8 h-8 text-red-500" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Module Error</h3>
+              <p className="text-muted-foreground">{error || 'Module failed to load'}</p>
+            </div>
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+              >
+                Back to Dashboard
+              </button>
+            )}
           </div>
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-foreground">Module Error</h3>
-            <p className="text-muted-foreground">{error || 'Module failed to load'}</p>
-          </div>
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
-            >
-              Back to Dashboard
-            </button>
-          )}
         </div>
-      </div>
-    );
-  }
-
-  return <Component onBack={onBack} {...props} />;
+      ) : (
+        <Component onBack={onBack} {...props} />
+      )}
+    </React.Fragment>
+  );
 };
 
 const ModulesProvider = ({ children }: { children: React.ReactNode }) => {

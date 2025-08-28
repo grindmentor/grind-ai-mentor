@@ -73,16 +73,16 @@ export const usePreloadComponents = () => {
 export const useModulePreloader = () => {
   const preloadModule = async (moduleId: string) => {
     const moduleMap: Record<string, () => Promise<any>> = {
-      'coachgpt': () => import('@/components/ai-modules/CoachGPT'),
+      'coach-gpt': () => import('@/components/ai-modules/CoachGPT'),
       'smart-training': () => import('@/components/ai-modules/SmartTraining'),
       'workout-logger': () => import('@/components/ai-modules/WorkoutLoggerAI'),
       'progress-hub': () => import('@/components/ai-modules/ProgressHub'),
-      'food-log': () => import('@/components/ai-modules/SmartFoodLog'),
+      'smart-food-log': () => import('@/components/ai-modules/SmartFoodLog'),
       'physique-ai': () => import('@/components/ai-modules/PhysiqueAI'),
       'tdee-calculator': () => import('@/components/ai-modules/TDEECalculator'),
-      'meal-plan-ai': () => import('@/components/ai-modules/MealPlanAI'),
-      'recovery-coach': () => import('@/components/ai-modules/RecoveryCoachAI'),
-      'timer': () => import('@/components/ai-modules/WorkoutTimer'),
+      'meal-plan-generator': () => import('@/components/ai-modules/MealPlanAI'),
+      'recovery-coach': () => import('@/components/ai-modules/RecoveryCoach'),
+      'workout-timer': () => import('@/components/ai-modules/WorkoutTimer'),
       'habit-tracker': () => import('@/components/ai-modules/HabitTracker'),
       'cut-calc-pro': () => import('@/components/ai-modules/CutCalcPro'),
       'workout-scheduler': () => import('@/components/ai-modules/WorkoutScheduler')

@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,6 @@ const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
 const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements'));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
-const ModuleScrollHandler = lazy(() => import('@/components/ui/module-scroll-handler'));
 
 // Define the type for computed modules
 interface ComputedModules {
@@ -202,9 +200,7 @@ const Dashboard = () => {
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Modules not loaded yet, showing loading screen');
-    }
+    console.log('Modules not loaded yet, showing loading screen');
     return <EnhancedLoading type="dashboard" skeleton={true} message="Loading Myotopia modules..." />;
   }
 
@@ -219,9 +215,7 @@ const Dashboard = () => {
 
   // Show selected module with native transition
   if (selectedModule) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Rendering selected module:', selectedModule.id);
-    }
+    console.log('Rendering selected module:', selectedModule.id);
     try {
       const ModuleComponent = selectedModule.component;
       return (
@@ -233,15 +227,13 @@ const Dashboard = () => {
           >
             <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
               <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
-                <ModuleScrollHandler moduleId={selectedModule.id}>
-                  <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
-                    <ModuleComponent 
-                      onBack={handleBackToDashboard}
-                      onFoodLogged={handleFoodLogged}
-                      navigationSource={navigationSource}
-                    />
-                  </ModuleErrorBoundary>
-                </ModuleScrollHandler>
+                <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
+                  <ModuleComponent 
+                    onBack={handleBackToDashboard}
+                    onFoodLogged={handleFoodLogged}
+                    navigationSource={navigationSource}
+                  />
+                </ModuleErrorBoundary>
               </Suspense>
             </div>
           </NativeTransition>
@@ -253,10 +245,7 @@ const Dashboard = () => {
     }
   }
 
-  // Scroll to top when dashboard loads
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  // Remove excessive console logs that cause performance issues
 
   return (
     <ErrorBoundary>

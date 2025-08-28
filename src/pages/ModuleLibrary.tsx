@@ -90,13 +90,7 @@ const ModuleLibrary = () => {
 
   const handleModuleClick = (module) => {
     setSelectedModule(module);
-    // Improved scroll handling with error checking
-    try {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
-      // Fallback for browsers that don't support smooth scrolling
-      window.scrollTo(0, 0);
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToLibrary = () => {

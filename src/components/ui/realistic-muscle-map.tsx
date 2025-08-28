@@ -14,13 +14,13 @@ export const RealisticMuscleMap: React.FC<RealisticMuscleMapProps> = ({
   viewMode = 'front' 
 }) => {
   const getMuscleColor = (score: number): string => {
-    if (score >= 90) return '#10b981'; // Emerald-500 - Elite
-    if (score >= 80) return '#8b5cf6'; // Violet-500 - Advanced
-    if (score >= 70) return '#7c3aed'; // Purple-600 - Intermediate+
-    if (score >= 60) return '#6d28d9'; // Purple-700 - Intermediate
-    if (score >= 50) return '#5b21b6'; // Purple-800 - Beginner+
-    if (score >= 30) return '#4c1d95'; // Purple-900 - Beginner
-    return '#6b7280'; // Gray-500 - Untrained
+    if (score >= 90) return 'hsl(var(--primary))'; // Elite
+    if (score >= 80) return 'hsl(262 83% 58%)'; // Advanced - purple
+    if (score >= 70) return 'hsl(258 90% 66%)'; // Intermediate+ - purple
+    if (score >= 60) return 'hsl(253 91% 52%)'; // Intermediate - purple
+    if (score >= 50) return 'hsl(250 84% 54%)'; // Beginner+ - purple
+    if (score >= 30) return 'hsl(248 95% 70%)'; // Beginner - light purple
+    return 'hsl(var(--muted-foreground))'; // Untrained
   };
 
   const getMuscleScore = (muscleName: string): number => {
@@ -34,97 +34,99 @@ export const RealisticMuscleMap: React.FC<RealisticMuscleMapProps> = ({
   if (viewMode === 'back') {
     return (
       <div className="relative w-full max-w-md mx-auto">
-        <div className="bg-gradient-to-br from-slate-900/40 to-slate-800/60 rounded-2xl p-6 border border-slate-500/20">
+        <div className="bg-card rounded-2xl p-6 border border-border">
           <h3 className="text-center text-sm font-medium text-foreground mb-4">Posterior View</h3>
           <svg viewBox="0 0 300 500" className="w-full h-auto">
             {/* Head (back) */}
-            <circle cx="150" cy="45" r="25" fill="rgba(100, 116, 139, 0.3)" stroke="#64748b" strokeWidth="1"/>
+            <circle cx="150" cy="45" r="25" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
             
             {/* Neck */}
-            <rect x="140" y="70" width="20" height="12" fill="rgba(100, 116, 139, 0.3)" rx="6"/>
+            <rect x="140" y="70" width="20" height="12" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2" rx="6"/>
             
             {/* Trapezius */}
-            <path d="M 120 85 Q 150 75 180 85 Q 190 95 185 110 Q 150 115 115 110 Q 110 95 120 85 Z"
+            <path d="M 120 85 L 180 85 L 185 110 L 115 110 Z"
               fill={getMuscleColor(getMuscleScore('traps'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.9"/>
-            <text x="150" y="100" textAnchor="middle" className="fill-white text-xs font-medium">
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="150" y="100" textAnchor="middle" className="fill-foreground text-xs font-medium">
               Traps
             </text>
             
             {/* Rear Delts */}
-            <ellipse cx="105" cy="115" rx="12" ry="18" 
+            <rect x="93" y="97" width="24" height="36" rx="12"
               fill={getMuscleColor(getMuscleScore('shoulders'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
-            <ellipse cx="195" cy="115" rx="12" ry="18" 
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <rect x="183" y="97" width="24" height="36" rx="12"
               fill={getMuscleColor(getMuscleScore('shoulders'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="105" y="118" textAnchor="middle" className="fill-foreground text-xs font-medium">Rear</text>
+            <text x="195" y="118" textAnchor="middle" className="fill-foreground text-xs font-medium">Rear</text>
             
             {/* Latissimus Dorsi */}
-            <path d="M 110 130 Q 90 160 95 200 Q 120 220 140 210 Q 150 180 150 150 Q 140 140 110 130 Z"
+            <polygon points="110,130 90,160 95,200 140,210 150,150"
               fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
-            <path d="M 190 130 Q 210 160 205 200 Q 180 220 160 210 Q 150 180 150 150 Q 160 140 190 130 Z"
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <polygon points="190,130 210,160 205,200 160,210 150,150"
               fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
-            <text x="125" y="170" textAnchor="middle" className="fill-white text-xs font-medium">Lats</text>
-            <text x="175" y="170" textAnchor="middle" className="fill-white text-xs font-medium">Lats</text>
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="125" y="170" textAnchor="middle" className="fill-foreground text-xs font-medium">Lats</text>
+            <text x="175" y="170" textAnchor="middle" className="fill-foreground text-xs font-medium">Lats</text>
             
-            {/* Rhomboids & Mid Traps */}
-            <ellipse cx="150" cy="135" rx="25" ry="15" 
+            {/* Mid Back */}
+            <rect x="125" y="120" width="50" height="30" rx="8"
               fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
-            <text x="150" y="140" textAnchor="middle" className="fill-white text-xs font-medium">
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="150" y="138" textAnchor="middle" className="fill-foreground text-xs font-medium">
               Mid Back
             </text>
             
             {/* Triceps */}
-            <ellipse cx="85" cy="160" rx="10" ry="25" 
+            <rect x="75" y="135" width="20" height="50" rx="10"
               fill={getMuscleColor(getMuscleScore('arms'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
-            <ellipse cx="215" cy="160" rx="10" ry="25" 
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <rect x="205" y="135" width="20" height="50" rx="10"
               fill={getMuscleColor(getMuscleScore('arms'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
-            <text x="85" y="165" textAnchor="middle" className="fill-white text-xs font-medium">Tri</text>
-            <text x="215" y="165" textAnchor="middle" className="fill-white text-xs font-medium">Tri</text>
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="85" y="163" textAnchor="middle" className="fill-foreground text-xs font-medium">Tri</text>
+            <text x="215" y="163" textAnchor="middle" className="fill-foreground text-xs font-medium">Tri</text>
             
-            {/* Lower Back / Erector Spinae */}
-            <ellipse cx="150" cy="200" rx="20" ry="25" 
+            {/* Lower Back */}
+            <rect x="130" y="175" width="40" height="50" rx="8"
               fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="#ffffff" strokeWidth="1" opacity="0.8"/>
-            <text x="150" y="205" textAnchor="middle" className="fill-white text-xs font-medium">
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="150" y="203" textAnchor="middle" className="fill-foreground text-xs font-medium">
               Lower Back
             </text>
             
             {/* Glutes */}
-            <ellipse cx="135" cy="240" rx="18" ry="20" 
+            <rect x="117" y="220" width="36" height="40" rx="8"
               fill={getMuscleColor(getMuscleScore('glutes'))} 
-              stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-            <ellipse cx="165" cy="240" rx="18" ry="20" 
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <rect x="147" y="220" width="36" height="40" rx="8"
               fill={getMuscleColor(getMuscleScore('glutes'))} 
-              stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-            <text x="150" y="245" textAnchor="middle" className="fill-white text-xs font-medium">
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="150" y="243" textAnchor="middle" className="fill-foreground text-xs font-medium">
               Glutes
             </text>
             
             {/* Hamstrings */}
-            <ellipse cx="130" cy="300" rx="15" ry="40" 
+            <rect x="115" y="260" width="30" height="80" rx="8"
               fill={getMuscleColor(getMuscleScore('legs'))} 
-              stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-            <ellipse cx="170" cy="300" rx="15" ry="40" 
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <rect x="155" y="260" width="30" height="80" rx="8"
               fill={getMuscleColor(getMuscleScore('legs'))} 
-              stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-            <text x="150" y="305" textAnchor="middle" className="fill-white text-xs font-medium">
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="150" y="303" textAnchor="middle" className="fill-foreground text-xs font-medium">
               Hamstrings
             </text>
             
             {/* Calves */}
-            <ellipse cx="130" cy="400" rx="12" ry="30" 
+            <rect x="118" y="370" width="24" height="60" rx="8"
               fill={getMuscleColor(getMuscleScore('calves'))} 
-              stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-            <ellipse cx="170" cy="400" rx="12" ry="30" 
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <rect x="158" y="370" width="24" height="60" rx="8"
               fill={getMuscleColor(getMuscleScore('calves'))} 
-              stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-            <text x="150" y="405" textAnchor="middle" className="fill-white text-xs font-medium">
+              stroke="hsl(var(--border))" strokeWidth="2"/>
+            <text x="150" y="403" textAnchor="middle" className="fill-foreground text-xs font-medium">
               Calves
             </text>
           </svg>
@@ -136,114 +138,114 @@ export const RealisticMuscleMap: React.FC<RealisticMuscleMapProps> = ({
   // Front view (default)
   return (
     <div className="relative w-full max-w-md mx-auto">
-      <div className="bg-gradient-to-br from-slate-900/40 to-slate-800/60 rounded-2xl p-6 border border-slate-500/20">
+      <div className="bg-card rounded-2xl p-6 border border-border">
         <h3 className="text-center text-sm font-medium text-foreground mb-4">Anterior View</h3>
         <svg viewBox="0 0 300 500" className="w-full h-auto">
           {/* Head */}
-          <circle cx="150" cy="45" r="25" fill="rgba(100, 116, 139, 0.3)" stroke="#64748b" strokeWidth="1"/>
+          <circle cx="150" cy="45" r="25" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
           
           {/* Neck */}
-          <rect x="140" y="70" width="20" height="12" fill="rgba(100, 116, 139, 0.3)" rx="6"/>
+          <rect x="140" y="70" width="20" height="12" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2" rx="6"/>
           
           {/* Anterior Deltoids */}
-          <ellipse cx="115" cy="105" rx="15" ry="20" 
+          <rect x="100" y="85" width="30" height="40" rx="15"
             fill={getMuscleColor(getMuscleScore('shoulders'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-          <ellipse cx="185" cy="105" rx="15" ry="20" 
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <rect x="170" y="85" width="30" height="40" rx="15"
             fill={getMuscleColor(getMuscleScore('shoulders'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-          <text x="115" y="110" textAnchor="middle" className="fill-white text-xs font-medium">Delts</text>
-          <text x="185" y="110" textAnchor="middle" className="fill-white text-xs font-medium">Delts</text>
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <text x="115" y="108" textAnchor="middle" className="fill-foreground text-xs font-medium">Delts</text>
+          <text x="185" y="108" textAnchor="middle" className="fill-foreground text-xs font-medium">Delts</text>
           
           {/* Pectorals */}
-          <path d="M 120 120 Q 150 110 180 120 Q 185 140 175 155 Q 150 165 125 155 Q 115 140 120 120 Z"
+          <polygon points="120,120 180,120 175,155 125,155"
             fill={getMuscleColor(getMuscleScore('chest'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-          <text x="150" y="140" textAnchor="middle" className="fill-white text-xs font-medium">
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <text x="150" y="140" textAnchor="middle" className="fill-foreground text-xs font-medium">
             Chest
           </text>
           
           {/* Biceps */}
-          <ellipse cx="95" cy="155" rx="12" ry="25" 
+          <rect x="83" y="130" width="24" height="50" rx="12"
             fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <ellipse cx="205" cy="155" rx="12" ry="25" 
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <rect x="193" y="130" width="24" height="50" rx="12"
             fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.8"/>
-          <text x="95" y="160" textAnchor="middle" className="fill-white text-xs font-medium">Bi</text>
-          <text x="205" y="160" textAnchor="middle" className="fill-white text-xs font-medium">Bi</text>
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <text x="95" y="158" textAnchor="middle" className="fill-foreground text-xs font-medium">Bi</text>
+          <text x="205" y="158" textAnchor="middle" className="fill-foreground text-xs font-medium">Bi</text>
           
           {/* Forearms */}
-          <ellipse cx="95" cy="190" rx="8" ry="20" 
+          <rect x="87" y="170" width="16" height="40" rx="8"
             fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
-          <ellipse cx="205" cy="190" rx="8" ry="20" 
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <rect x="197" y="170" width="16" height="40" rx="8"
             fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
+            stroke="hsl(var(--border))" strokeWidth="2"/>
           
           {/* Rectus Abdominis */}
-          <rect x="135" y="165" width="30" height="45" rx="8" 
+          <rect x="135" y="155" width="30" height="55" rx="8" 
             fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-          {/* Ab lines for definition */}
-          <line x1="150" y1="175" x2="150" y2="200" stroke="#ffffff" strokeWidth="0.5" opacity="0.6"/>
-          <line x1="140" y1="185" x2="160" y2="185" stroke="#ffffff" strokeWidth="0.5" opacity="0.6"/>
-          <line x1="140" y1="195" x2="160" y2="195" stroke="#ffffff" strokeWidth="0.5" opacity="0.6"/>
-          <text x="150" y="190" textAnchor="middle" className="fill-white text-xs font-medium">
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          {/* Ab divisions */}
+          <line x1="150" y1="170" x2="150" y2="200" stroke="hsl(var(--border))" strokeWidth="1"/>
+          <line x1="140" y1="180" x2="160" y2="180" stroke="hsl(var(--border))" strokeWidth="1"/>
+          <line x1="140" y1="190" x2="160" y2="190" stroke="hsl(var(--border))" strokeWidth="1"/>
+          <text x="150" y="185" textAnchor="middle" className="fill-foreground text-xs font-medium">
             Abs
           </text>
           
           {/* Obliques */}
-          <ellipse cx="120" cy="185" rx="8" ry="20" 
+          <rect x="112" y="165" width="16" height="40" rx="8"
             fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
-          <ellipse cx="180" cy="185" rx="8" ry="20" 
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <rect x="172" y="165" width="16" height="40" rx="8"
             fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
+            stroke="hsl(var(--border))" strokeWidth="2"/>
           
-          {/* Hip Flexors / Lower Abs */}
-          <ellipse cx="150" cy="220" rx="25" ry="12" 
+          {/* Lower Core */}
+          <rect x="125" y="208" width="50" height="24" rx="8"
             fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
-          <text x="150" y="225" textAnchor="middle" className="fill-white text-xs font-medium">
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <text x="150" y="223" textAnchor="middle" className="fill-foreground text-xs font-medium">
             Lower Core
           </text>
           
           {/* Quadriceps */}
-          <ellipse cx="130" cy="290" rx="18" ry="50" 
+          <rect x="112" y="240" width="36" height="100" rx="8"
             fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-          <ellipse cx="170" cy="290" rx="18" ry="50" 
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <rect x="152" y="240" width="36" height="100" rx="8"
             fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="#ffffff" strokeWidth="1.5" opacity="0.9"/>
-          {/* Quad definition lines */}
-          <line x1="125" y1="270" x2="125" y2="310" stroke="#ffffff" strokeWidth="0.5" opacity="0.5"/>
-          <line x1="135" y1="270" x2="135" y2="310" stroke="#ffffff" strokeWidth="0.5" opacity="0.5"/>
-          <line x1="165" y1="270" x2="165" y2="310" stroke="#ffffff" strokeWidth="0.5" opacity="0.5"/>
-          <line x1="175" y1="270" x2="175" y2="310" stroke="#ffffff" strokeWidth="0.5" opacity="0.5"/>
-          <text x="150" y="295" textAnchor="middle" className="fill-white text-xs font-medium">
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          {/* Quad divisions */}
+          <line x1="124" y1="250" x2="124" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
+          <line x1="136" y1="250" x2="136" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
+          <line x1="164" y1="250" x2="164" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
+          <line x1="176" y1="250" x2="176" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
+          <text x="150" y="293" textAnchor="middle" className="fill-foreground text-xs font-medium">
             Quads
           </text>
           
-          {/* Tibialis Anterior (Shins) */}
-          <ellipse cx="130" cy="380" rx="8" ry="25" 
+          {/* Shins */}
+          <rect x="122" y="355" width="16" height="50" rx="8"
             fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.6"/>
-          <ellipse cx="170" cy="380" rx="8" ry="25" 
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <rect x="162" y="355" width="16" height="50" rx="8"
             fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.6"/>
-          <text x="150" y="385" textAnchor="middle" className="fill-white text-xs font-medium">
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <text x="150" y="383" textAnchor="middle" className="fill-foreground text-xs font-medium">
             Shins
           </text>
           
           {/* Calves (front view) */}
-          <ellipse cx="130" cy="420" rx="10" ry="20" 
+          <rect x="120" y="410" width="20" height="40" rx="8"
             fill={getMuscleColor(getMuscleScore('calves'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
-          <ellipse cx="170" cy="420" rx="10" ry="20" 
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <rect x="160" y="410" width="20" height="40" rx="8"
             fill={getMuscleColor(getMuscleScore('calves'))} 
-            stroke="#ffffff" strokeWidth="1" opacity="0.7"/>
-          <text x="150" y="425" textAnchor="middle" className="fill-white text-xs font-medium">
+            stroke="hsl(var(--border))" strokeWidth="2"/>
+          <text x="150" y="433" textAnchor="middle" className="fill-foreground text-xs font-medium">
             Calves
           </text>
         </svg>
@@ -254,13 +256,13 @@ export const RealisticMuscleMap: React.FC<RealisticMuscleMapProps> = ({
 
 export const MuscleMapLegend: React.FC = () => {
   const levels = [
-    { color: '#6b7280', label: 'Untrained (0-29%)', description: 'No training data' },
-    { color: '#4c1d95', label: 'Beginner (30-49%)', description: 'Starting development' },
-    { color: '#5b21b6', label: 'Novice (50-59%)', description: 'Basic foundation' },
-    { color: '#6d28d9', label: 'Intermediate (60-69%)', description: 'Solid progress' },
-    { color: '#7c3aed', label: 'Advanced (70-79%)', description: 'Well developed' },
-    { color: '#8b5cf6', label: 'Expert (80-89%)', description: 'Highly trained' },
-    { color: '#10b981', label: 'Elite (90-100%)', description: 'Peak development' },
+    { color: 'hsl(var(--muted-foreground))', label: 'Untrained (0-29%)', description: 'No training data' },
+    { color: 'hsl(248 95% 70%)', label: 'Beginner (30-49%)', description: 'Starting development' },
+    { color: 'hsl(250 84% 54%)', label: 'Novice (50-59%)', description: 'Basic foundation' },
+    { color: 'hsl(253 91% 52%)', label: 'Intermediate (60-69%)', description: 'Solid progress' },
+    { color: 'hsl(258 90% 66%)', label: 'Advanced (70-79%)', description: 'Well developed' },
+    { color: 'hsl(262 83% 58%)', label: 'Expert (80-89%)', description: 'Highly trained' },
+    { color: 'hsl(var(--primary))', label: 'Elite (90-100%)', description: 'Peak development' },
   ];
 
   return (

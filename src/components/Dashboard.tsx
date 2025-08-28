@@ -9,7 +9,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -124,14 +124,18 @@ const Dashboard = () => {
 
   // Optimized module click handler with preloading
   const handleModuleClick = useCallback((module: any) => {
+    console.log('Module clicked:', module);
+    
     // Preload the module if not already loaded
     if (module.id && !lowDataMode) {
       preloadModule(module.id);
     }
     
     try {
+      console.log('Setting selected module:', module.id, module.title);
       setSelectedModule(module);
       setNavigationSource('dashboard');
+      console.log('Module set successfully');
     } catch (error) {
       console.error('Error setting selected module:', error);
     }
@@ -211,9 +215,9 @@ const Dashboard = () => {
   // Show notifications with native transition
   if (showNotifications) {
     return (
-      <NativeTransition routeKey="notifications" type="slide" direction="forward">
+      <div className="min-h-screen">
         <NotificationCenter onBack={handleBackToDashboard} />
-      </NativeTransition>
+      </div>
     );
   }
 
@@ -226,25 +230,19 @@ const Dashboard = () => {
       const ModuleComponent = selectedModule.component;
       return (
         <ErrorBoundary>
-          <NativeTransition 
-            routeKey={selectedModule.id} 
-            type="slide" 
-            direction={navigationSource === 'dashboard' ? 'forward' : 'backward'}
-          >
-            <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
-              <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
-                <ModuleScrollHandler moduleId={selectedModule.id}>
-                  <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
-                    <ModuleComponent 
-                      onBack={handleBackToDashboard}
-                      onFoodLogged={handleFoodLogged}
-                      navigationSource={navigationSource}
-                    />
-                  </ModuleErrorBoundary>
-                </ModuleScrollHandler>
-              </Suspense>
-            </div>
-          </NativeTransition>
+          <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
+            <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
+              <ModuleScrollHandler moduleId={selectedModule.id}>
+                <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
+                  <ModuleComponent 
+                    onBack={handleBackToDashboard}
+                    onFoodLogged={handleFoodLogged}
+                    navigationSource={navigationSource}
+                  />
+                </ModuleErrorBoundary>
+              </ModuleScrollHandler>
+            </Suspense>
+          </div>
         </ErrorBoundary>
       );
     } catch (error) {
@@ -260,9 +258,8 @@ const Dashboard = () => {
 
   return (
     <ErrorBoundary>
-      <NativeTransition routeKey="dashboard" type="fade">
-        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden" ref={gestureRef as React.RefObject<HTMLDivElement>}>
-          {/* Enhanced header with notifications, profile, and settings */}
+      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden" ref={gestureRef as React.RefObject<HTMLDivElement>}>
+        {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between">
@@ -425,6 +422,33 @@ const Dashboard = () => {
                 </div>
               )}
 
+              {/* All Modules Section */}
+              <div className="mb-6 sm:mb-8 lg:mb-12">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-orange-500" />
+                    AI Modules
+                  </h2>
+                  <Button
+                    onClick={() => navigate('/modules')}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center"
+                  >
+                    View All
+                  </Button>
+                </div>
+                <Suspense fallback={<EnhancedLoading type="module" size="sm" message="Loading modules..." />}>
+                  <ModuleGrid
+                    modules={regularModules}
+                    favorites={favorites}
+                    onModuleClick={handleModuleClick}
+                    onToggleFavorite={toggleFavorite}
+                    viewMode="grid"
+                  />
+                </Suspense>
+              </div>
+
               {/* Premium Promotion for Free Users - Moved to sidebar */}
               {currentTier === 'free' && (
                 <div className="mb-6 sm:mb-8">
@@ -448,10 +472,8 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </NativeTransition>
-    </ErrorBoundary>
-  );
+      </ErrorBoundary>
+    );
 };
 
 export default Dashboard;
-

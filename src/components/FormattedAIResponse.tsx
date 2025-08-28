@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
 
 interface FormattedAIResponseProps {
   content: string;
@@ -42,10 +43,18 @@ export const FormattedAIResponse: React.FC<FormattedAIResponseProps> = ({ conten
     return formatted;
   };
 
+  // Sanitize HTML before rendering
+  const sanitizedHTML = DOMPurify.sanitize(formatText(content), {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'code'],
+    ALLOWED_ATTR: ['class'],
+    FORBID_TAGS: ['script', 'object', 'embed', 'link', 'style', 'img', 'iframe'],
+    USE_PROFILES: { html: true }
+  });
+
   return (
     <div 
       className={cn("prose prose-invert max-w-none", className)}
-      dangerouslySetInnerHTML={{ __html: formatText(content) }}
+      dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
     />
   );
 };

@@ -65,7 +65,7 @@ const FeatureGate: React.FC<FeatureGateProps> = ({
         <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <Zap className="w-6 h-6 text-orange-400" />
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">Usage Limit Reached</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Usage Limit Reached</h3>
         <p className="text-gray-400 mb-4">
           You've used all {remaining === 0 ? 'available uses' : `${remaining} remaining uses`} for this feature this month.
         </p>
@@ -93,7 +93,7 @@ const FeatureGate: React.FC<FeatureGateProps> = ({
         <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <Lock className="w-6 h-6 text-yellow-400" />
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">Premium Feature</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Premium Feature</h3>
         <p className="text-gray-400 mb-4">{upgradeMessage}</p>
         <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 mb-4">
           <Crown className="w-3 h-3 mr-1" />

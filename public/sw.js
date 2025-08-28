@@ -1,24 +1,40 @@
-const CACHE_NAME = 'myotopia-v5-ultrafast';
-const STATIC_CACHE = 'myotopia-static-v5';
-const DYNAMIC_CACHE = 'myotopia-dynamic-v5';
-const AI_CACHE = 'myotopia-ai-responses-v3';
-const IMAGE_CACHE = 'myotopia-images-v3';
-const INSTANT_CACHE = 'myotopia-instant-v1';
+// Enhanced Service Worker v7 - Aggressive Caching for SEO
+const CACHE_NAME = 'myotopia-v7-longcache';
+const STATIC_CACHE = 'myotopia-static-v7';
+const DYNAMIC_CACHE = 'myotopia-dynamic-v7';
+const AI_CACHE = 'myotopia-ai-responses-v7';
+const IMAGE_CACHE = 'myotopia-images-v7';
+const INSTANT_CACHE = 'myotopia-instant-v7';
+const ASSETS_CACHE = 'myotopia-assets-v7';
 
-let aggressiveCacheEnabled = false;
+// Enhanced cache expiration times (in milliseconds)
+const CACHE_EXPIRATION = {
+  STATIC_ASSETS: 365 * 24 * 60 * 60 * 1000, // 1 year for JS/CSS/fonts
+  IMAGES: 30 * 24 * 60 * 60 * 1000, // 30 days for images
+  API_DATA: 5 * 60 * 1000, // 5 minutes for API responses
+  AI_RESPONSES: 24 * 60 * 60 * 1000, // 24 hours for AI responses
+  NAVIGATION: 60 * 60 * 1000 // 1 hour for navigation requests
+};
 
-// Critical assets for immediate caching (reduced for faster install)
+let aggressiveCacheEnabled = true; // Enable aggressive caching by default
+
+// Critical assets for immediate caching
 const CRITICAL_ASSETS = [
   '/',
-  '/manifest.json'
+  '/manifest.json',
+  '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png',
+  '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.webp'
 ];
 
-// Static assets for background caching
+// Enhanced static assets for aggressive background caching
 const STATIC_ASSETS = [
   '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png',
+  '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.webp',
   '/favicon-32x32.png',
   '/favicon-16x16.png',
-  '/apple-touch-icon.png'
+  '/apple-touch-icon.png',
+  '/icon.svg',
+  '/browserconfig.xml'
 ];
 
 // Ultra-fast install with instant cache initialization
@@ -35,7 +51,8 @@ self.addEventListener('install', (event) => {
       caches.open(STATIC_CACHE),
       caches.open(DYNAMIC_CACHE),
       caches.open(AI_CACHE),
-      caches.open(IMAGE_CACHE)
+      caches.open(IMAGE_CACHE),
+      caches.open(ASSETS_CACHE)
     ]).then(() => {
       console.log('[SW] Instant installation complete');
       return self.skipWaiting();
@@ -102,8 +119,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Handle different request types with ultra-optimized strategies
-  if (isCriticalAsset(request)) {
+  // Handle different request types with enhanced caching strategies
+  if (isStaticAsset(request)) {
+    event.respondWith(handleStaticAssetWithLongCache(request));
+  } else if (isCriticalAsset(request)) {
     event.respondWith(handleCriticalAssetUltraFast(request));
   } else if (isImage(request)) {
     event.respondWith(handleImageOptimized(request));
@@ -118,11 +137,16 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Asset type detection (optimized)
+// Asset type detection with enhanced caching strategies
 function isCriticalAsset(request) {
   const url = new URL(request.url);
   return CRITICAL_ASSETS.some(asset => url.pathname === asset) ||
-         (url.pathname.match(/\.(css|js)$/) && url.pathname.includes('/src/'));
+         (url.pathname.match(/\.(css|js)$/) && url.pathname.includes('/assets/'));
+}
+
+function isStaticAsset(request) {
+  const url = new URL(request.url);
+  return url.pathname.match(/\.(css|js|woff|woff2|ttf|eot)$/) && url.pathname.includes('/assets/');
 }
 
 function isImage(request) {
@@ -148,7 +172,45 @@ function isNavigationRequest(request) {
   return request.mode === 'navigate';
 }
 
-// Ultra-fast handlers
+// Enhanced handlers with long-term caching
+async function handleStaticAssetWithLongCache(request) {
+  const cache = await caches.open(ASSETS_CACHE);
+  const cachedResponse = await cache.match(request);
+  
+  // Check if cached version is still valid (1 year for static assets)
+  if (cachedResponse) {
+    const cachedDate = new Date(cachedResponse.headers.get('date') || 0);
+    const now = new Date();
+    const age = now.getTime() - cachedDate.getTime();
+    
+    if (age < CACHE_EXPIRATION.STATIC_ASSETS) {
+      return cachedResponse;
+    }
+  }
+  
+  try {
+    const networkResponse = await fetch(request.clone());
+    if (networkResponse.ok) {
+      // Add cache headers to response
+      const responseWithHeaders = new Response(networkResponse.body, {
+        status: networkResponse.status,
+        statusText: networkResponse.statusText,
+        headers: {
+          ...Object.fromEntries(networkResponse.headers.entries()),
+          'Cache-Control': 'public, max-age=31536000', // 1 year
+          'Date': new Date().toUTCString()
+        }
+      });
+      cache.put(request.clone(), responseWithHeaders.clone());
+      return responseWithHeaders;
+    }
+    return networkResponse;
+  } catch (error) {
+    // Return cached version even if expired
+    return cachedResponse || new Response('Static asset unavailable', { status: 503 });
+  }
+}
+
 async function handleCriticalAssetUltraFast(request) {
   try {
     const cache = await caches.open(STATIC_CACHE);
@@ -162,7 +224,18 @@ async function handleCriticalAssetUltraFast(request) {
     
     const networkResponse = await fetch(request.clone());
     if (networkResponse.ok) {
-      cache.put(request.clone(), networkResponse.clone());
+      // Add long cache headers
+      const responseWithHeaders = new Response(networkResponse.body, {
+        status: networkResponse.status,
+        statusText: networkResponse.statusText,
+        headers: {
+          ...Object.fromEntries(networkResponse.headers.entries()),
+          'Cache-Control': 'public, max-age=31536000',
+          'Date': new Date().toUTCString()
+        }
+      });
+      cache.put(request.clone(), responseWithHeaders.clone());
+      return responseWithHeaders;
     }
     return networkResponse;
   } catch (error) {
@@ -177,20 +250,37 @@ async function handleImageOptimized(request) {
   const cache = await caches.open(IMAGE_CACHE);
   const cachedResponse = await cache.match(request);
   
+  // Check if cached image is still valid (30 days)
   if (cachedResponse) {
-    return cachedResponse;
+    const cachedDate = new Date(cachedResponse.headers.get('date') || 0);
+    const now = new Date();
+    const age = now.getTime() - cachedDate.getTime();
+    
+    if (age < CACHE_EXPIRATION.IMAGES) {
+      return cachedResponse;
+    }
   }
   
   try {
     const networkResponse = await fetch(request.clone());
     if (networkResponse.ok) {
-      // Cache images for longer period
-      const responseToCache = networkResponse.clone();
-      cache.put(request.clone(), responseToCache);
+      // Cache images with long-term headers
+      const responseWithHeaders = new Response(networkResponse.body, {
+        status: networkResponse.status,
+        statusText: networkResponse.statusText,
+        headers: {
+          ...Object.fromEntries(networkResponse.headers.entries()),
+          'Cache-Control': 'public, max-age=2592000', // 30 days
+          'Date': new Date().toUTCString()
+        }
+      });
+      cache.put(request.clone(), responseWithHeaders.clone());
+      return responseWithHeaders;
     }
     return networkResponse;
   } catch (error) {
-    return new Response('Image not available offline', { status: 503 });
+    // Return cached version even if expired
+    return cachedResponse || new Response('Image not available offline', { status: 503 });
   }
 }
 

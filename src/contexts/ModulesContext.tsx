@@ -1,7 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { Activity, BarChart3, BookOpen, ChefHat, Flame, LayoutDashboard, ListChecks, LucideIcon, MessageSquare, Pizza, TrendingUp, Timer, Target, Zap, NotebookPen, Eye } from 'lucide-react';
-import ModuleErrorBoundary from '@/components/ModuleErrorBoundary';
-import { InstantModuleLoader, useModuleLoadPerformance } from '@/components/ui/instant-module-loader';
+import ModuleLoader from '@/components/modules/ModuleLoader';
 
 type ModuleId =
   | 'dashboard'
@@ -45,338 +44,123 @@ export const useModules = () => {
   return context;
 };
 
-// Enhanced placeholder component with engaging animations
-const PlaceholderComponent = ({ title, onBack }: { title?: string; onBack?: () => void }) => (
-  <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center p-6 animate-fade-in">
-    <div className="text-center max-w-md space-y-6">
-      {/* Multi-layered loading spinner */}
-      <div className="relative mx-auto">
-        <div className="w-20 h-20 border-4 border-orange-500/20 border-t-orange-500 border-r-orange-400 rounded-full animate-spin" />
-        <div className="absolute inset-2 w-16 h-16 border-3 border-orange-400/30 border-b-orange-400 border-l-orange-300 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
-        <div className="absolute inset-4 w-12 h-12 border-2 border-orange-300/40 border-t-orange-300 rounded-full animate-spin" style={{ animationDuration: '1s' }} />
-      </div>
-      
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold animate-pulse">{title || 'Module'}</h2>
-        <p className="text-orange-300/70 mb-6 animate-pulse" style={{ animationDelay: '200ms' }}>
-          Powered by science-based training
-        </p>
-        
-        {/* Animated dots */}
-        <div className="flex space-x-2 justify-center">
-          <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-3 h-3 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-3 h-3 bg-orange-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-        </div>
-      </div>
-      
-      {onBack && (
-        <button 
-          onClick={onBack} 
-          className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all duration-200 hover:scale-105 animate-fade-in"
-          style={{ animationDelay: '500ms' }}
-        >
-          Back to Dashboard
-        </button>
-      )}
+// Simple loading component
+const SimpleLoader = ({ title }: { title: string }) => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center space-y-3">
+      <div className="w-8 h-8 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto" />
+      <p className="text-sm text-muted-foreground">Loading {title}...</p>
     </div>
   </div>
 );
 
-// Enhanced safe component loader with instant loading and better error handling
-const SafeComponent = ({ moduleName, onBack }: { 
-  moduleName: string; 
-  onBack?: () => void;
-}) => {
-  const { loadMetrics, recordLoadComplete } = useModuleLoadPerformance(moduleName);
-  console.log(`Loading module: ${moduleName}`);
-  
-  try {
-    // Dynamically import components with enhanced error handling
-    switch (moduleName) {
-      case 'blueprint-ai':
-        const BlueprintAI = React.lazy(() => 
-          import('@/components/ai-modules/BlueprintAI')
-            .then(module => {
-              console.log(`Successfully loaded BlueprintAI module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load BlueprintAI module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Blueprint AI" {...props} /> };
-            })
-        );
-        return (
-          <InstantModuleLoader 
-            moduleId="blueprint-ai"
-            fallback={<PlaceholderComponent title="Blueprint AI" onBack={onBack} />}
-            onLoadComplete={() => recordLoadComplete(true)}
-          >
-            <ModuleErrorBoundary moduleName="Blueprint AI" onBack={onBack}>
-              <React.Suspense fallback={<PlaceholderComponent title="Blueprint AI" onBack={onBack} />}>
-                <BlueprintAI onBack={onBack || (() => {})} />
-              </React.Suspense>
-            </ModuleErrorBoundary>
-          </InstantModuleLoader>
-        );
-      
-      case 'smart-training':
-        const SmartTraining = React.lazy(() => 
-          import('@/components/ai-modules/SmartTraining')
-            .then(module => {
-              console.log(`Successfully loaded SmartTraining module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load SmartTraining module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Smart Training" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Smart Training" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Smart Training" onBack={onBack} />}>
-              <SmartTraining onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
+// Fixed component that avoids the "rendered fewer hooks" error
+const SafeComponent = ({ moduleName, onBack, ...props }: { moduleName: string; onBack?: () => void }) => {
+  // Always call hooks in the same order, regardless of state
+  const [Component, setComponent] = React.useState<React.ComponentType<any> | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-      
-      case 'coach-gpt':
-        const CoachGPT = React.lazy(() => 
-          import('@/components/ai-modules/CoachGPT')
-            .then(module => {
-              console.log(`Successfully loaded CoachGPT module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load CoachGPT module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Coach GPT" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Coach GPT" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Coach GPT" onBack={onBack} />}>
-              <CoachGPT onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'tdee-calculator':
-        const TDEECalculator = React.lazy(() => 
-          import('@/components/ai-modules/TDEECalculator')
-            .then(module => {
-              console.log(`Successfully loaded TDEECalculator module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load TDEECalculator module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="TDEE Calculator" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="TDEE Calculator" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="TDEE Calculator" onBack={onBack} />}>
-              <TDEECalculator onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'meal-plan-generator':
-        const MealPlanAI = React.lazy(() => 
-          import('@/components/ai-modules/MealPlanAI')
-            .then(module => {
-              console.log(`Successfully loaded MealPlanAI module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load MealPlanAI module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Meal Plan Generator" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Meal Plan Generator" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Meal Plan Generator" onBack={onBack} />}>
-              <MealPlanAI onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'recovery-coach':
-        const RecoveryCoach = React.lazy(() => 
-          import('@/components/ai-modules/RecoveryCoach')
-            .then(module => {
-              console.log(`Successfully loaded RecoveryCoach module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load RecoveryCoach module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Recovery Coach" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Recovery Coach" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Recovery Coach" onBack={onBack} />}>
-              <RecoveryCoach onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'workout-logger':
-        const WorkoutLoggerAI = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutLoggerAI')
-            .then(module => {
-              console.log(`Successfully loaded WorkoutLoggerAI module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load WorkoutLoggerAI module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Workout Logger" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Workout Logger" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Workout Logger" onBack={onBack} />}>
-              <WorkoutLoggerAI onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'smart-food-log':
-        const SmartFoodLog = React.lazy(() => 
-          import('@/components/ai-modules/SmartFoodLog')
-            .then(module => {
-              console.log(`Successfully loaded SmartFoodLog module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load SmartFoodLog module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Smart Food Log" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Smart Food Log" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Smart Food Log" onBack={onBack} />}>
-              <SmartFoodLog onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'progress-hub':
-        const ProgressHub = React.lazy(() => 
-          import('@/components/ai-modules/ProgressHub')
-            .then(module => {
-              console.log(`Successfully loaded ProgressHub module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load ProgressHub module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Progress Hub" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Progress Hub" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Progress Hub" onBack={onBack} />}>
-              <ProgressHub onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'workout-timer':
-        const WorkoutTimer = React.lazy(() => 
-          import('@/components/ai-modules/WorkoutTimer')
-            .then(module => {
-              console.log(`Successfully loaded WorkoutTimer module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load WorkoutTimer module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Workout Timer" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Workout Timer" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Workout Timer" onBack={onBack} />}>
-              <WorkoutTimer onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'cut-calc-pro':
-        const CutCalcPro = React.lazy(() => 
-          import('@/components/ai-modules/CutCalcPro')
-            .then(module => {
-              console.log(`Successfully loaded CutCalcPro module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load CutCalcPro module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="CutCalc Pro" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="CutCalc Pro" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="CutCalc Pro" onBack={onBack} />}>
-              <CutCalcPro onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'habit-tracker':
-        const HabitTracker = React.lazy(() => 
-          import('@/components/ai-modules/HabitTracker')
-            .then(module => {
-              console.log(`Successfully loaded HabitTracker module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load HabitTracker module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Habit Tracker" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Habit Tracker" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Habit Tracker" onBack={onBack} />}>
-              <HabitTracker onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      case 'physique-ai':
-        const PhysiqueAI = React.lazy(() => 
-          import('@/components/ai-modules/ProgressAI')
-            .then(module => {
-              console.log(`Successfully loaded PhysiqueAI module`);
-              return module;
-            })
-            .catch(error => {
-              console.error(`Failed to load PhysiqueAI module:`, error);
-              return { default: (props: any) => <PlaceholderComponent title="Physique AI" {...props} /> };
-            })
-        );
-        return (
-          <ModuleErrorBoundary moduleName="Physique AI" onBack={onBack}>
-            <React.Suspense fallback={<PlaceholderComponent title="Physique AI" onBack={onBack} />}>
-              <PhysiqueAI onBack={onBack || (() => {})} />
-            </React.Suspense>
-          </ModuleErrorBoundary>
-        );
-      
-      default:
-        console.warn(`Unknown module: ${moduleName}`);
-        return (
-          <ModuleErrorBoundary moduleName={moduleName} onBack={onBack}>
-            <PlaceholderComponent title={moduleName} onBack={onBack} />
-          </ModuleErrorBoundary>
-        );
-    }
-  } catch (error) {
-    console.error(`Critical error loading module ${moduleName}:`, error);
-    return (
-      <ModuleErrorBoundary moduleName={moduleName} onBack={onBack}>
-        <PlaceholderComponent title={moduleName} onBack={onBack} />
-      </ModuleErrorBoundary>
-    );
-  }
+  React.useEffect(() => {
+    let mounted = true;
+    
+    const loadModule = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        let moduleImport;
+        switch (moduleName) {
+          case 'blueprint-ai':
+            moduleImport = await import('@/components/ai-modules/BlueprintAI');
+            break;
+          case 'smart-training':
+            moduleImport = await import('@/components/ai-modules/SmartTraining');
+            break;
+          case 'coach-gpt':
+            moduleImport = await import('@/components/ai-modules/CoachGPT');
+            break;
+          case 'tdee-calculator':
+            moduleImport = await import('@/components/ai-modules/TDEECalculator');
+            break;
+          case 'meal-plan-generator':
+            moduleImport = await import('@/components/ai-modules/MealPlanAI');
+            break;
+          case 'smart-food-log':
+            moduleImport = await import('@/components/ai-modules/SmartFoodLog');
+            break;
+          case 'workout-logger':
+            moduleImport = await import('@/components/ai-modules/WorkoutLoggerAI');
+            break;
+          case 'progress-hub':
+            moduleImport = await import('@/components/ai-modules/ProgressHub');
+            break;
+          case 'recovery-coach':
+            moduleImport = await import('@/components/ai-modules/RecoveryCoach');
+            break;
+          case 'workout-timer':
+            moduleImport = await import('@/components/ai-modules/WorkoutTimer');
+            break;
+          case 'cut-calc-pro':
+            moduleImport = await import('@/components/ai-modules/CutCalcPro');
+            break;
+          case 'habit-tracker':
+            moduleImport = await import('@/components/ai-modules/HabitTracker');
+            break;
+          case 'physique-ai':
+            moduleImport = await import('@/components/ai-modules/PhysiqueAI');
+            break;
+          default:
+            throw new Error(`Unknown module: ${moduleName}`);
+        }
+
+        if (mounted && moduleImport?.default) {
+          setComponent(() => moduleImport.default);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(`Failed to load module ${moduleName}:`, err);
+        if (mounted) {
+          setError(`Failed to load ${moduleName}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          setLoading(false);
+        }
+      }
+    };
+
+    loadModule();
+    return () => { mounted = false; };
+  }, [moduleName]);
+
+  // Always render the same component structure to avoid hook count changes
+  return (
+    <React.Fragment>
+      {loading ? (
+        <SimpleLoader title={moduleName} />
+      ) : error || !Component ? (
+        <div className="flex items-center justify-center min-h-[400px] p-8">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
+              <Target className="w-8 h-8 text-red-500" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Module Error</h3>
+              <p className="text-muted-foreground">{error || 'Module failed to load'}</p>
+            </div>
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+              >
+                Back to Dashboard
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <Component onBack={onBack} {...props} />
+      )}
+    </React.Fragment>
+  );
 };
 
 const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
@@ -386,7 +170,7 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Blueprint AI',
       description: 'Your intelligent session planner and workout archive with science-backed programs',
       icon: Target,
-      component: (props: any) => <SafeComponent moduleName="blueprint-ai" {...props} />,
+      component: (props: any) => <ModuleLoader moduleId="blueprint-ai" moduleTitle="Blueprint AI" {...props} />,
       gradient: 'from-cyan-500 to-blue-500',
       usageKey: 'training_programs',
       isPremium: false,
@@ -395,134 +179,134 @@ const ModulesProvider = ({ children }: { children: React.ReactNode }) => {
     {
       id: 'smart-training',
       title: 'Smart Training',
-      description: 'AI-powered workout recommendations with scientific backing',
-      icon: Flame,
-      component: (props: any) => <SafeComponent moduleName="smart-training" {...props} />,
-      gradient: 'from-red-500 to-pink-500',
-      usageKey: 'smart_training',
-      isPremium: true,
+      description: 'AI-powered workout generator with advanced progressive overload tracking',
+      icon: Activity,
+      component: (props: any) => <ModuleLoader moduleId="smart-training" moduleTitle="Smart Training" {...props} />,
+      gradient: 'from-green-500 to-emerald-500',
+      usageKey: 'workout_generations',
+      isPremium: false,
       isNew: false
     },
     {
       id: 'coach-gpt',
-      title: 'Coach GPT',
-      description: 'Your AI fitness coach with research-based guidance',
+      title: 'CoachGPT',
+      description: 'Your personal AI fitness coach for questions, form tips, and expert guidance',
       icon: MessageSquare,
-      component: (props: any) => <SafeComponent moduleName="coach-gpt" {...props} />,
-      gradient: 'from-green-500 to-emerald-500',
-      usageKey: 'coach_gpt',
+      component: (props: any) => <ModuleLoader moduleId="coach-gpt" moduleTitle="CoachGPT" {...props} />,
+      gradient: 'from-purple-500 to-indigo-500',
+      usageKey: 'ai_conversations',
       isPremium: false,
       isNew: false
     },
     {
       id: 'tdee-calculator',
       title: 'TDEE Calculator',
-      description: 'Calculate your Total Daily Energy Expenditure scientifically',
-      icon: BarChart3,
-      component: (props: any) => <SafeComponent moduleName="tdee-calculator" {...props} />,
-      gradient: 'from-blue-500 to-cyan-500',
-      usageKey: 'tdee_calculator',
-      isPremium: false,
-      isNew: false
-    },
-    {
-      id: 'cut-calc-pro',
-      title: 'CutCalc Pro',
-      description: 'Advanced cutting calculator with comprehensive analysis',
-      icon: Target,
-      component: (props: any) => <SafeComponent moduleName="cut-calc-pro" {...props} />,
-      gradient: 'from-red-500 to-red-700',
-      usageKey: 'cut_calc_pro',
+      description: 'Calculate your Total Daily Energy Expenditure with precision and science',
+      icon: Flame,
+      component: (props: any) => <ModuleLoader moduleId="tdee-calculator" moduleTitle="TDEE Calculator" {...props} />,
+      gradient: 'from-red-500 to-orange-500',
+      usageKey: 'tdee_calculations',
       isPremium: false,
       isNew: false
     },
     {
       id: 'meal-plan-generator',
-      title: 'Meal Plan Generator',
-      description: 'Generate personalized, science-based meal plans',
+      title: 'Meal Plan AI',
+      description: 'Generate personalized meal plans tailored to your fitness goals and preferences',
       icon: ChefHat,
-      component: (props: any) => <SafeComponent moduleName="meal-plan-generator" {...props} />,
+      component: (props: any) => <ModuleLoader moduleId="meal-plan-generator" moduleTitle="Meal Plan AI" {...props} />,
       gradient: 'from-yellow-500 to-orange-500',
-      usageKey: 'meal_plan_generator',
+      usageKey: 'meal_plans',
       isPremium: true,
       isNew: false
     },
     {
       id: 'smart-food-log',
       title: 'Smart Food Log',
-      description: 'AI-powered food logging with photo analysis and nutrition tracking',
+      description: 'AI-powered food tracking with photo recognition and nutritional insights',
       icon: Pizza,
-      component: (props: any) => <SafeComponent moduleName="smart-food-log" {...props} />,
-      gradient: 'from-orange-500 to-amber-500',
-      usageKey: 'smart_food_log',
+      component: (props: any) => <ModuleLoader moduleId="smart-food-log" moduleTitle="Smart Food Log" {...props} />,
+      gradient: 'from-teal-500 to-cyan-500',
+      usageKey: 'food_logs',
+      isPremium: false,
+      isNew: false
+    },
+    {
+      id: 'workout-logger',
+      title: 'Workout Logger AI',
+      description: 'Intelligent workout tracking with AI-powered form analysis and progress insights',
+      icon: NotebookPen,
+      component: (props: any) => <ModuleLoader moduleId="workout-logger" moduleTitle="Workout Logger AI" {...props} />,
+      gradient: 'from-blue-500 to-indigo-500',
+      usageKey: 'workout_logs',
+      isPremium: false,
+      isNew: false
+    },
+    {
+      id: 'progress-hub',
+      title: 'Progress Hub',
+      description: 'Comprehensive progress tracking with AI insights and personalized recommendations',
+      icon: TrendingUp,
+      component: (props: any) => <ModuleLoader moduleId="progress-hub" moduleTitle="Progress Hub" {...props} />,
+      gradient: 'from-violet-500 to-purple-500',
+      usageKey: 'progress_analysis',
       isPremium: false,
       isNew: false
     },
     {
       id: 'recovery-coach',
       title: 'Recovery Coach',
-      description: 'Optimize your recovery with AI guidance and research',
-      icon: Activity,
-      component: (props: any) => <SafeComponent moduleName="recovery-coach" {...props} />,
-      gradient: 'from-teal-500 to-green-500',
-      usageKey: 'recovery_coach',
-      isPremium: false,
-      isNew: false
-    },
-    {
-      id: 'workout-logger',
-      title: 'Workout Logger',
-      description: 'Log and track your workouts with intelligent insights',
-      icon: NotebookPen,
-      component: (props: any) => <SafeComponent moduleName="workout-logger" {...props} />,
-      gradient: 'from-indigo-500 to-violet-500',
-      usageKey: 'workout_logger',
-      isPremium: false,
+      description: 'Optimize your recovery with AI-driven insights on sleep, stress, and regeneration',
+      icon: Zap,
+      component: (props: any) => <ModuleLoader moduleId="recovery-coach" moduleTitle="Recovery Coach" {...props} />,
+      gradient: 'from-emerald-500 to-teal-500',
+      usageKey: 'recovery_insights',
+      isPremium: true,
       isNew: false
     },
     {
       id: 'workout-timer',
       title: 'Workout Timer',
-      description: 'Time your workouts with smart rest period recommendations',
+      description: 'Professional workout timer with rest periods, intervals, and custom routines',
       icon: Timer,
-      component: (props: any) => <SafeComponent moduleName="workout-timer" {...props} />,
-      gradient: 'from-cyan-500 to-blue-500',
-      usageKey: 'workout_timer',
+      component: (props: any) => <ModuleLoader moduleId="workout-timer" moduleTitle="Workout Timer" {...props} />,
+      gradient: 'from-orange-500 to-red-500',
+      usageKey: 'timer_sessions',
       isPremium: false,
+      isNew: false
+    },
+    {
+      id: 'cut-calc-pro',
+      title: 'CutCalc Pro',
+      description: 'Advanced cutting calculator with precision macros and timeline predictions',
+      icon: BarChart3,
+      component: (props: any) => <ModuleLoader moduleId="cut-calc-pro" moduleTitle="CutCalc Pro" {...props} />,
+      gradient: 'from-pink-500 to-red-500',
+      usageKey: 'cutting_calculations',
+      isPremium: true,
       isNew: false
     },
     {
       id: 'habit-tracker',
       title: 'Habit Tracker',
-      description: 'Build lasting fitness habits with behavioral science',
-      icon: Zap,
-      component: (props: any) => <SafeComponent moduleName="habit-tracker" {...props} />,
-      gradient: 'from-yellow-500 to-yellow-700',
-      usageKey: 'habit_tracker',
+      description: 'Build lasting fitness habits with AI-powered tracking and motivation',
+      icon: ListChecks,
+      component: (props: any) => <ModuleLoader moduleId="habit-tracker" moduleTitle="Habit Tracker" {...props} />,
+      gradient: 'from-amber-500 to-yellow-500',
+      usageKey: 'habit_tracking',
       isPremium: false,
       isNew: false
     },
     {
       id: 'physique-ai',
       title: 'Physique AI',
-      description: 'AI-powered physique analysis and progress tracking with visual insights',
+      description: 'AI-powered body composition analysis and physique progress tracking',
       icon: Eye,
-      component: (props: any) => <SafeComponent moduleName="physique-ai" {...props} />,
-      gradient: 'from-purple-500 to-indigo-500',
-      usageKey: 'progress_analyses',
+      component: (props: any) => <ModuleLoader moduleId="physique-ai" moduleTitle="Physique AI" {...props} />,
+      gradient: 'from-indigo-500 to-purple-500',
+      usageKey: 'physique_analysis',
       isPremium: true,
-      isNew: false
-    },
-    {
-      id: 'progress-hub',
-      title: 'Progress Hub',
-      description: 'Track your fitness progress with detailed measurements and analytics',
-      icon: TrendingUp,
-      component: (props: any) => <SafeComponent moduleName="progress-hub" {...props} />,
-      gradient: 'from-purple-800 to-purple-900',
-      usageKey: 'progress_tracking',
-      isPremium: false,
-      isNew: false
+      isNew: true
     }
   ];
 

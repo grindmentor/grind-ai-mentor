@@ -10,7 +10,6 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import "./utils/prodOptimizations.ts"
-import './utils/lcp-optimization.ts'
 import { PerformanceProvider } from '@/components/ui/performance-provider'
 import { loadAppShell } from '@/utils/appShellCache'
 
@@ -60,41 +59,20 @@ if (!isCapacitor) {
 // Optimized iOS install prompt with better performance
 function createIOSInstallPrompt() {
   if (isIOS && !isInStandaloneMode) {
-  // Use requestIdleCallback for non-critical UI
-  const createPrompt = () => {
-    const iosPrompt = document.createElement('div');
-    iosPrompt.className = 'fixed bottom-4 left-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-3 rounded-xl shadow-2xl flex items-center justify-between transform transition-all duration-300 animate-slide-up';
-    
-    // Create elements safely without innerHTML
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'flex items-center gap-3';
-    
-    const iconDiv = document.createElement('div');
-    iconDiv.className = 'w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm';
-    iconDiv.textContent = '📱';
-    
-    const textContainer = document.createElement('div');
-    textContainer.className = 'min-w-0 flex-1';
-    
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'font-semibold text-sm';
-    titleDiv.textContent = 'Install Myotopia';
-    
-    const subtitleDiv = document.createElement('div');
-    subtitleDiv.className = 'text-xs opacity-90 truncate';
-    subtitleDiv.textContent = 'Tap Share → Add to Home Screen';
-    
-    const closeButton = document.createElement('button');
-    closeButton.className = 'bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs font-medium transition-colors shrink-0';
-    closeButton.textContent = '✕';
-    closeButton.onclick = () => iosPrompt.remove();
-    
-    textContainer.appendChild(titleDiv);
-    textContainer.appendChild(subtitleDiv);
-    contentDiv.appendChild(iconDiv);
-    contentDiv.appendChild(textContainer);
-    iosPrompt.appendChild(contentDiv);
-    iosPrompt.appendChild(closeButton);
+    // Use requestIdleCallback for non-critical UI
+    const createPrompt = () => {
+      const iosPrompt = document.createElement('div');
+      iosPrompt.className = 'fixed bottom-4 left-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-3 rounded-xl shadow-2xl flex items-center justify-between transform transition-all duration-300 animate-slide-up';
+      iosPrompt.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-sm">📱</div>
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold text-sm">Install Myotopia</div>
+            <div class="text-xs opacity-90 truncate">Tap Share → Add to Home Screen</div>
+          </div>
+        </div>
+        <button class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs font-medium transition-colors shrink-0" onclick="this.parentElement.remove()">✕</button>
+      `;
       
       document.body.appendChild(iosPrompt);
       
@@ -130,7 +108,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   const createInstallButton = () => {
     const installButton = document.createElement('button');
     installButton.className = 'fixed bottom-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-3 py-2 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all duration-200 transform hover:scale-105 touch-manipulation animate-slide-up';
-    installButton.textContent = '📱 Install App';
+    installButton.innerHTML = '📱 Install App';
     
     installButton.onclick = async () => {
       if (deferredPrompt) {
@@ -206,93 +184,52 @@ function updateOnlineStatus() {
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
-// Optimize font loading to reduce critical path blocking
+// Ultra-optimized font preloading with performance monitoring
+const criticalFonts = [
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+  'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap'
+];
+
+criticalFonts.forEach((fontUrl, index) => {
+  // Stagger font loading to avoid blocking
+  setTimeout(() => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'style';
+    link.href = fontUrl;
+    link.onload = () => {
+      link.rel = 'stylesheet';
+    };
+    document.head.appendChild(link);
+  }, index * 50);
+});
+
+// Ultra-aggressive critical component preloading
 if (typeof window !== 'undefined') {
-  const optimizedFontLoad = () => {
-    // Only load Inter for critical text, defer Orbitron
-    const criticalFont = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
-    const decorativeFont = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap';
+  // Immediate preloading without waiting for idle
+  const criticalImports = [
+    () => import('./components/Dashboard'),
+    () => import('./components/ui/loading-screen'),
+    () => import('./components/ai-modules/CoachGPT'),
+    () => import('./components/ai-modules/SmartTraining'),
+    () => import('./components/ai-modules/WorkoutLoggerAI'),
+    () => import('./components/ai-modules/TDEECalculator'),
+    () => import('./components/ai-modules/ProgressHub'),
+    () => import('./components/ai-modules/BlueprintAI')
+  ];
 
-    // Load critical font immediately
-    const criticalLink = document.createElement('link');
-    criticalLink.rel = 'stylesheet';
-    criticalLink.href = criticalFont;
-    document.head.appendChild(criticalLink);
-
-    // Defer decorative font to avoid blocking
+  // Load all critical components immediately in parallel
+  criticalImports.forEach((importFn, index) => {
     setTimeout(() => {
-      const decorativeLink = document.createElement('link');
-      decorativeLink.rel = 'stylesheet';
-      decorativeLink.href = decorativeFont;
-      decorativeLink.media = 'print';
-      decorativeLink.onload = () => {
-        decorativeLink.media = 'all';
-      };
-      document.head.appendChild(decorativeLink);
-    }, 1000);
-  };
+      importFn().catch(() => {});
+    }, index * 10); // Minimal 10ms stagger
+  });
 
-  // Load fonts after critical path
-  setTimeout(optimizedFontLoad, 300);
-}
-
-// Defer all non-critical component preloading until after critical path
-if (typeof window !== 'undefined') {
-  // Only preload after the page is fully interactive to avoid blocking critical requests
-  const deferredPreload = () => {
-    // Only load the most critical components, defer the rest
-    const criticalImports = [
-      () => import('./components/ui/loading-screen'), // Essential for UX
-      () => import('./components/Dashboard'), // Main app component
-    ];
-
-    const nonCriticalImports = [
-      () => import('./components/ai-modules/CoachGPT'),
-      () => import('./components/ai-modules/SmartTraining'),
-      () => import('./components/ai-modules/WorkoutLoggerAI'),
-      () => import('./components/ai-modules/TDEECalculator'),
-      () => import('./components/ai-modules/ProgressHub'),
-      () => import('./components/ai-modules/BlueprintAI')
-    ];
-
-    // Load critical components first
-    criticalImports.forEach((importFn, index) => {
-      setTimeout(() => {
-        importFn().catch(() => {});
-      }, 500 + (index * 100)); // Start after 500ms
-    });
-
-    // Load non-critical components much later to avoid interfering with critical path
-    nonCriticalImports.forEach((importFn, index) => {
-      setTimeout(() => {
-        importFn().catch(() => {});
-      }, 2000 + (index * 200)); // Start after 2 seconds
-    });
-  };
-
-  // Wait much longer before any preloading to ensure critical path completes
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(deferredPreload, { timeout: 2000 });
-  } else {
-    setTimeout(deferredPreload, 1500);
-  }
+  // Simple module loading - no aggressive preloading
 }
 
 // Performance measurement
 const appStart = performance.now();
-
-// Hide loading indicator and skeleton immediately when React starts
-const loadingElement = document.getElementById('app-loading');
-const heroSkeleton = document.getElementById('hero-skeleton');
-
-if (loadingElement) {
-  loadingElement.style.display = 'none';
-}
-
-// Keep skeleton visible until React content renders
-if (heroSkeleton) {
-  // Will be hidden by the observer in index.html once React content appears
-}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

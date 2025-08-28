@@ -19,7 +19,7 @@ const moduleImports: Record<string, () => Promise<any>> = {
   'cut-calc-pro': () => import('@/components/ai-modules/CutCalcPro'),
   'habit-tracker': () => import('@/components/ai-modules/HabitTracker'),
   'workout-timer': () => import('@/components/ai-modules/WorkoutTimer'),
-  'physique-ai': () => import('@/components/ai-modules/PhysiqueAI'),
+  'physique-ai': () => import('@/components/ai-modules/ProgressAI'),
 };
 
 export const useAggressiveModulePreloader = () => {

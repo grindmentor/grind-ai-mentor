@@ -21,7 +21,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   const isMobile = useIsMobile();
 
   return (
-    <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
+    <div className="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800/50">
       <div className="px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
@@ -30,7 +30,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 onClick={onBack}
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground hover:text-foreground hover:bg-accent p-2 flex-shrink-0"
+                className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
@@ -42,7 +42,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               </div>
             )}
             
-            <h1 className="font-bold text-foreground truncate text-lg sm:text-xl">
+            <h1 className="font-bold text-white truncate text-lg sm:text-xl">
               {title}
             </h1>
           </div>
@@ -52,7 +52,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               onClick={onNotificationsClick}
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent p-2 flex-shrink-0"
+              className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0"
             >
               <Bell className="w-5 h-5" />
             </Button>

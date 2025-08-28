@@ -671,5 +671,3 @@ const [analysis, setAnalysis] = useState<any>(null);
     </div>
   );
 };
-
-export default PhysiqueAI;

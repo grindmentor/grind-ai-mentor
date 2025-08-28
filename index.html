@@ -9,20 +9,8 @@
     <link rel="apple-touch-icon" href="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" />
     <link rel="mask-icon" href="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" color="#F97316" />
     
-    <!-- Enhanced meta tags for aggressive caching -->
-    <meta charset="UTF-8" />
-    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable">
-    <meta http-equiv="Expires" content="31536000">
-    <meta http-equiv="Pragma" content="cache">
-    <meta name="cache-control" content="public, max-age=31536000, stale-while-revalidate=86400">
-    
-    <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://druwytttcxnfpwgyrvmt.supabase.co wss://druwytttcxnfpwgyrvmt.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none';">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    
     <!-- Essential meta tags -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>Myotopia - Science-Based AI Fitness Coach</title>
     <meta name="description" content="Transform your physique with personalized, science-based AI fitness coaching. Get workout plans, nutrition guidance, and progress tracking powered by cutting-edge research." />
     
@@ -53,204 +41,31 @@
     <meta property="twitter:description" content="Transform your physique with personalized, science-based AI fitness coaching" />
     <meta property="twitter:image" content="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" />
 
-    <!-- Enhanced Preconnect for critical resources only -->
+    <!-- Preconnect to external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Remove Supabase preconnect to avoid early connection overhead for homepage -->
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     
-    <!-- Critical CSS inline for homepage above-the-fold -->
+    <!-- Critical CSS inline -->
     <style>
-      /* Critical CSS for immediate rendering - homepage specific */
-      html { 
-        scroll-behavior: smooth; 
-        font-size: 16px;
-        line-height: 1.5;
-      }
-      
+      /* Critical CSS for immediate rendering */
+      html { scroll-behavior: smooth; }
       body { 
         margin: 0; 
         padding: 0; 
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+        font-family: system-ui, -apple-system, sans-serif;
         background: linear-gradient(135deg, #000000 0%, rgba(249, 115, 22, 0.1) 50%, rgba(220, 38, 38, 0.2) 100%);
         color: white;
         overflow-x: hidden;
-        font-display: swap;
-        text-rendering: optimizeSpeed;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
       }
+      #root { min-height: 100vh; }
+      .font-orbitron { font-family: 'Orbitron', monospace; }
       
-      #root { 
-        min-height: 100vh; 
-        contain: layout style paint;
+      /* Loading animation */
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
       }
-      
-      /* Critical loading state with immediate visibility */
-      .app-loading {
-        position: fixed;
-        inset: 0;
-        background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9998;
-        opacity: 1;
-        visibility: visible;
-      }
-      
-      .loading-spinner {
-        width: 32px;
-        height: 32px;
-        border: 2px solid rgba(249, 115, 22, 0.3);
-        border-top: 2px solid #f97316;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        opacity: 1;
-      }
-      
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      
-      /* Critical homepage layout styles */
-      .hero-container {
-        min-height: 100vh;
-        background: linear-gradient(to bottom right, rgb(0 0 0), rgba(249, 115, 22, 0.1), rgba(220, 38, 38, 0.2));
-        color: rgb(255 255 255 / 1);
-        padding: 1rem;
-        overflow-y: auto;
-      }
-      
-      .hero-content {
-        max-width: 56rem;
-        margin: 0 auto;
-        text-align: center;
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-      }
-      
-      .hero-logo {
-        width: 3rem;
-        height: 3rem;
-        background: linear-gradient(135deg, #f97316, #dc2626);
-        border-radius: 0.75rem;
-        margin: 0 auto 1.5rem auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-      }
-      
-      .hero-badge {
-        background: rgba(249, 115, 22, 0.2);
-        color: rgb(251, 146, 60);
-        border: 1px solid rgba(249, 115, 22, 0.3);
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        display: inline-flex;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-      }
-      
-      .hero-title {
-        font-size: clamp(1.5rem, 4vw, 3.75rem);
-        font-weight: 700;
-        color: white;
-        margin-bottom: 1rem;
-        line-height: 1.2;
-      }
-      
-      .hero-title-gradient-1 {
-        background: linear-gradient(to right, white, rgb(254, 237, 204), white);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      
-      .hero-title-gradient-2 {
-        background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      
-      .hero-description {
-        font-size: clamp(0.875rem, 2vw, 1.125rem);
-        color: rgb(209, 213, 219);
-        margin-bottom: 2rem;
-        max-width: 48rem;
-        line-height: 1.6;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      
-      .hero-button {
-        background: linear-gradient(to right, #f97316, #dc2626);
-        color: white;
-        padding: 0.75rem 2rem;
-        border-radius: 0.5rem;
-        border: none;
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-family: inherit;
-        touch-action: manipulation;
-      }
-      
-      .hero-button:hover {
-        background: linear-gradient(to right, #ea580c, #b91c1c);
-        transform: translateY(-1px);
-        box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.2);
-      }
-      
-      .features-section {
-        padding: 3rem 1rem;
-        max-width: 56rem;
-        margin: 0 auto;
-      }
-      
-      .features-header {
-        max-width: 32rem;
-        margin: 0 auto;
-        text-align: center;
-        margin-bottom: 3rem;
-      }
-      
-      .features-title {
-        font-size: clamp(1.25rem, 3vw, 2.25rem);
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-      }
-      
-      .features-description {
-        color: rgb(156, 163, 175);
-        font-size: clamp(0.875rem, 2vw, 1.125rem);
-        line-height: 1.6;
-      }
-      
-      /* Mobile optimizations */
-      @media (max-width: 768px) {
-        html { font-size: 14px; }
-        * { -webkit-tap-highlight-color: transparent; }
-        input, textarea, select { font-size: 16px !important; }
-        .hero-content { padding-top: 1rem; }
-        .features-section { padding: 2rem 1rem; }
-      }
-      
-      /* Animation for skeleton removal */
-      .fade-out {
-        opacity: 0;
-        transition: opacity 0.2s ease-out;
-      }
+      .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
       
       /* Slide up animation for install prompts */
       @keyframes slide-up {
@@ -260,60 +75,9 @@
       .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
     </style>
     
-    <!-- Ultra-deferred CSS loading to eliminate unused CSS blocking -->
-    <script>
-      // Only load full CSS bundle when React takes over or user interacts
-      let cssLoaded = false;
-      
-      function loadFullCSS() {
-        if (cssLoaded) return;
-        cssLoaded = true;
-        
-        const cssLink = document.createElement('link');
-        cssLink.rel = 'stylesheet';
-        cssLink.href = '/assets/css/index-V2OB3Tvb.css';
-        cssLink.media = 'print';
-        cssLink.onload = function() {
-          this.media = 'all';
-        };
-        document.head.appendChild(cssLink);
-      }
-      
-      // Load CSS on user interaction (when they actually need the full UI)
-      const interactionEvents = ['click', 'touchstart', 'keydown', 'scroll'];
-      const handleInteraction = () => {
-        interactionEvents.forEach(event => {
-          document.removeEventListener(event, handleInteraction, { passive: true });
-        });
-        loadFullCSS();
-      };
-      
-      interactionEvents.forEach(event => {
-        document.addEventListener(event, handleInteraction, { passive: true });
-      });
-      
-      // Fallback - load CSS after 3 seconds for non-interactive users
-      setTimeout(loadFullCSS, 3000);
-    </script>
-    
-    
-    <!-- Inline critical fonts for immediate LCP -->
-    <style>
-      @font-face {
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 400;
-        font-display: swap;
-        src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyeMZhrib2Bg-4.woff2') format('woff2');
-      }
-      @font-face {
-        font-family: 'Inter';
-        font-style: normal;
-        font-weight: 700;
-        font-display: swap;
-        src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYMZhrib2Bg-4.woff2') format('woff2');
-      }
-    </style>
+    <!-- Optimized font loading -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     
     <!-- Fallback for no-JS font loading -->
     <noscript>
@@ -321,133 +85,8 @@
     </noscript>
   </head>
   <body>
-    <!-- Immediate visible content for FCP optimization -->
-    <div id="app-loading" class="app-loading" style="position: fixed; inset: 0; z-index: 9998;">
-      <div class="loading-spinner"></div>
-    </div>
-    
-    <!-- Optimized critical hero for instant LCP -->
-    <div id="hero-skeleton" style="position: fixed; inset: 0; z-index: 9999; background: linear-gradient(to bottom right, rgb(0 0 0), rgba(249, 115, 22, 0.1), rgba(220, 38, 38, 0.2)); color: white; overflow-y: auto; display: none;">
-      <!-- Hero Section -->
-      <div style="max-width: 56rem; margin: 0 auto; text-align: center; padding: 2rem 1rem 3rem 1rem;">
-        <div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #f97316, #dc2626); border-radius: 0.75rem; margin: 0 auto 1.5rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-          🏋️
-        </div>
-        <div style="background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border: 1px solid rgba(249, 115, 22, 0.3); padding: 0.25rem 0.75rem; border-radius: 9999px; display: inline-flex; align-items: center; margin-bottom: 1.5rem; font-size: 0.875rem; font-weight: 500;">
-          ⚡ Science-Powered Fitness AI
-        </div>
-        <h1 style="font-size: clamp(1.5rem, 4vw, 3.75rem); font-weight: 700; color: white; margin-bottom: 1rem; line-height: 1.2;">
-          <span style="background: linear-gradient(to right, white, rgb(254, 237, 204), white); -webkit-background-clip: text; background-clip: text; color: transparent;">Transform Your</span>
-          <br>
-          <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">Fitness Journey</span>
-        </h1>
-        <p style="font-size: clamp(0.875rem, 2vw, 1.125rem); color: rgb(209, 213, 219); margin-bottom: 2rem; max-width: 48rem; line-height: 1.6; margin-left: auto; margin-right: auto;">
-          Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. Based on the latest scientific research for optimal results.
-        </p>
-        <button id="hero-cta" style="background: linear-gradient(to right, #f97316, #dc2626); color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit;">
-          Start for Free →
-        </button>
-      </div>
-      
-      <!-- Features Section with immediate LCP element -->
-      <div style="padding: 3rem 1rem; max-width: 56rem; margin: 0 auto;">
-        <div style="max-width: 32rem; margin: 0 auto; text-align: center; margin-bottom: 3rem;">
-          <h2 style="font-size: clamp(1.25rem, 3vw, 2.25rem); font-weight: 700; margin-bottom: 0.75rem;">
-            <span style="background: linear-gradient(to right, rgb(251, 146, 60), rgb(239, 68, 68)); -webkit-background-clip: text; background-clip: text; color: transparent;">
-              Powered by Science
-            </span>
-          </h2>
-          <!-- Critical LCP element - rendered immediately -->
-          <p style="color: rgb(156, 163, 175); font-size: clamp(0.875rem, 2vw, 1.125rem); line-height: 1.6; opacity: 1; visibility: visible;" class="text-gray-400 text-sm sm:text-base md:text-lg">
-            Experience the future of fitness with AI that understands your unique needs
-          </p>
-        </div>
-      </div>
-    </div>
-    
     <div id="root"></div>
-    
-    <!-- Optimized script loading with deferred React initialization -->
-    <script>
-      // Immediately hide skeleton on page load for all pages except homepage
-      document.addEventListener('DOMContentLoaded', function() {
-        const currentPath = window.location.pathname;
-        const heroSkeleton = document.getElementById('hero-skeleton');
-        const appLoading = document.getElementById('app-loading');
-        
-        // Only show skeleton on homepage
-        if (currentPath === '/') {
-          if (heroSkeleton) {
-            heroSkeleton.style.display = 'block';
-          }
-        } else {
-          // Hide skeleton immediately on all other pages
-          if (heroSkeleton) {
-            heroSkeleton.style.display = 'none';
-          }
-        }
-        
-        // Always hide loading spinner
-        if (appLoading) {
-          appLoading.style.display = 'none';
-        }
-      });
-      
-      // Defer React initialization until user interaction or timeout
-      let reactInitialized = false;
-      
-      function initializeReact() {
-        if (reactInitialized) return;
-        reactInitialized = true;
-        
-        // Remove skeleton content
-        const heroSkeleton = document.getElementById('hero-skeleton');
-        const appLoading = document.getElementById('app-loading');
-        
-        if (heroSkeleton) {
-          heroSkeleton.style.opacity = '0';
-          setTimeout(() => {
-            heroSkeleton.style.display = 'none';
-          }, 300);
-        }
-        
-        if (appLoading) {
-          appLoading.style.display = 'none';
-        }
-      }
-      
-      // Initialize React on user interaction (much faster than waiting for full load)
-      const interactionEvents = ['click', 'touchstart', 'keydown', 'scroll'];
-      const handleUserInteraction = () => {
-        interactionEvents.forEach(event => {
-          document.removeEventListener(event, handleUserInteraction, { passive: true });
-        });
-        initializeReact();
-      };
-      
-      interactionEvents.forEach(event => {
-        document.addEventListener(event, handleUserInteraction, { passive: true });
-      });
-      
-      // Fallback initialization after short delay for non-interactive users
-      setTimeout(initializeReact, 2000);
-      
-      // Enhanced hero button functionality
-      document.addEventListener('DOMContentLoaded', function() {
-        const heroButton = document.getElementById('hero-cta');
-        
-        if (heroButton) {
-          heroButton.onclick = function() {
-            // Initialize React immediately on CTA click
-            initializeReact();
-            setTimeout(() => {
-              window.location.href = '/signin';
-            }, 100);
-          };
-        }
-      });
-    </script>
-    <script type="module" src="/src/main.tsx" defer></script>
+    <script type="module" src="/src/main.tsx"></script>
     
     <!-- Performance monitoring -->
     <script>

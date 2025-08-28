@@ -118,8 +118,13 @@ const SafeComponent = ({ moduleName, onBack, ...props }: { moduleName: string; o
         }
       } catch (err) {
         console.error(`Failed to load module ${moduleName}:`, err);
+        console.error('Module error details:', {
+          moduleName,
+          error: err,
+          stack: err instanceof Error ? err.stack : undefined
+        });
         if (mounted) {
-          setError(`Failed to load ${moduleName}`);
+          setError(`Failed to load ${moduleName}: ${err instanceof Error ? err.message : 'Unknown error'}`);
           setLoading(false);
         }
       }

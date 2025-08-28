@@ -124,14 +124,18 @@ const Dashboard = () => {
 
   // Optimized module click handler with preloading
   const handleModuleClick = useCallback((module: any) => {
+    console.log('Module clicked:', module);
+    
     // Preload the module if not already loaded
     if (module.id && !lowDataMode) {
       preloadModule(module.id);
     }
     
     try {
+      console.log('Setting selected module:', module.id, module.title);
       setSelectedModule(module);
       setNavigationSource('dashboard');
+      console.log('Module set successfully');
     } catch (error) {
       console.error('Error setting selected module:', error);
     }

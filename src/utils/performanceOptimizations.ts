@@ -1,4 +1,5 @@
 // Performance optimization utilities for Myotopia
+
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
   private metrics: Map<string, number> = new Map();
@@ -19,9 +20,7 @@ export class PerformanceMonitor {
     if (!start) return 0;
     
     const duration = performance.now() - start;
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
-    }
+    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
     this.metrics.delete(name);
     return duration;
   }
@@ -143,6 +142,18 @@ export function compressImage(
   });
 }
 
+// Memory usage monitoring
+export function monitorMemoryUsage(): void {
+  if ('memory' in performance) {
+    const memory = (performance as any).memory;
+    console.log('[Memory]', {
+      used: `${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)}MB`,
+      total: `${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)}MB`,
+      limit: `${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)}MB`
+    });
+  }
+}
+
 // Connection speed detection
 export function detectConnectionSpeed(): 'slow' | 'fast' {
   if ('connection' in navigator) {
@@ -170,36 +181,4 @@ export function preloadCriticalResources(): void {
     link.crossOrigin = 'anonymous';
     document.head.appendChild(link);
   });
-}
-
-// Initialize performance optimizations
-export function initializePerformance(): void {
-  // Preload critical resources
-  preloadCriticalResources();
-  
-  // Set up performance observer
-  if ('PerformanceObserver' in window) {
-    const observer = new PerformanceObserver((list) => {
-      const entries = list.getEntries();
-      entries.forEach(entry => {
-        if (entry.entryType === 'largest-contentful-paint') {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`[Performance] LCP: ${entry.startTime.toFixed(2)}ms`);
-          }
-        }
-      });
-    });
-    
-    observer.observe({ entryTypes: ['largest-contentful-paint'] });
-  }
-  
-  // Monitor memory usage in development
-  if (process.env.NODE_ENV === 'development' && 'memory' in performance) {
-    setInterval(() => {
-      const memory = (performance as any).memory;
-      if (memory.usedJSHeapSize > memory.jsHeapSizeLimit * 0.8) {
-        console.warn('[Performance] High memory usage detected');
-      }
-    }, 30000);
-  }
 }

@@ -27,7 +27,6 @@ import { ExerciseShareProvider } from "@/contexts/ExerciseShareContext";
 import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppOptimizations } from "@/components/AppOptimizations";
-import BackgroundSync from "@/components/ui/background-sync";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +51,6 @@ function App() {
               <ExerciseShareProvider>
                 <TooltipProvider>
                   <AppOptimizations />
-                  <BackgroundSync />
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>

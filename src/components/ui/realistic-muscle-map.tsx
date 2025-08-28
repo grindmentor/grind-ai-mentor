@@ -1,5 +1,5 @@
 import React from 'react';
-import realisticAnatomyImage from '@/assets/realistic-muscle-anatomy-chart.jpg';
+import backAnatomyImage from '@/assets/realistic-muscle-anatomy.jpg';
 
 interface RealisticMuscleMapProps {
   muscleGroups: Array<{
@@ -77,15 +77,10 @@ export const RealisticMuscleMap: React.FC<RealisticMuscleMapProps> = ({
         
         <div className="relative w-full aspect-[4/3]">
           {/* Base anatomical image */}
-          <img 
-            src={realisticAnatomyImage} 
-            alt="Human muscle anatomy diagram"
+          <img
+            src={viewMode === 'front' ? '/lovable-uploads/a2f0ea8c-f9d9-4353-a43f-af6cc4628401.png' : backAnatomyImage}
+            alt={viewMode === 'front' ? 'Myotopia realistic muscle anatomy map (anterior view)' : 'Myotopia realistic muscle anatomy map (posterior view)'}
             className="w-full h-full object-contain rounded-lg"
-            style={{ 
-              clipPath: viewMode === 'front' 
-                ? 'polygon(0% 0%, 50% 0%, 50% 100%, 0% 100%)' 
-                : 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'
-            }}
           />
           
           {/* Color overlays for muscle development */}

@@ -76,7 +76,7 @@ export const PWAInstallPrompt: React.FC = () => {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-30 mx-auto max-w-sm">
+    <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm">
       <Card className="bg-gradient-to-r from-primary/90 to-primary/80 border-primary/50 text-white shadow-2xl">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">

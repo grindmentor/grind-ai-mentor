@@ -31,4 +31,4 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.usda-food-proxy]
-verify_jwt = true
+verify_jwt = false

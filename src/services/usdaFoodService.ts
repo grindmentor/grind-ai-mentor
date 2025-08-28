@@ -43,6 +43,7 @@ class USDAFoodService {
     }
 
     try {
+      console.log('Invoking usda-food-proxy', { q: query.trim(), pageSize });
       const { data, error } = await supabase.functions.invoke('usda-food-proxy', {
         body: { query: query.trim(), pageSize }
       });

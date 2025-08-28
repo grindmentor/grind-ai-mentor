@@ -174,8 +174,12 @@ const OptimizedProgressHub: React.FC = () => {
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="physique" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
           <TabsTrigger value="physique" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Physique
@@ -193,6 +197,29 @@ const OptimizedProgressHub: React.FC = () => {
             Goals
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Overall</CardTitle></CardHeader>
+              <CardContent>
+                <Progress value={progressMetrics.overallProgress} className="h-2" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Workouts</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-2xl font-semibold">{progressMetrics.totalWorkouts}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Avg Sleep</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-2xl font-semibold">{progressMetrics.avgSleep.toFixed(1)}h</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         <TabsContent value="physique" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

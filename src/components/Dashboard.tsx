@@ -29,6 +29,8 @@ import { toast } from 'sonner';
 import { useInstantLoading } from '@/hooks/useInstantLoading';
 import { NativeTransition, NativePageTransition } from '@/components/ui/native-transitions';
 import { NativeButton } from '@/components/ui/native-button';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -49,6 +51,7 @@ const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library' | 'direct'>('dashboard');
@@ -197,6 +200,39 @@ const Dashboard = () => {
     }
     return result;
   }, [modules, favorites, favoritesLoading, dashboardCache]);
+
+  // Prefetch Progress Hub data in background to cut first-open latency
+  useEffect(() => {
+    if (!user?.id) return;
+    queryClient.prefetchQuery({
+      queryKey: ['progressData', user.id],
+      queryFn: async () => {
+        const [workoutData, recoveryData, goalsData] = await Promise.all([
+          supabase
+            .from('progressive_overload_entries')
+            .select('exercise_name, weight, sets, reps, workout_date, rpe, created_at')
+            .eq('user_id', user.id)
+            .limit(200),
+          supabase
+            .from('recovery_data')
+            .select('sleep_hours, stress_level, recorded_date, created_at')
+            .eq('user_id', user.id)
+            .limit(50),
+          supabase
+            .from('user_goals')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+        ]);
+        return {
+          workouts: workoutData.data || [],
+          recovery: recoveryData.data || [],
+          goals: goalsData.data || []
+        };
+      },
+      staleTime: 5 * 60 * 1000
+    });
+  }, [user?.id, progressHubModule, queryClient]);
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, Suspense, lazy } from "react";
 import Index from "./pages/Index";
+import AppPreloader from "@/components/AppPreloader";
 // Lazy load non-homepage routes to reduce initial bundle size
 const AppPage = lazy(() => import("./pages/App"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -26,7 +27,7 @@ const PreferencesProvider = lazy(() => import("@/contexts/PreferencesContext").t
 const UserDataProvider = lazy(() => import("@/contexts/UserDataContext").then(m => ({ default: m.UserDataProvider })));
 const ModulesProvider = lazy(() => import("@/contexts/ModulesContext"));
 const ExerciseShareProvider = lazy(() => import("@/contexts/ExerciseShareContext").then(m => ({ default: m.ExerciseShareProvider })));
-const AppPreloader = lazy(() => import("@/components/AppPreloader"));
+// AppPreloader imported eagerly above to avoid Suspense issues
 const ProtectedRoute = lazy(() => import("@/components/ProtectedRoute"));
 
 // Defer non-critical optimizations

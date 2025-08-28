@@ -1,4 +1,6 @@
 
+import { supabase } from '@/integrations/supabase/client';
+
 interface USDANutrient {
   nutrientId: number;
   nutrientName: string;
@@ -28,8 +30,6 @@ interface USDASearchResponse {
 }
 
 class USDAFoodService {
-  private readonly apiKey = 'Pdqj0WtQ8g761LGI1gfBOiuRLfuhjDaAX4dfKXzV';
-  private readonly baseUrl = 'https://api.nal.usda.gov/fdc/v1';
   private cache = new Map<string, { data: USDASearchResponse; timestamp: number }>();
   private readonly cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
@@ -43,34 +43,23 @@ class USDAFoodService {
     }
 
     try {
-      const searchParams = new URLSearchParams({
-        query: query.trim(),
-        api_key: this.apiKey,
-        pageSize: pageSize.toString(),
-        dataType: 'Survey (FNDDS),Branded,Foundation,SR Legacy',
-        sortBy: 'dataType.keyword',
-        sortOrder: 'asc'
+      const { data, error } = await supabase.functions.invoke('usda-food-proxy', {
+        body: { query: query.trim(), pageSize }
       });
 
-      const response = await fetch(`${this.baseUrl}/foods/search?${searchParams}`);
-      
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('USDA API rate limit exceeded. Please try again in a moment.');
-        }
-        throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
+      if (error) {
+        console.error('USDA proxy error:', error);
+        throw new Error(error.message || 'Failed to search foods');
       }
 
-      const data: USDASearchResponse = await response.json();
-      
-      // Filter and prioritize results
-      const prioritizedFoods = this.prioritizeResults(data.foods);
-      const filteredData = { ...data, foods: prioritizedFoods };
-      
+      if (!data) {
+        throw new Error('No data returned from USDA search');
+      }
+
       // Cache the results
-      this.cache.set(cacheKey, { data: filteredData, timestamp: Date.now() });
+      this.cache.set(cacheKey, { data, timestamp: Date.now() });
       
-      return filteredData;
+      return data;
     } catch (error) {
       console.error('USDA API search error:', error);
       throw error;

@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.food-photo-ai-test]
 verify_jwt = false
+
+[functions.usda-food-proxy]
+verify_jwt = true

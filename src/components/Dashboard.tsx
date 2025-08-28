@@ -225,27 +225,19 @@ const Dashboard = () => {
     try {
       const ModuleComponent = selectedModule.component;
       return (
-        <ErrorBoundary>
-          <NativeTransition 
-            routeKey={selectedModule.id} 
-            type="slide" 
-            direction={navigationSource === 'dashboard' ? 'forward' : 'backward'}
-          >
-            <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
-              <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
-                <ModuleScrollHandler moduleId={selectedModule.id}>
-                  <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
-                    <ModuleComponent 
-                      onBack={handleBackToDashboard}
-                      onFoodLogged={handleFoodLogged}
-                      navigationSource={navigationSource}
-                    />
-                  </ModuleErrorBoundary>
-                </ModuleScrollHandler>
-              </Suspense>
-            </div>
-          </NativeTransition>
-        </ErrorBoundary>
+        <NativeTransition 
+          routeKey={selectedModule.id} 
+          type="slide" 
+          direction={navigationSource === 'dashboard' ? 'forward' : 'backward'}
+        >
+          <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
+            <ModuleComponent 
+              onBack={handleBackToDashboard}
+              onFoodLogged={handleFoodLogged}
+              navigationSource={navigationSource}
+            />
+          </div>
+        </NativeTransition>
       );
     } catch (error) {
       console.error('Error rendering selected module:', error);

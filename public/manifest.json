@@ -1,8 +1,9 @@
+
 {
   "id": "myotopia-ai-fitness-coach",
   "name": "Myotopia - Science-Based AI Fitness Coach",
   "short_name": "Myotopia",
-  "description": "Transform your physique with personalized, science-based AI fitness coaching. Get unlimited access to advanced workout plans, nutrition guidance, and progress tracking.",
+  "description": "Transform your physique with personalized, science-based AI fitness coaching",
   "start_url": "/app",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "fullscreen"],
@@ -14,12 +15,6 @@
   "dir": "ltr",
   "iarc_rating_id": "e10plus",
   "prefer_related_applications": false,
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -44,28 +39,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
+      "src": "/icons/icon-512.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Myotopia Mobile Dashboard - Access all AI fitness modules"
+      "label": "Myotopia Mobile Dashboard"
     },
     {
-      "src": "/lovable-uploads/0cf1e2f0-9354-49bc-95a3-7b00a1503967.png",
+      "src": "/icons/icon-512.png",
       "sizes": "1024x768",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Myotopia Desktop Dashboard - Comprehensive fitness tracking"
+      "label": "Myotopia Desktop Dashboard"
     }
   ],
   "categories": ["fitness", "health", "lifestyle", "productivity", "sports"],
@@ -73,37 +62,30 @@
     {
       "name": "CoachGPT",
       "short_name": "Coach",
-      "description": "AI fitness coaching and advice",
+      "description": "AI fitness coaching",
       "url": "/app?module=coachgpt",
       "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     },
     {
       "name": "Workout Timer",
       "short_name": "Timer",
-      "description": "Smart workout timing and rest periods",
+      "description": "Smart workout timing",
       "url": "/app?module=timer",
       "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     },
     {
       "name": "Progress Hub",
       "short_name": "Progress",
-      "description": "Track your fitness journey and achievements",
+      "description": "Track your fitness journey",
       "url": "/app?module=progress-hub",
-      "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Physique AI",
-      "short_name": "Analysis",
-      "description": "Advanced body composition analysis",
-      "url": "/app?module=physique-ai",
       "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
     }
   ],
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=app.myotopia.fitness",
-      "id": "app.myotopia.fitness"
+      "url": "https://play.google.com/store/apps/details?id=app.lovable.myotopia",
+      "id": "app.lovable.myotopia"
     },
     {
       "platform": "itunes",
@@ -112,8 +94,7 @@
     }
   ],
   "scope_extensions": [
-    { "origin": "https://myotopia.app" },
-    { "origin": "https://app.myotopia.com" }
+    { "origin": "https://myotopia.app" }
   ],
   "file_handlers": [
     {
@@ -121,40 +102,14 @@
       "accept": {
         "application/json": [".json"],
         "text/plain": [".txt"],
-        "text/csv": [".csv"],
-        "application/vnd.ms-excel": [".xlsx"]
-      },
-      "icons": [
-        {
-          "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-          "sizes": "256x256",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "action": "/app?handler=nutrition",
-      "accept": {
-        "text/csv": [".csv"],
-        "application/json": [".json"]
-      },
-      "icons": [
-        {
-          "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-          "sizes": "256x256",
-          "type": "image/png"
-        }
-      ]
+        "text/csv": [".csv"]
+      }
     }
   ],
   "handle_links": "preferred",
   "protocol_handlers": [
     {
       "protocol": "myotopia",
-      "url": "/app?protocol=%s"
-    },
-    {
-      "protocol": "web+myotopia",
       "url": "/app?protocol=%s"
     }
   ],
@@ -169,11 +124,7 @@
       "files": [
         {
           "name": "photos",
-          "accept": ["image/jpeg", "image/png", "image/webp", "image/heic"]
-        },
-        {
-          "name": "workouts",
-          "accept": ["application/json", "text/csv", "text/plain"]
+          "accept": ["image/jpeg", "image/png", "image/webp"]
         }
       ]
     }
@@ -181,14 +132,12 @@
   "widgets": [
     {
       "name": "workout-progress",
-      "description": "Quick workout progress overview with today's stats",
+      "description": "Quick workout progress overview",
       "tag": "workout-progress",
       "template": "workout-progress-template",
       "ms_ac_template": "workout-progress-adaptive-card.json",
       "data": "/app/api/widget/workout-progress",
       "type": "application/json",
-      "auth": false,
-      "update": 900,
       "screenshots": [
         {
           "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
@@ -202,29 +151,12 @@
           "sizes": "256x256"
         }
       ]
-    },
-    {
-      "name": "nutrition-summary",
-      "description": "Daily nutrition and calorie tracking summary",
-      "tag": "nutrition-summary",
-      "template": "nutrition-summary-template",
-      "data": "/app/api/widget/nutrition-summary",
-      "type": "application/json",
-      "auth": false,
-      "update": 1800,
-      "screenshots": [
-        {
-          "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-          "sizes": "256x256",
-          "label": "Nutrition Summary Widget"
-        }
-      ],
-      "icons": [
-        {
-          "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-          "sizes": "256x256"
-        }
-      ]
     }
-  ]
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

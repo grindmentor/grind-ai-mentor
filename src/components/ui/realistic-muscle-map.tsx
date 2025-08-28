@@ -1,4 +1,5 @@
 import React from 'react';
+import realisticAnatomyImage from '@/assets/realistic-muscle-anatomy-chart.jpg';
 
 interface RealisticMuscleMapProps {
   muscleGroups: Array<{
@@ -31,224 +32,108 @@ export const RealisticMuscleMap: React.FC<RealisticMuscleMapProps> = ({
     return muscle?.score || 0;
   };
 
-  if (viewMode === 'back') {
-    return (
-      <div className="relative w-full max-w-md mx-auto">
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <h3 className="text-center text-sm font-medium text-foreground mb-4">Posterior View</h3>
-          <svg viewBox="0 0 300 500" className="w-full h-auto">
-            {/* Head (back) */}
-            <circle cx="150" cy="45" r="25" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
-            
-            {/* Neck */}
-            <rect x="140" y="70" width="20" height="12" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2" rx="6"/>
-            
-            {/* Trapezius */}
-            <path d="M 120 85 L 180 85 L 185 110 L 115 110 Z"
-              fill={getMuscleColor(getMuscleScore('traps'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="150" y="100" textAnchor="middle" className="fill-foreground text-xs font-medium">
-              Traps
-            </text>
-            
-            {/* Rear Delts */}
-            <rect x="93" y="97" width="24" height="36" rx="12"
-              fill={getMuscleColor(getMuscleScore('shoulders'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <rect x="183" y="97" width="24" height="36" rx="12"
-              fill={getMuscleColor(getMuscleScore('shoulders'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="105" y="118" textAnchor="middle" className="fill-foreground text-xs font-medium">Rear</text>
-            <text x="195" y="118" textAnchor="middle" className="fill-foreground text-xs font-medium">Rear</text>
-            
-            {/* Latissimus Dorsi */}
-            <polygon points="110,130 90,160 95,200 140,210 150,150"
-              fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <polygon points="190,130 210,160 205,200 160,210 150,150"
-              fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="125" y="170" textAnchor="middle" className="fill-foreground text-xs font-medium">Lats</text>
-            <text x="175" y="170" textAnchor="middle" className="fill-foreground text-xs font-medium">Lats</text>
-            
-            {/* Mid Back */}
-            <rect x="125" y="120" width="50" height="30" rx="8"
-              fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="150" y="138" textAnchor="middle" className="fill-foreground text-xs font-medium">
-              Mid Back
-            </text>
-            
-            {/* Triceps */}
-            <rect x="75" y="135" width="20" height="50" rx="10"
-              fill={getMuscleColor(getMuscleScore('arms'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <rect x="205" y="135" width="20" height="50" rx="10"
-              fill={getMuscleColor(getMuscleScore('arms'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="85" y="163" textAnchor="middle" className="fill-foreground text-xs font-medium">Tri</text>
-            <text x="215" y="163" textAnchor="middle" className="fill-foreground text-xs font-medium">Tri</text>
-            
-            {/* Lower Back */}
-            <rect x="130" y="175" width="40" height="50" rx="8"
-              fill={getMuscleColor(getMuscleScore('back'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="150" y="203" textAnchor="middle" className="fill-foreground text-xs font-medium">
-              Lower Back
-            </text>
-            
-            {/* Glutes */}
-            <rect x="117" y="220" width="36" height="40" rx="8"
-              fill={getMuscleColor(getMuscleScore('glutes'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <rect x="147" y="220" width="36" height="40" rx="8"
-              fill={getMuscleColor(getMuscleScore('glutes'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="150" y="243" textAnchor="middle" className="fill-foreground text-xs font-medium">
-              Glutes
-            </text>
-            
-            {/* Hamstrings */}
-            <rect x="115" y="260" width="30" height="80" rx="8"
-              fill={getMuscleColor(getMuscleScore('legs'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <rect x="155" y="260" width="30" height="80" rx="8"
-              fill={getMuscleColor(getMuscleScore('legs'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="150" y="303" textAnchor="middle" className="fill-foreground text-xs font-medium">
-              Hamstrings
-            </text>
-            
-            {/* Calves */}
-            <rect x="118" y="370" width="24" height="60" rx="8"
-              fill={getMuscleColor(getMuscleScore('calves'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <rect x="158" y="370" width="24" height="60" rx="8"
-              fill={getMuscleColor(getMuscleScore('calves'))} 
-              stroke="hsl(var(--border))" strokeWidth="2"/>
-            <text x="150" y="403" textAnchor="middle" className="fill-foreground text-xs font-medium">
-              Calves
-            </text>
-          </svg>
-        </div>
-      </div>
-    );
-  }
+  const getMuscleOpacity = (score: number): number => {
+    // Higher scores get more opacity (more visible color overlay)
+    return Math.max(0.3, Math.min(0.8, score / 100));
+  };
 
-  // Front view (default)
+  // Define muscle group positions for front view
+  const frontMuscleAreas = [
+    { name: 'chest', x: 45, y: 25, width: 10, height: 12, score: getMuscleScore('chest') },
+    { name: 'shoulders', x: 35, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
+    { name: 'shoulders', x: 57, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
+    { name: 'arms', x: 28, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
+    { name: 'arms', x: 66, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
+    { name: 'core', x: 43, y: 38, width: 14, height: 18, score: getMuscleScore('core') },
+    { name: 'legs', x: 40, y: 58, width: 8, height: 25, score: getMuscleScore('legs') },
+    { name: 'legs', x: 52, y: 58, width: 8, height: 25, score: getMuscleScore('legs') },
+    { name: 'calves', x: 41, y: 85, width: 6, height: 12, score: getMuscleScore('calves') },
+    { name: 'calves', x: 53, y: 85, width: 6, height: 12, score: getMuscleScore('calves') }
+  ];
+
+  // Define muscle group positions for back view
+  const backMuscleAreas = [
+    { name: 'traps', x: 42, y: 18, width: 16, height: 8, score: getMuscleScore('traps') },
+    { name: 'shoulders', x: 30, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
+    { name: 'shoulders', x: 62, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
+    { name: 'back', x: 38, y: 28, width: 24, height: 20, score: getMuscleScore('back') },
+    { name: 'arms', x: 25, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
+    { name: 'arms', x: 69, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
+    { name: 'glutes', x: 42, y: 50, width: 16, height: 12, score: getMuscleScore('glutes') },
+    { name: 'legs', x: 40, y: 64, width: 8, height: 20, score: getMuscleScore('legs') },
+    { name: 'legs', x: 52, y: 64, width: 8, height: 20, score: getMuscleScore('legs') },
+    { name: 'calves', x: 41, y: 85, width: 6, height: 12, score: getMuscleScore('calves') },
+    { name: 'calves', x: 53, y: 85, width: 6, height: 12, score: getMuscleScore('calves') }
+  ];
+
+  const currentMuscleAreas = viewMode === 'front' ? frontMuscleAreas : backMuscleAreas;
+
   return (
     <div className="relative w-full max-w-md mx-auto">
       <div className="bg-card rounded-2xl p-6 border border-border">
-        <h3 className="text-center text-sm font-medium text-foreground mb-4">Anterior View</h3>
-        <svg viewBox="0 0 300 500" className="w-full h-auto">
-          {/* Head */}
-          <circle cx="150" cy="45" r="25" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2"/>
+        <h3 className="text-center text-sm font-medium text-foreground mb-4">
+          {viewMode === 'front' ? 'Anterior View' : 'Posterior View'}
+        </h3>
+        
+        <div className="relative w-full aspect-[4/3]">
+          {/* Base anatomical image */}
+          <img 
+            src={realisticAnatomyImage} 
+            alt="Human muscle anatomy diagram"
+            className="w-full h-full object-contain rounded-lg"
+            style={{ 
+              clipPath: viewMode === 'front' 
+                ? 'polygon(0% 0%, 50% 0%, 50% 100%, 0% 100%)' 
+                : 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'
+            }}
+          />
           
-          {/* Neck */}
-          <rect x="140" y="70" width="20" height="12" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="2" rx="6"/>
+          {/* Color overlays for muscle development */}
+          <div className="absolute inset-0">
+            {currentMuscleAreas.map((muscle, index) => (
+              <div
+                key={`${muscle.name}-${index}`}
+                className="absolute rounded-md transition-all duration-300 hover:scale-105"
+                style={{
+                  left: `${muscle.x}%`,
+                  top: `${muscle.y}%`,
+                  width: `${muscle.width}%`,
+                  height: `${muscle.height}%`,
+                  backgroundColor: getMuscleColor(muscle.score),
+                  opacity: getMuscleOpacity(muscle.score),
+                  mixBlendMode: 'multiply',
+                  border: '1px solid rgba(255,255,255,0.3)'
+                }}
+                title={`${muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}: ${muscle.score}%`}
+              />
+            ))}
+          </div>
           
-          {/* Anterior Deltoids */}
-          <rect x="100" y="85" width="30" height="40" rx="15"
-            fill={getMuscleColor(getMuscleScore('shoulders'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <rect x="170" y="85" width="30" height="40" rx="15"
-            fill={getMuscleColor(getMuscleScore('shoulders'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <text x="115" y="108" textAnchor="middle" className="fill-foreground text-xs font-medium">Delts</text>
-          <text x="185" y="108" textAnchor="middle" className="fill-foreground text-xs font-medium">Delts</text>
-          
-          {/* Pectorals */}
-          <polygon points="120,120 180,120 175,155 125,155"
-            fill={getMuscleColor(getMuscleScore('chest'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <text x="150" y="140" textAnchor="middle" className="fill-foreground text-xs font-medium">
-            Chest
-          </text>
-          
-          {/* Biceps */}
-          <rect x="83" y="130" width="24" height="50" rx="12"
-            fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <rect x="193" y="130" width="24" height="50" rx="12"
-            fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <text x="95" y="158" textAnchor="middle" className="fill-foreground text-xs font-medium">Bi</text>
-          <text x="205" y="158" textAnchor="middle" className="fill-foreground text-xs font-medium">Bi</text>
-          
-          {/* Forearms */}
-          <rect x="87" y="170" width="16" height="40" rx="8"
-            fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <rect x="197" y="170" width="16" height="40" rx="8"
-            fill={getMuscleColor(getMuscleScore('arms'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          
-          {/* Rectus Abdominis */}
-          <rect x="135" y="155" width="30" height="55" rx="8" 
-            fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          {/* Ab divisions */}
-          <line x1="150" y1="170" x2="150" y2="200" stroke="hsl(var(--border))" strokeWidth="1"/>
-          <line x1="140" y1="180" x2="160" y2="180" stroke="hsl(var(--border))" strokeWidth="1"/>
-          <line x1="140" y1="190" x2="160" y2="190" stroke="hsl(var(--border))" strokeWidth="1"/>
-          <text x="150" y="185" textAnchor="middle" className="fill-foreground text-xs font-medium">
-            Abs
-          </text>
-          
-          {/* Obliques */}
-          <rect x="112" y="165" width="16" height="40" rx="8"
-            fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <rect x="172" y="165" width="16" height="40" rx="8"
-            fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          
-          {/* Lower Core */}
-          <rect x="125" y="208" width="50" height="24" rx="8"
-            fill={getMuscleColor(getMuscleScore('core'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <text x="150" y="223" textAnchor="middle" className="fill-foreground text-xs font-medium">
-            Lower Core
-          </text>
-          
-          {/* Quadriceps */}
-          <rect x="112" y="240" width="36" height="100" rx="8"
-            fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <rect x="152" y="240" width="36" height="100" rx="8"
-            fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          {/* Quad divisions */}
-          <line x1="124" y1="250" x2="124" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
-          <line x1="136" y1="250" x2="136" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
-          <line x1="164" y1="250" x2="164" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
-          <line x1="176" y1="250" x2="176" y2="330" stroke="hsl(var(--border))" strokeWidth="1"/>
-          <text x="150" y="293" textAnchor="middle" className="fill-foreground text-xs font-medium">
-            Quads
-          </text>
-          
-          {/* Shins */}
-          <rect x="122" y="355" width="16" height="50" rx="8"
-            fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <rect x="162" y="355" width="16" height="50" rx="8"
-            fill={getMuscleColor(getMuscleScore('legs'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <text x="150" y="383" textAnchor="middle" className="fill-foreground text-xs font-medium">
-            Shins
-          </text>
-          
-          {/* Calves (front view) */}
-          <rect x="120" y="410" width="20" height="40" rx="8"
-            fill={getMuscleColor(getMuscleScore('calves'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <rect x="160" y="410" width="20" height="40" rx="8"
-            fill={getMuscleColor(getMuscleScore('calves'))} 
-            stroke="hsl(var(--border))" strokeWidth="2"/>
-          <text x="150" y="433" textAnchor="middle" className="fill-foreground text-xs font-medium">
-            Calves
-          </text>
-        </svg>
+          {/* Muscle labels */}
+          <div className="absolute inset-0 pointer-events-none">
+            {currentMuscleAreas
+              .filter((muscle, index, self) => 
+                index === self.findIndex(m => m.name === muscle.name)
+              )
+              .map((muscle, index) => (
+                <div
+                  key={muscle.name}
+                  className="absolute text-xs font-medium text-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded shadow-sm"
+                  style={{
+                    left: `${muscle.x + muscle.width/2}%`,
+                    top: `${muscle.y + muscle.height + 2}%`,
+                    transform: 'translateX(-50%)',
+                    fontSize: '10px'
+                  }}
+                >
+                  {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
+                  <br />
+                  <span className="text-muted-foreground">{muscle.score}%</span>
+                </div>
+              ))
+            }
+          </div>
+        </div>
       </div>
     </div>
   );

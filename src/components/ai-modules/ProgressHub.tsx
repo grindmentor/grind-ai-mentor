@@ -37,7 +37,7 @@ import {
   Cpu
 } from 'lucide-react';
 import { RealisticMuscleMap, MuscleMapLegend } from '@/components/ui/realistic-muscle-map';
-import muscleAnatomyImage from '@/assets/realistic-muscle-anatomy.jpg';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/contexts/UserDataContext';
@@ -893,16 +893,17 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="relative w-full max-w-2xl mx-auto">
-                  <img 
-                    src={muscleAnatomyImage} 
-                    alt="Human Muscle Anatomy - Front and Back View" 
-                    className="w-full h-auto rounded-lg border border-border/50"
-                  />
-                  <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-muted-foreground">
-                    Professional Reference
+                <div className="flex items-center justify-center mb-4">
+                  <div className="inline-flex rounded-md border border-border bg-muted/50 p-1">
+                    <Button size="sm" variant={viewMode === 'front' ? 'default' : 'ghost'} onClick={() => setViewMode('front')}>
+                      Front
+                    </Button>
+                    <Button size="sm" variant={viewMode === 'back' ? 'default' : 'ghost'} onClick={() => setViewMode('back')}>
+                      Back
+                    </Button>
                   </div>
                 </div>
+                <RealisticMuscleMap muscleGroups={muscleGroups} viewMode={viewMode} />
               </CardContent>
             </Card>
 

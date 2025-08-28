@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const corsHeaders = {
+const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+  'Content-Type': 'application/json'
 };
 
 interface USDANutrient {
@@ -33,107 +36,100 @@ interface USDASearchResponse {
   totalPages: number;
 }
 
+function prioritize(foods: USDAFoodItem[] = []): USDAFoodItem[] {
+  const priorityOrder = {
+    'Survey (FNDDS)': 1,
+    'Foundation': 2,
+    'Branded': 3,
+    'SR Legacy': 4
+  } as const;
+
+  return foods
+    .filter((food) => food.foodNutrients && food.foodNutrients.length > 0)
+    .sort((a, b) => {
+      const aPriority = (priorityOrder as any)[a.dataType] ?? 5;
+      const bPriority = (priorityOrder as any)[b.dataType] ?? 5;
+      return aPriority - bPriority;
+    })
+    .slice(0, 20);
+}
+
+async function getParams(req: Request): Promise<{ query: string; pageSize: number } | { error: string }> {
+  try {
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      const query = (url.searchParams.get('query') || '').trim();
+      const pageSize = Number(url.searchParams.get('pageSize') || 20);
+      if (!query) return { error: 'Query parameter is required' };
+      return { query, pageSize: isNaN(pageSize) ? 20 : Math.max(1, Math.min(pageSize, 50)) };
+    }
+
+    // POST body (JSON)
+    const text = await req.text();
+    if (!text) return { error: 'Empty request body' };
+    let parsed: any;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return { error: 'Invalid JSON body' };
+    }
+
+    const query = (parsed?.query || '').trim();
+    const pageSize = Number(parsed?.pageSize ?? 20);
+    if (!query) return { error: 'Query parameter is required' };
+    return { query, pageSize: isNaN(pageSize) ? 20 : Math.max(1, Math.min(pageSize, 50)) };
+  } catch (e) {
+    console.error('Failed to parse request params', e);
+    return { error: 'Failed to parse request parameters' };
+  }
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const { query, pageSize = 20 } = await req.json();
-    
-    if (!query || typeof query !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'Query parameter is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+  const params = await getParams(req);
+  if ('error' in params) {
+    return new Response(JSON.stringify({ error: params.error }), { status: 400, headers: corsHeaders });
+  }
 
+  const { query, pageSize } = params;
+
+  try {
     const apiKey = Deno.env.get('USDA_API_KEY');
     if (!apiKey) {
-      console.error('USDA_API_KEY not found in environment');
-      return new Response(
-        JSON.stringify({ error: 'API configuration error' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      console.error('USDA_API_KEY is missing');
+      return new Response(JSON.stringify({ error: 'API not configured' }), { status: 500, headers: corsHeaders });
     }
 
     const searchParams = new URLSearchParams({
-      query: query.trim(),
+      query,
       api_key: apiKey,
-      pageSize: pageSize.toString(),
+      pageSize: String(pageSize),
       dataType: 'Survey (FNDDS),Branded,Foundation,SR Legacy',
       sortBy: 'dataType.keyword',
       sortOrder: 'asc'
     });
 
-    console.log(`Making USDA API request for query: ${query}`);
-    
-    const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?${searchParams}`);
-    
-    if (!response.ok) {
-      console.error(`USDA API error: ${response.status} ${response.statusText}`);
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
-          { 
-            status: 429, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-      return new Response(
-        JSON.stringify({ error: `USDA API error: ${response.status}` }),
-        { 
-          status: response.status, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    console.log('USDA request', { query, pageSize });
+    const upstream = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?${searchParams}`);
+
+    if (!upstream.ok) {
+      const text = await upstream.text();
+      console.error('USDA upstream error', upstream.status, text);
+      const status = upstream.status === 429 ? 429 : 502;
+      const msg = upstream.status === 429 ? 'Rate limit exceeded' : 'Upstream API error';
+      return new Response(JSON.stringify({ error: msg, status: upstream.status }), { status, headers: corsHeaders });
     }
 
-    const data: USDASearchResponse = await response.json();
-    console.log(`USDA API returned ${data.foods?.length || 0} results`);
+    const raw: USDASearchResponse = await upstream.json();
+    const filtered = { ...raw, foods: prioritize(raw.foods) };
 
-    // Filter and prioritize results (same logic as original service)
-    const priorityOrder = {
-      'Survey (FNDDS)': 1,
-      'Foundation': 2,
-      'Branded': 3,
-      'SR Legacy': 4
-    };
-
-    const prioritizedFoods = data.foods
-      ?.filter(food => food.foodNutrients && food.foodNutrients.length > 0)
-      .sort((a, b) => {
-        const aPriority = priorityOrder[a.dataType as keyof typeof priorityOrder] || 5;
-        const bPriority = priorityOrder[b.dataType as keyof typeof priorityOrder] || 5;
-        return aPriority - bPriority;
-      })
-      .slice(0, 20) || [];
-
-    const filteredData = { ...data, foods: prioritizedFoods };
-
-    return new Response(
-      JSON.stringify(filteredData),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
-  } catch (error) {
-    console.error('Error in USDA food proxy:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify(filtered), { status: 200, headers: corsHeaders });
+  } catch (err) {
+    console.error('Proxy failure', err);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: corsHeaders });
   }
 });

@@ -44,23 +44,35 @@ class USDAFoodService {
 
     try {
       console.log('Invoking usda-food-proxy', { q: query.trim(), pageSize });
-      const { data, error } = await supabase.functions.invoke('usda-food-proxy', {
-        body: { query: query.trim(), pageSize }
-      });
+      // First try official Supabase invoke
+      try {
+        const { data, error } = await supabase.functions.invoke('usda-food-proxy', {
+          body: { query: query.trim(), pageSize }
+        });
 
-      if (error) {
-        console.error('USDA proxy error:', error);
-        throw new Error(error.message || 'Failed to search foods');
+        if (error) throw new Error(error.message || 'Failed to search foods');
+        if (!data) throw new Error('No data returned from USDA search');
+
+        // Cache and return
+        this.cache.set(cacheKey, { data, timestamp: Date.now() });
+        return data;
+      } catch (invokeErr) {
+        console.warn('usda-food-proxy invoke failed, falling back to direct fetch:', invokeErr);
+        const resp = await fetch('https://druwytttcxnfpwgyrvmt.supabase.co/functions/v1/usda-food-proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: query.trim(), pageSize })
+        });
+
+        if (!resp.ok) {
+          const text = await resp.text().catch(() => '');
+          throw new Error(`USDA search failed (${resp.status}): ${text || resp.statusText}`);
+        }
+
+        const data: USDASearchResponse = await resp.json();
+        this.cache.set(cacheKey, { data, timestamp: Date.now() });
+        return data;
       }
-
-      if (!data) {
-        throw new Error('No data returned from USDA search');
-      }
-
-      // Cache the results
-      this.cache.set(cacheKey, { data, timestamp: Date.now() });
-      
-      return data;
     } catch (error) {
       console.error('USDA API search error:', error);
       throw error;

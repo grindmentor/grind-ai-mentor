@@ -8,6 +8,7 @@ import { RealisticMuscleMap } from '@/components/ui/realistic-muscle-map';
 import { HexagonProgress } from '@/components/ui/hexagon-progress';
 import { Camera, Upload, Zap, TrendingUp, Target, Activity, Eye, Brain } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -31,6 +32,7 @@ interface PhysiqueAnalysis {
 
 const PhysiqueAI = () => {
   const { user } = useAuth();
+  const { uploadPhoto, isUploading, uploadProgress } = usePhotoUpload();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -64,23 +66,22 @@ const PhysiqueAI = () => {
     setIsAnalyzing(true);
     
     try {
-      // Upload image to Supabase storage
-      const fileName = `physique-${user.id}-${Date.now()}.${selectedFile.name.split('.').pop()}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('progress-photos')
-        .upload(fileName, selectedFile);
+      // Upload photo to storage first
+      const photoUrl = await uploadPhoto(selectedFile, {
+        bucket: 'physique-photos',
+        maxSizeMB: 50,
+        allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
+      });
 
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('progress-photos')
-        .getPublicUrl(fileName);
+      if (!photoUrl) {
+        setIsAnalyzing(false);
+        return;
+      }
 
       // Call AI analysis function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-physique', {
         body: { 
-          imageUrl: publicUrl,
+          imageUrl: photoUrl,
           userId: user.id 
         }
       });
@@ -92,8 +93,8 @@ const PhysiqueAI = () => {
         .from('progress_photos')
         .insert({
           user_id: user.id,
-          file_url: publicUrl,
-          file_name: fileName,
+          file_url: photoUrl,
+          file_name: selectedFile.name,
           analysis_result: JSON.stringify(analysisData),
           photo_type: 'physique_analysis',
           taken_date: new Date().toISOString().split('T')[0]
@@ -182,23 +183,28 @@ const PhysiqueAI = () => {
                     </div>
                     
                     {selectedFile && (
-                      <Button 
-                        onClick={analyzePhysique}
-                        disabled={isAnalyzing}
-                        className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                      >
-                        {isAnalyzing ? (
-                          <>
-                            <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            <Brain className="h-4 w-4 mr-2" />
-                            Analyze Physique
-                          </>
-                        )}
-                      </Button>
+                    <Button 
+                      onClick={analyzePhysique}
+                      disabled={isAnalyzing || isUploading}
+                      className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                          Uploading {uploadProgress}%...
+                        </>
+                      ) : isAnalyzing ? (
+                        <>
+                          <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="h-4 w-4 mr-2" />
+                          Analyze Physique
+                        </>
+                      )}
+                    </Button>
                     )}
                   </div>
                   

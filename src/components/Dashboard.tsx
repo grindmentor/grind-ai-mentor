@@ -31,6 +31,7 @@ import { NativeTransition, NativePageTransition } from '@/components/ui/native-t
 import { NativeButton } from '@/components/ui/native-button';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import NativeInstallPrompt from '@/components/ui/native-install-prompt';
 
 // Lazy load heavy components with better loading states
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -472,6 +473,9 @@ const Dashboard = () => {
               )}
             </div>
           </div>
+          
+          {/* Native Install Prompt */}
+          <NativeInstallPrompt />
         </div>
       </NativeTransition>
     </ErrorBoundary>

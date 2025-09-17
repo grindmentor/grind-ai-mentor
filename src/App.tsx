@@ -56,14 +56,13 @@ function App() {
               <ExerciseShareProvider>
                 <TooltipProvider>
                   <AppOptimizations />
-                  <ProtocolHandler />
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
+                    <ProtocolHandler />
                     <div className="min-h-screen bg-background">
                       {/* PWA Titlebar area for window controls overlay */}
                       <div className="titlebar-area" />
-                      
                       <Routes>
                         <Route path="/" element={<Index />} />
                         <Route path="/signin" element={<SignIn />} />

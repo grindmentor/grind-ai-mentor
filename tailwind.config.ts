@@ -61,7 +61,50 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Enhanced scientific color system
+				success: {
+					light: 'hsl(var(--success-light))',
+					DEFAULT: 'hsl(var(--success-DEFAULT))',
+					dark: 'hsl(var(--success-dark))'
+				},
+				warning: {
+					light: 'hsl(var(--warning-light))',
+					DEFAULT: 'hsl(var(--warning-DEFAULT))',
+					dark: 'hsl(var(--warning-dark))'
+				},
+				error: {
+					light: 'hsl(var(--error-light))',
+					DEFAULT: 'hsl(var(--error-DEFAULT))',
+					dark: 'hsl(var(--error-dark))'
+				},
+				// Interactive element colors
+				interactive: {
+					primary: 'hsl(var(--interactive-primary))',
+					secondary: 'hsl(var(--interactive-secondary))',
+					success: 'hsl(var(--interactive-success))',
+					warning: 'hsl(var(--interactive-warning))',
+					error: 'hsl(var(--interactive-error))'
 				}
+			},
+			fontFamily: {
+				display: 'var(--font-display)',
+				body: 'var(--font-body)',
+				mono: 'var(--font-mono)'
+			},
+			boxShadow: {
+				'scientific': 'var(--shadow-scientific)',
+				'elevated': 'var(--shadow-elevated)',
+				'glow-primary': 'var(--glow-primary)',
+				'glow-success': 'var(--glow-success)',
+				'glow-warning': 'var(--glow-warning)',
+				'glow-error': 'var(--glow-error)'
+			},
+			dropShadow: {
+				'glow-primary': 'var(--glow-primary)',
+				'glow-success': 'var(--glow-success)',
+				'glow-warning': 'var(--glow-warning)',
+				'glow-error': 'var(--glow-error)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

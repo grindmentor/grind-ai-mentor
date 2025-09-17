@@ -36,6 +36,39 @@
   --input: 0 0% 14%;
   --ring: 39 100% 50%;
     --radius: 0.5rem;
+
+    /* Enhanced Typography Scale */
+    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+
+    /* Scientific Color Precision */
+    --success-light: 142 85% 55%;
+    --success-DEFAULT: 142 76% 36%;
+    --success-dark: 142 65% 25%;
+    
+    --warning-light: 47 100% 70%;
+    --warning-DEFAULT: 47 96% 53%;
+    --warning-dark: 47 85% 35%;
+    
+    --error-light: 0 100% 75%;
+    --error-DEFAULT: 0 84% 60%;
+    --error-dark: 0 75% 45%;
+
+    /* Interactive Element Colors */
+    --interactive-primary: var(--primary);
+    --interactive-secondary: var(--secondary);
+    --interactive-success: var(--success-DEFAULT);
+    --interactive-warning: var(--warning-DEFAULT);
+    --interactive-error: var(--error-DEFAULT);
+
+    /* Enhanced Shadows and Glows */
+    --shadow-scientific: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+    --shadow-elevated: 0 20px 40px -15px hsl(var(--primary) / 0.4);
+    --glow-primary: 0 0 40px hsl(var(--primary) / 0.6);
+    --glow-success: 0 0 30px hsl(var(--success-DEFAULT) / 0.5);
+    --glow-warning: 0 0 30px hsl(var(--warning-DEFAULT) / 0.5);
+    --glow-error: 0 0 30px hsl(var(--error-DEFAULT) / 0.5);
     
     /* Safe area support */
     --safe-area-inset-top: env(safe-area-inset-top, 0px);
@@ -77,9 +110,66 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+  }
+
+  /* Typography system */
+  .font-display {
+    font-family: var(--font-display);
+  }
+  
+  .font-body {
+    font-family: var(--font-body);
+  }
+  
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* Text gradient utility */
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass morphism effects */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-button {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+  }
+
+  /* Scientific emphasis styles */
+  .scientific-emphasis {
+    position: relative;
+  }
+
+  .scientific-emphasis::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)));
+    opacity: 0.8;
   }
 }
 

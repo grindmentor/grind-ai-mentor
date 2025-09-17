@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Index from "./pages/Index";
-import AppPage from "./pages/App";
+import { default as AppPage } from "./pages/App";
 import PhysiqueAIDashboard from "./pages/PhysiqueAIDashboard";
 import PhysiqueAI from "./pages/PhysiqueAI";
 import WorkoutLogger from "./pages/WorkoutLogger";

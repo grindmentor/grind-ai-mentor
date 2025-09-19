@@ -15,13 +15,23 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
   viewMode = 'front' 
 }) => {
   const getMuscleColor = (score: number): string => {
-    if (score >= 90) return 'hsl(var(--primary))'; // Elite - primary theme color
-    if (score >= 80) return 'hsl(142 76% 36%)'; // Advanced - green
-    if (score >= 70) return 'hsl(142 71% 45%)'; // Intermediate+ - light green
-    if (score >= 60) return 'hsl(47 96% 53%)'; // Intermediate - yellow
-    if (score >= 50) return 'hsl(25 95% 53%)'; // Beginner+ - orange
-    if (score >= 30) return 'hsl(var(--muted))'; // Beginner - muted
-    return 'hsl(var(--muted-foreground))'; // Untrained - very muted
+    if (score >= 90) return 'hsl(271 100% 50%)'; // Elite - Purple
+    if (score >= 80) return 'hsl(262 83% 58%)'; // Expert - Blue Purple  
+    if (score >= 70) return 'hsl(142 76% 36%)'; // Advanced - Green
+    if (score >= 60) return 'hsl(47 96% 53%)'; // Intermediate - Yellow
+    if (score >= 50) return 'hsl(25 95% 53%)'; // Novice - Orange
+    if (score >= 30) return 'hsl(200 100% 70%)'; // Beginner - Light Blue
+    return 'hsl(220 13% 69%)'; // Untrained - Gray
+  };
+
+  const getMuscleLevel = (score: number): string => {
+    if (score >= 90) return 'Elite';
+    if (score >= 80) return 'Expert'; 
+    if (score >= 70) return 'Advanced';
+    if (score >= 60) return 'Intermediate';
+    if (score >= 50) return 'Novice';
+    if (score >= 30) return 'Beginner';
+    return 'Untrained';
   };
 
   const getMuscleScore = (muscleName: string): number => {
@@ -33,8 +43,14 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
   };
 
   const getMuscleOpacity = (score: number): number => {
-    // Higher scores get more opacity (more visible color overlay)
-    return Math.max(0.3, Math.min(0.8, score / 100));
+    // Higher scores get more opacity with better visibility
+    return Math.max(0.4, Math.min(0.85, (score + 20) / 100));
+  };
+
+  const getGlowIntensity = (score: number): string => {
+    if (score >= 80) return '0 0 20px rgba(139, 92, 246, 0.6)';
+    if (score >= 60) return '0 0 15px rgba(34, 197, 94, 0.4)';
+    return '0 0 8px rgba(59, 130, 246, 0.3)';
   };
 
   // Define muscle group positions for front view
@@ -70,17 +86,22 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
 
   return (
     <div className="relative w-full max-w-md mx-auto">
-      <div className="bg-card rounded-2xl p-6 border border-border">
-        <h3 className="text-center text-sm font-medium text-foreground mb-4">
-          {viewMode === 'front' ? 'Anterior View' : 'Posterior View'}
-        </h3>
+      <div className="bg-gradient-to-br from-background to-muted/20 rounded-2xl p-6 border border-border/50 shadow-lg backdrop-blur-sm">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Muscle Development Map
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {viewMode === 'front' ? 'Anterior View' : 'Posterior View'}
+          </p>
+        </div>
         
-        <div className="relative w-full aspect-[4/3]">
+        <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-muted/10 to-muted/20 rounded-xl overflow-hidden">
           {/* Base anatomical image */}
           <img
             src={viewMode === 'front' ? '/lovable-uploads/a2f0ea8c-f9d9-4353-a43f-af6cc4628401.png' : backAnatomyImage}
             alt={viewMode === 'front' ? 'Myotopia realistic muscle anatomy map (anterior view)' : 'Myotopia realistic muscle anatomy map (posterior view)'}
-            className="w-full h-full object-contain rounded-lg"
+            className="w-full h-full object-contain"
             loading="lazy"
             decoding="async"
             fetchPriority="low"
@@ -88,12 +109,12 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
             height={768}
           />
           
-          {/* Color overlays for muscle development */}
+          {/* Enhanced color overlays for muscle development */}
           <div className="absolute inset-0">
             {currentMuscleAreas.map((muscle, index) => (
               <div
                 key={`${muscle.name}-${index}`}
-                className="absolute rounded-md transition-all duration-300 hover:scale-105"
+                className="absolute rounded-lg transition-all duration-500 hover:scale-110 cursor-pointer group"
                 style={{
                   left: `${muscle.x}%`,
                   top: `${muscle.y}%`,
@@ -101,15 +122,24 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
                   height: `${muscle.height}%`,
                   backgroundColor: getMuscleColor(muscle.score),
                   opacity: getMuscleOpacity(muscle.score),
-                  mixBlendMode: 'multiply',
-                  border: '1px solid rgba(255,255,255,0.3)'
+                  mixBlendMode: 'soft-light',
+                  border: `2px solid ${getMuscleColor(muscle.score)}60`,
+                  boxShadow: getGlowIntensity(muscle.score),
                 }}
-                title={`${muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}: ${muscle.score}%`}
-              />
+                title={`${muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}: ${getMuscleLevel(muscle.score)} (${muscle.score}%)`}
+              >
+                {/* Subtle inner glow effect */}
+                <div 
+                  className="absolute inset-0 rounded-lg opacity-20"
+                  style={{
+                    background: `radial-gradient(circle at center, ${getMuscleColor(muscle.score)} 0%, transparent 70%)`
+                  }}
+                />
+              </div>
             ))}
           </div>
           
-          {/* Muscle labels */}
+          {/* Elegant muscle labels with improved positioning */}
           <div className="absolute inset-0 pointer-events-none">
             {currentMuscleAreas
               .filter((muscle, index, self) => 
@@ -118,20 +148,42 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
               .map((muscle, index) => (
                 <div
                   key={muscle.name}
-                  className="absolute text-xs font-medium text-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded shadow-sm"
+                  className="absolute group"
                   style={{
                     left: `${muscle.x + muscle.width/2}%`,
-                    top: `${muscle.y + muscle.height + 2}%`,
+                    top: `${muscle.y + muscle.height + 1}%`,
                     transform: 'translateX(-50%)',
-                    fontSize: '10px'
                   }}
                 >
-                  {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
-                  <br />
-                  <span className="text-muted-foreground">{muscle.score}%</span>
+                  <div className="bg-background/95 backdrop-blur-md border border-border/50 rounded-lg px-3 py-2 shadow-lg transition-all duration-300 hover:scale-105">
+                    <div className="text-center">
+                      <div className="text-xs font-semibold text-foreground">
+                        {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
+                      </div>
+                      <div className="flex items-center justify-center space-x-2 mt-1">
+                        <div 
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: getMuscleColor(muscle.score) }}
+                        />
+                        <span className="text-xs font-medium" style={{ color: getMuscleColor(muscle.score) }}>
+                          {getMuscleLevel(muscle.score)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {muscle.score}%
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))
             }
+          </div>
+        </div>
+        
+        {/* Development summary */}
+        <div className="mt-4 text-center">
+          <div className="text-xs text-muted-foreground">
+            Color intensity reflects training development level
           </div>
         </div>
       </div>
@@ -143,33 +195,51 @@ export const RealisticMuscleMap = React.memo(RealisticMuscleMapComponent);
 
 export const MuscleMapLegend: React.FC = () => {
   const levels = [
-    { color: 'hsl(var(--muted-foreground))', label: 'Untrained (0-29%)', description: 'No training data' },
-    { color: 'hsl(var(--muted))', label: 'Beginner (30-49%)', description: 'Starting development' },
-    { color: 'hsl(25 95% 53%)', label: 'Novice (50-59%)', description: 'Basic foundation' },
-    { color: 'hsl(47 96% 53%)', label: 'Intermediate (60-69%)', description: 'Solid progress' },
-    { color: 'hsl(142 71% 45%)', label: 'Advanced (70-79%)', description: 'Well developed' },
-    { color: 'hsl(142 76% 36%)', label: 'Expert (80-89%)', description: 'Highly trained' },
-    { color: 'hsl(var(--primary))', label: 'Elite (90-100%)', description: 'Peak development' },
+    { color: 'hsl(220 13% 69%)', label: 'Untrained (0-29%)', description: 'No training data', glow: '0 0 8px rgba(156, 163, 175, 0.3)' },
+    { color: 'hsl(200 100% 70%)', label: 'Beginner (30-49%)', description: 'Starting development', glow: '0 0 8px rgba(59, 130, 246, 0.3)' },
+    { color: 'hsl(25 95% 53%)', label: 'Novice (50-59%)', description: 'Basic foundation', glow: '0 0 10px rgba(251, 146, 60, 0.4)' },
+    { color: 'hsl(47 96% 53%)', label: 'Intermediate (60-69%)', description: 'Solid progress', glow: '0 0 12px rgba(250, 204, 21, 0.4)' },
+    { color: 'hsl(142 76% 36%)', label: 'Advanced (70-79%)', description: 'Well developed', glow: '0 0 15px rgba(34, 197, 94, 0.4)' },
+    { color: 'hsl(262 83% 58%)', label: 'Expert (80-89%)', description: 'Highly trained', glow: '0 0 18px rgba(139, 92, 246, 0.5)' },
+    { color: 'hsl(271 100% 50%)', label: 'Elite (90-100%)', description: 'Peak development', glow: '0 0 20px rgba(139, 92, 246, 0.6)' },
   ];
 
   return (
-    <div className="space-y-3">
-      <h4 className="text-sm font-medium text-center text-foreground mb-3">
-        Muscle Development Scale
-      </h4>
-      <div className="grid grid-cols-1 gap-2 text-xs">
+    <div className="space-y-4">
+      <div className="text-center">
+        <h4 className="text-lg font-semibold text-foreground mb-2">
+          Muscle Development Scale
+        </h4>
+        <p className="text-sm text-muted-foreground">
+          Color-coded training progression levels
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-3">
         {levels.map((level, index) => (
-          <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/20">
-            <div className="flex items-center space-x-3">
-              <div 
-                className="w-4 h-4 rounded-full border border-white/20" 
-                style={{ backgroundColor: level.color }}
-              />
-              <span className="font-medium text-foreground">{level.label}</span>
+          <div key={index} className="group">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50 hover:border-border transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-center space-x-4">
+                <div 
+                  className="w-5 h-5 rounded-full border-2 border-white/30 transition-all duration-300 group-hover:scale-110" 
+                  style={{ 
+                    backgroundColor: level.color,
+                    boxShadow: level.glow
+                  }}
+                />
+                <div>
+                  <span className="font-semibold text-foreground text-sm">{level.label}</span>
+                  <div className="text-xs text-muted-foreground mt-1">{level.description}</div>
+                </div>
+              </div>
+              <div className="w-2 h-2 rounded-full opacity-40" style={{ backgroundColor: level.color }} />
             </div>
-            <span className="text-muted-foreground text-xs">{level.description}</span>
           </div>
         ))}
+      </div>
+      <div className="text-center mt-4">
+        <p className="text-xs text-muted-foreground">
+          Higher intensity colors and glow effects indicate advanced development
+        </p>
       </div>
     </div>
   );

@@ -136,46 +136,47 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
             ))}
           </div>
 
-          {/* Muscle Map - Right Side */}
-          <div className="flex-1 relative aspect-[4/3] bg-gradient-to-b from-muted/10 to-muted/20 rounded-xl overflow-hidden">
-            {/* Base anatomical image */}
-            <img
-              src={viewMode === 'front' ? '/lovable-uploads/a2f0ea8c-f9d9-4353-a43f-af6cc4628401.png' : backAnatomyImage}
-              alt={viewMode === 'front' ? 'Myotopia realistic muscle anatomy map (anterior view)' : 'Myotopia realistic muscle anatomy map (posterior view)'}
-              className="w-full h-full object-contain"
-              loading="lazy"
-              decoding="async"
-              fetchPriority="low"
-              width={1024}
-              height={768}
-            />
+          {/* Abstract Muscle Map - Right Side */}
+          <div className="flex-1 relative aspect-[4/3] bg-gradient-to-b from-muted/5 to-muted/10 rounded-xl overflow-hidden border border-border/20">
+            {/* Body outline background */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-muted-foreground/20 text-6xl font-light">
+                {viewMode === 'front' ? '◯' : '◯'}
+              </div>
+            </div>
             
-            {/* Enhanced color overlays for muscle development */}
+            {/* Muscle group representations */}
             <div className="absolute inset-0">
               {currentMuscleAreas.map((muscle, index) => (
                 <div
                   key={`${muscle.name}-${index}`}
-                  className="absolute rounded-lg transition-all duration-500 hover:scale-110 cursor-pointer group"
+                  className="absolute rounded-lg transition-all duration-500 hover:scale-110 cursor-pointer group border-2"
                   style={{
                     left: `${muscle.x}%`,
                     top: `${muscle.y}%`,
                     width: `${muscle.width}%`,
                     height: `${muscle.height}%`,
                     backgroundColor: getMuscleColor(muscle.score),
-                    opacity: getMuscleOpacity(muscle.score),
-                    mixBlendMode: 'soft-light',
-                    border: `2px solid ${getMuscleColor(muscle.score)}60`,
+                    borderColor: getMuscleColor(muscle.score),
+                    opacity: 0.8,
                     boxShadow: getGlowIntensity(muscle.score),
                   }}
                   title={`${muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}: ${getMuscleLevel(muscle.score)} (${muscle.score}%)`}
                 >
-                  {/* Subtle inner glow effect */}
+                  {/* Inner highlight */}
                   <div 
-                    className="absolute inset-0 rounded-lg opacity-20"
+                    className="absolute inset-1 rounded opacity-30"
                     style={{
-                      background: `radial-gradient(circle at center, ${getMuscleColor(muscle.score)} 0%, transparent 70%)`
+                      background: `linear-gradient(135deg, white 0%, transparent 50%)`
                     }}
                   />
+                  
+                  {/* Muscle group label */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-white/90 text-center leading-tight">
+                      {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

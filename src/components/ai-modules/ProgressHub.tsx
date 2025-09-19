@@ -640,11 +640,77 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
 
   if (isLoading) {
     return (
-      <div className="p-8 flex flex-col items-center justify-center min-h-screen">
-        <LoadingSpinner size="lg" text="Analyzing your progress data..." />
-        <p className="text-muted-foreground mt-4 text-center">
-          Calculating comprehensive fitness metrics
-        </p>
+      <div className="min-h-screen bg-background p-6">
+        {onBack && (
+          <Button variant="ghost" onClick={onBack} className="mb-6">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        )}
+        
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center animate-pulse">
+              <Activity className="w-8 h-8 text-primary animate-pulse" />
+            </div>
+            <h1 className="text-4xl font-bold text-foreground mb-4 animate-fade-in">Progress Hub</h1>
+            <p className="text-muted-foreground text-lg animate-fade-in">
+              Analyzing your fitness journey with scientific precision...
+            </p>
+            
+            {/* Loading animation */}
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                <div className="w-3 h-3 bg-primary/70 rounded-full animate-pulse delay-100"></div>
+                <div className="w-3 h-3 bg-primary/40 rounded-full animate-pulse delay-200"></div>
+              </div>
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Loading comprehensive analytics...
+              </p>
+            </div>
+          </div>
+          
+          {/* Loading skeleton cards */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-12">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="w-8 h-8 bg-muted rounded-lg"></div>
+                    <div className="w-12 h-6 bg-muted rounded"></div>
+                  </div>
+                  <div className="w-20 h-4 bg-muted rounded mt-2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="w-full h-2 bg-muted rounded-full mb-2"></div>
+                  <div className="w-16 h-3 bg-muted rounded"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {/* Loading muscle map skeleton */}
+          <Card className="animate-pulse">
+            <CardHeader>
+              <div className="w-48 h-6 bg-muted rounded mx-auto"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-6">
+                <div className="w-64 space-y-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center space-x-3 p-3 rounded-lg bg-muted/20">
+                      <div className="w-4 h-4 bg-muted rounded-full"></div>
+                      <div className="w-20 h-4 bg-muted rounded"></div>
+                      <div className="w-8 h-4 bg-muted rounded ml-auto"></div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex-1 h-64 bg-muted/20 rounded-xl"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

@@ -56,13 +56,17 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
   // Define muscle group positions for front view
   const frontMuscleAreas = [
     { name: 'chest', x: 45, y: 25, width: 10, height: 12, score: getMuscleScore('chest') },
-    { name: 'shoulders', x: 35, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
-    { name: 'shoulders', x: 57, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
-    { name: 'arms', x: 28, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
-    { name: 'arms', x: 66, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
+    { name: 'front delt', x: 35, y: 20, width: 8, height: 8, score: getMuscleScore('front delt') },
+    { name: 'front delt', x: 57, y: 20, width: 8, height: 8, score: getMuscleScore('front delt') },
+    { name: 'side delt', x: 32, y: 22, width: 6, height: 6, score: getMuscleScore('side delt') },
+    { name: 'side delt', x: 62, y: 22, width: 6, height: 6, score: getMuscleScore('side delt') },
+    { name: 'biceps', x: 28, y: 28, width: 6, height: 12, score: getMuscleScore('biceps') },
+    { name: 'biceps', x: 66, y: 28, width: 6, height: 12, score: getMuscleScore('biceps') },
+    { name: 'forearms', x: 26, y: 42, width: 6, height: 10, score: getMuscleScore('forearms') },
+    { name: 'forearms', x: 68, y: 42, width: 6, height: 10, score: getMuscleScore('forearms') },
     { name: 'core', x: 43, y: 38, width: 14, height: 18, score: getMuscleScore('core') },
-    { name: 'legs', x: 40, y: 58, width: 8, height: 25, score: getMuscleScore('legs') },
-    { name: 'legs', x: 52, y: 58, width: 8, height: 25, score: getMuscleScore('legs') },
+    { name: 'quads', x: 40, y: 58, width: 8, height: 20, score: getMuscleScore('quads') },
+    { name: 'quads', x: 52, y: 58, width: 8, height: 20, score: getMuscleScore('quads') },
     { name: 'calves', x: 41, y: 85, width: 6, height: 12, score: getMuscleScore('calves') },
     { name: 'calves', x: 53, y: 85, width: 6, height: 12, score: getMuscleScore('calves') }
   ];
@@ -70,14 +74,18 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
   // Define muscle group positions for back view
   const backMuscleAreas = [
     { name: 'traps', x: 42, y: 18, width: 16, height: 8, score: getMuscleScore('traps') },
-    { name: 'shoulders', x: 30, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
-    { name: 'shoulders', x: 62, y: 20, width: 8, height: 8, score: getMuscleScore('shoulders') },
+    { name: 'rear delt', x: 30, y: 20, width: 8, height: 8, score: getMuscleScore('rear delt') },
+    { name: 'rear delt', x: 62, y: 20, width: 8, height: 8, score: getMuscleScore('rear delt') },
+    { name: 'side delt', x: 27, y: 22, width: 6, height: 6, score: getMuscleScore('side delt') },
+    { name: 'side delt', x: 67, y: 22, width: 6, height: 6, score: getMuscleScore('side delt') },
     { name: 'back', x: 38, y: 28, width: 24, height: 20, score: getMuscleScore('back') },
-    { name: 'arms', x: 25, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
-    { name: 'arms', x: 69, y: 25, width: 6, height: 15, score: getMuscleScore('arms') },
+    { name: 'triceps', x: 25, y: 28, width: 6, height: 12, score: getMuscleScore('triceps') },
+    { name: 'triceps', x: 69, y: 28, width: 6, height: 12, score: getMuscleScore('triceps') },
+    { name: 'forearms', x: 23, y: 42, width: 6, height: 10, score: getMuscleScore('forearms') },
+    { name: 'forearms', x: 71, y: 42, width: 6, height: 10, score: getMuscleScore('forearms') },
     { name: 'glutes', x: 42, y: 50, width: 16, height: 12, score: getMuscleScore('glutes') },
-    { name: 'legs', x: 40, y: 64, width: 8, height: 20, score: getMuscleScore('legs') },
-    { name: 'legs', x: 52, y: 64, width: 8, height: 20, score: getMuscleScore('legs') },
+    { name: 'hamstrings', x: 40, y: 64, width: 8, height: 20, score: getMuscleScore('hamstrings') },
+    { name: 'hamstrings', x: 52, y: 64, width: 8, height: 20, score: getMuscleScore('hamstrings') },
     { name: 'calves', x: 41, y: 85, width: 6, height: 12, score: getMuscleScore('calves') },
     { name: 'calves', x: 53, y: 85, width: 6, height: 12, score: getMuscleScore('calves') }
   ];

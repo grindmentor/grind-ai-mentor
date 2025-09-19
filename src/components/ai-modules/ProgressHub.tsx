@@ -326,9 +326,9 @@ const ProgressHub: React.FC<ProgressHubProps> = ({ onBack }) => {
       'Chest': ['bench press', 'push up', 'chest fly', 'dips', 'incline', 'decline', 'pec'],
       'Back': ['pull up', 'row', 'lat', 'deadlift', 'chin up', 'pulldown', 'rear delt'],
       'Shoulders': ['shoulder press', 'lateral raise', 'overhead', 'shrug', 'upright row', 'front raise'],
-      'Arms': ['curl', 'tricep', 'arm', 'bicep', 'hammer', 'preacher', 'close grip'],
+      'Arms': ['bicep curl', 'tricep', 'arm curl', 'hammer curl', 'preacher curl', 'close grip', 'triceps extension'],
       'Core': ['plank', 'crunch', 'sit up', 'ab', 'core', 'russian twist', 'oblique'],
-      'Legs': ['squat', 'leg press', 'quad', 'hamstring', 'lunge', 'leg extension', 'leg curl'],
+      'Legs': ['squat', 'leg press', 'quad', 'hamstring curl', 'lunge', 'leg extension', 'hamstring'],
       'Glutes': ['hip thrust', 'glute', 'bridge', 'romanian deadlift', 'sumo'],
       'Calves': ['calf raise', 'calf', 'standing calf', 'seated calf']
     };

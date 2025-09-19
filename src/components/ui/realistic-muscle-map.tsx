@@ -103,90 +103,44 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
           </p>
         </div>
         
-        <div className="flex gap-6 items-start">
-          {/* Muscle Groups List - Left Side */}
-          <div className="flex-shrink-0 w-64 space-y-3">
-            <h4 className="font-semibold text-foreground mb-4">Muscle Groups</h4>
-            {uniqueMuscles.map((muscle) => (
-              <div
-                key={muscle.name}
-                className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-muted/20 to-muted/10 border border-border/30 hover:border-border transition-all duration-300 hover:scale-[1.02]"
-              >
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-4 h-4 rounded-full border-2 border-white/30 flex-shrink-0"
-                    style={{ 
-                      backgroundColor: getMuscleColor(muscle.score),
-                      boxShadow: getGlowIntensity(muscle.score)
-                    }}
-                  />
-                  <div>
-                    <div className="font-medium text-foreground text-sm">
-                      {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
-                    </div>
-                    <div className="text-xs" style={{ color: getMuscleColor(muscle.score) }}>
-                      {getMuscleLevel(muscle.score)}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm font-semibold text-foreground">
-                  {muscle.score}%
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Abstract Muscle Map - Right Side */}
-          <div className="flex-1 relative aspect-[4/3] bg-gradient-to-b from-muted/5 to-muted/10 rounded-xl overflow-hidden border border-border/20">
-            {/* Body outline background */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-muted-foreground/20 text-6xl font-light">
-                {viewMode === 'front' ? '◯' : '◯'}
-              </div>
-            </div>
-            
-            {/* Muscle group representations */}
-            <div className="absolute inset-0">
-              {currentMuscleAreas.map((muscle, index) => (
-                <div
-                  key={`${muscle.name}-${index}`}
-                  className="absolute rounded-lg transition-all duration-500 hover:scale-110 cursor-pointer group border-2"
-                  style={{
-                    left: `${muscle.x}%`,
-                    top: `${muscle.y}%`,
-                    width: `${muscle.width}%`,
-                    height: `${muscle.height}%`,
+        {/* Muscle Groups List */}
+        <div className="max-w-md mx-auto space-y-3">
+          <h4 className="font-semibold text-foreground mb-4 text-center">Muscle Development Status</h4>
+          {uniqueMuscles.map((muscle) => (
+            <div
+              key={muscle.name}
+              className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-muted/20 to-muted/10 border border-border/30 hover:border-border transition-all duration-300 hover:scale-[1.02]"
+            >
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="w-4 h-4 rounded-full border-2 border-white/30 flex-shrink-0"
+                  style={{ 
                     backgroundColor: getMuscleColor(muscle.score),
-                    borderColor: getMuscleColor(muscle.score),
-                    opacity: 0.8,
-                    boxShadow: getGlowIntensity(muscle.score),
+                    boxShadow: getGlowIntensity(muscle.score)
                   }}
-                  title={`${muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}: ${getMuscleLevel(muscle.score)} (${muscle.score}%)`}
-                >
-                  {/* Inner highlight */}
-                  <div 
-                    className="absolute inset-1 rounded opacity-30"
-                    style={{
-                      background: `linear-gradient(135deg, white 0%, transparent 50%)`
-                    }}
-                  />
-                  
-                  {/* Muscle group label */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-semibold text-white/90 text-center leading-tight">
-                      {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
-                    </span>
+                />
+                <div>
+                  <div className="font-medium text-foreground">
+                    {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
+                  </div>
+                  <div className="text-sm" style={{ color: getMuscleColor(muscle.score) }}>
+                    {getMuscleLevel(muscle.score)}
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="text-lg font-semibold text-foreground">
+                {muscle.score}%
+              </div>
             </div>
-          </div>
+          ))}
         </div>
         
+        
+        
         {/* Development summary */}
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <div className="text-xs text-muted-foreground">
-            Hover over colored areas on the image to see muscle details
+            Development levels based on training data and performance metrics
           </div>
         </div>
       </div>

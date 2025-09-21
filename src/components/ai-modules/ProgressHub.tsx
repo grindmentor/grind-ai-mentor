@@ -74,7 +74,7 @@ export default function OptimizedProgressHub() {
   const [activeTab, setActiveTab] = useState("overview");
 
   const handleBack = () => {
-    navigate('/app');
+    navigate('/app', { replace: true });
   };
 
   console.log('ProgressHub - Loading:', isLoading, 'Data:', progressData, 'Error:', error);

@@ -67,14 +67,18 @@ const ProgressSkeleton = () => (
   </div>
 );
 
-export default function OptimizedProgressHub() {
+export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: progressData, isLoading, error } = useOptimizedProgressData(user?.id || null);
   const [activeTab, setActiveTab] = useState("overview");
 
   const handleBack = () => {
-    navigate('/app', { replace: true });
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/app', { replace: true });
+    }
   };
 
   console.log('ProgressHub - Loading:', isLoading, 'Data:', progressData, 'Error:', error);

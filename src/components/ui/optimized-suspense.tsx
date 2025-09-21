@@ -24,7 +24,7 @@ const MemoizedSkeleton = memo(({ className }: { className?: string }) => (
 
 const MemoizedSpinner = memo(() => (
   <div className="flex items-center justify-center p-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+    <div className="w-6 h-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></div>
   </div>
 ));
 

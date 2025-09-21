@@ -77,17 +77,12 @@ export default function App() {
           showNotificationButton={true}
           className="h-full"
         >
-          <OptimizedSuspense 
-            loadingType="screen"
-            message={lowDataMode ? "Loading (Performance Mode)" : "Loading Myotopia..."} 
-          >
-            <PWAHandler />
-            <ComprehensiveErrorBoundary showHomeButton={false}>
-              {measurePerformance('Dashboard Render', () => (
-                <Dashboard />
-              ))}
-            </ComprehensiveErrorBoundary>
-          </OptimizedSuspense>
+          <PWAHandler />
+          <ComprehensiveErrorBoundary showHomeButton={false}>
+            {measurePerformance('Dashboard Render', () => (
+              <Dashboard />
+            ))}
+          </ComprehensiveErrorBoundary>
         </AppShell>
       </AppBackground>
     </NativeAppWrapper>

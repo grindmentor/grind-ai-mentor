@@ -25,17 +25,23 @@ export const useOptimizedProgressData = (userId: string | null) => {
           .order('recorded_date', { ascending: false })
           .limit(7),
         
-        // Fetch active goals only
+        // Fetch all goals (simpler query that's less likely to fail)
         supabase
           .from('user_goals')
           .select('id, title, target_value, current_value, status, category, created_at')
           .eq('user_id', userId)
-          .eq('status', 'active')
       ]);
 
-      if (workoutData.error) throw workoutData.error;
-      if (recoveryData.error) throw recoveryData.error;
-      if (goalsData.error) throw goalsData.error;
+      // Handle errors gracefully - don't throw, just log and return empty data
+      if (workoutData.error) {
+        console.warn('Workout data error:', workoutData.error);
+      }
+      if (recoveryData.error) {
+        console.warn('Recovery data error:', recoveryData.error);
+      }
+      if (goalsData.error) {
+        console.warn('Goals data error:', goalsData.error);
+      }
 
       return {
         workouts: workoutData.data || [],
@@ -52,12 +58,18 @@ export const useOptimizedProgressData = (userId: string | null) => {
 
 // Hook for muscle group calculations
 export const useMuscleGroupProgress = (workouts: any[]) => {
+  if (!workouts || !Array.isArray(workouts)) {
+    return {};
+  }
+  
   return workouts.reduce((acc, workout) => {
+    if (!workout || !workout.exercise_name) return acc;
+    
     const muscleGroup = getMuscleGroupFromExercise(workout.exercise_name);
     if (!acc[muscleGroup]) {
       acc[muscleGroup] = { totalVolume: 0, sessions: 0 };
     }
-    acc[muscleGroup].totalVolume += workout.weight * workout.sets * workout.reps;
+    acc[muscleGroup].totalVolume += (workout.weight || 0) * (workout.sets || 0) * (workout.reps || 0);
     acc[muscleGroup].sessions += 1;
     return acc;
   }, {});

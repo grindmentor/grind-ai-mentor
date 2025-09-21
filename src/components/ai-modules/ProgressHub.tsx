@@ -70,6 +70,8 @@ export default function OptimizedProgressHub() {
   const { data: progressData, isLoading, error } = useOptimizedProgressData(user?.id || null);
   const [activeTab, setActiveTab] = useState("overview");
 
+  console.log('ProgressHub - Loading:', isLoading, 'Data:', progressData, 'Error:', error);
+
   // Calculate muscle groups from actual workout data
   const muscleGroupData = useMuscleGroupProgress(progressData?.workouts || []);
 
@@ -89,10 +91,10 @@ export default function OptimizedProgressHub() {
 
     const { workouts, recovery, goals } = progressData;
     
-    // Calculate realistic muscle group scores from actual data
-    const muscleGroups = Object.entries(muscleGroupData).map(([name, data]: [string, any]) => ({
+    // Calculate realistic muscle group scores from actual data  
+    const muscleGroups = Object.entries(muscleGroupData || {}).map(([name, data]: [string, any]) => ({
       name,
-      score: Math.min(100, Math.max(30, (data.totalVolume / 1000) + (data.sessions * 10))),
+      score: Math.min(100, Math.max(30, (data?.totalVolume / 1000) + (data?.sessions * 10))),
       progressTrend: 'up' as const
     }));
 
@@ -108,26 +110,26 @@ export default function OptimizedProgressHub() {
       }
     });
 
-    const weeklyVolume = workouts.reduce((acc, workout) => 
-      acc + (workout.weight * workout.sets * workout.reps), 0
-    );
+    const weeklyVolume = workouts?.reduce((acc, workout) => 
+      acc + ((workout?.weight || 0) * (workout?.sets || 0) * (workout?.reps || 0)), 0
+    ) || 0;
     
-    const avgSleep = recovery.length > 0 ? 
-      recovery.reduce((acc: number, curr: any) => acc + (curr.sleep_hours || 7.5), 0) / recovery.length : 7.5;
+    const avgSleep = recovery?.length > 0 ? 
+      recovery.reduce((acc: number, curr: any) => acc + (curr?.sleep_hours || 7.5), 0) / recovery.length : 7.5;
 
     // Calculate consistency based on workout frequency
-    const daysWithWorkouts = new Set(workouts.map(w => w.workout_date)).size;
+    const daysWithWorkouts = new Set(workouts?.map(w => w?.workout_date).filter(Boolean)).size;
     const consistency = Math.min(100, (daysWithWorkouts / 7) * 100);
 
     return {
-      overallProgress: Math.min(100, Math.max(50, workouts.length * 5 + consistency)),
-      totalWorkouts: workouts.length,
+      overallProgress: Math.min(100, Math.max(50, (workouts?.length || 0) * 5 + consistency)),
+      totalWorkouts: workouts?.length || 0,
       averageSleep: avgSleep,
-      activeGoals: goals.length,
+      activeGoals: goals?.filter((goal: any) => goal?.status === 'active').length || 0,
       muscleGroups,
       weeklyVolume: Math.floor(weeklyVolume / 1000) || 0,
       consistency: Math.floor(consistency),
-      strengthGain: Math.min(20, Math.max(5, workouts.length * 2))
+      strengthGain: Math.min(20, Math.max(5, (workouts?.length || 0) * 2))
     };
   }, [progressData, muscleGroupData]);
 

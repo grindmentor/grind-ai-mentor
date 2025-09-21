@@ -10,6 +10,8 @@ import { RealisticMuscleMap } from "@/components/ui/realistic-muscle-map";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOptimizedProgressData, useMuscleGroupProgress } from '@/hooks/useOptimizedProgressData';
 import { ProgressMetrics } from '@/components/progress/ProgressMetrics';
+import { BackButton } from '@/components/ui/back-button';
+import { useNavigate } from 'react-router-dom';
 import { 
   Activity, 
   Target, 
@@ -67,8 +69,13 @@ const ProgressSkeleton = () => (
 
 export default function OptimizedProgressHub() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: progressData, isLoading, error } = useOptimizedProgressData(user?.id || null);
   const [activeTab, setActiveTab] = useState("overview");
+
+  const handleBack = () => {
+    navigate('/app');
+  };
 
   console.log('ProgressHub - Loading:', isLoading, 'Data:', progressData, 'Error:', error);
 
@@ -169,6 +176,10 @@ export default function OptimizedProgressHub() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+      {/* Back Button */}
+      <div className="flex items-center mb-6">
+        <BackButton onBack={handleBack} text="Back to Dashboard" />
+      </div>
       {/* Hero Stats Section */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover-scale">

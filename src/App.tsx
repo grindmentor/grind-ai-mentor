@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Index from "./pages/Index";
 import { default as AppPage } from "./pages/App";
@@ -11,6 +11,7 @@ import PhysiqueAIDashboard from "./pages/PhysiqueAIDashboard";
 import PhysiqueAI from "./pages/PhysiqueAI";
 import WorkoutLogger from "./pages/WorkoutLogger";
 import SmartFoodLog from "./pages/SmartFoodLog";
+import BlueprintAI from "./components/ai-modules/BlueprintAI";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
@@ -34,6 +35,11 @@ import { AppOptimizations } from "@/components/AppOptimizations";
 import ProtocolHandler from "@/components/ui/protocol-handler";
 
 const queryClient = new QueryClient();
+
+const BlueprintAIWrapper = () => {
+  const navigate = useNavigate();
+  return <BlueprintAI onBack={() => navigate('/app')} />;
+};
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -129,6 +135,14 @@ function App() {
                           element={
                             <ProtectedRoute>
                               <SmartFoodLog />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/blueprint-ai"
+                          element={
+                            <ProtectedRoute>
+                              <BlueprintAIWrapper />
                             </ProtectedRoute>
                           }
                         />

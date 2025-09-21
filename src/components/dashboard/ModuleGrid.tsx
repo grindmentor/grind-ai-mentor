@@ -195,7 +195,10 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
         return <Card 
           key={module.id} 
           className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`} 
-          onClick={() => {
+          onClick={(e) => {
+            console.log('Module clicked (list):', module.title);
+            e.preventDefault();
+            e.stopPropagation();
             onModuleInteraction?.(module.id);
             onModuleClick(module);
           }}
@@ -245,11 +248,14 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
       const theme = getModuleTheme(module.title);
       return <PerformanceOptimizedCard 
         key={module.id} 
-        className={`group ${theme.bg} ${theme.border}`} 
+        className={`group cursor-pointer ${theme.bg} ${theme.border}`} 
         gradient={`${theme.bg} ${theme.border}`} 
         hoverEffect={true} 
         clickable={true} 
-        onClick={() => {
+        onClick={(e) => {
+          console.log('Module clicked:', module.title);
+          e.preventDefault();
+          e.stopPropagation();
           onModuleInteraction?.(module.id);
           onModuleClick(module);
         }}

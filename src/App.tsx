@@ -100,6 +100,38 @@ function App() {
                             </ProtectedRoute>
                           }
                         />
+                        <Route
+                          path="/workout-logger"
+                          element={
+                            <ProtectedRoute>
+                              <WorkoutLogger />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/physique-ai"
+                          element={
+                            <ProtectedRoute>
+                              <PhysiqueAI />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/physique-ai-dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <PhysiqueAIDashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/smart-food-log"
+                          element={
+                            <ProtectedRoute>
+                              <SmartFoodLog />
+                            </ProtectedRoute>
+                          }
+                        />
                         <Route path="/pricing" element={<Pricing />} />
                         <Route path="/support" element={<Support />} />
                         <Route path="/terms" element={<Terms />} />

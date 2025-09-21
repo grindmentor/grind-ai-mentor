@@ -136,7 +136,7 @@ export default function OptimizedProgressHub() {
             <div className="flex items-center space-x-2">
               <TrendingUp className="w-5 h-5 text-green-500" />
               <div>
-                <div className="text-2xl font-bold">{progressMetrics.overallProgress}%</div>
+                <div className="text-2xl font-bold">{progressMetrics?.overallProgress || 0}%</div>
                 <div className="text-sm text-muted-foreground">Overall Progress</div>
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function OptimizedProgressHub() {
             <div className="flex items-center space-x-2">
               <Dumbbell className="w-5 h-5 text-blue-500" />
               <div>
-                <div className="text-2xl font-bold">{progressMetrics.totalWorkouts}</div>
+                <div className="text-2xl font-bold">{progressMetrics?.totalWorkouts || 0}</div>
                 <div className="text-sm text-muted-foreground">Total Workouts</div>
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function OptimizedProgressHub() {
             <div className="flex items-center space-x-2">
               <Shield className="w-5 h-5 text-purple-500" />
               <div>
-                <div className="text-2xl font-bold">{progressMetrics.averageSleep.toFixed(1)}h</div>
+                <div className="text-2xl font-bold">{(progressMetrics?.averageSleep || 0).toFixed(1)}h</div>
                 <div className="text-sm text-muted-foreground">Avg Sleep</div>
               </div>
             </div>
@@ -172,7 +172,7 @@ export default function OptimizedProgressHub() {
             <div className="flex items-center space-x-2">
               <Target className="w-5 h-5 text-orange-500" />
               <div>
-                <div className="text-2xl font-bold">{progressMetrics.activeGoals}</div>
+                <div className="text-2xl font-bold">{progressMetrics?.activeGoals || 0}</div>
                 <div className="text-sm text-muted-foreground">Active Goals</div>
               </div>
             </div>
@@ -312,7 +312,9 @@ export default function OptimizedProgressHub() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center">
-                  <RealisticMuscleMap muscleGroups={progressMetrics.muscleGroups} />
+                  <RealisticMuscleMap 
+                    muscleGroups={progressMetrics?.muscleGroups || []} 
+                  />
                 </CardContent>
               </Card>
 

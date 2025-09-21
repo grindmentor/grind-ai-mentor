@@ -89,6 +89,12 @@ const ModuleLibrary = () => {
   });
 
   const handleModuleClick = (module) => {
+    console.log('Module clicked:', module.title, module.id);
+    // For Blueprint AI, navigate to the specific route
+    if (module.id === 'blueprint-ai') {
+      navigate('/blueprint-ai');
+      return;
+    }
     setSelectedModule(module);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

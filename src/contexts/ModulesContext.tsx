@@ -49,13 +49,6 @@ export const useModules = () => {
 const PlaceholderComponent = ({ title, onBack }: { title?: string; onBack?: () => void }) => (
   <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center p-6 animate-fade-in">
     <div className="text-center max-w-md space-y-6">
-      {/* Multi-layered loading spinner */}
-      <div className="relative mx-auto">
-        <div className="w-20 h-20 border-4 border-orange-500/20 border-t-orange-500 border-r-orange-400 rounded-full animate-spin" />
-        <div className="absolute inset-2 w-16 h-16 border-3 border-orange-400/30 border-b-orange-400 border-l-orange-300 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
-        <div className="absolute inset-4 w-12 h-12 border-2 border-orange-300/40 border-t-orange-300 rounded-full animate-spin" style={{ animationDuration: '1s' }} />
-      </div>
-      
       <div className="space-y-4">
         <h2 className="text-2xl font-bold animate-pulse">{title || 'Module'}</h2>
         <p className="text-orange-300/70 mb-6 animate-pulse" style={{ animationDelay: '200ms' }}>

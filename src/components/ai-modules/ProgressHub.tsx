@@ -70,7 +70,6 @@ export default function OptimizedProgressHub() {
   const { user } = useAuth();
   const { data: progressData, isLoading, error } = useProgressData(user?.id || null);
   const [activeTab, setActiveTab] = useState("overview");
-  const [tabLoading, setTabLoading] = useState(false);
 
   const progressMetrics = useMemo(() => {
     if (!progressData || !progressData.workouts) {
@@ -105,11 +104,6 @@ export default function OptimizedProgressHub() {
     };
   }, [progressData]);
 
-  const handleTabChange = (value: string) => {
-    setTabLoading(true);
-    setActiveTab(value);
-    setTimeout(() => setTabLoading(false), 300);
-  };
 
   if (isLoading) {
     return <ProgressSkeleton />;
@@ -181,7 +175,7 @@ export default function OptimizedProgressHub() {
       </div>
 
       {/* Detailed Progress Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-muted">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="physique">Physique</TabsTrigger>
@@ -190,23 +184,7 @@ export default function OptimizedProgressHub() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
-          {tabLoading && activeTab === "overview" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-32" />
-                    <Skeleton className="h-4 w-48" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-16 mb-2" />
-                    <Skeleton className="h-3 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -281,26 +259,10 @@ export default function OptimizedProgressHub() {
                 </CardContent>
               </Card>
             </div>
-          )}
         </TabsContent>
 
         <TabsContent value="physique" className="space-y-6 mt-6">
-          {tabLoading && activeTab === "physique" ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {[...Array(2)].map((_, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-40" />
-                    <Skeleton className="h-4 w-64" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-64 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -346,27 +308,11 @@ export default function OptimizedProgressHub() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
+          </div>
         </TabsContent>
 
         <TabsContent value="mental" className="space-y-6 mt-6">
-          {tabLoading && activeTab === "mental" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-32" />
-                    <Skeleton className="h-4 w-48" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-16 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/20 border-purple-500/30">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -462,28 +408,11 @@ export default function OptimizedProgressHub() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
+          </div>
         </TabsContent>
 
         <TabsContent value="science" className="space-y-6 mt-6">
-          {tabLoading && activeTab === "science" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-32" />
-                    <Skeleton className="h-4 w-48" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-12 w-full mb-2" />
-                    <Skeleton className="h-3 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/20 border-cyan-500/30">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -571,8 +500,7 @@ export default function OptimizedProgressHub() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

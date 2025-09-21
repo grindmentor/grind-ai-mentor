@@ -1,6 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -10,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { RealisticMuscleMap } from "@/components/ui/realistic-muscle-map";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOptimizedProgressData, useMuscleGroupProgress } from '@/hooks/useOptimizedProgressData';
+import { ProgressMetrics } from '@/components/progress/ProgressMetrics';
 import { 
   Activity, 
   Target, 
@@ -31,16 +31,18 @@ import {
   Coffee,
   Droplets,
   Gauge,
-  Camera
+  Camera,
+  Plus,
+  ExternalLink
 } from "lucide-react";
 
-// Enhanced Progress Skeleton Component
+// Optimized Progress Skeleton Component
 const ProgressSkeleton = () => (
-  <div className="space-y-8 animate-fade-in">
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  <div className="space-y-6 animate-fade-in">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => (
         <Card key={i} className="hover-scale">
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <Skeleton className="h-8 w-full mb-2" />
             <Skeleton className="h-4 w-16" />
           </CardContent>
@@ -48,7 +50,7 @@ const ProgressSkeleton = () => (
       ))}
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[...Array(6)].map((_, i) => (
+      {[...Array(3)].map((_, i) => (
         <Card key={i} className="hover-scale">
           <CardHeader>
             <Skeleton className="h-6 w-32" />
@@ -63,38 +65,16 @@ const ProgressSkeleton = () => (
   </div>
 );
 
-// Enhanced Progress Data Hook
-const useProgressData = (userId: string | null) => {
-  return useQuery({
-    queryKey: ['progressData', userId],
-    queryFn: async () => {
-      if (!userId) return null;
-      
-      const [workoutData, recoveryData, goalsData] = await Promise.all([
-        supabase.from('progressive_overload_entries').select('*').eq('user_id', userId).order('workout_date', { ascending: false }).limit(50),
-        supabase.from('recovery_data').select('*').eq('user_id', userId).order('recorded_date', { ascending: false }).limit(30),
-        supabase.from('user_goals').select('*').eq('user_id', userId)
-      ]);
-
-      return {
-        workouts: workoutData.data || [],
-        recovery: recoveryData.data || [],
-        goals: goalsData.data || []
-      };
-    },
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-};
-
 export default function OptimizedProgressHub() {
   const { user } = useAuth();
-  const { data: progressData, isLoading, error } = useProgressData(user?.id || null);
+  const { data: progressData, isLoading, error } = useOptimizedProgressData(user?.id || null);
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Calculate muscle groups from actual workout data
+  const muscleGroupData = useMuscleGroupProgress(progressData?.workouts || []);
+
   const progressMetrics = useMemo(() => {
-    if (!progressData || !progressData.workouts) {
+    if (!progressData) {
       return {
         overallProgress: 0,
         totalWorkouts: 0,
@@ -109,31 +89,63 @@ export default function OptimizedProgressHub() {
 
     const { workouts, recovery, goals } = progressData;
     
-    // Calculate muscle group scores with realistic data
-    const muscleGroups = [
-      { name: 'chest', score: Math.floor(Math.random() * 40) + 60, progressTrend: 'up' as const },
-      { name: 'back', score: Math.floor(Math.random() * 30) + 70, progressTrend: 'up' as const },
-      { name: 'shoulders', score: Math.floor(Math.random() * 35) + 55, progressTrend: 'stable' as const },
-      { name: 'arms', score: Math.floor(Math.random() * 25) + 65, progressTrend: 'up' as const },
-      { name: 'legs', score: Math.floor(Math.random() * 20) + 75, progressTrend: 'up' as const },
-      { name: 'core', score: Math.floor(Math.random() * 30) + 50, progressTrend: 'up' as const }
-    ];
+    // Calculate realistic muscle group scores from actual data
+    const muscleGroups = Object.entries(muscleGroupData).map(([name, data]: [string, any]) => ({
+      name,
+      score: Math.min(100, Math.max(30, (data.totalVolume / 1000) + (data.sessions * 10))),
+      progressTrend: 'up' as const
+    }));
 
-    const weeklyVolume = workouts.reduce((acc, workout) => acc + (workout.weight * workout.sets * workout.reps), 0);
+    // Fill in missing muscle groups with baseline scores
+    const allMuscleGroups = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core'];
+    allMuscleGroups.forEach(muscle => {
+      if (!muscleGroups.find(m => m.name === muscle)) {
+        muscleGroups.push({
+          name: muscle,
+          score: 40 + Math.floor(Math.random() * 20),
+          progressTrend: 'up' as const
+        });
+      }
+    });
+
+    const weeklyVolume = workouts.reduce((acc, workout) => 
+      acc + (workout.weight * workout.sets * workout.reps), 0
+    );
+    
     const avgSleep = recovery.length > 0 ? 
-      recovery.reduce((acc: number, curr: any) => acc + (curr.sleep_hours || 0), 0) / recovery.length : 7.5;
+      recovery.reduce((acc: number, curr: any) => acc + (curr.sleep_hours || 7.5), 0) / recovery.length : 7.5;
+
+    // Calculate consistency based on workout frequency
+    const daysWithWorkouts = new Set(workouts.map(w => w.workout_date)).size;
+    const consistency = Math.min(100, (daysWithWorkouts / 7) * 100);
 
     return {
-      overallProgress: Math.floor(Math.random() * 20) + 75,
-      totalWorkouts: workouts.length || Math.floor(Math.random() * 50) + 20,
+      overallProgress: Math.min(100, Math.max(50, workouts.length * 5 + consistency)),
+      totalWorkouts: workouts.length,
       averageSleep: avgSleep,
-      activeGoals: goals.filter((goal: any) => goal.status === 'active').length || Math.floor(Math.random() * 3) + 2,
+      activeGoals: goals.length,
       muscleGroups,
-      weeklyVolume: Math.floor(weeklyVolume / 1000) || Math.floor(Math.random() * 15) + 8,
-      consistency: Math.floor(Math.random() * 15) + 85,
-      strengthGain: Math.floor(Math.random() * 10) + 12
+      weeklyVolume: Math.floor(weeklyVolume / 1000) || 0,
+      consistency: Math.floor(consistency),
+      strengthGain: Math.min(20, Math.max(5, workouts.length * 2))
     };
-  }, [progressData]);
+  }, [progressData, muscleGroupData]);
+
+  // Handler functions for interactive elements
+  const handleAddGoal = () => {
+    console.log('Navigate to goal creation');
+    // In a real app, this would navigate to goal creation or open a modal
+  };
+
+  const handleViewWorkouts = () => {
+    console.log('Navigate to workout history');
+    // In a real app, this would navigate to workout history
+  };
+
+  const handleViewNutrition = () => {
+    console.log('Navigate to nutrition tracking');
+    // In a real app, this would navigate to food log
+  };
 
   if (isLoading) {
     return <ProgressSkeleton />;
@@ -232,190 +244,78 @@ export default function OptimizedProgressHub() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-8 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Weekly Performance */}
-            <Card className="bg-gradient-to-br from-green-500/5 to-emerald-600/5 border-green-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-green-500" />
-                  <span>Weekly Performance</span>
-                </CardTitle>
-                <CardDescription>Your training consistency this week</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Strength Sessions</span>
-                  <Badge variant="outline" className="bg-green-500/10 text-green-700">4/5</Badge>
-                </div>
-                <Progress value={80} className="h-3" />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Cardio Sessions</span>
-                  <Badge variant="outline" className="bg-blue-500/10 text-blue-700">3/3</Badge>
-                </div>
-                <Progress value={100} className="h-3" />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Rest & Recovery</span>
-                  <Badge variant="outline" className="bg-purple-500/10 text-purple-700">2/2</Badge>
-                </div>
-                <Progress value={100} className="h-3" />
-              </CardContent>
-            </Card>
+          <ProgressMetrics 
+            metrics={progressMetrics}
+            onAddGoal={handleAddGoal}
+            onViewWorkouts={handleViewWorkouts}
+          />
 
-            {/* Goal Achievements */}
-            <Card className="bg-gradient-to-br from-orange-500/5 to-red-600/5 border-orange-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Award className="w-5 h-5 text-orange-500" />
-                  <span>Goal Progress</span>
-                </CardTitle>
-                <CardDescription>Current objectives and milestones</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Bench Press 225 lbs</span>
-                    <span className="text-xs text-muted-foreground">85%</span>
-                  </div>
-                  <Progress value={85} className="h-2" />
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Body Fat to 12%</span>
-                    <span className="text-xs text-muted-foreground">70%</span>
-                  </div>
-                  <Progress value={70} className="h-2" />
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">5K Run under 22min</span>
-                    <span className="text-xs text-muted-foreground">45%</span>
-                  </div>
-                  <Progress value={45} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Performance Metrics */}
-            <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-600/5 border-blue-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Gauge className="w-5 h-5 text-blue-500" />
-                  <span>Key Metrics</span>
-                </CardTitle>
-                <CardDescription>Performance indicators and trends</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-muted/30 rounded-lg">
-                    <div className="text-lg font-bold text-blue-500">{progressMetrics?.weeklyVolume}k</div>
-                    <div className="text-xs text-muted-foreground">Weekly Volume</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted/30 rounded-lg">
-                    <div className="text-lg font-bold text-green-500">{progressMetrics?.consistency}%</div>
-                    <div className="text-xs text-muted-foreground">Consistency</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted/30 rounded-lg">
-                    <div className="text-lg font-bold text-purple-500">65min</div>
-                    <div className="text-xs text-muted-foreground">Avg Duration</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted/30 rounded-lg">
-                    <div className="text-lg font-bold text-orange-500">+{progressMetrics?.strengthGain}%</div>
-                    <div className="text-xs text-muted-foreground">Strength Gain</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Achievements */}
-            <Card className="bg-gradient-to-br from-yellow-500/5 to-amber-600/5 border-yellow-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Flame className="w-5 h-5 text-yellow-500" />
-                  <span>Recent Wins</span>
-                </CardTitle>
-                <CardDescription>Latest accomplishments and PRs</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center space-x-3 p-2 bg-yellow-500/5 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm">New squat PR: 275 lbs</span>
-                </div>
-                <div className="flex items-center space-x-3 p-2 bg-green-500/5 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">10-day consistency streak</span>
-                </div>
-                <div className="flex items-center space-x-3 p-2 bg-blue-500/5 rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Improved sleep quality</span>
-                </div>
-                <div className="flex items-center space-x-3 p-2 bg-purple-500/5 rounded-lg">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm">Body fat down 2%</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Training Schedule */}
-            <Card className="bg-gradient-to-br from-indigo-500/5 to-violet-600/5 border-indigo-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+          {/* Training Schedule */}
+          <Card className="bg-gradient-to-br from-indigo-500/5 to-violet-600/5 border-indigo-500/20 hover-scale">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
                   <Timer className="w-5 h-5 text-indigo-500" />
                   <span>This Week's Plan</span>
-                </CardTitle>
-                <CardDescription>Upcoming training sessions</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-2 border rounded-lg">
-                  <span className="text-sm font-medium">Push Day</span>
-                  <Badge className="bg-green-500/10 text-green-700">Today</Badge>
                 </div>
-                <div className="flex items-center justify-between p-2 border rounded-lg opacity-75">
-                  <span className="text-sm">Pull Day</span>
-                  <Badge variant="outline">Tomorrow</Badge>
+                <Button size="sm" variant="outline" onClick={() => console.log('Edit schedule')}>
+                  <ExternalLink className="w-4 h-4 mr-1" />
+                  Edit
+                </Button>
+              </CardTitle>
+              <CardDescription>Upcoming training sessions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {['Push Day', 'Pull Day', 'Legs', 'Cardio'].map((workout, index) => (
+                <div key={workout} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <span className="text-sm font-medium">{workout}</span>
+                  <Badge variant={index === 0 ? 'default' : 'outline'}>
+                    {index === 0 ? 'Today' : ['Tomorrow', 'Friday', 'Saturday'][index - 1]}
+                  </Badge>
                 </div>
-                <div className="flex items-center justify-between p-2 border rounded-lg opacity-75">
-                  <span className="text-sm">Legs</span>
-                  <Badge variant="outline">Friday</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 border rounded-lg opacity-75">
-                  <span className="text-sm">Cardio</span>
-                  <Badge variant="outline">Saturday</Badge>
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </CardContent>
+          </Card>
 
-            {/* Nutrition Overview */}
-            <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+          {/* Nutrition Overview */}
+          <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
                   <Scale className="w-5 h-5 text-pink-500" />
                   <span>Nutrition Status</span>
-                </CardTitle>
-                <CardDescription>Daily macro and calorie tracking</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Protein (180g target)</span>
-                    <span className="text-pink-500 font-medium">165g</span>
-                  </div>
-                  <Progress value={92} className="h-2" />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Carbs (250g target)</span>
-                    <span className="text-blue-500 font-medium">230g</span>
-                  </div>
-                  <Progress value={92} className="h-2" />
+                <Button size="sm" variant="outline" onClick={handleViewNutrition}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Log Food
+                </Button>
+              </CardTitle>
+              <CardDescription>Daily macro and calorie tracking</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Protein (180g target)</span>
+                  <span className="text-pink-500 font-medium">165g</span>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Calories (2400 target)</span>
-                    <span className="text-green-500 font-medium">2280</span>
-                  </div>
-                  <Progress value={95} className="h-2" />
+                <Progress value={92} className="h-2" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Carbs (250g target)</span>
+                  <span className="text-blue-500 font-medium">230g</span>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <Progress value={92} className="h-2" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Calories (2400 target)</span>
+                  <span className="text-green-500 font-medium">2280</span>
+                </div>
+                <Progress value={95} className="h-2" />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="physique" className="space-y-6 mt-8 animate-fade-in">
@@ -431,7 +331,7 @@ export default function OptimizedProgressHub() {
                   Interactive visualization of your training progress by muscle group
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex justify-center">
+              <CardContent className="flex justify-center p-6">
                 <RealisticMuscleMap 
                   muscleGroups={progressMetrics?.muscleGroups || []} 
                 />
@@ -489,7 +389,10 @@ export default function OptimizedProgressHub() {
                     <span className="text-sm font-medium">AI Physique Insight</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Your upper body development is outpacing lower body. Consider increasing leg training volume by 20% for optimal symmetry.
+                    {progressMetrics.totalWorkouts > 0 
+                      ? `Based on your ${progressMetrics.totalWorkouts} recent workouts, focus on balanced muscle development.`
+                      : 'Start tracking workouts to receive personalized physique insights.'
+                    }
                   </p>
                 </div>
               </CardContent>
@@ -498,9 +401,15 @@ export default function OptimizedProgressHub() {
             {/* Progress Photos Timeline */}
             <Card className="bg-gradient-to-br from-purple-500/5 to-pink-600/5 border-purple-500/20 hover-scale lg:col-span-2">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Camera className="w-5 h-5 text-purple-500" />
-                  <span>Transformation Timeline</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Camera className="w-5 h-5 text-purple-500" />
+                    <span>Transformation Timeline</span>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => console.log('Upload photo')}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Photo
+                  </Button>
                 </CardTitle>
                 <CardDescription>Visual progress tracking over time</CardDescription>
               </CardHeader>
@@ -508,7 +417,7 @@ export default function OptimizedProgressHub() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {['January', 'March', 'June', 'Current'].map((month, index) => (
                     <div key={month} className="text-center">
-                      <div className="aspect-square bg-gradient-to-br from-muted/30 to-muted/60 rounded-xl mb-2 flex items-center justify-center">
+                      <div className="aspect-square bg-gradient-to-br from-muted/30 to-muted/60 rounded-xl mb-2 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer">
                         <Users className="w-8 h-8 text-muted-foreground/50" />
                       </div>
                       <div className="text-sm font-medium">{month}</div>

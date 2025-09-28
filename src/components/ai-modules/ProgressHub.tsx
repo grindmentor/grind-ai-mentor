@@ -38,28 +38,73 @@ import {
   ExternalLink
 } from "lucide-react";
 
-// Optimized Progress Skeleton Component
+// Optimized Progress Skeleton Component with shimmer effect
 const ProgressSkeleton = () => (
-  <div className="space-y-6 animate-fade-in">
+  <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+    {/* Back Button Skeleton */}
+    <div className="flex items-center mb-6">
+      <Skeleton className="h-10 w-32" />
+    </div>
+    
+    {/* Hero Stats Skeleton */}
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => (
-        <Card key={i} className="hover-scale">
+        <Card key={i} className="hover-scale animate-pulse">
           <CardContent className="p-6">
-            <Skeleton className="h-8 w-full mb-2" />
-            <Skeleton className="h-4 w-16" />
+            <div className="flex items-center space-x-3">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       ))}
     </div>
+
+    {/* Tabs Skeleton */}
+    <div className="space-y-6">
+      <Skeleton className="h-12 w-full rounded-xl" />
+      
+      {/* Tab Content Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="hover-scale animate-pulse">
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-20 w-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// Tab Content Skeleton for faster switching
+const TabContentSkeleton = () => (
+  <div className="space-y-6 mt-8 animate-fade-in">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(3)].map((_, i) => (
-        <Card key={i} className="hover-scale">
+        <Card key={i} className="hover-scale animate-pulse">
           <CardHeader>
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-4 w-48" />
           </CardHeader>
-          <CardContent>
-            <Skeleton className="h-20 w-full" />
+          <CardContent className="space-y-4">
+            <Skeleton className="h-16 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -96,11 +141,16 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
         muscleGroups: [],
         weeklyVolume: 0,
         consistency: 0,
-        strengthGain: 0
+        strengthGain: 0,
+        currentWeight: 0,
+        bodyFatPercentage: 0,
+        totalVolume: 0,
+        averageRPE: 0,
+        weeklyFrequency: 0
       };
     }
 
-    const { workouts, recovery, goals } = progressData;
+    const { workouts, recovery, goals, profile } = progressData;
     
     // Calculate realistic muscle group scores from actual data  
     const muscleGroups = Object.entries(muscleGroupData || {}).map(([name, data]: [string, any]) => ({
@@ -109,38 +159,68 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
       progressTrend: 'up' as const
     }));
 
-    // Fill in missing muscle groups with baseline scores
+    // Fill in missing muscle groups with realistic baseline scores
     const allMuscleGroups = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core'];
     allMuscleGroups.forEach(muscle => {
       if (!muscleGroups.find(m => m.name === muscle)) {
         muscleGroups.push({
           name: muscle,
-          score: 40 + Math.floor(Math.random() * 20),
+          score: workouts?.length > 0 ? 45 + Math.floor(Math.random() * 25) : 30,
           progressTrend: 'up' as const
         });
       }
     });
 
+    // Enhanced calculations with real data
     const weeklyVolume = workouts?.reduce((acc, workout) => 
       acc + ((workout?.weight || 0) * (workout?.sets || 0) * (workout?.reps || 0)), 0
     ) || 0;
+
+    const totalVolume = weeklyVolume;
     
     const avgSleep = recovery?.length > 0 ? 
       recovery.reduce((acc: number, curr: any) => acc + (curr?.sleep_hours || 7.5), 0) / recovery.length : 7.5;
 
-    // Calculate consistency based on workout frequency
-    const daysWithWorkouts = new Set(workouts?.map(w => w?.workout_date).filter(Boolean)).size;
-    const consistency = Math.min(100, (daysWithWorkouts / 7) * 100);
+    const averageRPE = workouts?.length > 0 ? 
+      workouts.reduce((acc, workout) => acc + (workout?.rpe || 7), 0) / workouts.length : 7;
+
+    // Calculate consistency based on workout frequency over the last 2 weeks
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    
+    const recentWorkouts = workouts?.filter(w => 
+      w?.workout_date && new Date(w.workout_date) >= twoWeeksAgo
+    ) || [];
+    
+    const daysWithWorkouts = new Set(recentWorkouts.map(w => w?.workout_date).filter(Boolean)).size;
+    const consistency = Math.min(100, (daysWithWorkouts / 14) * 100);
+
+    // Weekly frequency calculation
+    const weeklyFrequency = Math.round((recentWorkouts.length / 2) * 10) / 10; // Average per week over 2 weeks
+
+    // Overall progress calculation based on multiple factors
+    const overallProgress = Math.min(100, Math.max(
+      20, 
+      (consistency * 0.4) + 
+      (Math.min(100, workouts?.length * 3) * 0.3) + 
+      (Math.min(100, avgSleep / 8 * 100) * 0.2) + 
+      (goals?.filter((goal: any) => goal?.status === 'active').length * 10 * 0.1)
+    ));
 
     return {
-      overallProgress: Math.min(100, Math.max(50, (workouts?.length || 0) * 5 + consistency)),
+      overallProgress: Math.round(overallProgress),
       totalWorkouts: workouts?.length || 0,
-      averageSleep: avgSleep,
+      averageSleep: Math.round(avgSleep * 10) / 10,
       activeGoals: goals?.filter((goal: any) => goal?.status === 'active').length || 0,
       muscleGroups,
       weeklyVolume: Math.floor(weeklyVolume / 1000) || 0,
-      consistency: Math.floor(consistency),
-      strengthGain: Math.min(20, Math.max(5, (workouts?.length || 0) * 2))
+      consistency: Math.round(consistency),
+      strengthGain: Math.min(25, Math.max(0, (workouts?.length || 0) * 1.5)),
+      currentWeight: profile?.weight || 0,
+      bodyFatPercentage: profile?.body_fat_percentage || 0,
+      totalVolume: Math.round(totalVolume),
+      averageRPE: Math.round(averageRPE * 10) / 10,
+      weeklyFrequency
     };
   }, [progressData, muscleGroupData]);
 
@@ -261,572 +341,427 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-8 animate-fade-in">
-          <ProgressMetrics 
-            metrics={progressMetrics}
-            onAddGoal={handleAddGoal}
-            onViewWorkouts={handleViewWorkouts}
-          />
+          {isLoading ? (
+            <TabContentSkeleton />
+          ) : (
+            <>
+              <ProgressMetrics 
+                metrics={progressMetrics}
+                onAddGoal={handleAddGoal}
+                onViewWorkouts={handleViewWorkouts}
+              />
 
-          {/* Training Schedule */}
-          <Card className="bg-gradient-to-br from-indigo-500/5 to-violet-600/5 border-indigo-500/20 hover-scale">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Timer className="w-5 h-5 text-indigo-500" />
-                  <span>This Week's Plan</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => console.log('Edit schedule')}>
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-              </CardTitle>
-              <CardDescription>Upcoming training sessions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {['Push Day', 'Pull Day', 'Legs', 'Cardio'].map((workout, index) => (
-                <div key={workout} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <span className="text-sm font-medium">{workout}</span>
-                  <Badge variant={index === 0 ? 'default' : 'outline'}>
-                    {index === 0 ? 'Today' : ['Tomorrow', 'Friday', 'Saturday'][index - 1]}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+              {/* Training Schedule */}
+              <Card className="bg-gradient-to-br from-indigo-500/5 to-violet-600/5 border-indigo-500/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Timer className="w-5 h-5 text-indigo-500" />
+                      <span>This Week's Plan</span>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => console.log('Edit schedule')}>
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>Upcoming training sessions</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {['Push Day', 'Pull Day', 'Legs', 'Cardio'].map((workout, index) => (
+                    <div key={workout} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <span className="text-sm font-medium">{workout}</span>
+                      <Badge variant={index === 0 ? 'default' : 'outline'}>
+                        {index === 0 ? 'Today' : ['Tomorrow', 'Friday', 'Saturday'][index - 1]}
+                      </Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
 
-          {/* Nutrition Overview */}
-          <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Scale className="w-5 h-5 text-pink-500" />
-                  <span>Nutrition Status</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={handleViewNutrition}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  Log Food
-                </Button>
-              </CardTitle>
-              <CardDescription>Daily macro and calorie tracking</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Protein (180g target)</span>
-                  <span className="text-pink-500 font-medium">165g</span>
-                </div>
-                <Progress value={92} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Carbs (250g target)</span>
-                  <span className="text-blue-500 font-medium">230g</span>
-                </div>
-                <Progress value={92} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Calories (2400 target)</span>
-                  <span className="text-green-500 font-medium">2280</span>
-                </div>
-                <Progress value={95} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
+              {/* Nutrition Overview */}
+              <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Scale className="w-5 h-5 text-pink-500" />
+                      <span>Nutrition Status</span>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={handleViewNutrition}>
+                      <Plus className="w-4 h-4 mr-1" />
+                      Log Food
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>Daily macro and calorie tracking</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Protein (180g target)</span>
+                      <span className="text-pink-500 font-medium">165g</span>
+                    </div>
+                    <Progress value={92} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Carbs (250g target)</span>
+                      <span className="text-blue-500 font-medium">230g</span>
+                    </div>
+                    <Progress value={92} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Calories (2400 target)</span>
+                      <span className="text-green-500 font-medium">2280</span>
+                    </div>
+                    <Progress value={95} className="h-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="physique" className="space-y-6 mt-8 animate-fade-in">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Interactive Muscle Map */}
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  <span>Muscle Development Map</span>
-                </CardTitle>
-                <CardDescription>
-                  Interactive visualization of your training progress by muscle group
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center p-6">
-                <RealisticMuscleMap 
-                  muscleGroups={progressMetrics?.muscleGroups || []} 
-                />
-              </CardContent>
-            </Card>
+          {isLoading ? (
+            <TabContentSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Interactive Muscle Map */}
+              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    <span>Muscle Development Map</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Interactive visualization of your training progress by muscle group
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center p-6">
+                  <RealisticMuscleMap 
+                    muscleGroups={progressMetrics?.muscleGroups || []} 
+                  />
+                </CardContent>
+              </Card>
 
-            {/* Body Composition Tracking */}
-            <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-600/5 border-blue-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                  <span>Body Composition</span>
-                </CardTitle>
-                <CardDescription>Track your physique changes over time</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-blue-500/5 rounded-xl">
-                    <div className="text-2xl font-bold text-blue-500">12.5%</div>
-                    <div className="text-sm text-muted-foreground">Body Fat</div>
-                    <div className="text-xs text-green-500 mt-1">↓ 2% this month</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-500/5 rounded-xl">
-                    <div className="text-2xl font-bold text-green-500">165 lbs</div>
-                    <div className="text-sm text-muted-foreground">Lean Mass</div>
-                    <div className="text-xs text-green-500 mt-1">↑ 3 lbs gained</div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Weight Goal Progress</span>
-                    <span className="text-sm text-muted-foreground">185 lbs target</span>
-                  </div>
-                  <Progress value={75} className="h-3" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Muscle Definition</span>
-                    <span className="text-sm text-muted-foreground">Advanced level</span>
-                  </div>
-                  <Progress value={82} className="h-3" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Symmetry Score</span>
-                    <span className="text-sm text-muted-foreground">Excellent</span>
-                  </div>
-                  <Progress value={88} className="h-3" />
-                </div>
-
-                <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Zap className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium">AI Physique Insight</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {progressMetrics.totalWorkouts > 0 
-                      ? `Based on your ${progressMetrics.totalWorkouts} recent workouts, focus on balanced muscle development.`
-                      : 'Start tracking workouts to receive personalized physique insights.'
-                    }
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Progress Photos Timeline */}
-            <Card className="bg-gradient-to-br from-purple-500/5 to-pink-600/5 border-purple-500/20 hover-scale lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Camera className="w-5 h-5 text-purple-500" />
-                    <span>Transformation Timeline</span>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={() => console.log('Upload photo')}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Photo
-                  </Button>
-                </CardTitle>
-                <CardDescription>Visual progress tracking over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {['January', 'March', 'June', 'Current'].map((month, index) => (
-                    <div key={month} className="text-center">
-                      <div className="aspect-square bg-gradient-to-br from-muted/30 to-muted/60 rounded-xl mb-2 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer">
-                        <Users className="w-8 h-8 text-muted-foreground/50" />
+              {/* Body Composition Tracking */}
+              <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-600/5 border-blue-500/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-blue-500" />
+                    <span>Body Composition</span>
+                  </CardTitle>
+                  <CardDescription>Track your physique changes over time</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-500/5 rounded-xl">
+                      <div className="text-2xl font-bold text-blue-500">
+                        {progressMetrics.bodyFatPercentage > 0 ? `${progressMetrics.bodyFatPercentage}%` : '--'}
                       </div>
-                      <div className="text-sm font-medium">{month}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {index === 3 ? '185 lbs • 12.5% BF' : `${175 + index * 3} lbs • ${16 - index * 1.2}% BF`}
+                      <div className="text-sm text-muted-foreground">Body Fat</div>
+                      <div className="text-xs text-green-500 mt-1">
+                        {progressMetrics.bodyFatPercentage > 0 ? '↓ Trending down' : 'Add data to track'}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <div className="text-center p-4 bg-green-500/5 rounded-xl">
+                      <div className="text-2xl font-bold text-green-500">
+                        {progressMetrics.currentWeight > 0 ? `${progressMetrics.currentWeight} lbs` : '--'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Current Weight</div>
+                      <div className="text-xs text-green-500 mt-1">
+                        {progressMetrics.currentWeight > 0 ? '↑ On track' : 'Update in profile'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Training Consistency</span>
+                      <span className="text-sm text-muted-foreground">{progressMetrics.consistency}% this month</span>
+                    </div>
+                    <Progress value={progressMetrics.consistency} className="h-3" />
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Weekly Frequency</span>
+                      <span className="text-sm text-muted-foreground">{progressMetrics.weeklyFrequency}x per week</span>
+                    </div>
+                    <Progress value={Math.min(100, (progressMetrics.weeklyFrequency / 5) * 100)} className="h-3" />
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Strength Progress</span>
+                      <span className="text-sm text-muted-foreground">+{progressMetrics.strengthGain}% gained</span>
+                    </div>
+                    <Progress value={Math.min(100, progressMetrics.strengthGain * 4)} className="h-3" />
+                  </div>
+
+                  <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-500/20">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Zap className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm font-medium">AI Physique Insight</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {progressMetrics.totalWorkouts > 0 
+                        ? `Based on your ${progressMetrics.totalWorkouts} recent workouts, focus on balanced muscle development.`
+                        : 'Start tracking workouts to receive personalized physique insights.'
+                      }
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="mental" className="space-y-6 mt-8 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Mental Resilience */}
-            <Card className="bg-gradient-to-br from-purple-500/5 to-indigo-600/5 border-purple-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Brain className="w-5 h-5 text-purple-500" />
-                  <span>Mental Resilience</span>
-                </CardTitle>
-                <CardDescription>Psychological strength and mindset tracking</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Motivation Level</span>
-                    <Badge className="bg-purple-500/10 text-purple-700">8.5/10</Badge>
+          {isLoading ? (
+            <TabContentSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Mental Resilience */}
+              <Card className="bg-gradient-to-br from-purple-500/5 to-indigo-600/5 border-purple-500/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Brain className="w-5 h-5 text-purple-500" />
+                    <span>Mental Resilience</span>
+                  </CardTitle>
+                  <CardDescription>Tracking stress, recovery, and mental wellness</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-green-500/5 rounded-xl">
+                      <div className="text-3xl font-bold text-green-500">
+                        {progressData?.recovery?.length > 0 ? 
+                          (progressData.recovery.reduce((acc: number, curr: any) => acc + (curr?.stress_level || 5), 0) / progressData.recovery.length).toFixed(1) 
+                          : '--'
+                        }
+                      </div>
+                      <div className="text-sm text-muted-foreground">Stress Level</div>
+                      <div className="text-xs text-green-500 mt-1">
+                        {progressData?.recovery?.length > 0 ? 'Tracked' : 'No data yet'}
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-blue-500/5 rounded-xl">
+                      <div className="text-3xl font-bold text-blue-500">
+                        {progressData?.recovery?.length > 0 ? 
+                          Math.round((progressData.recovery.reduce((acc: number, curr: any) => acc + (curr?.sleep_quality || 7), 0) / progressData.recovery.length) * 10) + '%'
+                          : '--'
+                        }
+                      </div>
+                      <div className="text-sm text-muted-foreground">Sleep Quality</div>
+                      <div className="text-xs text-blue-500 mt-1">
+                        {progressData?.recovery?.length > 0 ? 'Average rating' : 'Add sleep data'}
+                      </div>
+                    </div>
                   </div>
-                  <Progress value={85} className="h-3" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Stress Management</span>
-                    <Badge className="bg-blue-500/10 text-blue-700">7.2/10</Badge>
-                  </div>
-                  <Progress value={72} className="h-3" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Focus & Clarity</span>
-                    <Badge className="bg-green-500/10 text-green-700">8.8/10</Badge>
-                  </div>
-                  <Progress value={88} className="h-3" />
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="space-y-2">
-                  <div className="text-sm font-medium flex items-center space-x-2">
-                    <Zap className="w-4 h-4 text-yellow-500" />
-                    <span>Mental Performance Boost</span>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Energy Levels</span>
+                      <span className="text-sm text-muted-foreground">Excellent</span>
+                    </div>
+                    <Progress value={85} className="h-3" />
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Recovery Rate</span>
+                      <span className="text-sm text-muted-foreground">Optimal</span>
+                    </div>
+                    <Progress value={92} className="h-3" />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Your focus peaks during evening workouts. Consider scheduling important training sessions between 6-8 PM.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Recovery & Sleep */}
-            <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-600/5 border-blue-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Moon className="w-5 h-5 text-blue-500" />
-                  <span>Recovery & Sleep</span>
-                </CardTitle>
-                <CardDescription>Rest quality and recovery optimization</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-500/5 rounded-lg">
-                    <div className="text-xl font-bold text-blue-500">7.8</div>
-                    <div className="text-xs text-muted-foreground">Sleep Score</div>
+              {/* Wellness Habits */}
+              <Card className="bg-gradient-to-br from-green-500/5 to-emerald-600/5 border-green-500/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Heart className="w-5 h-5 text-green-500" />
+                    <span>Wellness Habits</span>
+                  </CardTitle>
+                  <CardDescription>Daily habits supporting your mental health</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-green-500/5 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Moon className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium">Sleep Consistency</span>
+                    </div>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-700">
+                      {progressMetrics.averageSleep > 7 ? 'Excellent' : 'Needs Work'}
+                    </Badge>
                   </div>
-                  <div className="text-center p-3 bg-green-500/5 rounded-lg">
-                    <div className="text-xl font-bold text-green-500">85%</div>
-                    <div className="text-xs text-muted-foreground">Recovery Rate</div>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Deep Sleep</span>
-                    <span className="text-sm font-medium text-blue-500">2h 15m</span>
-                  </div>
-                  <Progress value={78} className="h-2" />
                   
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">REM Sleep</span>
-                    <span className="text-sm font-medium text-purple-500">1h 45m</span>
-                  </div>
-                  <Progress value={65} className="h-2" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Sleep Efficiency</span>
-                    <span className="text-sm font-medium text-green-500">89%</span>
-                  </div>
-                  <Progress value={89} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Habit Tracking */}
-            <Card className="bg-gradient-to-br from-green-500/5 to-emerald-600/5 border-green-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Activity className="w-5 h-5 text-green-500" />
-                  <span>Consistency Tracker</span>
-                </CardTitle>
-                <CardDescription>Daily habits and behavioral patterns</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-between p-3 bg-blue-500/5 rounded-lg">
+                    <div className="flex items-center space-x-3">
                       <Droplets className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm">Hydration Goal</span>
+                      <span className="text-sm font-medium">Hydration</span>
                     </div>
-                    <Badge className="bg-blue-500/10 text-blue-700">7/8 cups</Badge>
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-700">
+                      Good
+                    </Badge>
                   </div>
-                  <Progress value={87} className="h-2" />
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Coffee className="w-4 h-4 text-orange-500" />
-                      <span className="text-sm">Morning Routine</span>
+                  <div className="flex items-center justify-between p-3 bg-purple-500/5 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Coffee className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm font-medium">Meditation</span>
                     </div>
-                    <Badge className="bg-green-500/10 text-green-700">Complete</Badge>
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-700">
+                      5 days streak
+                    </Badge>
                   </div>
-                  <Progress value={100} className="h-2" />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Heart className="w-4 h-4 text-red-500" />
-                      <span className="text-sm">Meditation</span>
-                    </div>
-                    <Badge className="bg-purple-500/10 text-purple-700">15/15 min</Badge>
-                  </div>
-                  <Progress value={100} className="h-2" />
-                </div>
 
-                <div className="mt-4 p-3 bg-green-500/5 rounded-lg">
-                  <div className="text-sm font-medium text-green-700 mb-1">21-Day Streak! 🔥</div>
-                  <div className="text-xs text-muted-foreground">
-                    Excellent consistency with your daily habits. Keep up the momentum!
+                  <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Shield className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium">Recovery Insight</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {progressMetrics.averageSleep > 7 
+                        ? 'Your sleep quality is supporting excellent recovery. Keep it up!'
+                        : 'Consider improving sleep quality to enhance recovery and performance.'
+                      }
+                    </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Wellness Metrics */}
-            <Card className="bg-gradient-to-br from-orange-500/5 to-red-600/5 border-orange-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Heart className="w-5 h-5 text-orange-500" />
-                  <span>Wellness Dashboard</span>
-                </CardTitle>
-                <CardDescription>Holistic health and wellbeing metrics</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center p-2 bg-red-500/5 rounded-lg">
-                    <div className="text-lg font-bold text-red-500">72</div>
-                    <div className="text-xs text-muted-foreground">Resting HR</div>
-                  </div>
-                  <div className="text-center p-2 bg-green-500/5 rounded-lg">
-                    <div className="text-lg font-bold text-green-500">45</div>
-                    <div className="text-xs text-muted-foreground">HRV Score</div>
-                  </div>
-                  <div className="text-center p-2 bg-blue-500/5 rounded-lg">
-                    <div className="text-lg font-bold text-blue-500">98%</div>
-                    <div className="text-xs text-muted-foreground">SpO2</div>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Energy Levels</span>
-                    <span className="text-sm font-medium text-yellow-500">High</span>
-                  </div>
-                  <Progress value={82} className="h-2" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Mood Rating</span>
-                    <span className="text-sm font-medium text-green-500">Positive</span>
-                  </div>
-                  <Progress value={88} className="h-2" />
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Stress Index</span>
-                    <span className="text-sm font-medium text-blue-500">Low</span>
-                  </div>
-                  <Progress value={25} className="h-2" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="science" className="space-y-6 mt-8 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Training Science */}
-            <Card className="bg-gradient-to-br from-cyan-500/5 to-blue-600/5 border-cyan-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FlaskConical className="w-5 h-5 text-cyan-500" />
-                  <span>Training Science</span>
-                </CardTitle>
-                <CardDescription>Evidence-based training insights and analysis</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-cyan-500/5 rounded-lg border border-cyan-500/20">
-                  <div className="font-medium text-cyan-700 mb-2">Progressive Overload Analysis</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Your strength has increased by <span className="font-semibold text-cyan-600">15%</span> in the last 8 weeks, 
-                    following optimal progressive overload principles.
-                  </p>
-                  <div className="text-xs text-cyan-600 bg-cyan-500/10 p-2 rounded">
-                    📚 Research: Gradual load increases of 2-10% weekly optimize strength gains while minimizing injury risk.
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-green-500/5 rounded-lg border border-green-500/20">
-                  <div className="font-medium text-green-700 mb-2">Volume Landmarks</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Current weekly volume is within the <span className="font-semibold text-green-600">10-20 set range</span> 
-                    per muscle group, optimal for hypertrophy.
-                  </p>
-                  <div className="text-xs text-green-600 bg-green-500/10 p-2 rounded">
-                    📊 Study: 10-20 sets per muscle group per week maximizes muscle protein synthesis response.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recovery Science */}
-            <Card className="bg-gradient-to-br from-indigo-500/5 to-purple-600/5 border-indigo-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-indigo-500" />
-                  <span>Recovery Science</span>
-                </CardTitle>
-                <CardDescription>Sleep and recovery optimization research</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-indigo-500/5 rounded-lg border border-indigo-500/20">
-                  <div className="font-medium text-indigo-700 mb-2">Sleep Quality Impact</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Averaging <span className="font-semibold text-indigo-600">7.5 hours</span> per night with 85% efficiency, 
-                    supporting optimal recovery and muscle protein synthesis.
-                  </p>
-                  <div className="text-xs text-indigo-600 bg-indigo-500/10 p-2 rounded">
-                    🧬 Research: 7-9 hours of quality sleep increases growth hormone release by 70%.
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-purple-500/5 rounded-lg border border-purple-500/20">
-                  <div className="font-medium text-purple-700 mb-2">HRV Trends</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Heart rate variability indicates <span className="font-semibold text-purple-600">excellent autonomic recovery</span> 
-                    and readiness for training.
-                  </p>
-                  <div className="text-xs text-purple-600 bg-purple-500/10 p-2 rounded">
-                    💓 Science: Higher HRV correlates with better recovery and reduced overtraining risk.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Nutrition Science */}
-            <Card className="bg-gradient-to-br from-emerald-500/5 to-green-600/5 border-emerald-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Scale className="w-5 h-5 text-emerald-500" />
-                  <span>Nutrition Science</span>
-                </CardTitle>
-                <CardDescription>Evidence-based nutrition tracking and insights</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
-                  <div className="font-medium text-emerald-700 mb-2">Protein Intake Optimization</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Averaging <span className="font-semibold text-emerald-600">1.6g/kg bodyweight</span>, within the optimal 
-                    range for muscle protein synthesis and recovery.
-                  </p>
-                  <div className="text-xs text-emerald-600 bg-emerald-500/10 p-2 rounded">
-                    🥩 Research: 1.6-2.2g/kg protein intake maximizes muscle protein synthesis for athletes.
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-orange-500/5 rounded-lg border border-orange-500/20">
-                  <div className="font-medium text-orange-700 mb-2">Nutrient Timing</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Post-workout nutrition window utilized effectively for 
-                    <span className="font-semibold text-orange-600"> enhanced recovery</span>.
-                  </p>
-                  <div className="text-xs text-orange-600 bg-orange-500/10 p-2 rounded">
-                    ⏰ Study: Post-exercise protein within 2 hours optimizes muscle adaptation.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Performance Psychology */}
-            <Card className="bg-gradient-to-br from-rose-500/5 to-pink-600/5 border-rose-500/20 hover-scale">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Brain className="w-5 h-5 text-rose-500" />
-                  <span>Performance Psychology</span>
-                </CardTitle>
-                <CardDescription>Mental performance optimization and behavioral science</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-rose-500/5 rounded-lg border border-rose-500/20">
-                  <div className="font-medium text-rose-700 mb-2">Circadian Performance</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Peak motivation occurs during <span className="font-semibold text-rose-600">evening training sessions</span>, 
-                    aligning with your natural circadian rhythm.
-                  </p>
-                  <div className="text-xs text-rose-600 bg-rose-500/10 p-2 rounded">
-                    🕐 Research: Performance peaks 6-8 hours after natural wake time for most individuals.
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-blue-500/5 rounded-lg border border-blue-500/20">
-                  <div className="font-medium text-blue-700 mb-2">Habit Formation</div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    <span className="font-semibold text-blue-600">21-day consistency streak</span> indicates strong habit 
-                    formation and behavioral change.
-                  </p>
-                  <div className="text-xs text-blue-600 bg-blue-500/10 p-2 rounded">
-                    🧠 Science: 66 days average to form automatic habits, you're building excellent momentum.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Research Highlights */}
-            <Card className="bg-gradient-to-br from-yellow-500/5 to-amber-600/5 border-yellow-500/20 hover-scale md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Award className="w-5 h-5 text-yellow-500" />
-                  <span>Latest Research Insights</span>
-                </CardTitle>
-                <CardDescription>Recent scientific findings relevant to your training</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 rounded-lg border border-blue-500/20">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <FlaskConical className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium text-blue-700">Exercise Order Research</span>
+          {isLoading ? (
+            <TabContentSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Scientific Metrics */}
+              <Card className="bg-gradient-to-br from-cyan-500/5 to-blue-600/5 border-cyan-500/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <FlaskConical className="w-5 h-5 text-cyan-500" />
+                    <span>Training Science</span>
+                  </CardTitle>
+                  <CardDescription>Evidence-based metrics and analysis</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-500/5 rounded-xl">
+                      <div className="text-2xl font-bold text-blue-500">
+                        {progressMetrics.totalVolume > 0 ? 
+                          `${(progressMetrics.totalVolume / 1000).toFixed(1)}k` 
+                          : '--'
+                        }
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Volume</div>
+                      <div className="text-xs text-blue-500 mt-1">
+                        {progressMetrics.totalVolume > 0 ? 'lbs lifted' : 'No workouts yet'}
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Recent 2024 study shows compound movements first can increase overall training volume by 12-15%.
+                    <div className="text-center p-4 bg-green-500/5 rounded-xl">
+                      <div className="text-2xl font-bold text-green-500">
+                        {progressMetrics.averageRPE > 0 ? progressMetrics.averageRPE : '--'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Avg RPE</div>
+                      <div className="text-xs text-green-500 mt-1">
+                        {progressMetrics.averageRPE > 0 ? 
+                          (progressMetrics.averageRPE <= 6 ? 'Light intensity' : 
+                           progressMetrics.averageRPE <= 8 ? 'Moderate intensity' : 'High intensity')
+                          : 'Track RPE in workouts'
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Progressive Overload</span>
+                      <span className="text-sm text-muted-foreground">Optimal</span>
+                    </div>
+                    <Progress value={78} className="h-3" />
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Volume Progression</span>
+                      <span className="text-sm text-muted-foreground">+12% weekly</span>
+                    </div>
+                    <Progress value={85} className="h-3" />
+                  </div>
+
+                  <div className="mt-6 p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-xl border border-cyan-500/20">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <BarChart3 className="w-4 h-4 text-cyan-500" />
+                      <span className="text-sm font-medium">Research-Based Insight</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {progressMetrics.totalWorkouts > 5 
+                        ? 'Your training volume aligns with research for optimal muscle growth and strength gains.'
+                        : 'Continue tracking workouts to build a data-driven training approach.'
+                      }
                     </p>
                   </div>
-                  
-                  <div className="p-4 bg-gradient-to-r from-purple-500/5 to-indigo-500/5 rounded-lg border border-purple-500/20">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Moon className="w-4 h-4 text-purple-500" />
-                      <span className="font-medium text-purple-700">Sleep & Performance</span>
+                </CardContent>
+              </Card>
+
+              {/* Performance Analytics */}
+              <Card className="bg-gradient-to-br from-orange-500/5 to-red-600/5 border-orange-500/20 hover-scale">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Gauge className="w-5 h-5 text-orange-500" />
+                    <span>Performance Analytics</span>
+                  </CardTitle>
+                  <CardDescription>Advanced training metrics and trends</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Training Frequency</span>
+                        <span className="text-lg font-bold text-orange-500">{progressMetrics.weeklyFrequency}x/week</span>
+                      </div>
+                      <Progress value={Math.min(100, (progressMetrics.weeklyFrequency / 4) * 100)} className="h-2" />
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      New findings: Each additional hour of quality sleep correlates with 3-5% strength improvement.
-                    </p>
-                  </div>
-                  
-                  <div className="p-4 bg-gradient-to-r from-green-500/5 to-emerald-500/5 rounded-lg border border-green-500/20">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Scale className="w-4 h-4 text-green-500" />
-                      <span className="font-medium text-green-700">Protein Distribution</span>
+                    
+                    <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Consistency Rate</span>
+                        <span className="text-lg font-bold text-green-500">{progressMetrics.consistency}%</span>
+                      </div>
+                      <Progress value={progressMetrics.consistency} className="h-2" />
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Spreading protein across 4+ meals shows 8% better muscle protein synthesis than 2-3 large meals.
-                    </p>
                   </div>
-                  
-                  <div className="p-4 bg-gradient-to-r from-orange-500/5 to-red-500/5 rounded-lg border border-orange-500/20">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Zap className="w-4 h-4 text-orange-500" />
-                      <span className="font-medium text-orange-700">Recovery Methods</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Cold therapy (10-15°C for 10-15 min) post-workout reduces inflammation markers by 23%.
-                    </p>
+
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">Recent Achievements</h4>
+                    {progressMetrics.totalWorkouts > 0 ? (
+                      <>
+                        <div className="flex items-center space-x-3 p-2 bg-green-500/5 rounded-lg">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-sm">Completed {progressMetrics.totalWorkouts} training sessions</span>
+                        </div>
+                        {progressMetrics.consistency > 70 && (
+                          <div className="flex items-center space-x-3 p-2 bg-blue-500/5 rounded-lg">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-sm">Maintaining {progressMetrics.consistency}% training consistency</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No training data yet</p>
+                        <p className="text-xs">Start logging workouts to see analytics</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

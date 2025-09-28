@@ -7,29 +7,37 @@ export const useOptimizedProgressData = (userId: string | null) => {
     queryFn: async () => {
       if (!userId) return null;
       
-      // Optimized queries - fetch only recent data needed for display
-      const [workoutData, recoveryData, goalsData] = await Promise.all([
-        // Only fetch last 10 workouts for calculations
+      // Optimized queries - fetch concurrently with better error handling
+      const [workoutData, recoveryData, goalsData, profileData] = await Promise.all([
+        // Only fetch last 20 workouts for better calculations
         supabase
           .from('progressive_overload_entries')
-          .select('exercise_name, weight, sets, reps, workout_date, created_at')
+          .select('exercise_name, weight, sets, reps, workout_date, rpe, created_at')
           .eq('user_id', userId)
           .order('workout_date', { ascending: false })
-          .limit(10),
+          .limit(20),
         
-        // Only fetch last 7 days of recovery data
+        // Only fetch last 14 days of recovery data for trends
         supabase
           .from('recovery_data')
           .select('sleep_hours, sleep_quality, energy_level, stress_level, recorded_date')
           .eq('user_id', userId)
           .order('recorded_date', { ascending: false })
-          .limit(7),
+          .limit(14),
         
-        // Fetch all goals (simpler query that's less likely to fail)
+        // Fetch active goals with progress tracking
         supabase
           .from('user_goals')
-          .select('id, title, target_value, current_value, status, category, created_at')
+          .select('id, title, target_value, current_value, status, category, created_at, deadline')
           .eq('user_id', userId)
+          .order('created_at', { ascending: false }),
+
+        // Fetch user profile for body metrics
+        supabase
+          .from('profiles')
+          .select('weight, height, goal, experience, body_fat_percentage')
+          .eq('id', userId)
+          .single()
       ]);
 
       // Handle errors gracefully - don't throw, just log and return empty data
@@ -42,17 +50,22 @@ export const useOptimizedProgressData = (userId: string | null) => {
       if (goalsData.error) {
         console.warn('Goals data error:', goalsData.error);
       }
+      if (profileData.error) {
+        console.warn('Profile data error:', profileData.error);
+      }
 
       return {
         workouts: workoutData.data || [],
         recovery: recoveryData.data || [],
-        goals: goalsData.data || []
+        goals: goalsData.data || [],
+        profile: profileData.data || null
       };
     },
     enabled: !!userId,
-    staleTime: 2 * 60 * 1000, // 2 minutes - fresh data
-    gcTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 30 * 1000, // 30 seconds - faster updates
+    gcTime: 2 * 60 * 1000, // 2 minutes cache  
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    refetchInterval: false, // Disable auto-refetch
   });
 };
 

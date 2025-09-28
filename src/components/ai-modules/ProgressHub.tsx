@@ -363,7 +363,8 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
       </div>
 
       {/* Detailed Progress Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <div className="animate-slide-in-up" style={{ animationDelay: '600ms' }}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-muted/50 to-muted/80 p-1 rounded-xl">
             <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 hover:scale-105">
               Overview

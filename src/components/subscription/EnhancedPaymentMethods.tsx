@@ -152,13 +152,13 @@ const EnhancedPaymentMethods = ({
       name: "PayPal", 
       icon: CreditCard, 
       description: "PayPal payments",
-      eta: "Next Update"
+      eta: "Coming Soon"
     },
     { 
       name: "Bank Transfer", 
       icon: Building, 
       description: "Direct bank transfer",
-      eta: "Q2 2024"
+      eta: "Coming Soon"
     }
   ];
 
@@ -215,7 +215,7 @@ const EnhancedPaymentMethods = ({
                   )}
                   <div>
                     <h3 className="text-white font-medium flex items-center">
-                      {paymentStarted ? "Processing Payment" : "Credit/Debit Card"}
+                      {paymentStarted ? "Processing Payment" : "Stripe"}
                       <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">
                         <Zap className="w-3 h-3 mr-1" />
                         Instant
@@ -247,31 +247,21 @@ const EnhancedPaymentMethods = ({
             </CardContent>
           </Card>
 
-          {/* Apple Pay - Available on supported devices */}
-          <Card className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-all">
+          {/* Apple Pay - Coming Soon */}
+          <Card className="bg-gray-800/50 border-gray-700/50">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Smartphone className="w-6 h-6 text-gray-300" />
+                <div className="flex items-center space-x-3 opacity-60">
+                  <Smartphone className="w-6 h-6 text-gray-400" />
                   <div>
-                    <h3 className="text-white font-medium flex items-center">
-                      Apple Pay
-                      <Badge className="ml-2 bg-gray-600 text-gray-300 text-xs">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Beta
-                      </Badge>
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      Touch ID, Face ID, or Apple Watch
-                    </p>
+                    <h3 className="text-gray-300 font-medium">Apple Pay</h3>
+                    <p className="text-sm text-gray-500">Touch ID, Face ID, or Apple Watch</p>
                   </div>
                 </div>
-                <ApplePayButton
-                  amount={currentPrice}
-                  onSuccess={handleApplePaySuccess}
-                  onError={handleApplePayError}
-                  className="bg-black text-white hover:bg-gray-800"
-                />
+                <Badge variant="secondary" className="bg-gray-600 text-gray-300">
+                  <Clock className="w-3 h-3 mr-1" />
+                  Coming Soon
+                </Badge>
               </div>
             </CardContent>
           </Card>

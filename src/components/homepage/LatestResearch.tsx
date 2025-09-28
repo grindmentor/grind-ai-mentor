@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ExternalLink, ChevronRight, Calendar } from 'lucide-react';
@@ -7,6 +7,18 @@ import ScientificStudies from '@/components/ScientificStudies';
 
 const LatestResearch = () => {
   const [showArchive, setShowArchive] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showArchive && cardRef.current) {
+      // Scroll the card into view when archive is opened
+      cardRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start',
+        inline: 'nearest'
+      });
+    }
+  }, [showArchive]);
 
   // Latest 2025 research - most recent study displayed first
   const latestArticle = {
@@ -50,7 +62,7 @@ const LatestResearch = () => {
   ];
 
   return (
-    <Card className="bg-gradient-to-r from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
+    <Card ref={cardRef} className="bg-gradient-to-r from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">

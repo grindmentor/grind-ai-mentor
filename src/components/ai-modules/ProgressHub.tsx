@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -38,24 +38,55 @@ import {
   ExternalLink
 } from "lucide-react";
 
+// Animated Number Counter Component
+const AnimatedNumber = ({ value, suffix = "", duration = 1000 }: { value: number; suffix?: string; duration?: number }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const startValue = displayValue;
+    const targetValue = value;
+
+    const animate = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentValue = startValue + (targetValue - startValue) * easeOutQuart;
+      
+      setDisplayValue(Math.round(currentValue * 10) / 10);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+
+  return <span>{displayValue}{suffix}</span>;
+};
+
 // Optimized Progress Skeleton Component with shimmer effect
 const ProgressSkeleton = () => (
   <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
     {/* Back Button Skeleton */}
-    <div className="flex items-center mb-6">
+    <div className="flex items-center mb-6 animate-slide-in-left">
       <Skeleton className="h-10 w-32" />
     </div>
     
     {/* Hero Stats Skeleton */}
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => (
-        <Card key={i} className="hover-scale animate-pulse">
+        <Card key={i} className="hover-scale animate-scale-in" style={{ animationDelay: `${i * 100}ms` }}>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <Skeleton className="w-10 h-10 rounded-full" />
+              <Skeleton className="w-10 h-10 rounded-full animate-pulse" />
               <div className="space-y-2">
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-8 w-16 animate-pulse" />
+                <Skeleton className="h-4 w-20 animate-pulse" />
               </div>
             </div>
           </CardContent>
@@ -64,22 +95,22 @@ const ProgressSkeleton = () => (
     </div>
 
     {/* Tabs Skeleton */}
-    <div className="space-y-6">
-      <Skeleton className="h-12 w-full rounded-xl" />
+    <div className="space-y-6 animate-slide-in-up" style={{ animationDelay: '400ms' }}>
+      <Skeleton className="h-12 w-full rounded-xl animate-pulse" />
       
       {/* Tab Content Skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <Card key={i} className="hover-scale animate-pulse">
+          <Card key={i} className="hover-scale animate-fade-in" style={{ animationDelay: `${500 + i * 100}ms` }}>
             <CardHeader>
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-6 w-32 animate-pulse" />
+              <Skeleton className="h-4 w-48 animate-pulse" />
             </CardHeader>
             <CardContent className="space-y-3">
-              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full animate-pulse" />
               <div className="space-y-2">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-3 w-full animate-pulse" />
+                <Skeleton className="h-3 w-3/4 animate-pulse" />
               </div>
             </CardContent>
           </Card>
@@ -94,16 +125,16 @@ const TabContentSkeleton = () => (
   <div className="space-y-6 mt-8 animate-fade-in">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(3)].map((_, i) => (
-        <Card key={i} className="hover-scale animate-pulse">
+        <Card key={i} className="hover-scale animate-slide-in-up" style={{ animationDelay: `${i * 150}ms` }}>
           <CardHeader>
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-6 w-32 animate-pulse" />
+            <Skeleton className="h-4 w-48 animate-pulse" />
           </CardHeader>
           <CardContent className="space-y-4">
-            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full animate-pulse" />
             <div className="space-y-2">
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-3 w-full animate-pulse" />
+              <Skeleton className="h-3 w-2/3 animate-pulse" />
             </div>
           </CardContent>
         </Card>
@@ -261,61 +292,69 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
       {/* Back Button */}
-      <div className="flex items-center mb-6">
+      <div className="flex items-center mb-6 animate-slide-in-left">
         <BackButton onBack={handleBack} text="Back to Dashboard" />
       </div>
       {/* Hero Stats Section */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover-scale">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 animate-scale-in">
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-primary/10 rounded-full">
-                <TrendingUp className="w-6 h-6 text-primary" />
+              <div className="p-2 bg-primary/10 rounded-full animate-pulse">
+                <TrendingUp className="w-6 h-6 text-primary animate-bounce" style={{ animationDelay: '100ms' }} />
               </div>
               <div>
-                <div className="text-3xl font-bold text-primary">{progressMetrics?.overallProgress || 0}%</div>
+                <div className="text-3xl font-bold text-primary">
+                  <AnimatedNumber value={progressMetrics?.overallProgress || 0} suffix="%" />
+                </div>
                 <div className="text-sm text-muted-foreground font-medium">Overall Progress</div>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 hover-scale">
+        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 animate-scale-in" style={{ animationDelay: '150ms' }}>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-500/10 rounded-full">
-                <Dumbbell className="w-6 h-6 text-blue-500" />
+              <div className="p-2 bg-blue-500/10 rounded-full animate-pulse">
+                <Dumbbell className="w-6 h-6 text-blue-500 animate-bounce" style={{ animationDelay: '200ms' }} />
               </div>
               <div>
-                <div className="text-3xl font-bold text-blue-500">{progressMetrics?.totalWorkouts || 0}</div>
+                <div className="text-3xl font-bold text-blue-500">
+                  <AnimatedNumber value={progressMetrics?.totalWorkouts || 0} />
+                </div>
                 <div className="text-sm text-muted-foreground font-medium">Total Sessions</div>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20 hover-scale">
+        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 animate-scale-in" style={{ animationDelay: '300ms' }}>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-500/10 rounded-full">
-                <Moon className="w-6 h-6 text-purple-500" />
+              <div className="p-2 bg-purple-500/10 rounded-full animate-pulse">
+                <Moon className="w-6 h-6 text-purple-500 animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
               <div>
-                <div className="text-3xl font-bold text-purple-500">{(progressMetrics?.averageSleep || 0).toFixed(1)}h</div>
+                <div className="text-3xl font-bold text-purple-500">
+                  <AnimatedNumber value={progressMetrics?.averageSleep || 0} suffix="h" />
+                </div>
                 <div className="text-sm text-muted-foreground font-medium">Avg Sleep</div>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20 hover-scale">
+        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 animate-scale-in" style={{ animationDelay: '450ms' }}>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-orange-500/10 rounded-full">
-                <Target className="w-6 h-6 text-orange-500" />
+              <div className="p-2 bg-orange-500/10 rounded-full animate-pulse">
+                <Target className="w-6 h-6 text-orange-500 animate-bounce" style={{ animationDelay: '400ms' }} />
               </div>
               <div>
-                <div className="text-3xl font-bold text-orange-500">{progressMetrics?.activeGoals || 0}</div>
+                <div className="text-3xl font-bold text-orange-500">
+                  <AnimatedNumber value={progressMetrics?.activeGoals || 0} />
+                </div>
                 <div className="text-sm text-muted-foreground font-medium">Active Goals</div>
               </div>
             </div>
@@ -326,22 +365,22 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
       {/* Detailed Progress Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-muted/50 to-muted/80 p-1 rounded-xl">
-          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="physique" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Physique
-          </TabsTrigger>
-          <TabsTrigger value="mental" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Mental
-          </TabsTrigger>
-          <TabsTrigger value="science" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            Science
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 hover:scale-105">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="physique" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 hover:scale-105">
+              Physique
+            </TabsTrigger>
+            <TabsTrigger value="mental" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 hover:scale-105">
+              Mental
+            </TabsTrigger>
+            <TabsTrigger value="science" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 hover:scale-105">
+              Science
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="overview" className="space-y-6 mt-8 animate-fade-in">
-          {isLoading ? (
+          <TabsContent value="overview" className="space-y-6 mt-8 animate-fade-in transition-all duration-500">
+            {isLoading ? (
             <TabContentSkeleton />
           ) : (
             <>
@@ -352,7 +391,7 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
               />
 
               {/* Training Schedule */}
-              <Card className="bg-gradient-to-br from-indigo-500/5 to-violet-600/5 border-indigo-500/20 hover-scale">
+              <Card className="bg-gradient-to-br from-indigo-500/5 to-violet-600/5 border-indigo-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 animate-slide-in-up" style={{ animationDelay: '200ms' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -368,7 +407,7 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {['Push Day', 'Pull Day', 'Legs', 'Cardio'].map((workout, index) => (
-                    <div key={workout} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div key={workout} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:scale-[1.02] hover:shadow-md animate-slide-in-right" style={{ animationDelay: `${300 + index * 100}ms` }}>
                       <span className="text-sm font-medium">{workout}</span>
                       <Badge variant={index === 0 ? 'default' : 'outline'}>
                         {index === 0 ? 'Today' : ['Tomorrow', 'Friday', 'Saturday'][index - 1]}
@@ -379,7 +418,7 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
               </Card>
 
               {/* Nutrition Overview */}
-              <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale">
+              <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/20 animate-slide-in-up" style={{ animationDelay: '400ms' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -421,13 +460,13 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
           )}
         </TabsContent>
 
-        <TabsContent value="physique" className="space-y-6 mt-8 animate-fade-in">
-          {isLoading ? (
+          <TabsContent value="physique" className="space-y-6 mt-8 animate-fade-in transition-all duration-500">
+            {isLoading ? (
             <TabContentSkeleton />
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Interactive Muscle Map */}
-              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover-scale">
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-slide-in-up">
+                {/* Interactive Muscle Map */}
+                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 animate-scale-in">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Users className="w-5 h-5 text-primary" />
@@ -444,8 +483,8 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                 </CardContent>
               </Card>
 
-              {/* Body Composition Tracking */}
-              <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-600/5 border-blue-500/20 hover-scale">
+                {/* Body Composition Tracking */}
+                <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-600/5 border-blue-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 animate-scale-in" style={{ animationDelay: '200ms' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <TrendingUp className="w-5 h-5 text-blue-500" />
@@ -515,11 +554,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
           )}
         </TabsContent>
 
-        <TabsContent value="mental" className="space-y-6 mt-8 animate-fade-in">
-          {isLoading ? (
+          <TabsContent value="mental" className="space-y-6 mt-8 animate-fade-in transition-all duration-500">
+            {isLoading ? (
             <TabContentSkeleton />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-in-up">
               {/* Mental Resilience */}
               <Card className="bg-gradient-to-br from-purple-500/5 to-indigo-600/5 border-purple-500/20 hover-scale">
                 <CardHeader>
@@ -633,11 +672,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
           )}
         </TabsContent>
 
-        <TabsContent value="science" className="space-y-6 mt-8 animate-fade-in">
-          {isLoading ? (
+          <TabsContent value="science" className="space-y-6 mt-8 animate-fade-in transition-all duration-500">
+            {isLoading ? (
             <TabContentSkeleton />
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-slide-in-up">
               {/* Scientific Metrics */}
               <Card className="bg-gradient-to-br from-cyan-500/5 to-blue-600/5 border-cyan-500/20 hover-scale">
                 <CardHeader>
@@ -763,7 +802,8 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
             </div>
           )}
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 }

@@ -257,18 +257,35 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
 
   // Handler functions for interactive elements
   const handleAddGoal = () => {
-    console.log('Navigate to goal creation');
-    // In a real app, this would navigate to goal creation or open a modal
+    navigate('/app?module=goals');
   };
 
   const handleViewWorkouts = () => {
-    console.log('Navigate to workout history');
-    // In a real app, this would navigate to workout history
+    navigate('/app?module=workout-logger');
   };
 
   const handleViewNutrition = () => {
-    console.log('Navigate to nutrition tracking');
-    // In a real app, this would navigate to food log
+    navigate('/app?module=smart-food-log');
+  };
+
+  const handleEditSchedule = () => {
+    navigate('/app?module=workout-scheduler');
+  };
+
+  const handleTakePhoto = () => {
+    navigate('/app?module=physique-ai');
+  };
+
+  const handleViewPhysique = () => {
+    navigate('/app?module=physique-ai');
+  };
+
+  const handleTrackRecovery = () => {
+    navigate('/app?module=recovery-coach');
+  };
+
+  const handleViewStudies = () => {
+    navigate('/app?module=science-hub');
   };
 
   if (isLoading) {
@@ -399,7 +416,7 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                       <Timer className="w-5 h-5 text-indigo-500" />
                       <span>This Week's Plan</span>
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => console.log('Edit schedule')}>
+                    <Button size="sm" variant="outline" onClick={handleEditSchedule}>
                       <ExternalLink className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
@@ -468,15 +485,21 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-slide-in-up">
                 {/* Interactive Muscle Map */}
                 <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 animate-scale-in">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    <span>Muscle Development Map</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Interactive visualization of your training progress by muscle group
-                  </CardDescription>
-                </CardHeader>
+                 <CardHeader>
+                   <CardTitle className="flex items-center justify-between">
+                     <div className="flex items-center space-x-2">
+                       <Users className="w-5 h-5 text-primary" />
+                       <span>Muscle Development Map</span>
+                     </div>
+                     <Button size="sm" variant="outline" onClick={handleViewWorkouts}>
+                       <ExternalLink className="w-4 h-4 mr-1" />
+                       Log Workout
+                     </Button>
+                   </CardTitle>
+                   <CardDescription>
+                     Interactive visualization of your training progress by muscle group
+                   </CardDescription>
+                 </CardHeader>
                 <CardContent className="flex justify-center p-6">
                   <RealisticMuscleMap 
                     muscleGroups={progressMetrics?.muscleGroups || []} 
@@ -486,13 +509,19 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
 
                 {/* Body Composition Tracking */}
                 <Card className="bg-gradient-to-br from-blue-500/5 to-cyan-600/5 border-blue-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 animate-scale-in" style={{ animationDelay: '200ms' }}>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5 text-blue-500" />
-                    <span>Body Composition</span>
-                  </CardTitle>
-                  <CardDescription>Track your physique changes over time</CardDescription>
-                </CardHeader>
+                 <CardHeader>
+                   <CardTitle className="flex items-center justify-between">
+                     <div className="flex items-center space-x-2">
+                       <TrendingUp className="w-5 h-5 text-blue-500" />
+                       <span>Body Composition</span>
+                     </div>
+                     <Button size="sm" variant="outline" onClick={handleTakePhoto}>
+                       <Camera className="w-4 h-4 mr-1" />
+                       Take Photo
+                     </Button>
+                   </CardTitle>
+                   <CardDescription>Track your physique changes over time</CardDescription>
+                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-blue-500/5 rounded-xl">
@@ -562,13 +591,19 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-in-up">
               {/* Mental Resilience */}
               <Card className="bg-gradient-to-br from-purple-500/5 to-indigo-600/5 border-purple-500/20 hover-scale">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Brain className="w-5 h-5 text-purple-500" />
-                    <span>Mental Resilience</span>
-                  </CardTitle>
-                  <CardDescription>Tracking stress, recovery, and mental wellness</CardDescription>
-                </CardHeader>
+                 <CardHeader>
+                   <CardTitle className="flex items-center justify-between">
+                     <div className="flex items-center space-x-2">
+                       <Brain className="w-5 h-5 text-purple-500" />
+                       <span>Mental Resilience</span>
+                     </div>
+                     <Button size="sm" variant="outline" onClick={handleTrackRecovery}>
+                       <ExternalLink className="w-4 h-4 mr-1" />
+                       Track Recovery
+                     </Button>
+                   </CardTitle>
+                   <CardDescription>Tracking stress, recovery, and mental wellness</CardDescription>
+                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-green-500/5 rounded-xl">
@@ -617,13 +652,19 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
 
               {/* Wellness Habits */}
               <Card className="bg-gradient-to-br from-green-500/5 to-emerald-600/5 border-green-500/20 hover-scale">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Heart className="w-5 h-5 text-green-500" />
-                    <span>Wellness Habits</span>
-                  </CardTitle>
-                  <CardDescription>Daily habits supporting your mental health</CardDescription>
-                </CardHeader>
+                 <CardHeader>
+                   <CardTitle className="flex items-center justify-between">
+                     <div className="flex items-center space-x-2">
+                       <Heart className="w-5 h-5 text-green-500" />
+                       <span>Wellness Habits</span>
+                     </div>
+                     <Button size="sm" variant="outline" onClick={handleAddGoal}>
+                       <Plus className="w-4 h-4 mr-1" />
+                       Add Goal
+                     </Button>
+                   </CardTitle>
+                   <CardDescription>Daily habits supporting your mental health</CardDescription>
+                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-green-500/5 rounded-lg">
                     <div className="flex items-center space-x-3">
@@ -680,13 +721,19 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-slide-in-up">
               {/* Scientific Metrics */}
               <Card className="bg-gradient-to-br from-cyan-500/5 to-blue-600/5 border-cyan-500/20 hover-scale">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <FlaskConical className="w-5 h-5 text-cyan-500" />
-                    <span>Training Science</span>
-                  </CardTitle>
-                  <CardDescription>Evidence-based metrics and analysis</CardDescription>
-                </CardHeader>
+                 <CardHeader>
+                   <CardTitle className="flex items-center justify-between">
+                     <div className="flex items-center space-x-2">
+                       <FlaskConical className="w-5 h-5 text-cyan-500" />
+                       <span>Training Science</span>
+                     </div>
+                     <Button size="sm" variant="outline" onClick={handleViewStudies}>
+                       <ExternalLink className="w-4 h-4 mr-1" />
+                       View Studies
+                     </Button>
+                   </CardTitle>
+                   <CardDescription>Evidence-based metrics and analysis</CardDescription>
+                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-4 bg-blue-500/5 rounded-xl">
@@ -749,13 +796,19 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
 
               {/* Performance Analytics */}
               <Card className="bg-gradient-to-br from-orange-500/5 to-red-600/5 border-orange-500/20 hover-scale">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Gauge className="w-5 h-5 text-orange-500" />
-                    <span>Performance Analytics</span>
-                  </CardTitle>
-                  <CardDescription>Advanced training metrics and trends</CardDescription>
-                </CardHeader>
+                 <CardHeader>
+                   <CardTitle className="flex items-center justify-between">
+                     <div className="flex items-center space-x-2">
+                       <Gauge className="w-5 h-5 text-orange-500" />
+                       <span>Performance Analytics</span>
+                     </div>
+                     <Button size="sm" variant="outline" onClick={handleViewWorkouts}>
+                       <BarChart3 className="w-4 h-4 mr-1" />
+                       View Analytics
+                     </Button>
+                   </CardTitle>
+                   <CardDescription>Advanced training metrics and trends</CardDescription>
+                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 gap-4">
                     <div className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl">

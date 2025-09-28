@@ -89,16 +89,20 @@ export const ProgressMetrics: React.FC<ProgressMetricsProps> = ({
           <CardContent className="space-y-4">
             {metrics.activeGoals > 0 ? (
               <>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Goal Progress</span>
-                    <span className="text-xs text-muted-foreground">Average: 75%</span>
-                  </div>
-                  <Progress value={75} className="h-2" />
-                </div>
                 <div className="text-center p-3 bg-orange-500/5 rounded-lg">
                   <div className="text-lg font-bold text-orange-500">{metrics.activeGoals}</div>
-                  <div className="text-xs text-muted-foreground">Goals in progress</div>
+                  <div className="text-xs text-muted-foreground">
+                    {metrics.activeGoals === 1 ? 'Goal in progress' : 'Goals in progress'}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Goals Set</span>
+                    <span className="text-xs text-muted-foreground">Keep tracking progress</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center p-2 bg-muted/20 rounded">
+                    Track your goals to see progress metrics
+                  </div>
                 </div>
               </>
             ) : (

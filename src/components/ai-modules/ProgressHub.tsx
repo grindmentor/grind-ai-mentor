@@ -183,24 +183,12 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
 
     const { workouts, recovery, goals, profile } = progressData;
     
-    // Calculate realistic muscle group scores from actual data  
+    // Calculate realistic muscle group scores from actual data only 
     const muscleGroups = Object.entries(muscleGroupData || {}).map(([name, data]: [string, any]) => ({
       name,
-      score: Math.min(100, Math.max(30, (data?.totalVolume / 1000) + (data?.sessions * 10))),
+      score: data?.totalVolume > 0 ? Math.min(100, (data?.totalVolume / 1000) + (data?.sessions * 10)) : 0,
       progressTrend: 'up' as const
-    }));
-
-    // Fill in missing muscle groups with realistic baseline scores
-    const allMuscleGroups = ['chest', 'back', 'shoulders', 'arms', 'legs', 'core'];
-    allMuscleGroups.forEach(muscle => {
-      if (!muscleGroups.find(m => m.name === muscle)) {
-        muscleGroups.push({
-          name: muscle,
-          score: workouts?.length > 0 ? 45 + Math.floor(Math.random() * 25) : 30,
-          progressTrend: 'up' as const
-        });
-      }
-    });
+    })).filter(mg => mg.score > 0); // Only show muscle groups with actual data
 
     // Enhanced calculations with real data
     const weeklyVolume = workouts?.reduce((acc, workout) => 
@@ -423,57 +411,96 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                   </CardTitle>
                   <CardDescription>Upcoming training sessions</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {['Push Day', 'Pull Day', 'Legs', 'Cardio'].map((workout, index) => (
-                    <div key={workout} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:scale-[1.02] hover:shadow-md animate-slide-in-right" style={{ animationDelay: `${300 + index * 100}ms` }}>
-                      <span className="text-sm font-medium">{workout}</span>
-                      <Badge variant={index === 0 ? 'default' : 'outline'}>
-                        {index === 0 ? 'Today' : ['Tomorrow', 'Friday', 'Saturday'][index - 1]}
-                      </Badge>
-                    </div>
-                  ))}
-                </CardContent>
+                 <CardContent className="space-y-3">
+                   {progressData?.workouts?.length > 0 ? (
+                     <div className="text-center py-6">
+                       <Activity className="w-8 h-8 mx-auto mb-2 text-indigo-500" />
+                       <p className="text-sm text-muted-foreground mb-2">
+                         You have {progressData.workouts.length} logged workouts
+                       </p>
+                       <Button 
+                         size="sm" 
+                         variant="outline" 
+                         onClick={handleEditSchedule}
+                         className="text-indigo-400 border-indigo-400"
+                       >
+                         Plan Workouts
+                       </Button>
+                     </div>
+                   ) : (
+                     <div className="text-center py-6">
+                       <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                       <p className="text-sm text-muted-foreground mb-2">
+                         No workout schedule yet
+                       </p>
+                       <Button 
+                         size="sm" 
+                         variant="outline" 
+                         onClick={handleEditSchedule}
+                         className="text-indigo-400 border-indigo-400"
+                       >
+                         Create Schedule
+                       </Button>
+                     </div>
+                   )}
+                 </CardContent>
               </Card>
 
-              {/* Nutrition Overview */}
-              <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/20 animate-slide-in-up" style={{ animationDelay: '400ms' }}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Scale className="w-5 h-5 text-pink-500" />
-                      <span>Nutrition Status</span>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={handleViewNutrition}>
-                      <Plus className="w-4 h-4 mr-1" />
-                      Log Food
-                    </Button>
-                  </CardTitle>
-                  <CardDescription>Daily macro and calorie tracking</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Protein (180g target)</span>
-                      <span className="text-pink-500 font-medium">165g</span>
-                    </div>
-                    <Progress value={92} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Carbs (250g target)</span>
-                      <span className="text-blue-500 font-medium">230g</span>
-                    </div>
-                    <Progress value={92} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Calories (2400 target)</span>
-                      <span className="text-green-500 font-medium">2280</span>
-                    </div>
-                    <Progress value={95} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
+               {/* Nutrition Overview - Only show if we have food log data */}
+               {progressData?.foodLogs?.length > 0 ? (
+                 <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/20 animate-slide-in-up" style={{ animationDelay: '400ms' }}>
+                   <CardHeader>
+                     <CardTitle className="flex items-center justify-between">
+                       <div className="flex items-center space-x-2">
+                         <Scale className="w-5 h-5 text-pink-500" />
+                         <span>Nutrition Tracking</span>
+                       </div>
+                       <Button size="sm" variant="outline" onClick={handleViewNutrition}>
+                         <Plus className="w-4 h-4 mr-1" />
+                         Log Food
+                       </Button>
+                     </CardTitle>
+                     <CardDescription>Your recent nutrition data</CardDescription>
+                   </CardHeader>
+                   <CardContent className="space-y-4">
+                     <div className="text-center py-4">
+                       <p className="text-sm text-muted-foreground">
+                         {progressData.foodLogs.length} food entries logged
+                       </p>
+                       <p className="text-xs text-muted-foreground mt-1">
+                         Total calories: {progressData.foodLogs.reduce((sum, entry) => sum + (entry.calories || 0), 0)}
+                       </p>
+                     </div>
+                   </CardContent>
+                 </Card>
+               ) : (
+                 <Card className="bg-gradient-to-br from-pink-500/5 to-rose-600/5 border-pink-500/20 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/20 animate-slide-in-up" style={{ animationDelay: '400ms' }}>
+                   <CardHeader>
+                     <CardTitle className="flex items-center justify-between">
+                       <div className="flex items-center space-x-2">
+                         <Scale className="w-5 h-5 text-pink-500" />
+                         <span>Nutrition Tracking</span>
+                       </div>
+                       <Button size="sm" variant="outline" onClick={handleViewNutrition}>
+                         <Plus className="w-4 h-4 mr-1" />
+                         Start Tracking
+                       </Button>
+                     </CardTitle>
+                     <CardDescription>Track your daily nutrition intake</CardDescription>
+                   </CardHeader>
+                   <CardContent className="space-y-4">
+                     <div className="text-center py-6">
+                       <Scale className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                       <p className="text-sm text-muted-foreground mb-2">
+                         No nutrition data yet
+                       </p>
+                       <p className="text-xs text-muted-foreground">
+                         Start logging food to see your nutrition progress
+                       </p>
+                     </div>
+                   </CardContent>
+                 </Card>
+               )}
             </>
           )}
         </TabsContent>
@@ -634,19 +661,33 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
 
                   <Separator />
 
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Energy Levels</span>
-                      <span className="text-sm text-muted-foreground">Excellent</span>
-                    </div>
-                    <Progress value={85} className="h-3" />
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Recovery Rate</span>
-                      <span className="text-sm text-muted-foreground">Optimal</span>
-                    </div>
-                    <Progress value={92} className="h-3" />
-                  </div>
+                   <div className="space-y-4">
+                     {progressData?.recovery?.length > 0 ? (
+                       <>
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm font-medium">Energy Levels</span>
+                           <span className="text-sm text-muted-foreground">
+                             {progressData.recovery.reduce((acc: number, curr: any) => acc + (curr?.energy_level || 5), 0) / progressData.recovery.length > 6 ? 'Good' : 'Fair'}
+                           </span>
+                         </div>
+                         <Progress value={Math.min(100, (progressData.recovery.reduce((acc: number, curr: any) => acc + (curr?.energy_level || 5), 0) / progressData.recovery.length / 10) * 100)} className="h-3" />
+                         
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm font-medium">Recovery Rate</span>
+                           <span className="text-sm text-muted-foreground">
+                             {progressMetrics.averageSleep > 7 ? 'Good' : 'Needs Work'}
+                           </span>
+                         </div>
+                         <Progress value={progressMetrics.averageSleep * 12.5} className="h-3" />
+                       </>
+                     ) : (
+                       <div className="text-center py-4">
+                         <p className="text-sm text-muted-foreground">
+                           No recovery metrics available yet
+                         </p>
+                       </div>
+                     )}
+                   </div>
                 </CardContent>
               </Card>
 
@@ -665,36 +706,48 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                    </CardTitle>
                    <CardDescription>Daily habits supporting your mental health</CardDescription>
                  </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-500/5 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Moon className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium">Sleep Consistency</span>
-                    </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-700">
-                      {progressMetrics.averageSleep > 7 ? 'Excellent' : 'Needs Work'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-blue-500/5 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Droplets className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm font-medium">Hydration</span>
-                    </div>
-                    <Badge variant="outline" className="bg-blue-500/10 text-blue-700">
-                      Good
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-purple-500/5 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Coffee className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm font-medium">Meditation</span>
-                    </div>
-                    <Badge variant="outline" className="bg-purple-500/10 text-purple-700">
-                      5 days streak
-                    </Badge>
-                  </div>
+                 <CardContent className="space-y-4">
+                   {progressData?.recovery?.length > 0 ? (
+                     <>
+                       <div className="flex items-center justify-between p-3 bg-green-500/5 rounded-lg">
+                         <div className="flex items-center space-x-3">
+                           <Moon className="w-4 h-4 text-green-500" />
+                           <span className="text-sm font-medium">Sleep Consistency</span>
+                         </div>
+                         <Badge variant="outline" className="bg-green-500/10 text-green-700">
+                           {progressMetrics.averageSleep > 7 ? 'Good' : 'Needs Work'}
+                         </Badge>
+                       </div>
+                       
+                       <div className="flex items-center justify-between p-3 bg-blue-500/5 rounded-lg">
+                         <div className="flex items-center space-x-3">
+                           <Heart className="w-4 h-4 text-blue-500" />
+                           <span className="text-sm font-medium">Recovery Data</span>
+                         </div>
+                         <Badge variant="outline" className="bg-blue-500/10 text-blue-700">
+                           {progressData.recovery.length} entries
+                         </Badge>
+                       </div>
+                     </>
+                   ) : (
+                     <div className="text-center py-6">
+                       <Heart className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                       <p className="text-sm text-muted-foreground mb-2">
+                         No wellness data yet
+                       </p>
+                       <p className="text-xs text-muted-foreground mb-4">
+                         Start tracking sleep, stress, and energy levels
+                       </p>
+                       <Button 
+                         size="sm" 
+                         variant="outline" 
+                         onClick={handleTrackRecovery}
+                         className="text-green-400 border-green-400"
+                       >
+                         Start Tracking
+                       </Button>
+                     </div>
+                   )}
 
                   <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
                     <div className="flex items-center space-x-2 mb-2">
@@ -765,19 +818,31 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
 
                   <Separator />
 
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Progressive Overload</span>
-                      <span className="text-sm text-muted-foreground">Optimal</span>
-                    </div>
-                    <Progress value={78} className="h-3" />
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Volume Progression</span>
-                      <span className="text-sm text-muted-foreground">+12% weekly</span>
-                    </div>
-                    <Progress value={85} className="h-3" />
-                  </div>
+                   <div className="space-y-4">
+                     {progressMetrics.totalWorkouts > 0 ? (
+                       <>
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm font-medium">Progressive Overload</span>
+                           <span className="text-sm text-muted-foreground">
+                             {progressMetrics.totalWorkouts > 10 ? 'Good Progress' : 'Getting Started'}
+                           </span>
+                         </div>
+                         <Progress value={Math.min(100, progressMetrics.totalWorkouts * 5)} className="h-3" />
+                         
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm font-medium">Training Consistency</span>
+                           <span className="text-sm text-muted-foreground">{progressMetrics.consistency}%</span>
+                         </div>
+                         <Progress value={progressMetrics.consistency} className="h-3" />
+                       </>
+                     ) : (
+                       <div className="text-center py-4">
+                         <p className="text-sm text-muted-foreground">
+                           Start logging workouts to see training science metrics
+                         </p>
+                       </div>
+                     )}
+                   </div>
 
                   <div className="mt-6 p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-xl border border-cyan-500/20">
                     <div className="flex items-center space-x-2 mb-2">

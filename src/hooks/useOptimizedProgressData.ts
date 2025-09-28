@@ -8,7 +8,7 @@ export const useOptimizedProgressData = (userId: string | null) => {
       if (!userId) return null;
       
       // Optimized queries - fetch concurrently with better error handling
-      const [workoutData, recoveryData, goalsData, profileData] = await Promise.all([
+      const [workoutData, recoveryData, goalsData, profileData, foodLogData] = await Promise.all([
         // Only fetch last 20 workouts for better calculations
         supabase
           .from('progressive_overload_entries')
@@ -37,7 +37,15 @@ export const useOptimizedProgressData = (userId: string | null) => {
           .from('profiles')
           .select('weight, height, goal, experience, body_fat_percentage')
           .eq('id', userId)
-          .single()
+          .single(),
+
+        // Fetch recent food logs
+        supabase
+          .from('food_log_entries')
+          .select('food_name, calories, protein, carbs, fat, logged_date')
+          .eq('user_id', userId)
+          .order('logged_date', { ascending: false })
+          .limit(10)
       ]);
 
       // Handle errors gracefully - don't throw, just log and return empty data
@@ -53,12 +61,16 @@ export const useOptimizedProgressData = (userId: string | null) => {
       if (profileData.error) {
         console.warn('Profile data error:', profileData.error);
       }
+      if (foodLogData.error) {
+        console.warn('Food log data error:', foodLogData.error);
+      }
 
       return {
         workouts: workoutData.data || [],
         recovery: recoveryData.data || [],
         goals: goalsData.data || [],
-        profile: profileData.data || null
+        profile: profileData.data || null,
+        foodLogs: foodLogData.data || []
       };
     },
     enabled: !!userId,

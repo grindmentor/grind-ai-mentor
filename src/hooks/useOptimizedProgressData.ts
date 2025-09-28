@@ -78,6 +78,8 @@ export const useOptimizedProgressData = (userId: string | null) => {
     gcTime: 2 * 60 * 1000, // 2 minutes cache  
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
     refetchInterval: false, // Disable auto-refetch
+    retry: 2, // Retry failed requests twice
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 };
 

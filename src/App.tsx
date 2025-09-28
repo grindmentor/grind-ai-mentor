@@ -29,6 +29,7 @@ import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
 import ModulesProvider from "@/contexts/ModulesContext";
 import { ExerciseShareProvider } from "@/contexts/ExerciseShareContext";
+import { GlobalStateProvider } from "@/contexts/GlobalStateContext";
 import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppOptimizations } from "@/components/AppOptimizations";
@@ -56,11 +57,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <PreferencesProvider>
-          <UserDataProvider>
-            <ModulesProvider>
-              <ExerciseShareProvider>
-                <TooltipProvider>
+        <GlobalStateProvider>
+          <PreferencesProvider>
+            <UserDataProvider>
+              <ModulesProvider>
+                <ExerciseShareProvider>
+                  <TooltipProvider>
                   <AppOptimizations />
                   <Toaster />
                   <Sonner />
@@ -160,7 +162,8 @@ function App() {
             </ModulesProvider>
           </UserDataProvider>
         </PreferencesProvider>
-      </AuthProvider>
+      </GlobalStateProvider>
+    </AuthProvider>
     </QueryClientProvider>
   );
 }

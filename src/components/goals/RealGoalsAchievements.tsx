@@ -6,6 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { Target, Trophy, Calendar, Plus, TrendingUp, Weight, Flame, Activity, Edit, Trash2, Repeat, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { useAppSync } from '@/utils/appSynchronization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { GoalCreationModal } from './GoalCreationModal';
@@ -40,14 +42,19 @@ interface Achievement {
 const RealGoalsAchievements = () => {
   const { user } = useAuth();
   const { preferences } = usePreferences();
+  const { state, actions } = useGlobalState();
+  const { on, off, emit, getCache, setCache, invalidateCache } = useAppSync();
+  
   const [goals, setGoals] = useState<Goal[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [activeTab, setActiveTab] = useState<'goals' | 'achievements'>('goals');
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+
+  // Sync with global loading state
+  const loading = state.loading.goals || state.loading.achievements;
 
   useEffect(() => {
     if (user && !initialLoadComplete) {
@@ -55,14 +62,44 @@ const RealGoalsAchievements = () => {
     }
   }, [user, initialLoadComplete]);
 
+  // Listen for real-time updates and data refresh events
+  useEffect(() => {
+    const handleDataRefresh = () => {
+      if (user) {
+        loadGoalsAndAchievements();
+      }
+    };
+
+    on('goals:refresh', handleDataRefresh);
+    on('achievements:refresh', handleDataRefresh);
+    on('realtime:user-goals', handleDataRefresh);
+    on('realtime:user-achievements', handleDataRefresh);
+
+    return () => {
+      off('goals:refresh', handleDataRefresh);
+      off('achievements:refresh', handleDataRefresh);
+      off('realtime:user-goals', handleDataRefresh);
+      off('realtime:user-achievements', handleDataRefresh);
+    };
+  }, [user, on, off]);
+
   const loadGoalsAndAchievements = async () => {
     if (!user) return;
 
+    // Check cache first
+    const cacheKey = `user-${user.id}-goals-achievements`;
+    const cached = getCache(cacheKey);
+    if (cached && !state.dataStale.goals && !state.dataStale.achievements) {
+      setGoals(cached.goals || []);
+      setAchievements(cached.achievements || []);
+      setInitialLoadComplete(true);
+      return;
+    }
+
     try {
-      // Only show loading state for initial load, not refreshes
-      if (!initialLoadComplete) {
-        setLoading(true);
-      }
+      // Set loading state
+      actions.setLoading('goals', true);
+      actions.setLoading('achievements', true);
       
       // Load goals with better error handling
       const { data: goalsData, error: goalsError } = await supabase
@@ -73,9 +110,11 @@ const RealGoalsAchievements = () => {
 
       if (goalsError) {
         console.error('Error loading goals:', goalsError);
+        actions.setError('goals', 'Failed to load goals');
         setGoals([]);
       } else {
         setGoals(goalsData || []);
+        actions.setError('goals', null);
       }
 
       // Load achievements with better error handling
@@ -87,24 +126,42 @@ const RealGoalsAchievements = () => {
 
       if (achievementsError) {
         console.error('Error loading achievements:', achievementsError);
+        actions.setError('achievements', 'Failed to load achievements');
         setAchievements([]);
       } else {
         setAchievements(achievementsData || []);
+        actions.setError('achievements', null);
       }
+
+      // Cache the results
+      setCache(cacheKey, {
+        goals: goalsData || [],
+        achievements: achievementsData || []
+      });
+
+      // Mark data as fresh
+      actions.setDataStale('goals', false);
+      actions.setDataStale('achievements', false);
+      
     } catch (error) {
       console.error('Unexpected error loading goals and achievements:', error);
+      actions.setError('global', 'Failed to load data');
       setGoals([]);
       setAchievements([]);
     } finally {
-      setLoading(false);
+      actions.setLoading('goals', false);
+      actions.setLoading('achievements', false);
       setInitialLoadComplete(true);
     }
   };
 
   const handleGoalCreated = () => {
+    // Invalidate cache and reload data
+    invalidateCache(`user-${user?.id}-goals-achievements`);
     loadGoalsAndAchievements();
     setShowGoalModal(false);
     setEditingGoal(null);
+    emit('goals:updated'); // Notify other components
   };
 
   const handleDeleteGoal = async (goalId: string) => {
@@ -119,15 +176,19 @@ const RealGoalsAchievements = () => {
       if (error) throw error;
 
       setGoals(prev => prev.filter(goal => goal.id !== goalId));
+      invalidateCache(`user-${user?.id}-goals-achievements`);
+      emit('goals:updated');
       toast.success('Goal deleted successfully');
     } catch (error) {
       console.error('Error deleting goal:', error);
       toast.error('Failed to delete goal');
+      actions.setError('goals', 'Failed to delete goal');
     }
   };
 
   const handleEditGoal = (goal: Goal) => {
     setEditingGoal(goal);
+    actions.openModal('goal-creation-modal');
     setShowGoalModal(true);
   };
 
@@ -201,9 +262,9 @@ const RealGoalsAchievements = () => {
       <Card className="bg-card border-border">
         <CardContent className="p-6">
           <div className="space-y-4">
-            <div className="h-4 bg-muted rounded w-1/4"></div>
-            <div className="h-8 bg-muted rounded"></div>
-            <div className="h-4 bg-muted rounded w-3/4"></div>
+            <div className="h-4 bg-muted rounded w-1/4 animate-pulse"></div>
+            <div className="h-8 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
           </div>
         </CardContent>
       </Card>

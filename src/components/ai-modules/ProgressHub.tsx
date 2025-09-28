@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { useAppSync } from '@/utils/appSynchronization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -145,6 +147,8 @@ const TabContentSkeleton = () => (
 
 export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }) {
   const { user } = useAuth();
+  const { state, actions } = useGlobalState();
+  const { on, off, emit, invalidateCache } = useAppSync();
   const navigate = useNavigate();
   const { data: progressData, isLoading, error } = useOptimizedProgressData(user?.id || null);
   const [activeTab, setActiveTab] = useState("overview");

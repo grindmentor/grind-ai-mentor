@@ -324,7 +324,7 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-gray-900 border-gray-700 text-white w-[95vw] max-w-2xl max-h-[95vh] mx-auto my-4 overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-white">
             {editingGoal ? 'Edit Goal' : 'Create New Goal'}

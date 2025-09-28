@@ -182,7 +182,7 @@ const ScientificStudies = () => {
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-white fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] z-50">
+      <DialogContent className="w-[95vw] max-w-4xl mx-auto max-h-[95vh] overflow-y-auto bg-gray-900/95 backdrop-blur-md border-gray-700/50 text-white">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-white flex items-center">
             <BookOpen className="w-6 h-6 mr-3 text-blue-400" />

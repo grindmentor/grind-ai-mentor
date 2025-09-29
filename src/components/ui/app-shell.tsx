@@ -78,7 +78,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   return <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
       {/* Persistent Top Navigation */}
       <motion.header 
-        className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/40 safe-area-top" 
+        className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm safe-area-top"
         initial={{ y: -100 }} 
         animate={{ y: 0 }} 
         transition={{ type: "spring", stiffness: 300, damping: 30 }}

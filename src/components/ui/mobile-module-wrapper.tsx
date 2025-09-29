@@ -22,7 +22,7 @@ export const MobileModuleWrapper: React.FC<MobileModuleWrapperProps> = ({
   return (
     <div className={`min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white ${className}`}>
       {/* Mobile-optimized header with back button above title */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md border-b border-gray-800/50">
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md">
         <div className="px-4 py-3 sm:px-6 sm:py-4">
           {/* Back button positioned above title on mobile */}
           <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center space-x-4'}`}>

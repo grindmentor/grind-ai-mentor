@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { RealisticMuscleMap } from "@/components/ui/realistic-muscle-map";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SmartLoading } from "@/components/ui/smart-loading";
 import { useOptimizedProgressData, useMuscleGroupProgress } from '@/hooks/useOptimizedProgressData';
 import { ProgressMetrics } from '@/components/progress/ProgressMetrics';
 import { BackButton } from '@/components/ui/back-button';
@@ -390,7 +391,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                   <CardDescription>Upcoming training sessions</CardDescription>
                 </CardHeader>
                  <CardContent className="space-y-3">
-                   {progressData?.workouts?.length > 0 ? (
+                   {isLoading ? (
+                     <div className="py-6">
+                       <SmartLoading message="Loading schedule..." type="processing" size="md" />
+                     </div>
+                   ) : progressData?.workouts?.length > 0 ? (
                      <div className="text-center py-6">
                        <Activity className="w-8 h-8 mx-auto mb-2 text-indigo-500" />
                        <p className="text-sm text-muted-foreground mb-2">
@@ -467,15 +472,21 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                      <CardDescription>Track your daily nutrition intake</CardDescription>
                    </CardHeader>
                    <CardContent className="space-y-4">
-                     <div className="text-center py-6">
-                       <Scale className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                       <p className="text-sm text-muted-foreground mb-2">
-                         No nutrition data yet
-                       </p>
-                       <p className="text-xs text-muted-foreground">
-                         Start logging food to see your nutrition progress
-                       </p>
-                     </div>
+                     {isLoading ? (
+                       <div className="py-6">
+                         <SmartLoading message="Loading nutrition..." type="processing" size="md" />
+                       </div>
+                     ) : (
+                       <div className="text-center py-6">
+                         <Scale className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                         <p className="text-sm text-muted-foreground mb-2">
+                           No nutrition data yet
+                         </p>
+                         <p className="text-xs text-muted-foreground">
+                           Start logging food to see your nutrition progress
+                         </p>
+                       </div>
+                     )}
                    </CardContent>
                  </Card>
                )}
@@ -640,7 +651,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                   <Separator />
 
                    <div className="space-y-4">
-                     {progressData?.recovery?.length > 0 ? (
+                     {isLoading ? (
+                       <div className="py-4">
+                         <SmartLoading message="Loading recovery metrics..." type="analysis" size="md" />
+                       </div>
+                     ) : progressData?.recovery?.length > 0 ? (
                        <>
                          <div className="flex justify-between items-center">
                            <span className="text-sm font-medium">Energy Levels</span>
@@ -685,7 +700,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                    <CardDescription>Daily habits supporting your mental health</CardDescription>
                  </CardHeader>
                  <CardContent className="space-y-4">
-                   {progressData?.recovery?.length > 0 ? (
+                   {isLoading ? (
+                     <div className="py-6">
+                       <SmartLoading message="Loading wellness data..." type="analysis" size="md" />
+                     </div>
+                   ) : progressData?.recovery?.length > 0 ? (
                      <>
                        <div className="flex items-center justify-between p-3 bg-green-500/5 rounded-lg">
                          <div className="flex items-center space-x-3">
@@ -797,7 +816,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                   <Separator />
 
                    <div className="space-y-4">
-                     {progressMetrics.totalWorkouts > 0 ? (
+                     {isLoading ? (
+                       <div className="py-4">
+                         <SmartLoading message="Loading training metrics..." type="analysis" size="md" />
+                       </div>
+                     ) : progressMetrics.totalWorkouts > 0 ? (
                        <>
                          <div className="flex justify-between items-center">
                            <span className="text-sm font-medium">Progressive Overload</span>
@@ -871,29 +894,33 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-muted-foreground">Recent Achievements</h4>
-                    {progressMetrics.totalWorkouts > 0 ? (
-                      <>
-                        <div className="flex items-center space-x-3 p-2 bg-green-500/5 rounded-lg">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-sm">Completed {progressMetrics.totalWorkouts} training sessions</span>
-                        </div>
-                        {progressMetrics.consistency > 70 && (
-                          <div className="flex items-center space-x-3 p-2 bg-blue-500/5 rounded-lg">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-sm">Maintaining {progressMetrics.consistency}% training consistency</span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No training data yet</p>
-                        <p className="text-xs">Start logging workouts to see analytics</p>
-                      </div>
-                    )}
-                  </div>
+                   <div className="space-y-3">
+                     <h4 className="text-sm font-medium text-muted-foreground">Recent Achievements</h4>
+                     {isLoading ? (
+                       <div className="py-4">
+                         <SmartLoading message="Loading achievements..." type="processing" size="md" />
+                       </div>
+                     ) : progressMetrics.totalWorkouts > 0 ? (
+                       <>
+                         <div className="flex items-center space-x-3 p-2 bg-green-500/5 rounded-lg">
+                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                           <span className="text-sm">Completed {progressMetrics.totalWorkouts} training sessions</span>
+                         </div>
+                         {progressMetrics.consistency > 70 && (
+                           <div className="flex items-center space-x-3 p-2 bg-blue-500/5 rounded-lg">
+                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                             <span className="text-sm">Maintaining {progressMetrics.consistency}% training consistency</span>
+                           </div>
+                         )}
+                       </>
+                     ) : (
+                       <div className="text-center py-4 text-muted-foreground">
+                         <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                         <p className="text-sm">No training data yet</p>
+                         <p className="text-xs">Start logging workouts to see analytics</p>
+                       </div>
+                     )}
+                   </div>
                 </CardContent>
               </Card>
             </div>

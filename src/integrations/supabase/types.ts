@@ -1134,9 +1134,11 @@ export type Database = {
           food_photo_analyses: number | null
           habit_checks: number | null
           id: string
+          last_physique_analysis: string | null
           meal_plan_generations: number | null
           month_year: string
           photo_uploads: number | null
+          physique_analyses: number | null
           progress_analyses: number | null
           tdee_calculations: number | null
           training_programs: number | null
@@ -1152,9 +1154,11 @@ export type Database = {
           food_photo_analyses?: number | null
           habit_checks?: number | null
           id?: string
+          last_physique_analysis?: string | null
           meal_plan_generations?: number | null
           month_year: string
           photo_uploads?: number | null
+          physique_analyses?: number | null
           progress_analyses?: number | null
           tdee_calculations?: number | null
           training_programs?: number | null
@@ -1170,9 +1174,11 @@ export type Database = {
           food_photo_analyses?: number | null
           habit_checks?: number | null
           id?: string
+          last_physique_analysis?: string | null
           meal_plan_generations?: number | null
           month_year?: string
           photo_uploads?: number | null
+          physique_analyses?: number | null
           progress_analyses?: number | null
           tdee_calculations?: number | null
           training_programs?: number | null

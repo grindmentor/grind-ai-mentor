@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import backAnatomyImage from '@/assets/realistic-muscle-anatomy.jpg';
 
 interface RealisticMuscleMapProps {
@@ -14,6 +14,14 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
   muscleGroups, 
   viewMode = 'front' 
 }) => {
+  // Memoize muscle score calculations
+  const muscleScoreMap = useMemo(() => {
+    const map = new Map<string, number>();
+    muscleGroups.forEach(muscle => {
+      map.set(muscle.name.toLowerCase(), muscle.score);
+    });
+    return map;
+  }, [muscleGroups]);
   const getMuscleColor = (score: number): string => {
     if (score >= 90) return 'hsl(271 100% 50%)'; // Elite - Purple
     if (score >= 80) return 'hsl(262 83% 58%)'; // Expert - Blue Purple  
@@ -35,11 +43,14 @@ const RealisticMuscleMapComponent: React.FC<RealisticMuscleMapProps> = ({
   };
 
   const getMuscleScore = (muscleName: string): number => {
-    const muscle = muscleGroups.find(m => 
-      m.name.toLowerCase().includes(muscleName.toLowerCase()) ||
-      muscleName.toLowerCase().includes(m.name.toLowerCase())
-    );
-    return muscle?.score || 0;
+    const lowerName = muscleName.toLowerCase();
+    // Fast lookup from pre-computed map
+    for (const [key, value] of muscleScoreMap) {
+      if (key.includes(lowerName) || lowerName.includes(key)) {
+        return value;
+      }
+    }
+    return 0;
   };
 
   const getMuscleOpacity = (score: number): number => {

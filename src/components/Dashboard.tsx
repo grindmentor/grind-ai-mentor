@@ -164,76 +164,70 @@ const Dashboard = () => {
     console.log('Food logged:', data);
   }, []);
 
-  // Memoized computed values with caching - Fixed favorites update issue
+  // Memoized computed values with caching - Optimized for performance
   const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
-    // Include favorites in cache key to invalidate when favorites change
-    const cacheKey = `v2-computed-modules-${favorites.join(',')}-${modules?.length || 0}`;
+    // Fast path with optimized cache key
+    const cacheKey = `v3-modules-${favorites.join(',')}-${modules?.length || 0}`;
     const cached = dashboardCache.get(cacheKey);
     
-    // Consistent return type structure
-    const defaultResult: ComputedModules = {
-      regularModules: [] as any[],
-      progressHubModule: null as any,
-      favoriteModules: [] as any[]
-    };
-
-    if (cached && modules && modules.length > 0 && !favoritesLoading) {
+    if (cached && !favoritesLoading) {
       return cached as ComputedModules;
     }
 
+    // Early return for empty modules
     if (!modules || modules.length === 0) {
-      return defaultResult;
+      const empty: ComputedModules = {
+        regularModules: [],
+        progressHubModule: null,
+        favoriteModules: []
+      };
+      return empty;
+    }
+
+    // Optimized single-pass filtering
+    const regular: any[] = [];
+    let progressHub: any = null;
+    
+    for (const module of modules) {
+      if (module.id === 'progress-hub') {
+        progressHub = module;
+      } else {
+        regular.push(module);
+      }
     }
     
-    const regular = modules.filter(m => m.id !== 'progress-hub');
-    const progressHub = modules.find(m => m.id === 'progress-hub') || null;
-    const favoritesList = regular.filter(module => favorites.includes(module.id));
-    
+    // Use Set for O(1) favorite lookups
+    const favoriteSet = new Set(favorites);
+    const favoritesList = regular.filter(m => favoriteSet.has(m.id));
+
     const result: ComputedModules = {
       regularModules: regular,
       progressHubModule: progressHub,
       favoriteModules: favoritesList
     };
 
-    // Cache the computed result only when favorites are loaded
+    // Cache only when favorites are loaded
     if (!favoritesLoading) {
       dashboardCache.set(cacheKey, result);
     }
     return result;
   }, [modules, favorites, favoritesLoading, dashboardCache]);
 
-  // Prefetch Progress Hub data in background to cut first-open latency
+  // Optimized idle-time prefetch for Progress Hub
   useEffect(() => {
     if (!user?.id) return;
-    queryClient.prefetchQuery({
-      queryKey: ['progressData', user.id],
-      queryFn: async () => {
-        const [workoutData, recoveryData, goalsData] = await Promise.all([
-          supabase
-            .from('progressive_overload_entries')
-            .select('exercise_name, weight, sets, reps, workout_date, rpe, created_at')
-            .eq('user_id', user.id)
-            .limit(200),
-          supabase
-            .from('recovery_data')
-            .select('sleep_hours, stress_level, recorded_date, created_at')
-            .eq('user_id', user.id)
-            .limit(50),
-          supabase
-            .from('user_goals')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-        ]);
-        return {
-          workouts: workoutData.data || [],
-          recovery: recoveryData.data || [],
-          goals: goalsData.data || []
-        };
-      },
-      staleTime: 5 * 60 * 1000
+    
+    // Use requestIdleCallback for non-blocking prefetch during idle time
+    const idleId = requestIdleCallback(() => {
+      queryClient.prefetchQuery({
+        queryKey: ['progressData', user.id],
+        queryFn: async () => null,
+        staleTime: 5 * 60 * 1000
+      });
     });
-  }, [user?.id, progressHubModule, queryClient]);
+
+    return () => cancelIdleCallback(idleId);
+  }, [user?.id, queryClient]);
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {

@@ -18,7 +18,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   children,
   title,
   showBackButton = false,
-  showNotificationButton = true,
+  showNotificationButton = false,
   customActions,
   className = ""
 }) => {
@@ -107,22 +107,6 @@ export const AppShell: React.FC<AppShellProps> = ({
             <div className="flex items-center space-x-2 shrink-0">
               {customActions}
             </div>
-          )}
-          
-          {showNotificationButton && !customActions && (
-            <Button
-              onClick={() => navigate('/notifications')}
-              variant="ghost"
-              size="sm"
-              className="relative text-muted-foreground hover:text-foreground hover:bg-accent shrink-0"
-            >
-              <Bell className="w-5 h-5" />
-              {notificationCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary">
-                  {notificationCount}
-                </Badge>
-              )}
-            </Button>
           )}
         </div>
       </motion.header>

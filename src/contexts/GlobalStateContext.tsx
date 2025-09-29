@@ -28,6 +28,10 @@ interface GlobalState {
     achievements: boolean;
     progress: boolean;
     notifications: boolean;
+    coach: boolean;
+    mealPlans: boolean;
+    workouts: boolean;
+    nutrition: boolean;
   };
   
   // Error state
@@ -68,6 +72,10 @@ const initialState: GlobalState = {
     achievements: false,
     progress: false,
     notifications: false,
+    coach: false,
+    mealPlans: false,
+    workouts: false,
+    nutrition: false,
   },
   errors: {},
   isOnline: navigator.onLine,

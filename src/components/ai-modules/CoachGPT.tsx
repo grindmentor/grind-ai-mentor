@@ -11,6 +11,9 @@ import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { handleAsync } from '@/utils/errorHandler';
+import { useAppSync } from '@/utils/appSynchronization';
 
 interface Message {
   id: string;
@@ -27,6 +30,8 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { optimizedSettings } = usePerformanceContext();
+  const { state, actions } = useGlobalState();
+  const { getCache, setCache, invalidateCache } = useAppSync();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -51,18 +56,25 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const loadConversationHistory = async () => {
     if (!user) return;
 
+    // Check cache first
+    const cacheKey = `coach-conversations-${user.id}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      setMessages(cached);
+      return;
+    }
+
+    actions.setLoading('coach', true);
+    
     try {
       const { data, error } = await supabase
         .from('coach_conversations')
         .select('id, message_role, message_content, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true })
-        .limit(optimizedSettings.lowDataMode ? 10 : 20); // Connection-aware limit
+        .limit(optimizedSettings.lowDataMode ? 10 : 20);
 
-      if (error) {
-        console.error('Error loading conversation:', error);
-        return;
-      }
+      if (error) throw error;
 
       const conversationMessages = data?.map(msg => ({
         id: msg.id,
@@ -70,10 +82,13 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         content: msg.message_content,
         timestamp: new Date(msg.created_at)
       })) || [];
-
+      
       setMessages(conversationMessages);
+      setCache(cacheKey, conversationMessages, 300000);
     } catch (error) {
-      console.error('Error loading conversation:', error);
+      console.error('Error loading conversations:', error);
+    } finally {
+      actions.setLoading('coach', false);
     }
   };
 

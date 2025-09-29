@@ -14,6 +14,9 @@ import FoodEntryModal from './FoodEntryModal';
 import { Trash2 } from 'lucide-react';
 import FooterLinks from '@/components/dashboard/FooterLinks';
 import { usdaFoodService } from '@/services/usdaFoodService';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { handleAsync } from '@/utils/errorHandler';
+import { useAppSync } from '@/utils/appSynchronization';
 
 interface FoodEntry {
   id: string;
@@ -35,6 +38,8 @@ interface SmartFoodLogProps {
 export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { actions } = useGlobalState();
+  const { getCache, setCache, invalidateCache, emit } = useAppSync();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -152,6 +157,10 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       setSearchResults([]);
       setSearchError(null);
       setNoResultsMessage(null);
+      
+      // Invalidate related caches
+      invalidateCache(`food-log-${user.id}`);
+      emit('nutrition:updated', user.id);
       
       toast({
         title: 'Food Saved! 🥗',

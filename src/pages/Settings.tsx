@@ -12,11 +12,15 @@ import { PageTransition } from '@/components/ui/page-transition';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { useAppSync } from '@/utils/appSynchronization';
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { actions } = useGlobalState();
+  const { invalidateCache } = useAppSync();
   const [activeTab, setActiveTab] = useState('units');
 
   const tabs = [
@@ -29,6 +33,10 @@ const Settings = () => {
 
   const handleLogout = async () => {
     try {
+      // Clear all caches and state
+      invalidateCache('.*');
+      actions.closeAllModals();
+      
       await supabase.auth.signOut();
       navigate('/');
     } catch (error) {

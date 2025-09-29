@@ -26,6 +26,9 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
 import { useUserUnits } from '@/hooks/useUserUnits';
 import WorkoutTemplateSelector from './WorkoutTemplateSelector';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { handleAsync } from '@/utils/errorHandler';
+import { useAppSync } from '@/utils/appSynchronization';
 
 interface WorkoutSet {
   weight: string | number;
@@ -46,6 +49,8 @@ interface WorkoutLoggerAIProps {
 const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const { user } = useAuth();
   const { units } = useUserUnits();
+  const { actions } = useGlobalState();
+  const { getCache, setCache, invalidateCache, emit } = useAppSync();
   const [activeTab, setActiveTab] = useState('current');
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [workoutName, setWorkoutName] = useState('');
@@ -285,6 +290,14 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       setWorkoutName('');
       setWorkoutNotes('');
       setStartTime(Date.now());
+      
+      // Invalidate related caches
+      invalidateCache(`workout-sessions-${user.id}`);
+      invalidateCache(`progress-data`);
+      
+      // Emit events for other components
+      emit('workouts:updated', user.id);
+      emit('progress:updated', user.id);
       
       toast.success(`Workout "${workoutName}" logged successfully!`);
       

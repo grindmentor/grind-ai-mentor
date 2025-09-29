@@ -16,6 +16,9 @@ import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FeatureGate from '@/components/FeatureGate';
 import { DietCuesDisplay } from './DietCuesDisplay';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { handleAsync } from '@/utils/errorHandler';
+import { useAppSync } from '@/utils/appSynchronization';
 
 interface MealPlanAIProps {
   onBack: () => void;
@@ -25,6 +28,8 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { incrementUsage } = useUsageTracking();
+  const { actions } = useGlobalState();
+  const { getCache, setCache, invalidateCache } = useAppSync();
   const [isGenerating, setIsGenerating] = useState(false);
   const [planData, setPlanData] = useState({
     goal: '',
@@ -47,6 +52,13 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const loadSavedPlans = async () => {
     if (!user) return;
 
+    const cacheKey = `meal-plans-${user.id}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      setSavedPlans(cached);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('meal_plans')
@@ -56,7 +68,9 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
         .limit(5);
 
       if (error) throw error;
+
       setSavedPlans(data || []);
+      setCache(cacheKey, data || [], 300000);
     } catch (error) {
       console.error('Error loading meal plans:', error);
     }

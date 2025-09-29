@@ -135,10 +135,11 @@ export const aiModules: AIModule[] = [
   {
     id: 'physique-ai',
     title: 'Physique AI',
-    description: 'BETA: AI physique analysis - may not work consistently',
+    description: 'AI-powered physique analysis with weekly insights',
     icon: Camera,
     gradient: 'from-slate-600/80 to-indigo-800/90 border-slate-500/60',
     component: ProgressAI,
-    isPremium: true
+    isPremium: true,
+    isNew: false
   }
 ];

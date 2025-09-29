@@ -1,7 +1,6 @@
-
-// Re-export optimized AI service for backward compatibility
+// Re-export unified AI service for backward compatibility
 export { 
-  optimizedAiService as aiService, 
-  getOptimizedAIResponse as getAIResponse, 
-  getOptimizedAIResponse as getCoachingAdvice 
-} from './optimizedAiService';
+  aiService, 
+  getAIResponse, 
+  getCoachingAdvice 
+} from './unifiedAiService';

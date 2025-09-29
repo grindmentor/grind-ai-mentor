@@ -8,7 +8,7 @@ const CRITICAL_COMPONENTS = [
   () => import('@/components/ai-modules/WorkoutLoggerAI'),
   () => import('@/components/ai-modules/ProgressHub'),
   () => import('@/components/ai-modules/SmartFoodLog'),
-  () => import('@/components/ai-modules/PhysiqueAI'),
+  () => import('@/components/ai-modules/ProgressAI'),
   () => import('@/components/ai-modules/TDEECalculator'),
   () => import('@/pages/Settings'),
   () => import('@/pages/Profile')
@@ -78,7 +78,7 @@ export const useModulePreloader = () => {
       'workout-logger': () => import('@/components/ai-modules/WorkoutLoggerAI'),
       'progress-hub': () => import('@/components/ai-modules/ProgressHub'),
       'food-log': () => import('@/components/ai-modules/SmartFoodLog'),
-      'physique-ai': () => import('@/components/ai-modules/PhysiqueAI'),
+      'physique-ai': () => import('@/components/ai-modules/ProgressAI'),
       'tdee-calculator': () => import('@/components/ai-modules/TDEECalculator'),
       'meal-plan-ai': () => import('@/components/ai-modules/MealPlanAI'),
       'recovery-coach': () => import('@/components/ai-modules/RecoveryCoachAI'),

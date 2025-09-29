@@ -40,15 +40,15 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-card/95 backdrop-blur-md border-border text-card-foreground w-screen h-screen sm:w-[90vw] sm:h-auto sm:max-w-2xl sm:max-h-[85vh] overflow-y-auto sm:rounded-xl p-0">
+      <DialogContent className="bg-card/95 backdrop-blur-md border-border text-card-foreground p-0 sm:max-w-2xl">
         <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl sm:text-2xl font-bold">
+            <DialogTitle className="text-xl sm:text-2xl font-bold pr-8">
               {exercise.name}
             </DialogTitle>
           </DialogHeader>
         </div>
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 pb-safe">
           <div className="space-y-6">
           {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">

@@ -91,15 +91,15 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-card/95 backdrop-blur-md border-border text-card-foreground w-screen h-screen sm:w-[90vw] sm:h-auto sm:max-w-3xl sm:max-h-[85vh] overflow-y-auto sm:rounded-xl p-0">
+      <DialogContent className="bg-card/95 backdrop-blur-md border-border text-card-foreground p-0">
         <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl sm:text-2xl font-bold">
+            <DialogTitle className="text-xl sm:text-2xl font-bold pr-8">
               {workout.title}
             </DialogTitle>
           </DialogHeader>
         </div>
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 pb-safe">
           <div className="space-y-6">
           {/* Workout Info */}
           <div className="flex flex-wrap gap-3">

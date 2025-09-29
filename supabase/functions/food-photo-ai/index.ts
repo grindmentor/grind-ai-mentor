@@ -144,7 +144,7 @@ If you cannot clearly identify foods or the image is unclear, return:
       }
 
       // Additional validation for food items
-      analysisResult.foodsDetected = analysisResult.foodsDetected.filter(food => 
+      analysisResult.foodsDetected = analysisResult.foodsDetected.filter((food: any) =>
         food.name && 
         food.quantity && 
         typeof food.calories === 'number' &&

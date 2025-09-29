@@ -64,9 +64,10 @@ serve(async (req) => {
       console.log('Request body received:', { type: requestBody.type, hasUserInput: !!requestBody.userInput });
     } catch (error) {
       console.error('Error parsing request body:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Invalid JSON';
       return new Response(JSON.stringify({ 
         error: 'Invalid JSON in request body',
-        details: error.message
+        details: errorMessage
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -414,9 +415,10 @@ DEFAULT RECOMMENDATIONS:
     });
   } catch (error) {
     console.error('Error in fitness-ai function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      details: error.message || 'An unexpected error occurred'
+      details: errorMessage
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

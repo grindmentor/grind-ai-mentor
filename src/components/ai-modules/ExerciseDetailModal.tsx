@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { X, Target, Dumbbell, Clock, AlertCircle } from 'lucide-react';
+import { Target, Dumbbell, Clock, AlertCircle } from 'lucide-react';
 
 interface Exercise {
   id: string;
@@ -40,21 +40,11 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white w-[96vw] max-w-2xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border text-card-foreground w-[96vw] max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-white pr-8">
-              {exercise.name}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="text-gray-400 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-bold">
+            {exercise.name}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">

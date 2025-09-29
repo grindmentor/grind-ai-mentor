@@ -56,8 +56,9 @@ const WorkoutLogger = () => {
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutSession[]>([]);
   const [selectedExercise, setSelectedExercise] = useState('');
   const [customExerciseName, setCustomExerciseName] = useState('');
+  const [savedExercises, setSavedExercises] = useState<string[]>([]);
 
-  // Popular exercises list
+  // Popular exercises list (fallback)
   const popularExercises = [
     'Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Barbell Row',
     'Pull-ups', 'Dips', 'Incline Bench Press', 'Romanian Deadlift', 'Lat Pulldown',
@@ -65,7 +66,10 @@ const WorkoutLogger = () => {
   ];
 
   useEffect(() => {
-    loadRecentWorkouts();
+    if (user) {
+      loadRecentWorkouts();
+      loadSavedExercises();
+    }
   }, [user]);
 
   useEffect(() => {
@@ -89,6 +93,25 @@ const WorkoutLogger = () => {
       setRecentWorkouts(data || []);
     } catch (error) {
       console.error('Error loading workouts:', error);
+    }
+  };
+
+  const loadSavedExercises = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_saved_exercises')
+        .select('name')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const exerciseNames = data?.map(e => e.name) || [];
+      setSavedExercises(exerciseNames);
+    } catch (error) {
+      console.error('Error loading saved exercises:', error);
     }
   };
 
@@ -363,6 +386,24 @@ const WorkoutLogger = () => {
                           <SelectValue placeholder="Select exercise" />
                         </SelectTrigger>
                         <SelectContent>
+                          {savedExercises.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                                Your Saved Exercises
+                              </div>
+                              {savedExercises.map((exercise) => (
+                                <SelectItem key={`saved-${exercise}`} value={exercise}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                    {exercise}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1 pt-2">
+                                Popular Exercises
+                              </div>
+                            </>
+                          )}
                           {popularExercises.map((exercise) => (
                             <SelectItem key={exercise} value={exercise}>
                               {exercise}

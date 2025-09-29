@@ -40,6 +40,9 @@ const WorkoutDetail = () => {
   const [workout, setWorkout] = useState<WorkoutTemplate | null>(null);
 
   useEffect(() => {
+    // Scroll to top when page loads
+    window.scrollTo(0, 0);
+    
     const workoutData = location.state?.workout;
     if (!workoutData) {
       navigate('/blueprint-ai');

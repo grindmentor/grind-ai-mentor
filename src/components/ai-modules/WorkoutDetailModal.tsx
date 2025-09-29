@@ -91,14 +91,16 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border text-card-foreground w-[96vw] max-w-3xl max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            {workout.title}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6">
+      <DialogContent className="bg-card/95 backdrop-blur-md border-border text-card-foreground w-screen h-screen sm:w-[90vw] sm:h-auto sm:max-w-3xl sm:max-h-[85vh] overflow-y-auto sm:rounded-xl p-0">
+        <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl sm:text-2xl font-bold">
+              {workout.title}
+            </DialogTitle>
+          </DialogHeader>
+        </div>
+        <div className="p-4 sm:p-6">
+          <div className="space-y-6">
           {/* Workout Info */}
           <div className="flex flex-wrap gap-3">
             <Badge className={getDifficultyColor(workout.difficulty)}>
@@ -197,6 +199,7 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
               ))}
             </div>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

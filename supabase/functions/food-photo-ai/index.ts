@@ -113,8 +113,8 @@ If you cannot clearly identify foods or the image is unclear, return:
             ]
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.1 // Low temperature for consistent results
+        max_completion_tokens: 1000
+        // Note: temperature parameter is NOT supported for GPT-4.1+ models
       }),
     });
 

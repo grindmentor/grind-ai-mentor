@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +11,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { expandedWorkoutTemplates } from '@/data/expandedWorkoutTemplates';
-import { WorkoutDetailModal } from '@/components/ai-modules/WorkoutDetailModal';
-import { ExerciseDetailModal } from '@/components/ai-modules/ExerciseDetailModal';
 
 interface Exercise {
   id: string;
@@ -42,6 +41,7 @@ interface BlueprintAIProps {
 }
 
 const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,8 +49,6 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
   const [workouts, setWorkouts] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutTemplate | null>(null);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -264,7 +262,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                       </div>
 
                       <Button
-                        onClick={() => setSelectedWorkout(workout)}
+                        onClick={() => navigate('/workout-detail', { state: { workout } })}
                         className="w-full bg-primary text-primary-foreground hover:bg-primary/90 border-0 font-medium"
                       >
                         <Eye className="w-4 h-4 mr-2" />
@@ -389,7 +387,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                         {workout.exercises.slice(0, 2).map((exercise, index) => (
                           <button
                             key={index}
-                            onClick={() => setSelectedExercise(exercise)}
+                            onClick={() => navigate('/exercise-detail', { state: { exercise } })}
                             className="w-full text-left p-3 bg-accent/10 rounded-lg text-sm text-accent-foreground hover:bg-accent/20 transition-colors border border-accent/20 hover:border-accent/40"
                           >
                             <span className="font-medium">{exercise.name}</span>
@@ -404,7 +402,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                       </div>
 
                       <Button
-                        onClick={() => setSelectedWorkout(workout)}
+                        onClick={() => navigate('/workout-detail', { state: { workout } })}
                         className="w-full bg-primary/20 hover:bg-primary/30 text-primary-foreground border border-primary/20 hover:border-primary/40 font-medium transition-all"
                       >
                         <Eye className="w-4 h-4 mr-2" />
@@ -418,22 +416,6 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
           </div>
         </div>
       </div>
-
-      {/* Workout Detail Modal */}
-      {selectedWorkout && (
-        <WorkoutDetailModal
-          workout={selectedWorkout}
-          onClose={() => setSelectedWorkout(null)}
-        />
-      )}
-
-      {/* Exercise Detail Modal */}
-      {selectedExercise && (
-        <ExerciseDetailModal
-          exercise={selectedExercise}
-          onClose={() => setSelectedExercise(null)}
-        />
-      )}
     </MobileModuleWrapper>
   );
 };

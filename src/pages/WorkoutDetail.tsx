@@ -1,5 +1,6 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { AppShell } from '@/components/ui/app-shell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Target, Timer, Dumbbell } from 'lucide-react';
@@ -31,23 +32,26 @@ interface WorkoutTemplate {
   color: string;
 }
 
-interface WorkoutDetailModalProps {
-  workout: WorkoutTemplate;
-  onClose: () => void;
-}
-
-export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
-  workout,
-  onClose
-}) => {
+const WorkoutDetail = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [workout, setWorkout] = useState<WorkoutTemplate | null>(null);
+
+  useEffect(() => {
+    const workoutData = location.state?.workout;
+    if (!workoutData) {
+      navigate('/blueprint-ai');
+      return;
+    }
+    setWorkout(workoutData);
+  }, [location, navigate]);
 
   const addExerciseToSavedList = async (exercise: Exercise) => {
     if (!user) return;
 
     try {
-      // Save exercise to user_saved_exercises table
       const { error } = await supabase
         .from('user_saved_exercises')
         .upsert({
@@ -89,44 +93,46 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
     }
   };
 
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-card/95 backdrop-blur-md border-border text-card-foreground p-0">
-        <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-md border-b border-border p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-xl sm:text-2xl font-bold pr-8">
-              {workout.title}
-            </DialogTitle>
-          </DialogHeader>
+  if (!workout) {
+    return (
+      <AppShell title="Loading..." showBackButton>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
-        <div className="p-4 sm:p-6 pb-safe">
-          <div className="space-y-6">
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell title={workout.title} showBackButton>
+      <div className="min-h-screen bg-background">
+        <div className="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto">
           {/* Workout Info */}
           <div className="flex flex-wrap gap-3">
             <Badge className={getDifficultyColor(workout.difficulty)}>
               {workout.difficulty}
             </Badge>
-            <Badge variant="outline" className="border-blue-500/30 text-blue-400 bg-blue-500/10">
+            <Badge variant="outline" className="border-primary/30 text-primary bg-primary/10">
               <Timer className="w-3 h-3 mr-1" />
               {workout.duration}
             </Badge>
-            <Badge variant="outline" className="border-purple-500/30 text-purple-400 bg-purple-500/10">
+            <Badge variant="outline" className="border-accent/30 text-accent-foreground bg-accent/10">
               {workout.exercises.length} exercises
             </Badge>
           </div>
 
           {/* Description */}
-          <p className="text-gray-300 leading-relaxed">{workout.description}</p>
+          <p className="text-muted-foreground leading-relaxed">{workout.description}</p>
 
           {/* Focus Areas */}
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-300">Focus Areas</h3>
+            <h3 className="text-sm font-semibold text-foreground">Focus Areas</h3>
             <div className="flex flex-wrap gap-2">
               {workout.focus.map((focus, index) => (
                 <Badge 
                   key={index}
                   variant="outline" 
-                  className="border-orange-500/30 text-orange-400 bg-orange-500/10"
+                  className="border-border text-muted-foreground bg-muted"
                 >
                   {focus}
                 </Badge>
@@ -136,20 +142,20 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
 
           {/* Exercises List */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white flex items-center">
+            <h3 className="text-lg font-semibold text-foreground flex items-center">
               <Dumbbell className="w-5 h-5 mr-2" />
               Exercises
             </h3>
             
             <div className="space-y-3">
               {workout.exercises.map((exercise, index) => (
-                <div key={exercise.id} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                <div key={exercise.id} className="p-4 bg-card rounded-lg border border-border">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h4 className="font-semibold text-white mb-1">
+                      <h4 className="font-semibold text-card-foreground mb-1">
                         {index + 1}. {exercise.name}
                       </h4>
-                      <div className="flex items-center space-x-4 text-sm text-gray-400">
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         <span className="flex items-center">
                           <Target className="w-3 h-3 mr-1" />
                           {exercise.sets} sets × {exercise.reps}
@@ -163,10 +169,10 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
                     <Button
                       onClick={() => addExerciseToSavedList(exercise)}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       <Plus className="w-3 h-3 mr-1" />
-                      Save Exercise
+                      Save
                     </Button>
                   </div>
                   
@@ -176,7 +182,7 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
                       <Badge 
                         key={idx}
                         variant="outline" 
-                        className="border-green-500/30 text-green-400 bg-green-500/10 text-xs"
+                        className="border-border text-muted-foreground bg-muted text-xs"
                       >
                         {muscle}
                       </Badge>
@@ -184,14 +190,14 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
                   </div>
 
                   {/* Equipment */}
-                  <div className="flex items-center text-xs text-gray-500">
+                  <div className="flex items-center text-xs text-muted-foreground">
                     <Dumbbell className="w-3 h-3 mr-1" />
                     {exercise.equipment}
                   </div>
 
                   {/* Notes */}
                   {exercise.notes && (
-                    <p className="text-gray-400 text-sm mt-2 italic">
+                    <p className="text-muted-foreground text-sm mt-2 italic">
                       {exercise.notes}
                     </p>
                   )}
@@ -200,8 +206,9 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
             </div>
           </div>
         </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </AppShell>
   );
 };
+
+export default WorkoutDetail;

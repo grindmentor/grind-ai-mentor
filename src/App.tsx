@@ -12,6 +12,8 @@ import PhysiqueAI from "./pages/PhysiqueAI";
 import WorkoutLogger from "./pages/WorkoutLogger";
 import SmartFoodLog from "./pages/SmartFoodLog";
 import BlueprintAI from "./components/ai-modules/BlueprintAI";
+import WorkoutDetail from "./pages/WorkoutDetail";
+import ExerciseDetail from "./pages/ExerciseDetail";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Pricing from "./pages/Pricing";
@@ -149,6 +151,22 @@ function App() {
                           element={
                             <ProtectedRoute>
                               <BlueprintAIWrapper />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/workout-detail"
+                          element={
+                            <ProtectedRoute>
+                              <WorkoutDetail />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/exercise-detail"
+                          element={
+                            <ProtectedRoute>
+                              <ExerciseDetail />
                             </ProtectedRoute>
                           }
                         />

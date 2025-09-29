@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ interface SmartFoodLogProps {
 }
 
 export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const { actions } = useGlobalState();
@@ -49,7 +51,6 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [portionSize, setPortionSize] = useState('100');
-  const [showCustomFoodModal, setShowCustomFoodModal] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [noResultsMessage, setNoResultsMessage] = useState<string | null>(null);
 
@@ -58,6 +59,44 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       loadFoodEntries();
     }
   }, [user, selectedDate]);
+
+  // Check for new food entries from AddFood page
+  useEffect(() => {
+    const checkForNewFood = () => {
+      const newFoodData = sessionStorage.getItem('newFoodEntry');
+      if (newFoodData) {
+        const foodData = JSON.parse(newFoodData);
+        sessionStorage.removeItem('newFoodEntry');
+        
+        // Add the food entry
+        const addEntry = async () => {
+          try {
+            const { error } = await supabase.from('food_log').insert([{
+              user_id: user?.id,
+              food_name: foodData.name,
+              calories: foodData.calories,
+              protein: foodData.protein,
+              carbs: foodData.carbs,
+              fat: foodData.fat,
+              fiber: foodData.fiber || 0,
+              portion_size: foodData.portion_size,
+              meal_type: foodData.meal_type,
+              logged_at: foodData.timestamp
+            }]);
+            
+            if (error) throw error;
+            loadFoodEntries();
+          } catch (error) {
+            console.error('Error adding food:', error);
+          }
+        };
+        addEntry();
+      }
+    };
+
+    window.addEventListener('focus', checkForNewFood);
+    return () => window.removeEventListener('focus', checkForNewFood);
+  }, [user]);
 
   // Debounced search effect
   useEffect(() => {
@@ -307,10 +346,10 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       const analysis = data;
       
       if (analysis.confidence === 'low' || !analysis.foodsDetected?.length) {
-        // Immediately show manual entry option
+        // Navigate to manual entry
         setSearchError('Could not identify foods clearly from photo');
         setNoResultsMessage('Photo unclear - add foods manually for best accuracy');
-        setShowCustomFoodModal(true);
+        navigate(`/add-food?meal=${mealType}`);
         return;
       }
 
@@ -422,7 +461,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
               {/* Quick Add Custom Food Button */}
               <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-500/20">
                 <Button
-                  onClick={() => setShowCustomFoodModal(true)}
+                  onClick={() => navigate(`/add-food?meal=${mealType}`)}
                   className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -504,7 +543,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                       <div>
                         <p className="text-red-200 text-sm">{searchError}</p>
                         <Button
-                          onClick={() => setShowCustomFoodModal(true)}
+                          onClick={() => navigate(`/add-food?meal=${mealType}`)}
                           size="sm"
                           className="mt-2 bg-red-600 hover:bg-red-700"
                         >
@@ -519,7 +558,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                     <div className="p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
                       <p className="text-yellow-200 text-sm">{noResultsMessage}</p>
                       <Button
-                        onClick={() => setShowCustomFoodModal(true)}
+                        onClick={() => navigate(`/add-food?meal=${mealType}&name=${searchQuery}`)}
                         size="sm"
                         className="mt-2 bg-yellow-600 hover:bg-yellow-700"
                       >
@@ -729,17 +768,6 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
           </Card>
         </div>
       </div>
-
-      <FoodEntryModal
-        isOpen={showCustomFoodModal}
-        onClose={() => {
-          setShowCustomFoodModal(false);
-          setNoResultsMessage(null);
-        }}
-        onAddFood={addCustomFood}
-        mealType={mealType}
-        initialFoodName={noResultsMessage ? searchQuery : ''}
-      />
 
       {/* Legal Footer */}
       <FooterLinks />

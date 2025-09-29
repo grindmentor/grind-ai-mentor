@@ -21,6 +21,9 @@ import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import ModuleLibrary from "./pages/ModuleLibrary";
 import Research from "./pages/Research";
+import CreateGoal from "./pages/CreateGoal";
+import AddFood from "./pages/AddFood";
+import CreateExercise from "./pages/CreateExercise";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import AuthCallback from "./pages/AuthCallback";
@@ -159,6 +162,30 @@ function App() {
                           element={
                             <ProtectedRoute>
                               <Research />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/create-goal" 
+                          element={
+                            <ProtectedRoute>
+                              <CreateGoal />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/add-food" 
+                          element={
+                            <ProtectedRoute>
+                              <AddFood />
+                            </ProtectedRoute>
+                          } 
+                        />
+                        <Route 
+                          path="/create-exercise" 
+                          element={
+                            <ProtectedRoute>
+                              <CreateExercise />
                             </ProtectedRoute>
                           } 
                         />

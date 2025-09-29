@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,6 @@ import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { useAppSync } from '@/utils/appSynchronization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { GoalCreationModal } from './GoalCreationModal';
 import GoalProgressLogger from './GoalProgressLogger';
 
 interface Goal {
@@ -40,6 +40,7 @@ interface Achievement {
 }
 
 const RealGoalsAchievements = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { preferences } = usePreferences();
   const { state, actions } = useGlobalState();
@@ -47,8 +48,6 @@ const RealGoalsAchievements = () => {
   
   const [goals, setGoals] = useState<Goal[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [activeTab, setActiveTab] = useState<'goals' | 'achievements'>('goals');
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -155,14 +154,19 @@ const RealGoalsAchievements = () => {
     }
   };
 
-  const handleGoalCreated = () => {
-    // Invalidate cache and reload data
-    invalidateCache(`user-${user?.id}-goals-achievements`);
-    loadGoalsAndAchievements();
-    setShowGoalModal(false);
-    setEditingGoal(null);
-    emit('goals:updated'); // Notify other components
-  };
+  // Check for goal updates when returning from create-goal page
+  useEffect(() => {
+    const handleGoalUpdate = () => {
+      if (user) {
+        invalidateCache(`user-${user?.id}-goals-achievements`);
+        loadGoalsAndAchievements();
+      }
+    };
+
+    // Listen for when user returns to this page
+    window.addEventListener('focus', handleGoalUpdate);
+    return () => window.removeEventListener('focus', handleGoalUpdate);
+  }, [user]);
 
   const handleDeleteGoal = async (goalId: string) => {
     if (!confirm('Are you sure you want to delete this goal?')) return;
@@ -187,9 +191,7 @@ const RealGoalsAchievements = () => {
   };
 
   const handleEditGoal = (goal: Goal) => {
-    setEditingGoal(goal);
-    actions.openModal('goal-creation-modal');
-    setShowGoalModal(true);
+    navigate(`/create-goal?edit=${goal.id}`);
   };
 
   const getProgressPercentage = (current: number, target: number, goalTitle: string) => {
@@ -323,10 +325,7 @@ const RealGoalsAchievements = () => {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <h3 className="text-white font-medium">Active Goals</h3>
                 <Button
-                  onClick={() => {
-                    setEditingGoal(null);
-                    setShowGoalModal(true);
-                  }}
+                  onClick={() => navigate('/create-goal')}
                   size="sm"
                   className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 mobile-button-enhanced"
                 >
@@ -340,10 +339,7 @@ const RealGoalsAchievements = () => {
                   <Target className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400 mb-4">No goals set yet</p>
                   <Button
-                    onClick={() => {
-                      setEditingGoal(null);
-                      setShowGoalModal(true);
-                    }}
+                    onClick={() => navigate('/create-goal')}
                     className="bg-orange-500 hover:bg-orange-600 mobile-button-enhanced"
                   >
                     Create Your First Goal
@@ -489,16 +485,6 @@ const RealGoalsAchievements = () => {
           )}
         </CardContent>
       </Card>
-
-      <GoalCreationModal
-        isOpen={showGoalModal}
-        onClose={() => {
-          setShowGoalModal(false);
-          setEditingGoal(null);
-        }}
-        onGoalCreated={handleGoalCreated}
-        editingGoal={editingGoal}
-      />
     </>
   );
 };

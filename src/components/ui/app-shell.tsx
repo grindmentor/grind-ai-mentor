@@ -77,16 +77,54 @@ export const AppShell: React.FC<AppShellProps> = ({
   }, [canGoBack, handleBack]);
   return <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
       {/* Persistent Top Navigation */}
-      <motion.header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/40 safe-area-top" initial={{
-      y: -100
-    }} animate={{
-      y: 0
-    }} transition={{
-      type: "spring",
-      stiffness: 300,
-      damping: 30
-    }}>
-        
+      <motion.header 
+        className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/40 safe-area-top" 
+        initial={{ y: -100 }} 
+        animate={{ y: 0 }} 
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            {showBackButton && (
+              <Button
+                onClick={handleBack}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            )}
+            {title && (
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
+                {title}
+              </h1>
+            )}
+          </div>
+          
+          {customActions && (
+            <div className="flex items-center space-x-2 shrink-0">
+              {customActions}
+            </div>
+          )}
+          
+          {showNotificationButton && !customActions && (
+            <Button
+              onClick={() => navigate('/notifications')}
+              variant="ghost"
+              size="sm"
+              className="relative text-muted-foreground hover:text-foreground hover:bg-accent shrink-0"
+            >
+              <Bell className="w-5 h-5" />
+              {notificationCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary">
+                  {notificationCount}
+                </Badge>
+              )}
+            </Button>
+          )}
+        </div>
       </motion.header>
 
       {/* Main Content Area with Smooth Transitions */}

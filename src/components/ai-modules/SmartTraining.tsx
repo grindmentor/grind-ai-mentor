@@ -15,6 +15,8 @@ import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
 import FeatureGate from '@/components/FeatureGate';
+import { aiService } from '@/services/aiService';
+import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
 
 interface SmartTrainingProps {
   onBack: () => void;
@@ -75,9 +77,7 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
     try {
       const isMinimalist = programData.trainingApproach === 'minimalist';
       
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: {
-          prompt: `Create a comprehensive ${programData.daysPerWeek || 4} day per week training program for ${programData.duration || 8} weeks based on the LATEST 2023-2025 research findings.
+      const prompt = `Create a comprehensive ${programData.daysPerWeek || 4} day per week training program for ${programData.duration || 8} weeks based on the LATEST 2023-2025 research findings.
 
 PROGRAM DETAILS:
 - Name: ${programData.name}
@@ -105,106 +105,13 @@ EVIDENCE-BASED STANDARD (2023-2025 Findings):
 - EFFORT: RIR 1-4 for most sets, occasional RIR 0-1
 `}
 
-SCIENTIFIC RATIONALE (Include in response):
-- Cite Helms et al. (2024): "Volume landmarks less important than proximity to failure"
-- Reference Schoenfeld et al. (2025): "2-3 quality sets often superior to 4-6 moderate effort sets"
-- Mention latest meta-analysis showing 3-5min rest critical for strength/hypertrophy adaptations
+Include complete program structure with all workouts, exercises, sets, reps, rest periods, and progression guidelines. Base all recommendations on 2023-2025 research.`;
 
-PROGRAM STRUCTURE REQUIREMENTS:
-1. Generate a COMPLETE program with specific workouts for each day
-2. Include exercise selection, sets, reps, and rest periods
-3. Structure with clear phases or progression over the ${programData.duration || 8} weeks
-4. Format using markdown with clear headings and sections
-5. Include warm-up and evidence-based progression guidelines
-6. Emphasize the scientific backing of the approach
-
-FORMAT STRUCTURE:
-### Program Overview
-- **Duration:** ${programData.duration || 8} weeks
-- **Frequency:** ${programData.daysPerWeek || 4} days per week
-- **Primary Goal:** ${programData.goal}
-- **Training Philosophy:** ${isMinimalist ? 'Evidence-Based Minimalist (2023-2025 Research)' : 'Evidence-Based Standard'}
-
-### Scientific Foundation
-**Latest Research Integration (2023-2025):**
-- Explain the research backing this approach
-- Cite specific studies and findings
-- Highlight why this approach is optimal
-
-### Training Principles
-${isMinimalist ? `
-**Minimalist Approach Principles:**
-- **Volume:** 2-3 sets per compound movement
-- **Intensity:** 4-6 reps, RIR 1-3 (very high effort)
-- **Rest:** 3-5 minutes between compound sets (non-negotiable)
-- **Frequency:** 2-3x per week per movement pattern
-- **Progression:** Weight increases primary, RIR reduction secondary
-` : `
-**Evidence-Based Principles:**
-- **Volume:** 2-4 sets (compounds lower, isolation higher)
-- **Intensity:** Matched to goal (4-8 strength, 6-12 hypertrophy)
-- **Rest:** 3-5min compounds, 2-3min isolation
-- **Effort:** RIR 1-4 most sets, occasional failure
-`}
-
-### Phase 1: Foundation (Weeks 1-2)
-#### Day 1: Upper Body Push Focus
-**Warm-up (10 minutes)**
-- Dynamic stretching and activation
-
-**Main Workout**
-${isMinimalist ? `
-1. Barbell Bench Press - 2 sets × 4-6 reps (RIR 2-3) - REST: 4-5min
-2. Overhead Press - 2 sets × 4-6 reps (RIR 2-3) - REST: 4min  
-3. Weighted Dips - 2 sets × 6-8 reps (RIR 2-3) - REST: 3min
-4. Close-Grip Bench Press - 2 sets × 6-8 reps (RIR 2-3) - REST: 3min
-` : `
-1. Barbell Bench Press - 3 sets × 6-8 reps (RIR 2-3) - REST: 4min
-2. Overhead Press - 3 sets × 6-8 reps (RIR 2-3) - REST: 4min
-3. Incline Dumbbell Press - 3 sets × 8-10 reps (RIR 2-3) - REST: 3min
-4. Weighted Dips - 2 sets × 8-12 reps (RIR 2-3) - REST: 3min
-5. Lateral Raises - 3 sets × 12-15 reps (RIR 1-2) - REST: 2min
-6. Tricep Extensions - 3 sets × 10-12 reps (RIR 1-2) - REST: 2min
-`}
-
-**Cool-down (5 minutes)**
-- Static stretching focused on worked muscles
-
-[Continue with remaining days following same evidence-based structure]
-
-### Phase 2: Development (Weeks 3-5)
-[Detailed progression for each day with intensity increases]
-
-### Phase 3: Peak (Weeks 6-8)
-[Advanced progression with either load increases or volume adjustments]
-
-### Weekly Progression Guidelines
-**Based on 2023-2025 Research:**
-- **Week 1-2:** Establish technique, moderate loads (RIR 3-4)
-- **Week 3-4:** Increase intensity (RIR 2-3), maintain or slightly reduce volume
-- **Week 5-6:** Peak intensity phase (RIR 1-2), focus on strength/neural adaptations
-- **Week 7-8:** Strategic deload or intensity maintenance
-
-### Scientific References & Rationale
-**Key Studies Informing This Program:**
-- Helms et al. (2024): Volume landmarks vs. proximity to failure analysis
-- Schoenfeld et al. (2025): Set number optimization for hypertrophy
-- Latest meta-analyses on rest interval optimization (2024)
-- RIR-based progression research (2023-2025)
-
-### Important Implementation Notes
-- **Rest Intervals:** Non-negotiable 3-5min for compounds based on latest research
-- **Effort Level:** Higher effort per set more important than total volume
-- **Progression:** Weight increases primary method, add sets/reduce RIR as secondary
-- **Recovery:** 48-72 hours between sessions training same movement patterns`,
-          type: 'training',
-          maxTokens: 3000
-        }
+      const response = await aiService.getTrainingAdvice(prompt, {
+        maxTokens: 3000,
+        priority: 'high',
+        useCache: true
       });
-
-      if (error) throw error;
-
-      const response = data?.response || "Failed to generate program. Please try again.";
       
       setGeneratedProgram({
         name: programData.name,
@@ -215,30 +122,14 @@ ${isMinimalist ? `
         content: response
       });
       
-      toast({
-        title: 'Evidence-Based Program Generated! 🎯',
+      handleSuccess('Evidence-Based Program Generated! 🎯', {
         description: `Your ${isMinimalist ? 'minimalist' : 'standard'} training program based on 2023-2025 research is ready!`
       });
     } catch (error) {
-      console.error('Error generating program:', error);
-      
-      // Enhanced error handling with specific messages
-      let errorMessage = 'Failed to generate program. Please try again.';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('API key')) {
-          errorMessage = 'AI service unavailable. Please check your connection and try again.';
-        } else if (error.message.includes('quota') || error.message.includes('limit')) {
-          errorMessage = 'AI service quota exceeded. Please try again later or contact support.';
-        } else if (error.message.includes('timeout')) {
-          errorMessage = 'Request timed out. Please try again with a simpler program description.';
-        }
-      }
-      
-      toast({
-        title: 'Program Generation Failed',
-        description: errorMessage,
-        variant: 'destructive'
+      handleError(error, { 
+        customMessage: 'Failed to generate training program. Please try again.',
+        action: generateProgram,
+        actionLabel: 'Retry'
       });
       
       // Show fallback message

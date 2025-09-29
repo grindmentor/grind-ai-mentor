@@ -16,6 +16,8 @@ import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FeatureGate from '@/components/FeatureGate';
 import { DietCuesDisplay } from './DietCuesDisplay';
+import { aiService } from '@/services/aiService';
+import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { handleAsync } from '@/utils/errorHandler';
 import { useAppSync } from '@/utils/appSynchronization';
@@ -91,9 +93,7 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: {
-          prompt: `Create a detailed ${planData.duration || 7} day meal plan for a ${planData.dietType} diet with the goal of ${planData.goal}.
+      const prompt = `Create a detailed ${planData.duration || 7} day meal plan for a ${planData.dietType} diet with the goal of ${planData.goal}.
 
 MEAL PLAN REQUIREMENTS:
 - Daily calories: ${planData.calories || 2000}
@@ -122,39 +122,36 @@ FORMAT AS JSON:
   ]
 }
 
-Include complete nutritional information and practical, easy-to-prepare meals. Base recommendations on the latest nutrition science.`,
-          type: 'nutrition',
-          maxTokens: 2500
-        }
-      });
+Include complete nutritional information and practical, easy-to-prepare meals. Base recommendations on the latest nutrition science.`;
 
-      if (error) throw error;
+      const response = await aiService.getNutritionAdvice(prompt, {
+        maxTokens: 2500,
+        priority: 'high',
+        useCache: true
+      });
 
       let parsedPlan;
       try {
-        parsedPlan = JSON.parse(data.response);
+        parsedPlan = JSON.parse(response);
       } catch (parseError) {
         // If JSON parsing fails, create a structured plan from the text response
         parsedPlan = {
           title: `${planData.dietType} ${planData.goal} Plan`,
           duration: parseInt(planData.duration) || 7,
           calories: parseInt(planData.calories) || 2000,
-          content: data.response
+          content: response
         };
       }
 
       setGeneratedPlan(parsedPlan);
-      
-      toast({
-        title: 'Meal Plan Generated! 🍽️',
-        description: 'Your personalized meal plan is ready!'
+      handleSuccess('Meal Plan Generated! 🍽️', { 
+        description: 'Your personalized meal plan is ready!' 
       });
     } catch (error) {
-      console.error('Error generating meal plan:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to generate meal plan. Please try again.',
-        variant: 'destructive'
+      handleError(error, { 
+        customMessage: 'Failed to generate meal plan. Please try again.',
+        action: generateMealPlan,
+        actionLabel: 'Retry'
       });
     } finally {
       setIsGenerating(false);

@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
+import { aiService } from '@/services/aiService';
+import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { handleAsync } from '@/utils/errorHandler';
@@ -170,10 +172,8 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         return;
       }
 
-      // Get AI response with optimized settings
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: {
-          prompt: `You are CoachGPT, an expert fitness coach for Myotopia. You provide structured, motivational, and science-backed fitness coaching advice.
+      // Get AI response with unified service
+      const prompt = `You are CoachGPT, an expert fitness coach for Myotopia. You provide structured, motivational, and science-backed fitness coaching advice.
 
 IMPORTANT FORMATTING RULES:
 - Use markdown formatting with ### for main headings, ** for bold text
@@ -196,19 +196,13 @@ STRICT RESTRICTIONS - DO NOT:
 
 User question: ${userMessage.content}
 
-Format your response with clear headings and structure. Be encouraging and cite scientific principles when relevant.`,
-          type: 'coaching',
-          maxTokens: optimizedSettings.maxTokens, // Connection-aware token limit
-          useGPT4Mini: optimizedSettings.useGPT4Mini
-        }
+Format your response with clear headings and structure. Be encouraging and cite scientific principles when relevant.`;
+
+      const response = await aiService.getCoachingAdvice(prompt, {
+        maxTokens: optimizedSettings.maxTokens,
+        priority: 'normal',
+        useCache: true
       });
-
-      if (error) {
-        console.error('AI Response Error:', error);
-        throw error;
-      }
-
-      const response = data?.response || "I'm having trouble processing your request right now. Please try again later.";
 
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -230,15 +224,10 @@ Format your response with clear headings and structure. Be encouraging and cite 
         });
 
     } catch (error) {
-      console.error('🚨 CoachGPT Error Details:', error);
-      console.error('🚨 Error message:', error?.message);
-      console.error('🚨 Error name:', error?.name);
-      console.error('🚨 Full error object:', JSON.stringify(error, null, 2));
-      
-      toast({
-        title: 'Error',
-        description: `Failed to send message: ${error?.message || 'Unknown error'}`,
-        variant: 'destructive'
+      handleError(error, { 
+        customMessage: 'Failed to get coaching advice. Please try again.',
+        action: () => handleSubmit(e),
+        actionLabel: 'Retry'
       });
       
       // Remove the user message if there was an error

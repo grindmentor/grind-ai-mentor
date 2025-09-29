@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface FormattedAIResponseProps {
@@ -50,4 +50,4 @@ export const FormattedAIResponse: React.FC<FormattedAIResponseProps> = ({ conten
   );
 };
 
-export default FormattedAIResponse;
+export default memo(FormattedAIResponse);

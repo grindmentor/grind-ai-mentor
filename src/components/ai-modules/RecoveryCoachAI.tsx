@@ -13,6 +13,8 @@ import { useUserData } from "@/contexts/UserDataContext";
 import FormattedAIResponse from "@/components/FormattedAIResponse";
 import { toast } from "sonner";
 import { useAuth } from '@/contexts/AuthContext';
+import { aiService } from '@/services/aiService';
+import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
 
 interface RecoveryCoachAIProps {
   onBack: () => void;
@@ -205,27 +207,17 @@ Provide specific, actionable protocols with timing, dosages, and implementation 
 
       console.log('Sending recovery coach request:', enhancedInput);
 
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: { 
-          prompt: enhancedInput,
-          feature: 'coach_gpt_queries'
-        }
+      const response = await aiService.getRecoveryAdvice(enhancedInput, {
+        maxTokens: 2500,
+        priority: 'high',
+        useCache: true
       });
 
-      console.log('Recovery coach response:', data, error);
+      console.log('Recovery coach response received');
 
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-      
-      if (data && data.response) {
-        setResponse(data.response);
-        await saveConversation(input, data.response);
-        toast.success('Recovery plan generated!');
-      } else {
-        throw new Error('No response received');
-      }
+      setResponse(response);
+      await saveConversation(input, response);
+      handleSuccess('Recovery plan generated!');
     } catch (error) {
       console.error('Error generating recovery plan:', error);
       

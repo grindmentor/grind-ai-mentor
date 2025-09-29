@@ -7,6 +7,8 @@ import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
+import { aiService } from '@/services/aiService';
+import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
 
 interface CardioAIProps {
   onBack: () => void;
@@ -59,17 +61,20 @@ const CardioAI = ({ onBack }: CardioAIProps) => {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('fitness-ai', {
-        body: { 
-          type: 'cardio',
-          userInput: input
-        }
+      const response = await aiService.getTrainingAdvice(input, {
+        maxTokens: 1500,
+        priority: 'normal',
+        useCache: true
       });
 
-      if (error) throw error;
-      setResponse(data.response);
+      setResponse(response);
+      handleSuccess('Cardio program generated!');
     } catch (error) {
-      console.error('Error generating cardio program:', error);
+      handleError(error, { 
+        customMessage: 'Failed to generate cardio program. Please try again.',
+        action: () => handleSubmit(e),
+        actionLabel: 'Retry'
+      });
       setResponse('Sorry, there was an error generating your cardio program. Please try again.');
     } finally {
       setIsLoading(false);

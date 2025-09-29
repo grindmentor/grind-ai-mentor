@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
@@ -166,4 +166,4 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   );
 };
 
-export default AIModuleCard;
+export default memo(AIModuleCard);

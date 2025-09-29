@@ -22,6 +22,11 @@ const AddFood = () => {
   const [fat, setFat] = useState('');
   const [fiber, setFiber] = useState('');
 
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (initialFoodName) {
       setFoodName(initialFoodName);

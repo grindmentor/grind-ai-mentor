@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,11 @@ const CreateExercise = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [newMuscle, setNewMuscle] = useState('');
+
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',

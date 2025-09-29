@@ -146,6 +146,11 @@ const CreateGoal = () => {
   const [loading, setLoading] = useState(false);
   const [editingGoal, setEditingGoal] = useState<any>(null);
 
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     if (editingGoalId && user) {
       // Fetch the goal to edit

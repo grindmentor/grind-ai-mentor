@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ChevronRight, Calendar, ArrowLeft, ExternalLink } from 'lucide-react';
@@ -99,6 +99,11 @@ const Research = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedStudy, setSelectedStudy] = useState<Study | null>(null);
+
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const filteredStudies = selectedCategory 
     ? recentStudies.filter(study => study.category === selectedCategory)

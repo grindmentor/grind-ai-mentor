@@ -20,6 +20,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import ModuleLibrary from "./pages/ModuleLibrary";
+import Research from "./pages/Research";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import AuthCallback from "./pages/AuthCallback";
@@ -153,6 +154,14 @@ function App() {
                         <Route path="/terms" element={<Terms />} />
                         <Route path="/privacy" element={<Privacy />} />
                         <Route path="/about" element={<About />} />
+                        <Route 
+                          path="/research" 
+                          element={
+                            <ProtectedRoute>
+                              <Research />
+                            </ProtectedRoute>
+                          } 
+                        />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </div>

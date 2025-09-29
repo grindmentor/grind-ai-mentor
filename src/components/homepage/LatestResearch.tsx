@@ -2,12 +2,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ExternalLink, ChevronRight, Calendar } from 'lucide-react';
-import ScientificStudies from '@/components/ScientificStudies';
+import { BookOpen, ExternalLink, ChevronRight, Calendar, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const LatestResearch = () => {
   const [showArchive, setShowArchive] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (showArchive && cardRef.current) {
@@ -128,9 +129,15 @@ const LatestResearch = () => {
             <div className="text-xs text-gray-500">
               Latest update • {new Date().toLocaleDateString()}
             </div>
-            <div className="flex items-center space-x-2">
-              <ScientificStudies />
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/research')}
+              className="text-green-300 hover:bg-green-500/10"
+            >
+              View All Research
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
         </div>
 

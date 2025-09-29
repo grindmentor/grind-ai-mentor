@@ -56,7 +56,7 @@ const ExerciseDetail = () => {
   }
 
   return (
-    <AppShell title={exercise.name} showBackButton>
+    <AppShell title={exercise.name} showBackButton={true}>
       <div className="min-h-screen bg-background">
         <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
           {/* Basic Info */}

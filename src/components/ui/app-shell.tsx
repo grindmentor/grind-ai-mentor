@@ -31,12 +31,9 @@ export const AppShell: React.FC<AppShellProps> = ({
     setCanGoBack(window.history.length > 1);
   }, [location]);
   const handleBack = useCallback(() => {
-    if (canGoBack) {
-      navigate(-1);
-    } else {
-      navigate('/app');
-    }
-  }, [canGoBack, navigate]);
+    console.log('Back button clicked, navigating...');
+    navigate(-1);
+  }, [navigate]);
 
   // Handle mobile swipe-to-go-back
   useEffect(() => {

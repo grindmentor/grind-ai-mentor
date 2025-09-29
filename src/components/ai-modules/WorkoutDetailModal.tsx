@@ -91,7 +91,7 @@ export const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white w-[95vw] max-w-2xl mx-auto max-h-[95vh] overflow-y-auto">
+      <DialogContent className="bg-gray-900 border-gray-700 text-white w-[96vw] max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-bold text-white pr-8">

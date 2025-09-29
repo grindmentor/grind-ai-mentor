@@ -125,7 +125,7 @@ export const CustomExerciseModal: React.FC<CustomExerciseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-800/95 border-gray-600/50 text-white w-[95vw] max-w-2xl mx-auto max-h-[95vh] overflow-y-auto">
+      <DialogContent className="bg-gray-800/95 border-gray-600/50 text-white w-[96vw] max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-blue-400">Create Custom Exercise</DialogTitle>
         </DialogHeader>

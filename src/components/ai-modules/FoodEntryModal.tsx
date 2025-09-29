@@ -76,7 +76,7 @@ const FoodEntryModal: React.FC<FoodEntryModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white w-[95vw] max-w-md mx-auto max-h-[95vh] overflow-y-auto">
+      <DialogContent className="bg-gray-900 border-gray-700 text-white w-[96vw] max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-orange-400">Add Custom Food</DialogTitle>
           <DialogDescription className="text-gray-400">

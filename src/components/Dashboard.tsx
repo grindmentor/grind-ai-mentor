@@ -217,16 +217,35 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user?.id) return;
     
-    // Use requestIdleCallback for non-blocking prefetch during idle time
-    const idleId = requestIdleCallback(() => {
-      queryClient.prefetchQuery({
-        queryKey: ['progressData', user.id],
-        queryFn: async () => null,
-        staleTime: 5 * 60 * 1000
+    // Use requestIdleCallback for non-blocking prefetch during idle time (with Safari fallback)
+    let idleId: number;
+    
+    if ('requestIdleCallback' in window) {
+      idleId = requestIdleCallback(() => {
+        queryClient.prefetchQuery({
+          queryKey: ['progressData', user.id],
+          queryFn: async () => null,
+          staleTime: 5 * 60 * 1000
+        });
       });
-    });
+    } else {
+      // Fallback for Safari/iOS
+      idleId = setTimeout(() => {
+        queryClient.prefetchQuery({
+          queryKey: ['progressData', user.id],
+          queryFn: async () => null,
+          staleTime: 5 * 60 * 1000
+        });
+      }, 100) as unknown as number;
+    }
 
-    return () => cancelIdleCallback(idleId);
+    return () => {
+      if ('cancelIdleCallback' in window) {
+        cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId);
+      }
+    };
   }, [user?.id, queryClient]);
 
   // Handle case where modules might not be loaded yet

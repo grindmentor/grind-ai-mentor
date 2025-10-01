@@ -71,14 +71,19 @@ export default function App() {
   return (
     <NativeAppWrapper enableHaptics={true} enableGestures={true}>
       <AppBackground>
-        <div className="h-full">
+        <AppShell
+          title="Myotopia"
+          showBackButton={false}
+          showNotificationButton={true}
+          className="h-full"
+        >
           <PWAHandler />
           <ComprehensiveErrorBoundary showHomeButton={false}>
             {measurePerformance('Dashboard Render', () => (
               <Dashboard />
             ))}
           </ComprehensiveErrorBoundary>
-        </div>
+        </AppShell>
       </AppBackground>
     </NativeAppWrapper>
   );

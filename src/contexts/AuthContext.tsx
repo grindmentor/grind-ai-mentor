@@ -90,10 +90,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('Initializing auth context');
     
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email);
       
-      // Only synchronous state updates here
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -104,17 +103,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const minutesDiff = timeDiff / (1000 * 60);
         
         setIsNewUser(minutesDiff < 5);
+        checkOnboardingStatus(session.user.id);
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
         
-        // Defer Supabase calls with setTimeout to prevent deadlock
-        setTimeout(() => {
-          checkOnboardingStatus(session.user.id);
-        }, 0);
-        
-        // Redirect to app page after successful signin
+        // For logged-in users, redirect immediately without delay
         if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+          // Use navigate instead of location.replace for better UX
           setTimeout(() => {
-            window.location.href = '/app';
+            if (window.location.pathname !== '/app') {
+              window.location.replace('/app');
+            }
           }, 100);
         }
       } else if (event === 'SIGNED_OUT') {
@@ -124,7 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Redirect to home on sign out
         if (window.location.pathname === '/app' || window.location.pathname.startsWith('/app')) {
-          window.location.href = '/';
+          window.location.replace('/');
         }
       }
       
@@ -143,17 +141,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session.user);
         setIsEmailUnconfirmed(!session.user.email_confirmed_at);
+        checkOnboardingStatus(session.user.id);
         
-        // Defer onboarding check
-        setTimeout(() => {
-          checkOnboardingStatus(session.user.id);
-        }, 0);
-        
-        // Redirect to app for existing sessions
+        // Instant redirect for existing sessions
         if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
           setTimeout(() => {
-            window.location.href = '/app';
-          }, 100);
+            if (window.location.pathname !== '/app') {
+              window.location.replace('/app');
+            }
+          }, 50);
         }
       }
       

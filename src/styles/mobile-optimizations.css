@@ -18,18 +18,6 @@
     min-width: 48px;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.1s ease-out, background-color 0.15s ease-out;
-  }
-
-  /* Native-like press effect */
-  button:active, [role="button"]:active {
-    transform: scale(0.97);
-  }
-
-  /* Card press effect */
-  .card:active, [data-card]:active {
-    transform: scale(0.98);
-    transition: transform 0.1s ease-out;
   }
   
   /* Top navigation buttons specific enhancements */

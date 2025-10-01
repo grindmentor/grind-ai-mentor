@@ -110,15 +110,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           checkOnboardingStatus(session.user.id);
         }, 0);
         
-        // For logged-in users, redirect immediately without delay
-        if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          // Use navigate instead of location.replace for better UX
-          setTimeout(() => {
-            if (window.location.pathname !== '/app') {
-              window.location.replace('/app');
-            }
-          }, 100);
-        }
+        // Defer redirect to allow state to settle
+        setTimeout(() => {
+          if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+            window.location.href = '/app';
+          }
+        }, 200);
       } else if (event === 'SIGNED_OUT') {
         setIsNewUser(false);
         setIsEmailUnconfirmed(false);
@@ -126,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Redirect to home on sign out
         if (window.location.pathname === '/app' || window.location.pathname.startsWith('/app')) {
-          window.location.replace('/');
+          window.location.href = '/';
         }
       }
       
@@ -151,14 +148,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           checkOnboardingStatus(session.user.id);
         }, 0);
         
-        // Instant redirect for existing sessions
-        if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
-          setTimeout(() => {
-            if (window.location.pathname !== '/app') {
-              window.location.replace('/app');
-            }
-          }, 50);
-        }
+        // Defer redirect for existing sessions
+        setTimeout(() => {
+          if (window.location.pathname === '/' || window.location.pathname === '/signin' || window.location.pathname === '/signup') {
+            window.location.href = '/app';
+          }
+        }, 200);
       }
       
       setLoading(false);

@@ -7,17 +7,30 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Copy, Check } from 'lucide-react';
 import Logo from '@/components/ui/logo';
+import { useToast } from '@/hooks/use-toast';
 
 const SignIn = () => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const copyErrorToClipboard = () => {
+    navigator.clipboard.writeText(error);
+    setCopied(true);
+    toast({
+      title: "Error copied",
+      description: "Error message copied to clipboard",
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,8 +77,17 @@ const SignIn = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <Alert className="bg-red-900/20 border-red-800 text-red-400">
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert className="bg-red-900/20 border-red-800 text-red-400 relative">
+                  <AlertDescription className="pr-10">{error}</AlertDescription>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={copyErrorToClipboard}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
                 </Alert>
               )}
 

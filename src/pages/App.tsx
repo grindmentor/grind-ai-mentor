@@ -13,6 +13,7 @@ import PWAHandler from '@/components/PWAHandler';
 import { OptimizedSuspense } from '@/components/ui/optimized-suspense';
 import { ComprehensiveErrorBoundary } from '@/components/ui/comprehensive-error-boundary';
 import { NativeAppWrapper } from '@/components/ui/native-app-wrapper';
+import { DashboardWrapper } from '@/components/DashboardWrapper';
 
 // Optimized lazy loading with preloading hints and error boundaries
 const Dashboard = React.lazy(() => 
@@ -31,53 +32,66 @@ export default function App() {
   usePreloadComponents();
 
   useEffect(() => {
-    // Initialize component preloading
-    initializePreloading();
+    console.log('[APP PAGE] Initializing...');
+    
+    try {
+      // Initialize component preloading
+      initializePreloading();
+      console.log('[APP PAGE] Preloading initialized');
 
-    // Initialize push notifications and background sync
-    const initializeServices = async () => {
-      try {
-        // Initialize push notifications
-        const pushInitialized = await pushNotificationService.initialize();
-        if (pushInitialized) {
-          // Setup iOS-specific notifications if on iOS
-          await pushNotificationService.setupIOSNotifications();
+      // Initialize push notifications and background sync
+      const initializeServices = async () => {
+        try {
+          console.log('[APP PAGE] Initializing services...');
           
-          // Request permission if not already granted
-          const permission = await pushNotificationService.requestPermission();
-          if (permission === 'granted') {
-            console.log('Push notifications enabled');
+          // Initialize push notifications
+          const pushInitialized = await pushNotificationService.initialize();
+          if (pushInitialized) {
+            console.log('[APP PAGE] Push notifications initialized');
+            
+            // Setup iOS-specific notifications if on iOS
+            await pushNotificationService.setupIOSNotifications();
+            
+            // Request permission if not already granted
+            const permission = await pushNotificationService.requestPermission();
+            if (permission === 'granted') {
+              console.log('[APP PAGE] Push notifications enabled');
+            }
           }
+
+          // Initialize background sync (already singleton)
+          console.log('[APP PAGE] Background sync service initialized');
+          
+        } catch (error) {
+          console.error('[APP PAGE] Failed to initialize services:', error);
         }
+      };
 
-        // Initialize background sync (already singleton)
-        console.log('Background sync service initialized');
-        
-      } catch (error) {
-        console.error('Failed to initialize services:', error);
+      // Use requestIdleCallback for non-critical initialization
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => {
+          initializeServices();
+        });
+      } else {
+        setTimeout(initializeServices, 100);
       }
-    };
-
-    // Use requestIdleCallback for non-critical initialization
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => {
-        initializeServices();
-      });
-    } else {
-      setTimeout(initializeServices, 100);
+    } catch (error) {
+      console.error('[APP PAGE] Initialization error:', error);
     }
   }, []);
+
+  console.log('[APP PAGE] Rendering...');
 
   return (
     <NativeAppWrapper enableHaptics={true} enableGestures={true}>
       <AppBackground>
         <div className="h-full">
           <PWAHandler />
-          <ComprehensiveErrorBoundary showHomeButton={false}>
-            {measurePerformance('Dashboard Render', () => (
+          <DashboardWrapper>
+            <OptimizedSuspense fallback={<BrandedLoading message="Loading Dashboard..." />}>
               <Dashboard />
-            ))}
-          </ComprehensiveErrorBoundary>
+            </OptimizedSuspense>
+          </DashboardWrapper>
         </div>
       </AppBackground>
     </NativeAppWrapper>

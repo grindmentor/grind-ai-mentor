@@ -124,18 +124,15 @@ const Dashboard = () => {
     }
   }, [location.state, selectedModule]);
 
-  // Optimized module click handler with preloading
+  // Optimized module click handler with immediate feedback
   const handleModuleClick = useCallback((module: any) => {
-    // Preload the module if not already loaded
-    if (module.id && !lowDataMode) {
-      preloadModule(module.id);
-    }
+    // Immediate UI response
+    setSelectedModule(module);
+    setNavigationSource('dashboard');
     
-    try {
-      setSelectedModule(module);
-      setNavigationSource('dashboard');
-    } catch (error) {
-      console.error('Error setting selected module:', error);
+    // Defer preloading to not block UI
+    if (module.id && !lowDataMode) {
+      setTimeout(() => preloadModule(module.id), 0);
     }
   }, [preloadModule, lowDataMode]);
 

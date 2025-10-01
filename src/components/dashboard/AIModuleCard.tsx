@@ -108,13 +108,10 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   const iconBgColor = getIconBgColor(title);
 
   const handleClick = () => {
-    onInteraction?.(id);
-    if (isPremium && !isSubscribed) {
-      // Don't prevent click for premium modules - let the module handle its own restriction
-      onClick();
-    } else {
-      onClick();
-    }
+    // Immediate click response
+    onClick();
+    // Defer analytics
+    setTimeout(() => onInteraction?.(id), 0);
   };
 
   const handleMouseEnter = () => {
@@ -124,8 +121,8 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   return (
     <Card 
       className={cn(
-        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`,
-        "animate-fade-in hover-scale transform-gpu",
+        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-transform duration-200 active:scale-95 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`,
+        "animate-fade-in transform-gpu",
         isPremium && !isSubscribed ? 'opacity-75' : ''
       )}
       onClick={handleClick}

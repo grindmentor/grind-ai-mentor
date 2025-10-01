@@ -24,12 +24,16 @@ const SignIn = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[SIGNIN DEBUG] Form submitted');
     setLoading(true);
     setError('');
     setErrorDetails(null);
 
     try {
+      console.log('[SIGNIN DEBUG] Calling signIn...');
       const { error } = await signIn(email, password);
+      console.log('[SIGNIN DEBUG] signIn returned, error:', error);
+      
       if (error) {
         const debugInfo = {
           timestamp: new Date().toISOString(),

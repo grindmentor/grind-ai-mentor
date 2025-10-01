@@ -17,6 +17,14 @@
     min-height: 44px;
     min-width: 44px;
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  
+  /* Smooth press feedback */
+  button:active, a:active, [role="button"]:active {
+    opacity: 0.9;
   }
   
   /* Top navigation buttons specific enhancements */

@@ -304,12 +304,20 @@
       min-width: 44px;
       /* Prevent accidental activation */
       touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+    }
+    
+    /* Native app press feedback */
+    button:active, [role="button"]:active, .touch-target:active {
+      opacity: 0.9;
     }
 
     /* Smooth scrolling for mobile */
     * {
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* Prevent zoom on form focus */

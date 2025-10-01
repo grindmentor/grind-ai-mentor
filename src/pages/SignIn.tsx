@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Eye, EyeOff, ArrowLeft, Copy, Check } from 'lucide-react';
 import Logo from '@/components/ui/logo';
+import { toast } from 'sonner';
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -18,15 +19,29 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorDetails, setErrorDetails] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setErrorDetails(null);
 
     try {
       const { error } = await signIn(email, password);
       if (error) {
+        const debugInfo = {
+          timestamp: new Date().toISOString(),
+          errorMessage: error.message,
+          errorName: error.name,
+          errorCode: (error as any).code,
+          errorStatus: (error as any).status,
+          fullError: JSON.stringify(error, null, 2),
+          userEmail: email
+        };
+        setErrorDetails(debugInfo);
+        
         if (error.message.includes('Invalid login credentials')) {
           setError('Invalid email or password. Please check your credentials and try again.');
         } else if (error.message.includes('Email not confirmed')) {
@@ -37,9 +52,33 @@ const SignIn = () => {
       }
       // Navigation handled by AuthContext
     } catch (err) {
+      const debugInfo = {
+        timestamp: new Date().toISOString(),
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorName: err instanceof Error ? err.name : 'Unknown',
+        errorStack: err instanceof Error ? err.stack : undefined,
+        fullError: JSON.stringify(err, Object.getOwnPropertyNames(err), 2),
+        userEmail: email
+      };
+      setErrorDetails(debugInfo);
       setError('An unexpected error occurred. Please try again.');
+      console.error('Sign in error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const copyDebugInfo = () => {
+    if (errorDetails) {
+      const debugText = `Myotopia Sign In Error Report
+========================================
+${Object.entries(errorDetails).map(([key, value]) => `${key}: ${value}`).join('\n')}
+========================================`;
+      
+      navigator.clipboard.writeText(debugText);
+      setCopied(true);
+      toast.success('Debug info copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -65,7 +104,43 @@ const SignIn = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <Alert className="bg-red-900/20 border-red-800 text-red-400">
-                  <AlertDescription>{error}</AlertDescription>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <AlertTitle className="text-red-400 font-semibold mb-2">
+                        Sign In Error
+                      </AlertTitle>
+                      <AlertDescription className="text-red-300 mb-3">
+                        {error}
+                      </AlertDescription>
+                      {errorDetails && (
+                        <div className="mt-3 p-3 bg-black/40 rounded border border-red-800/50">
+                          <p className="text-xs text-red-300 font-mono mb-2">Debug Information:</p>
+                          <div className="text-xs text-red-200 font-mono space-y-1 max-h-32 overflow-y-auto">
+                            {Object.entries(errorDetails).map(([key, value]) => (
+                              <div key={key} className="break-all">
+                                <span className="text-red-400">{key}:</span> {String(value)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {errorDetails && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={copyDebugInfo}
+                        className="shrink-0 h-8 w-8 p-0 hover:bg-red-800/20"
+                      >
+                        {copied ? (
+                          <Check className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-red-300" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </Alert>
               )}
 

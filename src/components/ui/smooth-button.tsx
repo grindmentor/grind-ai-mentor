@@ -58,10 +58,11 @@ export const SmoothButton = forwardRef<HTMLButtonElement, SmoothButtonProps>(
       <Button
         ref={ref}
         className={cn(
-          "transform transition-all duration-200 ease-out",
+          "transform transition-all duration-150 ease-out",
           "hover:scale-[1.02] active:scale-[0.98]",
           "hover:shadow-lg active:shadow-sm",
           "focus:ring-2 focus:ring-orange-500/20 focus:ring-offset-2",
+          "touch-manipulation select-none cursor-pointer",
           className
         )}
         onClick={handleClick}

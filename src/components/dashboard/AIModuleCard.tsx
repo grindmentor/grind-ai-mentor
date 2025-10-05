@@ -107,11 +107,22 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   const borderColor = getBorderColor(moduleGradient, title);
   const iconBgColor = getIconBgColor(title);
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     // Immediate click response
     onClick();
     // Defer analytics
     setTimeout(() => onInteraction?.(id), 0);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Prevent hover effects on touch
+    e.currentTarget.classList.add('touch-active');
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.currentTarget.classList.remove('touch-active');
   };
 
   const handleMouseEnter = () => {
@@ -121,11 +132,14 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   return (
     <Card 
       className={cn(
-        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-transform duration-200 active:scale-95 hover:scale-105 hover:shadow-2xl group relative overflow-hidden border ${borderColor}`,
+        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-transform duration-200 active:scale-95 group relative overflow-hidden border ${borderColor}`,
         "animate-fade-in transform-gpu",
+        "@media (hover: hover) { hover:scale-105 hover:shadow-2xl }",
         isPremium && !isSubscribed ? 'opacity-75' : ''
       )}
       onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       onMouseEnter={handleMouseEnter}
     >
       {/* Background pattern with reduced opacity */}

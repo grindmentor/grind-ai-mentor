@@ -23,19 +23,23 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Ultra-optimized for production
     target: 'es2020',
-    minify: mode === 'production' ? 'terser' : 'esbuild',
-    terserOptions: mode === 'production' ? {
+    minify: 'terser', // Always minify for better performance
+    terserOptions: {
       compress: {
-        drop_console: true,
+        drop_console: mode === 'production', // Keep console in dev for debugging
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info', 'console.debug'] : [],
         dead_code: true,
         unused: true,
+        passes: 2, // Multiple passes for better compression
       },
       mangle: {
         safari10: true,
       },
-    } : undefined,
+      format: {
+        comments: false, // Remove all comments
+      },
+    },
     rollupOptions: {
       output: {
         // Ultra-optimized manual chunk splitting for better caching

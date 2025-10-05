@@ -107,9 +107,14 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   const borderColor = getBorderColor(moduleGradient, title);
   const iconBgColor = getIconBgColor(title);
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Remove hover state immediately on touch devices
+    const target = e.currentTarget as HTMLElement;
+    target.blur();
+    
     // Immediate click response
     onClick();
     // Defer analytics
@@ -117,12 +122,19 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Prevent hover effects on touch
-    e.currentTarget.classList.add('touch-active');
+    // Mark as touched to prevent hover states
+    const target = e.currentTarget as HTMLElement;
+    target.style.pointerEvents = 'auto';
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    e.currentTarget.classList.remove('touch-active');
+    const target = e.currentTarget as HTMLElement;
+    // Clear any hover states
+    target.blur();
+    // Brief delay to ensure click happens before blur
+    setTimeout(() => {
+      target.style.pointerEvents = '';
+    }, 50);
   };
 
   const handleMouseEnter = () => {
@@ -132,9 +144,8 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   return (
     <Card 
       className={cn(
-        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-transform duration-200 active:scale-95 group relative overflow-hidden border ${borderColor}`,
+        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-transform duration-200 active:scale-95 [@media(hover:hover)]:hover:scale-105 [@media(hover:hover)]:hover:shadow-2xl group relative overflow-hidden border ${borderColor}`,
         "animate-fade-in transform-gpu",
-        "@media (hover: hover) { hover:scale-105 hover:shadow-2xl }",
         isPremium && !isSubscribed ? 'opacity-75' : ''
       )}
       onClick={handleClick}

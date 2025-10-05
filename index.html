@@ -50,7 +50,12 @@
     <!-- Critical CSS inline -->
     <style>
       /* Critical CSS for immediate rendering */
-      html { scroll-behavior: smooth; }
+      html { 
+        scroll-behavior: smooth;
+        /* Prevent text size adjustment on orientation change */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
       body { 
         margin: 0; 
         padding: 0; 
@@ -58,8 +63,15 @@
         background: linear-gradient(135deg, #000000 0%, rgba(249, 115, 22, 0.1) 50%, rgba(220, 38, 38, 0.2) 100%);
         color: white;
         overflow-x: hidden;
+        /* Better font rendering */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
-      #root { min-height: 100vh; }
+      #root { 
+        min-height: 100vh;
+        /* Isolate rendering for better performance */
+        contain: layout style paint;
+      }
       .font-orbitron { font-family: 'Orbitron', monospace; }
       
       /* Loading animation */
@@ -75,6 +87,19 @@
         to { transform: translateY(0); opacity: 1; }
       }
       .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+      
+      /* Mobile optimizations */
+      @media (max-width: 768px) {
+        /* Lighter shadows on mobile for better performance */
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Prevent zoom on input focus */
+        input, textarea, select {
+          font-size: 16px;
+        }
+      }
     </style>
     
     <!-- Optimized font loading -->

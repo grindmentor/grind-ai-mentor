@@ -8,6 +8,8 @@ performanceMonitor.startMeasure('app-startup');
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './styles/mobile-optimizations.css'
+import './styles/mobile-performance.css'
 import App from './App.tsx'
 import "./utils/prodOptimizations.ts"
 import { PerformanceProvider } from '@/components/ui/performance-provider'

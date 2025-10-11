@@ -11,7 +11,8 @@ import './index.css'
 import './styles/mobile-optimizations.css'
 import './styles/mobile-performance.css'
 import App from './App.tsx'
-import "./utils/prodOptimizations.ts"
+import { finalizeProdOptimizations } from './utils/performance'
+finalizeProdOptimizations();
 import { PerformanceProvider } from '@/components/ui/performance-provider'
 import { loadAppShell } from '@/utils/appShellCache'
 

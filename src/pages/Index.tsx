@@ -104,8 +104,8 @@ const Index = () => {
                 <Logo size={isMobile ? "lg" : "xl"} />
               </div>
               
-              <Badge className="mb-4 sm:mb-6 md:mb-8 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 transition-colors">
-                <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+              <Badge className="mb-4 sm:mb-6 md:mb-8 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30 transition-colors" aria-label="Science-Powered Fitness AI badge">
+                <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-2" aria-hidden="true" />
                 Science-Powered Fitness AI
               </Badge>
               
@@ -126,12 +126,22 @@ const Index = () => {
               
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0">
                 <Button 
-                  onClick={() => navigate(user ? '/app' : '/signin')}
+                  onClick={() => {
+                    // Track CTA click event
+                    if (typeof window !== 'undefined' && (window as any).trackEvent) {
+                      (window as any).trackEvent('get_started_click', {
+                        button_location: 'hero_cta',
+                        user_status: user ? 'authenticated' : 'guest'
+                      });
+                    }
+                    navigate(user ? '/app' : '/signin');
+                  }}
                   size={isMobile ? "default" : "lg"}
                   className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  aria-label={user ? 'Go to your dashboard' : 'Start your free fitness journey'}
                 >
                   {user ? 'Go to Dashboard' : 'Start for Free'}
-                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
+                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
                 </Button>
                 
                 <Button 
@@ -139,6 +149,7 @@ const Index = () => {
                   variant="outline"
                   size={isMobile ? "default" : "lg"}
                   className="w-full sm:w-auto border-gray-600 text-white hover:bg-gray-800/50 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg"
+                  aria-label="Learn more about Myotopia"
                 >
                   Learn More
                 </Button>
@@ -151,19 +162,19 @@ const Index = () => {
         <KeyFeatures />
 
         {/* Features Section */}
-        <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 md:mb-16">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4">
+        <div className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
               <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                 Powered by Science
               </span>
             </h2>
-            <p className="text-gray-400 text-sm sm:text-base md:text-lg">
+            <p className="text-gray-400 text-base sm:text-lg">
               Experience the future of fitness with AI that understands your unique needs
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {features.map((feature, index) => (
               <AnimatedCard 
                 key={index}
@@ -188,17 +199,17 @@ const Index = () => {
         <AvailableAchievements />
 
         {/* Benefits Section */}
-        <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
-          <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 md:mb-16">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4 text-white">
+        <div className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
+          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4 text-white">
               Why Choose Our Platform?
             </h2>
-            <p className="text-gray-400 text-sm sm:text-base md:text-lg">
+            <p className="text-gray-400 text-base sm:text-lg">
               Built for serious fitness enthusiasts who want real results
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
               <AnimatedCard 
                 key={index}
@@ -216,26 +227,27 @@ const Index = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
+        <div className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
           <AnimatedCard 
-            className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/20 p-6 sm:p-8 md:p-12 text-center"
+            className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/20 p-8 sm:p-10 md:p-12 text-center"
             delay={400}
           >
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
               <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                 Ready to Transform?
               </span>
             </h2>
-            <p className="text-gray-300 text-sm sm:text-base md:text-lg mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto">
+            <p className="text-gray-300 text-base sm:text-lg md:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto">
               Join thousands of users who are already achieving their fitness goals with AI-powered guidance
             </p>
             <Button 
               onClick={() => navigate(user ? '/app' : '/signin')}
               size={isMobile ? "default" : "lg"}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold"
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 text-base sm:text-lg font-semibold"
+              aria-label={user ? 'Go to your dashboard' : 'Start your free fitness journey'}
             >
               {user ? 'Go to Dashboard' : 'Start for Free'}
-              <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
+              <ArrowRight className="ml-2 w-5 h-5" aria-hidden="true" />
             </Button>
           </AnimatedCard>
         </div>

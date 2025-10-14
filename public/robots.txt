@@ -1,14 +1,24 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# robots.txt for Myotopia
 
 User-agent: *
 Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /about
+Allow: /support
+Allow: /research
+
+# Disallow authenticated/private areas
+Disallow: /app
+Disallow: /app/*
+Disallow: /signin
+Disallow: /signup
+Disallow: /auth/
+Disallow: /settings
+
+# Disallow API endpoints and functions
+Disallow: /api/
+Disallow: /functions/
+
+# Sitemap location
+Sitemap: https://www.myotopia.app/sitemap.xml

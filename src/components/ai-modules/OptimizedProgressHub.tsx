@@ -75,29 +75,62 @@ const OptimizedProgressHub: React.FC = () => {
     const recovery = data.recovery;
     const goals = data.goals;
 
-    // Calculate muscle development scores based on workout data
-    const muscleGroups = [
-      { name: 'chest', score: 75, progressTrend: 'up' as const },
-      { name: 'shoulders', score: 68, progressTrend: 'up' as const },
-      { name: 'arms', score: 72, progressTrend: 'stable' as const },
-      { name: 'back', score: 80, progressTrend: 'up' as const },
-      { name: 'core', score: 65, progressTrend: 'up' as const },
-      { name: 'legs', score: 85, progressTrend: 'up' as const },
-      { name: 'glutes', score: 70, progressTrend: 'stable' as const },
-      { name: 'calves', score: 60, progressTrend: 'down' as const },
-      { name: 'traps', score: 73, progressTrend: 'up' as const }
-    ];
+    // Calculate muscle development scores based on REAL workout data only
+    const muscleExerciseMap: Record<string, string[]> = {
+      chest: ['bench press', 'chest press', 'push up', 'fly', 'dip'],
+      shoulders: ['shoulder press', 'lateral raise', 'front raise', 'overhead press'],
+      arms: ['bicep curl', 'tricep', 'hammer curl', 'skull crusher'],
+      back: ['row', 'pull up', 'lat pulldown', 'deadlift'],
+      core: ['plank', 'crunch', 'ab', 'sit up', 'leg raise'],
+      legs: ['squat', 'leg press', 'lunge', 'leg extension', 'leg curl'],
+      glutes: ['hip thrust', 'glute bridge', 'kickback'],
+      calves: ['calf raise', 'calf press'],
+      traps: ['shrug', 'upright row']
+    };
+
+    // Build muscle groups from actual workout data
+    const muscleGroups = Object.entries(muscleExerciseMap).map(([muscle, keywords]) => {
+      const relevantWorkouts = workouts.filter(w => 
+        keywords.some(keyword => w.exercise_name?.toLowerCase().includes(keyword))
+      );
+      
+      const totalVolume = relevantWorkouts.reduce((sum, w) => 
+        sum + (w.weight || 0) * (w.sets || 0) * (w.reps || 0), 0
+      );
+      
+      // Only include muscles with actual training data
+      if (relevantWorkouts.length === 0 || totalVolume === 0) {
+        return null;
+      }
+
+      // Calculate score based on volume and frequency
+      const score = Math.min(100, (totalVolume / 1000) + (relevantWorkouts.length * 5));
+      
+      return {
+        name: muscle,
+        score: Math.round(score),
+        progressTrend: 'up' as const
+      };
+    }).filter((mg): mg is NonNullable<typeof mg> => mg !== null);
 
     const totalWorkouts = workouts.length;
     const avgSleep = recovery.length > 0 ? recovery.reduce((sum, r) => sum + (r.sleep_hours || 0), 0) / recovery.length : 0;
     const activeGoals = goals.filter(g => !g.is_completed).length;
+    
+    // Calculate overall progress based on real data only
+    const overallProgress = Math.min(100, Math.max(
+      0,
+      (totalWorkouts * 2) + // 2% per workout
+      (avgSleep > 0 ? (avgSleep / 8) * 20 : 0) + // Up to 20% for good sleep
+      (activeGoals * 5) // 5% per active goal
+    ));
 
     return {
       muscleGroups,
       totalWorkouts,
-      avgSleep,
+      avgSleep: Math.round(avgSleep * 10) / 10,
       activeGoals,
-      overallProgress: 74
+      overallProgress: Math.round(overallProgress)
     };
   }, [data]);
 
@@ -175,7 +208,7 @@ const OptimizedProgressHub: React.FC = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Overview
@@ -184,44 +217,43 @@ const OptimizedProgressHub: React.FC = () => {
             <Eye className="h-4 w-4" />
             Physique
           </TabsTrigger>
-          <TabsTrigger value="strength" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Strength
-          </TabsTrigger>
           <TabsTrigger value="recovery" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
-            Recovery
+            Mental
           </TabsTrigger>
           <TabsTrigger value="goals" className="flex items-center gap-2">
             <Trophy className="h-4 w-4" />
-            Goals
+            Science
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Suspense fallback={<ProgressSkeleton />}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Overall</CardTitle></CardHeader>
               <CardContent>
                 <Progress value={progressMetrics.overallProgress} className="h-2" />
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Workouts</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-2xl font-semibold">{progressMetrics.totalWorkouts}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Avg Sleep</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-2xl font-semibold">{progressMetrics.avgSleep.toFixed(1)}h</p>
-              </CardContent>
-            </Card>
-          </div>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Workouts</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-semibold">{progressMetrics.totalWorkouts}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Avg Sleep</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-semibold">{progressMetrics.avgSleep > 0 ? `${progressMetrics.avgSleep}h` : '--'}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="physique" className="space-y-6">
+          <Suspense fallback={<ProgressSkeleton />}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <Card>
@@ -261,39 +293,69 @@ const OptimizedProgressHub: React.FC = () => {
               </Card>
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="strength">
-          <Card>
-            <CardHeader>
-              <CardTitle>Strength Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Strength tracking data will be displayed here.</p>
-            </CardContent>
-          </Card>
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="recovery">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recovery Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Recovery and wellness data will be displayed here.</p>
-            </CardContent>
-          </Card>
+          <Suspense fallback={<ProgressSkeleton />}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Mental & Recovery Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data?.recovery && data.recovery.length > 0 ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Tracking {data.recovery.length} recovery entries
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Avg Sleep</p>
+                        <p className="text-2xl font-bold">{progressMetrics?.avgSleep || 0}h</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Avg Stress</p>
+                        <p className="text-2xl font-bold">
+                          {data.recovery.length > 0 
+                            ? (data.recovery.reduce((sum, r) => sum + (r.stress_level || 0), 0) / data.recovery.length).toFixed(1)
+                            : '--'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">No recovery data yet. Start tracking sleep and stress levels.</p>
+                )}
+              </CardContent>
+            </Card>
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="goals">
-          <Card>
-            <CardHeader>
-              <CardTitle>Goal Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Goal tracking and achievements will be displayed here.</p>
-            </CardContent>
-          </Card>
+          <Suspense fallback={<ProgressSkeleton />}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Scientific Insights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {progressMetrics?.totalWorkouts > 0 ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Based on your {progressMetrics.totalWorkouts} logged workouts
+                    </p>
+                    <div className="p-4 bg-primary/5 rounded-lg">
+                      <p className="text-sm">
+                        Training consistency and progressive overload are key factors in muscle development.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Start logging workouts to see science-based insights.</p>
+                )}
+              </CardContent>
+            </Card>
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>

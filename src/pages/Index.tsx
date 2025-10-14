@@ -10,6 +10,9 @@ import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import Logo from "@/components/ui/logo";
 import AvailableAchievements from "@/components/homepage/AvailableAchievements";
+import KeyFeatures from "@/components/homepage/KeyFeatures";
+import ContactForm from "@/components/homepage/ContactForm";
+import FAQ from "@/components/homepage/FAQ";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -94,7 +97,7 @@ const Index = () => {
         {/* Hero Section */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-transparent to-orange-600/10" />
-          <div className="relative px-4 sm:px-6 pt-8 sm:pt-12 md:pt-20 pb-12 sm:pb-16 mx-auto max-w-7xl lg:px-8">
+          <div className="relative px-4 sm:px-6 pt-6 sm:pt-10 md:pt-16 pb-10 sm:pb-14 mx-auto max-w-7xl lg:px-8">
             <div className="mx-auto max-w-4xl text-center animate-fade-in">
               {/* Logo */}
               <div className="mb-6 sm:mb-8">
@@ -106,7 +109,7 @@ const Index = () => {
                 Science-Powered Fitness AI
               </Badge>
               
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-6 leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-6 leading-tight">
                 <span className="bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent">
                   Transform Your
                 </span>
@@ -116,7 +119,7 @@ const Index = () => {
                 </span>
               </h1>
               
-              <p className="text-sm sm:text-base md:text-lg leading-6 sm:leading-7 md:leading-8 text-gray-300 mb-6 sm:mb-8 md:mb-10 px-2 sm:px-4 md:px-0 max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl leading-relaxed text-gray-300 mb-6 sm:mb-8 md:mb-10 px-2 sm:px-4 md:px-0 max-w-3xl mx-auto">
                 Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. 
                 Based on the latest scientific research for optimal results.
               </p>
@@ -143,6 +146,9 @@ const Index = () => {
             </div>
           </div>
         </div>
+
+        {/* Key Features Section - New */}
+        <KeyFeatures />
 
         {/* Features Section */}
         <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
@@ -233,6 +239,12 @@ const Index = () => {
             </Button>
           </AnimatedCard>
         </div>
+
+        {/* Contact Form - New */}
+        <ContactForm />
+
+        {/* FAQ Section - New */}
+        <FAQ />
 
         {/* Footer Links */}
         <footer className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm">

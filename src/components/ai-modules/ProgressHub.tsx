@@ -131,8 +131,6 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else {
-      navigate('/app', { replace: true });
     }
   };
 
@@ -222,37 +220,38 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
     };
   }, [progressData, muscleGroupData]);
 
-  // Handler functions for interactive elements
+  // Handler functions for interactive elements - removed navigate calls to prevent page reloads
   const handleAddGoal = () => {
-    navigate('/app?module=goals');
+    // Navigation handled by parent Dashboard component via URL params
+    window.location.search = '?module=goals';
   };
 
   const handleViewWorkouts = () => {
-    navigate('/app?module=workout-logger');
+    window.location.search = '?module=workout-logger';
   };
 
   const handleViewNutrition = () => {
-    navigate('/app?module=smart-food-log');
+    window.location.search = '?module=smart-food-log';
   };
 
   const handleEditSchedule = () => {
-    navigate('/app?module=workout-scheduler');
+    window.location.search = '?module=workout-scheduler';
   };
 
   const handleTakePhoto = () => {
-    navigate('/app?module=physique-ai');
+    window.location.search = '?module=physique-ai';
   };
 
   const handleViewPhysique = () => {
-    navigate('/app?module=physique-ai');
+    window.location.search = '?module=physique-ai';
   };
 
   const handleTrackRecovery = () => {
-    navigate('/app?module=recovery-coach');
+    window.location.search = '?module=recovery-coach';
   };
 
   const handleViewStudies = () => {
-    navigate('/app?module=science-hub');
+    window.location.search = '?module=science-hub';
   };
 
   if (isLoading) {

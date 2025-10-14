@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,11 @@ const useProgressData = (userId: string) => {
   });
 };
 
-const OptimizedProgressHub: React.FC = () => {
+interface OptimizedProgressHubProps {
+  onBack?: () => void;
+}
+
+const OptimizedProgressHub: React.FC<OptimizedProgressHubProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { data, isLoading } = useProgressData(user?.id || '');
 

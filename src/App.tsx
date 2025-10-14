@@ -40,6 +40,9 @@ import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AppOptimizations } from "@/components/AppOptimizations";
 import ProtocolHandler from "@/components/ui/protocol-handler";
+import { AppShell } from "@/components/AppShell";
+import { RouteTransition } from "@/components/ui/route-transition";
+import '@/utils/prefetch'; // Initialize prefetching
 
 const queryClient = new QueryClient();
 
@@ -78,142 +81,144 @@ function App() {
                   <Sonner />
                   <BrowserRouter>
                     <ProtocolHandler />
-                    <div className="min-h-screen bg-background">
+                    <AppShell>
                       {/* PWA Titlebar area for window controls overlay */}
                       <div className="titlebar-area" />
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/signin" element={<SignIn />} />
-                        <Route path="/signup" element={<SignUp />} />
-                        <Route path="/auth/callback" element={<AuthCallback />} />
-                        <Route
-                          path="/app"
-                          element={
-                            <ProtectedRoute>
-                              <AppPage />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/modules"
-                          element={
-                            <ProtectedRoute>
-                              <ModuleLibrary />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/settings"
-                          element={
-                            <ProtectedRoute>
-                              <Settings />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/profile"
-                          element={
-                            <ProtectedRoute>
-                              <Profile />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/workout-logger"
-                          element={
-                            <ProtectedRoute>
-                              <WorkoutLogger />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/physique-ai"
-                          element={
-                            <ProtectedRoute>
-                              <PhysiqueAI />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/physique-ai-dashboard"
-                          element={
-                            <ProtectedRoute>
-                              <PhysiqueAIDashboard />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/smart-food-log"
-                          element={
-                            <ProtectedRoute>
-                              <SmartFoodLog />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/blueprint-ai"
-                          element={
-                            <ProtectedRoute>
-                              <BlueprintAIWrapper />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/workout-detail"
-                          element={
-                            <ProtectedRoute>
-                              <WorkoutDetail />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/exercise-detail"
-                          element={
-                            <ProtectedRoute>
-                              <ExerciseDetail />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route path="/pricing" element={<Pricing />} />
-                        <Route path="/support" element={<Support />} />
-                        <Route path="/terms" element={<Terms />} />
-                        <Route path="/privacy" element={<Privacy />} />
-                        <Route path="/about" element={<About />} />
-                        <Route 
-                          path="/research" 
-                          element={
-                            <ProtectedRoute>
-                              <Research />
-                            </ProtectedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/create-goal" 
-                          element={
-                            <ProtectedRoute>
-                              <CreateGoal />
-                            </ProtectedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/add-food" 
-                          element={
-                            <ProtectedRoute>
-                              <AddFood />
-                            </ProtectedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/create-exercise" 
-                          element={
-                            <ProtectedRoute>
-                              <CreateExercise />
-                            </ProtectedRoute>
-                          } 
-                        />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </div>
+                      <RouteTransition>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/signin" element={<SignIn />} />
+                          <Route path="/signup" element={<SignUp />} />
+                          <Route path="/auth/callback" element={<AuthCallback />} />
+                          <Route
+                            path="/app"
+                            element={
+                              <ProtectedRoute>
+                                <AppPage />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/modules"
+                            element={
+                              <ProtectedRoute>
+                                <ModuleLibrary />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/settings"
+                            element={
+                              <ProtectedRoute>
+                                <Settings />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/profile"
+                            element={
+                              <ProtectedRoute>
+                                <Profile />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/workout-logger"
+                            element={
+                              <ProtectedRoute>
+                                <WorkoutLogger />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/physique-ai"
+                            element={
+                              <ProtectedRoute>
+                                <PhysiqueAI />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/physique-ai-dashboard"
+                            element={
+                              <ProtectedRoute>
+                                <PhysiqueAIDashboard />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/smart-food-log"
+                            element={
+                              <ProtectedRoute>
+                                <SmartFoodLog />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/blueprint-ai"
+                            element={
+                              <ProtectedRoute>
+                                <BlueprintAIWrapper />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/workout-detail"
+                            element={
+                              <ProtectedRoute>
+                                <WorkoutDetail />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/exercise-detail"
+                            element={
+                              <ProtectedRoute>
+                                <ExerciseDetail />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route path="/pricing" element={<Pricing />} />
+                          <Route path="/support" element={<Support />} />
+                          <Route path="/terms" element={<Terms />} />
+                          <Route path="/privacy" element={<Privacy />} />
+                          <Route path="/about" element={<About />} />
+                          <Route 
+                            path="/research" 
+                            element={
+                              <ProtectedRoute>
+                                <Research />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/create-goal" 
+                            element={
+                              <ProtectedRoute>
+                                <CreateGoal />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/add-food" 
+                            element={
+                              <ProtectedRoute>
+                                <AddFood />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/create-exercise" 
+                            element={
+                              <ProtectedRoute>
+                                <CreateExercise />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </RouteTransition>
+                    </AppShell>
                   </BrowserRouter>
                 </TooltipProvider>
               </ExerciseShareProvider>

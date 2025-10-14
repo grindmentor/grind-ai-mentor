@@ -19,13 +19,20 @@
     
     <!-- Enhanced PWA Meta Tags -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#F97316" />
+    <meta name="theme-color" content="#F97316" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Myotopia" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="msapplication-TileColor" content="#F97316" />
     <meta name="msapplication-config" content="/browserconfig.xml" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    
+    <!-- iOS-specific optimizations -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-startup-image" href="/icons/icon-512.png" />
     
     <!-- Performance optimizations -->
     <meta name="format-detection" content="telephone=no" />
@@ -62,6 +69,11 @@
     <link rel="preconnect" href="https://druwytttcxnfpwgyrvmt.supabase.co" crossorigin>
     <link rel="dns-prefetch" href="https://druwytttcxnfpwgyrvmt.supabase.co">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://api.openai.com">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/icons/icon-512.png" as="image" type="image/png">
+    <link rel="preload" href="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" as="image" type="image/png">
     
     <!-- Critical CSS inline -->
     <style>
@@ -115,6 +127,22 @@
         input, textarea, select {
           font-size: 16px;
         }
+      }
+      
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      
+      /* Touch optimizations */
+      button, a {
+        touch-action: manipulation;
+        min-width: 44px;
+        min-height: 44px;
       }
     </style>
     

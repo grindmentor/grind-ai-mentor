@@ -1,9 +1,10 @@
-const CACHE_NAME = 'myotopia-v5-ultrafast';
-const STATIC_CACHE = 'myotopia-static-v5';
-const DYNAMIC_CACHE = 'myotopia-dynamic-v5';
-const AI_CACHE = 'myotopia-ai-responses-v3';
-const IMAGE_CACHE = 'myotopia-images-v3';
-const INSTANT_CACHE = 'myotopia-instant-v1';
+const CACHE_NAME = 'myotopia-v6-native-feel';
+const STATIC_CACHE = 'myotopia-static-v6';
+const DYNAMIC_CACHE = 'myotopia-dynamic-v6';
+const AI_CACHE = 'myotopia-ai-responses-v4';
+const IMAGE_CACHE = 'myotopia-images-v4';
+const INSTANT_CACHE = 'myotopia-instant-v2';
+const API_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for API responses
 
 let aggressiveCacheEnabled = false;
 
@@ -53,9 +54,25 @@ self.addEventListener('install', (event) => {
   }
 });
 
+// Stale-While-Revalidate helper for instant-feel navigation
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+  
+  const fetchPromise = fetch(request).then((networkResponse) => {
+    if (networkResponse && networkResponse.status === 200) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  }).catch(() => cachedResponse); // Fallback to cache on network error
+
+  // Return cached response immediately if available, otherwise wait for network
+  return cachedResponse || fetchPromise;
+}
+
 // Activate with aggressive cleanup
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating ultra-optimized service worker...');
+  console.log('[SW] Activating native-feel service worker...');
   
   event.waitUntil(
     Promise.all([
@@ -63,7 +80,7 @@ self.addEventListener('activate', (event) => {
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (!cacheName.includes('v4') && !cacheName.includes('v2')) {
+            if (!cacheName.includes('v6') && !cacheName.includes('v5')) {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -73,7 +90,7 @@ self.addEventListener('activate', (event) => {
       // Take control immediately
       self.clients.claim()
     ]).then(() => {
-      console.log('[SW] Activation complete - ultra performance mode enabled');
+      console.log('[SW] Activation complete - native-feel mode enabled');
     })
   );
 });
@@ -231,23 +248,16 @@ async function handleAIRequestCached(request) {
 }
 
 async function handleAPIRequestFast(request) {
+  // For GET requests, use stale-while-revalidate for instant responses
+  if (request.method === 'GET') {
+    return staleWhileRevalidate(request, DYNAMIC_CACHE);
+  }
+  
+  // For non-GET requests, always go to network
   try {
     const networkResponse = await fetch(request.clone(), {
-      // Optimize API requests
       keepalive: true
     });
-    
-    // Cache successful GET requests only for short periods
-    if (networkResponse.ok && request.method === 'GET') {
-      const cache = await caches.open(DYNAMIC_CACHE);
-      const responseToCache = networkResponse.clone();
-      cache.put(request.clone(), responseToCache);
-      
-      // Auto-expire after 5 minutes
-      setTimeout(() => {
-        cache.delete(request.clone());
-      }, 300000);
-    }
     
     return networkResponse;
   } catch (error) {

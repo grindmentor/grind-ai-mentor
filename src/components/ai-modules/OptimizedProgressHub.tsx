@@ -206,9 +206,9 @@ const OptimizedProgressHub: React.FC = () => {
         </Card>
       </div>
 
-      {/* Main Content Tabs */}
+      {/* Main Content Tabs - Force all content to render */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-4" role="tablist">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Overview
@@ -227,7 +227,7 @@ const OptimizedProgressHub: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6" forceMount hidden={false}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Overall</CardTitle></CardHeader>
@@ -250,7 +250,7 @@ const OptimizedProgressHub: React.FC = () => {
             </div>
         </TabsContent>
 
-        <TabsContent value="physique" className="space-y-6">
+        <TabsContent value="physique" className="space-y-6" forceMount hidden={false}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <Card>
@@ -269,12 +269,10 @@ const OptimizedProgressHub: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Suspense fallback={<div className="h-96 bg-muted rounded-lg animate-pulse" />}>
-                    <RealisticMuscleMap
-                      muscleGroups={progressMetrics.muscleGroups}
-                      viewMode="front"
-                    />
-                  </Suspense>
+                  <RealisticMuscleMap
+                    muscleGroups={progressMetrics.muscleGroups}
+                    viewMode="front"
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -292,7 +290,7 @@ const OptimizedProgressHub: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="recovery">
+        <TabsContent value="recovery" forceMount hidden={false}>
           <Card>
               <CardHeader>
                 <CardTitle>Mental & Recovery Metrics</CardTitle>
@@ -326,7 +324,7 @@ const OptimizedProgressHub: React.FC = () => {
             </Card>
         </TabsContent>
 
-        <TabsContent value="goals">
+        <TabsContent value="goals" forceMount hidden={false}>
           <Card>
               <CardHeader>
                 <CardTitle>Scientific Insights</CardTitle>

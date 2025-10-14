@@ -228,8 +228,7 @@ const OptimizedProgressHub: React.FC = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <Suspense fallback={<ProgressSkeleton />}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">Overall</CardTitle></CardHeader>
               <CardContent>
@@ -245,15 +244,13 @@ const OptimizedProgressHub: React.FC = () => {
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Avg Sleep</CardTitle></CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-semibold">{progressMetrics.avgSleep > 0 ? `${progressMetrics.avgSleep}h` : '--'}</p>
+              <p className="text-2xl font-semibold">{progressMetrics.avgSleep > 0 ? `${progressMetrics.avgSleep}h` : '--'}</p>
                 </CardContent>
               </Card>
             </div>
-          </Suspense>
         </TabsContent>
 
         <TabsContent value="physique" className="space-y-6">
-          <Suspense fallback={<ProgressSkeleton />}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <Card>
@@ -293,12 +290,10 @@ const OptimizedProgressHub: React.FC = () => {
               </Card>
             </div>
           </div>
-          </Suspense>
         </TabsContent>
 
         <TabsContent value="recovery">
-          <Suspense fallback={<ProgressSkeleton />}>
-            <Card>
+          <Card>
               <CardHeader>
                 <CardTitle>Mental & Recovery Metrics</CardTitle>
               </CardHeader>
@@ -329,12 +324,10 @@ const OptimizedProgressHub: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-          </Suspense>
         </TabsContent>
 
         <TabsContent value="goals">
-          <Suspense fallback={<ProgressSkeleton />}>
-            <Card>
+          <Card>
               <CardHeader>
                 <CardTitle>Scientific Insights</CardTitle>
               </CardHeader>
@@ -355,7 +348,6 @@ const OptimizedProgressHub: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-          </Suspense>
         </TabsContent>
       </Tabs>
     </div>

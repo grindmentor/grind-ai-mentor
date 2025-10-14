@@ -365,12 +365,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-8">
-            <React.Suspense fallback={<TabContentSkeleton />}>
-              <ProgressMetrics 
-                metrics={progressMetrics}
-                onAddGoal={handleAddGoal}
-                onViewWorkouts={handleViewWorkouts}
-              />
+            <ProgressMetrics 
+              metrics={progressMetrics}
+              onAddGoal={handleAddGoal}
+              onViewWorkouts={handleViewWorkouts}
+            />
 
               {/* Training Schedule */}
               <Card className="bg-gradient-to-br from-indigo-500/5 to-violet-600/5 border-indigo-500/20">
@@ -476,13 +475,11 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                      </div>
                    </CardContent>
                  </Card>
-                )}
-            </React.Suspense>
+                 )}
           </TabsContent>
 
           <TabsContent value="physique" className="space-y-6 mt-8">
-            <React.Suspense fallback={<TabContentSkeleton />}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Interactive Muscle Map */}
                 <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
                  <CardHeader>
@@ -581,12 +578,10 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                 </CardContent>
               </Card>
             </div>
-            </React.Suspense>
           </TabsContent>
 
           <TabsContent value="mental" className="space-y-6 mt-8">
-            <React.Suspense fallback={<TabContentSkeleton />}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Mental Resilience */}
               <Card className="bg-gradient-to-br from-purple-500/5 to-indigo-600/5 border-purple-500/20">
                  <CardHeader>
@@ -735,12 +730,10 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                 </CardContent>
               </Card>
             </div>
-            </React.Suspense>
           </TabsContent>
 
           <TabsContent value="science" className="space-y-6 mt-8">
-            <React.Suspense fallback={<TabContentSkeleton />}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Scientific Metrics */}
               <Card className="bg-gradient-to-br from-cyan-500/5 to-blue-600/5 border-cyan-500/20">
                  <CardHeader>
@@ -888,7 +881,6 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                 </CardContent>
               </Card>
             </div>
-            </React.Suspense>
           </TabsContent>
         </Tabs>
       </div>

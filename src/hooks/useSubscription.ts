@@ -113,27 +113,22 @@ export const useSubscription = () => {
     try {
       setIsLoading(true);
 
-      // Special handling for premium users - including sindre@limaway.no
-      if (user.email === 'emilbelq@gmail.com' || user.email === 'lucasblandquist@gmail.com' || user.email === 'sindre@limaway.no') {
-        const newStatus = { tier: 'premium', end: null, billing: null };
-        setCurrentTier('premium');
-        setSubscriptionEnd(null);
-        setBillingCycle(null);
-        cacheRef.current = newStatus;
-        lastCheckRef.current = Date.now();
-        return;
-      }
-
       // Check cache freshness (10 seconds for more responsive updates)
       const now = Date.now();
       if (cacheRef.current && (now - lastCheckRef.current) < 10000) {
+        setIsLoading(false);
         return;
       }
 
+      // Call server-side function to check subscription using role-based access control
       const { data, error } = await supabase.functions.invoke('check-subscription');
 
       if (error) {
         console.error('Error checking subscription:', error);
+        // Default to free tier on error
+        setCurrentTier('free');
+        setSubscriptionEnd(null);
+        setBillingCycle(null);
         return;
       }
 
@@ -150,6 +145,10 @@ export const useSubscription = () => {
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
+      // Default to free tier on error
+      setCurrentTier('free');
+      setSubscriptionEnd(null);
+      setBillingCycle(null);
     } finally {
       setIsLoading(false);
     }

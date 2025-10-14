@@ -24,10 +24,52 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // NOTE: This function requires Stripe to be imported - works in production deployment
+    // Create Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+    logStep("Authorization header found");
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
+    if (!user) throw new Error("User not authenticated");
+    logStep("User authenticated", { userId: user.id });
+
+    // Check user role from database using the get_user_role function
+    const { data: roleData, error: roleError } = await supabaseClient.rpc('get_user_role', {
+      _user_id: user.id
+    });
+
+    if (roleError) {
+      logStep("Error fetching role", { error: roleError });
+      throw new Error(`Failed to fetch user role: ${roleError.message}`);
+    }
+
+    const role = roleData || 'free';
+    logStep("User role fetched", { role });
+
+    // Map role to subscription tier
+    const subscriptionTier = role === 'admin' || role === 'premium' ? 'premium' : 'free';
+
+    // Get additional subscription info from subscribers table if exists
+    const { data: subscriberData } = await supabaseClient
+      .from('subscribers')
+      .select('subscription_end, billing_cycle')
+      .eq('user_id', user.id)
+      .single();
+
     return new Response(JSON.stringify({ 
-      error: "Stripe functions are disabled in preview. Deploy to Supabase for full functionality.",
-      subscription_tier: 'free'
+      subscription_tier: subscriptionTier,
+      subscription_end: subscriberData?.subscription_end || null,
+      billing_cycle: subscriberData?.billing_cycle || null
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

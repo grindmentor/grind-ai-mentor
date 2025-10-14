@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Brain, Target, Zap, Star, Users, Trophy, Shield } from "lucide-react";
+import { ArrowRight, Brain, Target, Zap, Star, Users, Trophy, Shield, Menu, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PageTransition } from "@/components/ui/page-transition";
 import { AnimatedCard } from "@/components/ui/animated-card";
@@ -18,6 +18,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -94,10 +95,89 @@ const Index = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground">
+        {/* Mobile Navigation */}
+        <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/80 border-b border-gray-800/50 safe-top">
+          <nav className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl">
+            <div className="flex items-center justify-between h-16 sm:h-20">
+              <div className="flex items-center">
+                <Logo size="sm" />
+              </div>
+              
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
+                <button
+                  onClick={() => navigate('/about')}
+                  className="text-sm lg:text-base text-gray-300 hover:text-orange-400 transition-colors"
+                >
+                  About
+                </button>
+                <button
+                  onClick={() => navigate('/support')}
+                  className="text-sm lg:text-base text-gray-300 hover:text-orange-400 transition-colors"
+                >
+                  Support
+                </button>
+                <Button
+                  onClick={() => navigate(user ? '/app' : '/signin')}
+                  size="sm"
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white min-h-[44px] px-6"
+                >
+                  {user ? 'Dashboard' : 'Sign In'}
+                </Button>
+              </div>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 text-gray-300 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-expanded={mobileMenuOpen}
+                aria-label="Toggle navigation menu"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
+
+            {/* Mobile Menu Overlay */}
+            {mobileMenuOpen && (
+              <div className="md:hidden pb-4 border-t border-gray-800/50 mt-2">
+                <div className="flex flex-col space-y-3 pt-4">
+                  <button
+                    onClick={() => {
+                      navigate('/about');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-left px-4 py-3 text-gray-300 hover:text-orange-400 hover:bg-gray-800/30 rounded-lg transition-colors min-h-[44px]"
+                  >
+                    About
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate('/support');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-left px-4 py-3 text-gray-300 hover:text-orange-400 hover:bg-gray-800/30 rounded-lg transition-colors min-h-[44px]"
+                  >
+                    Support
+                  </button>
+                  <Button
+                    onClick={() => {
+                      navigate(user ? '/app' : '/signin');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white w-full min-h-[44px]"
+                  >
+                    {user ? 'Go to Dashboard' : 'Sign In'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </nav>
+        </header>
+
         {/* Hero Section */}
-        <div className="relative overflow-hidden">
+        <section id="hero" className="relative overflow-hidden scroll-mt-24">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-transparent to-orange-600/10" />
-          <div className="relative px-4 sm:px-6 pt-6 sm:pt-10 md:pt-16 pb-10 sm:pb-14 mx-auto max-w-7xl lg:px-8">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl relative py-16 sm:py-20 lg:py-24">
             <div className="mx-auto max-w-4xl text-center animate-fade-in">
               {/* Logo */}
               <div className="mb-6 sm:mb-8">
@@ -109,7 +189,7 @@ const Index = () => {
                 Science-Powered Fitness AI
               </Badge>
               
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-6 leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
                 <span className="bg-gradient-to-r from-white via-orange-100 to-white bg-clip-text text-transparent">
                   Transform Your
                 </span>
@@ -119,12 +199,12 @@ const Index = () => {
                 </span>
               </h1>
               
-              <p className="text-base sm:text-lg md:text-xl leading-relaxed text-gray-300 mb-6 sm:mb-8 md:mb-10 px-2 sm:px-4 md:px-0 max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg lg:text-xl leading-relaxed text-gray-300 mb-6 sm:mb-8 lg:mb-10 max-w-3xl mx-auto">
                 Get personalized workout plans, nutrition guidance, and expert coaching powered by AI. 
                 Based on the latest scientific research for optimal results.
               </p>
               
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button 
                   onClick={() => {
                     // Track CTA click event
@@ -136,19 +216,19 @@ const Index = () => {
                     }
                     navigate(user ? '/app' : '/signin');
                   }}
-                  size={isMobile ? "default" : "lg"}
-                  className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                  size="lg"
+                  className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-3 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 min-h-[44px]"
                   aria-label={user ? 'Go to your dashboard' : 'Start your free fitness journey'}
                 >
                   {user ? 'Go to Dashboard' : 'Start for Free'}
-                  <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+                  <ArrowRight className="ml-2 w-5 h-5" aria-hidden="true" />
                 </Button>
                 
                 <Button 
                   onClick={() => navigate('/about')}
                   variant="outline"
-                  size={isMobile ? "default" : "lg"}
-                  className="w-full sm:w-auto border-gray-600 text-white hover:bg-gray-800/50 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base md:text-lg"
+                  size="lg"
+                  className="w-full sm:w-auto border-gray-600 text-white hover:bg-gray-800/50 backdrop-blur-sm px-8 py-3 text-base sm:text-lg min-h-[44px]"
                   aria-label="Learn more about Myotopia"
                 >
                   Learn More
@@ -156,101 +236,103 @@ const Index = () => {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Key Features Section - New */}
         <KeyFeatures />
 
         {/* Features Section */}
-        <div className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4">
+        <section id="features" className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl py-12 sm:py-14 lg:py-16 scroll-mt-24">
+          <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4 leading-tight">
               <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                 Powered by Science
               </span>
             </h2>
-            <p className="text-gray-400 text-base sm:text-lg">
+            <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-prose mx-auto">
               Experience the future of fitness with AI that understands your unique needs
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {features.map((feature, index) => (
               <AnimatedCard 
                 key={index}
-                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300"
+                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 hover:bg-gray-800/50 transition-all duration-300 w-full sm:min-h-[260px] lg:min-h-[300px]"
                 delay={feature.delay}
               >
-                <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 flex items-center justify-center ${feature.color}`}>
+                <CardHeader className="text-center p-6 sm:p-8">
+                  <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-700 flex items-center justify-center ${feature.color}`}>
                     {feature.icon}
                   </div>
-                  <CardTitle className="text-base sm:text-lg md:text-xl text-white mb-2">{feature.title}</CardTitle>
-                  <CardDescription className="text-gray-400 leading-relaxed text-xs sm:text-sm md:text-base">
+                  <CardTitle className="text-lg sm:text-xl text-white mb-3">{feature.title}</CardTitle>
+                  <CardDescription className="text-gray-400 leading-relaxed text-sm sm:text-base">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
               </AnimatedCard>
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Available Achievements Section */}
         <AvailableAchievements />
 
         {/* Benefits Section */}
-        <div className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8 bg-gray-900/20 backdrop-blur-sm">
-          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-4 text-white">
-              Why Choose Our Platform?
-            </h2>
-            <p className="text-gray-400 text-base sm:text-lg">
-              Built for serious fitness enthusiasts who want real results
-            </p>
-          </div>
+        <section id="benefits" className="bg-gray-900/20 backdrop-blur-sm scroll-mt-24">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl py-12 sm:py-14 lg:py-16">
+            <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 lg:mb-16">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4 text-white leading-tight">
+                Why Choose Our Platform?
+              </h2>
+              <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-prose mx-auto">
+                Built for serious fitness enthusiasts who want real results
+              </p>
+            </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {benefits.map((benefit, index) => (
-              <AnimatedCard 
-                key={index}
-                className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 p-3 sm:p-4 md:p-6 text-center hover:bg-gray-800/50 transition-all duration-300"
-                delay={index * 100}
-              >
-                <div className="text-orange-500 mb-2 sm:mb-3 md:mb-4 flex justify-center">
-                  {benefit.icon}
-                </div>
-                <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-1 sm:mb-2">{benefit.title}</h3>
-                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{benefit.description}</p>
-              </AnimatedCard>
-            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+              {benefits.map((benefit, index) => (
+                <AnimatedCard 
+                  key={index}
+                  className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 p-6 sm:p-8 text-center hover:bg-gray-800/50 transition-all duration-300 w-full sm:min-h-[240px]"
+                  delay={index * 100}
+                >
+                  <div className="text-orange-500 mb-4 flex justify-center">
+                    {benefit.icon}
+                  </div>
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2">{benefit.title}</h3>
+                  <p className="text-gray-400 text-sm sm:text-base leading-relaxed">{benefit.description}</p>
+                </AnimatedCard>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* CTA Section */}
-        <div className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
+        <section id="cta" className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl py-12 sm:py-14 lg:py-16 scroll-mt-24">
           <AnimatedCard 
-            className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/20 p-8 sm:p-10 md:p-12 text-center"
+            className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border-orange-500/20 p-8 sm:p-10 lg:p-12 text-center"
             delay={400}
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 leading-tight">
               <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
                 Ready to Transform?
               </span>
             </h2>
-            <p className="text-gray-300 text-base sm:text-lg md:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto">
+            <p className="text-gray-300 text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed">
               Join thousands of users who are already achieving their fitness goals with AI-powered guidance
             </p>
             <Button 
               onClick={() => navigate(user ? '/app' : '/signin')}
-              size={isMobile ? "default" : "lg"}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 text-base sm:text-lg font-semibold"
+              size="lg"
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 text-base sm:text-lg font-semibold min-h-[44px]"
               aria-label={user ? 'Go to your dashboard' : 'Start your free fitness journey'}
             >
               {user ? 'Go to Dashboard' : 'Start for Free'}
               <ArrowRight className="ml-2 w-5 h-5" aria-hidden="true" />
             </Button>
           </AnimatedCard>
-        </div>
+        </section>
 
         {/* Contact Form - New */}
         <ContactForm />
@@ -260,35 +342,65 @@ const Index = () => {
 
         {/* Footer Links */}
         <footer className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 md:py-12 lg:px-8">
-            <div className="flex flex-col md:flex-row justify-center items-center space-y-3 md:space-y-0 md:space-x-8">
-              <button
-                onClick={() => navigate('/about')}
-                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
-              >
-                About
-              </button>
-              <button
-                onClick={() => navigate('/privacy')}
-                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
-              >
-                Privacy Policy
-              </button>
-              <button
-                onClick={() => navigate('/terms')}
-                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
-              >
-                Terms of Service
-              </button>
-              <button
-                onClick={() => navigate('/support')}
-                className="text-gray-400 hover:text-orange-400 transition-colors text-sm"
-              >
-                Support
-              </button>
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl py-8 sm:py-10 lg:py-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-8">
+              <div className="text-center sm:text-left">
+                <h3 className="text-white font-semibold mb-3 text-sm sm:text-base">Product</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate('/about')}
+                    className="block text-gray-400 hover:text-orange-400 transition-colors text-sm w-full sm:w-auto text-center sm:text-left min-h-[44px] sm:min-h-0"
+                  >
+                    About
+                  </button>
+                </div>
+              </div>
+              
+              <div className="text-center sm:text-left">
+                <h3 className="text-white font-semibold mb-3 text-sm sm:text-base">Support</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate('/support')}
+                    className="block text-gray-400 hover:text-orange-400 transition-colors text-sm w-full sm:w-auto text-center sm:text-left min-h-[44px] sm:min-h-0"
+                  >
+                    Help Center
+                  </button>
+                </div>
+              </div>
+              
+              <div className="text-center sm:text-left">
+                <h3 className="text-white font-semibold mb-3 text-sm sm:text-base">Legal</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate('/privacy')}
+                    className="block text-gray-400 hover:text-orange-400 transition-colors text-sm w-full sm:w-auto text-center sm:text-left min-h-[44px] sm:min-h-0"
+                  >
+                    Privacy Policy
+                  </button>
+                  <button
+                    onClick={() => navigate('/terms')}
+                    className="block text-gray-400 hover:text-orange-400 transition-colors text-sm w-full sm:w-auto text-center sm:text-left min-h-[44px] sm:min-h-0"
+                  >
+                    Terms of Service
+                  </button>
+                </div>
+              </div>
+              
+              <div className="text-center sm:text-left">
+                <h3 className="text-white font-semibold mb-3 text-sm sm:text-base">Company</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate('/about')}
+                    className="block text-gray-400 hover:text-orange-400 transition-colors text-sm w-full sm:w-auto text-center sm:text-left min-h-[44px] sm:min-h-0"
+                  >
+                    About Us
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="mt-4 sm:mt-6 md:mt-8 text-center">
-              <p className="text-xs text-gray-500">
+            
+            <div className="pt-6 sm:pt-8 border-t border-gray-800/50 text-center">
+              <p className="text-xs sm:text-sm text-gray-500">
                 © 2025 Myotopia. All rights reserved.
               </p>
             </div>

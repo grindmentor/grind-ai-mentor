@@ -69,53 +69,55 @@ const AvailableAchievements = () => {
   ];
 
   return (
-    <div className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-      <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 md:mb-16">
-        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4">
-          <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-            Available Achievements
-          </span>
-        </h2>
-        <p className="text-gray-400 text-sm sm:text-base md:text-lg">
-          Unlock these achievements as you progress on your fitness journey
-        </p>
-      </div>
+    <section id="achievements" className="scroll-mt-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl py-12 sm:py-14 lg:py-16">
+        <div className="mx-auto max-w-2xl text-center mb-8 sm:mb-12 lg:mb-16">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4 leading-tight">
+            <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+              Available Achievements
+            </span>
+          </h2>
+          <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-prose mx-auto">
+            Unlock these achievements as you progress on your fitness journey
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {availableAchievements.map((achievement) => (
-          <Card 
-            key={achievement.id}
-            className={`bg-gray-900/40 backdrop-blur-sm ${achievement.borderColor} hover:bg-gray-800/50 transition-all duration-300 group`}
-          >
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className={`w-10 h-10 ${achievement.bgColor} rounded-xl flex items-center justify-center ${achievement.color}`}>
-                  {achievement.icon}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {availableAchievements.map((achievement) => (
+            <Card 
+              key={achievement.id}
+              className={`bg-gray-900/40 backdrop-blur-sm ${achievement.borderColor} hover:bg-gray-800/50 transition-all duration-300 group w-full`}
+            >
+              <CardHeader className="pb-4 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 ${achievement.bgColor} rounded-xl flex items-center justify-center ${achievement.color}`}>
+                    {achievement.icon}
+                  </div>
+                  <Badge 
+                    className={`${achievement.bgColor} ${achievement.color} ${achievement.borderColor} border text-xs sm:text-sm`}
+                    variant="outline"
+                  >
+                    {achievement.category}
+                  </Badge>
                 </div>
-                <Badge 
-                  className={`${achievement.bgColor} ${achievement.color} ${achievement.borderColor} border`}
-                  variant="outline"
-                >
-                  {achievement.category}
-                </Badge>
-              </div>
-              <CardTitle className="text-white text-lg group-hover:text-orange-400 transition-colors">
-                {achievement.title}
-              </CardTitle>
-              <CardDescription className="text-gray-400 text-sm">
-                {achievement.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="w-full bg-gray-700/50 rounded-full h-2">
-                <div className="bg-gray-600 h-2 rounded-full w-0 transition-all duration-500 group-hover:w-1/4"></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">Ready to unlock</p>
-            </CardContent>
-          </Card>
-        ))}
+                <CardTitle className="text-white text-base sm:text-lg group-hover:text-orange-400 transition-colors">
+                  {achievement.title}
+                </CardTitle>
+                <CardDescription className="text-gray-400 text-sm sm:text-base leading-relaxed">
+                  {achievement.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0 px-4 sm:px-6 pb-4 sm:pb-6">
+                <div className="w-full bg-gray-700/50 rounded-full h-2">
+                  <div className="bg-gray-600 h-2 rounded-full w-0 transition-all duration-500 group-hover:w-1/4"></div>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-500 mt-2">Ready to unlock</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -73,94 +73,96 @@ const ContactForm = () => {
   };
 
   return (
-    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-      <div className="mx-auto max-w-2xl">
-        <AnimatedCard 
-          className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 p-6 sm:p-8"
-          delay={200}
-        >
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-              <Mail className="w-6 h-6 text-white" />
+    <section id="contact" className="scroll-mt-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl py-12 sm:py-14 lg:py-16">
+        <div className="mx-auto max-w-2xl">
+          <AnimatedCard 
+            className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 p-6 sm:p-8 lg:p-10"
+            delay={200}
+          >
+            <div className="text-center mb-6 sm:mb-8">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                <Mail className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 leading-tight">
+                <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  Get in Touch
+                </span>
+              </h2>
+              <p className="text-gray-400 text-base sm:text-lg leading-relaxed">
+                Have questions? We'd love to hear from you
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">
-              <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                Get in Touch
-              </span>
-            </h2>
-            <p className="text-gray-400 text-sm sm:text-base">
-              Have questions? We'd love to hear from you
-            </p>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="text"
-                placeholder="Your Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                aria-label="Your name"
-                aria-invalid={!!errors.name}
-                aria-describedby={errors.name ? "name-error" : undefined}
-                className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-orange-500"
-              />
-              {errors.name && (
-                <p id="name-error" className="text-red-400 text-sm mt-1" role="alert">
-                  {errors.name}
-                </p>
-              )}
-            </div>
-            
-            <div>
-              <Input
-                type="email"
-                placeholder="Your Email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-                aria-label="Your email address"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? "email-error" : undefined}
-                className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-orange-500"
-              />
-              {errors.email && (
-                <p id="email-error" className="text-red-400 text-sm mt-1" role="alert">
-                  {errors.email}
-                </p>
-              )}
-            </div>
-            
-            <div>
-              <Textarea
-                placeholder="Your Message"
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                required
-                rows={5}
-                aria-label="Your message"
-                aria-invalid={!!errors.message}
-                aria-describedby={errors.message ? "message-error" : undefined}
-                className="bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-orange-500 resize-none"
-              />
-              {errors.message && (
-                <p id="message-error" className="text-red-400 text-sm mt-1" role="alert">
-                  {errors.message}
-                </p>
-              )}
-            </div>
-            
-            <Button 
-              type="submit"
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold"
-              aria-label="Send your message"
-            >
-              Send Message
-              <Send className="ml-2 w-4 h-4" aria-hidden="true" />
-            </Button>
-          </form>
-        </AnimatedCard>
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+              <div>
+                <Input
+                  type="text"
+                  placeholder="Your Name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  aria-label="Your name"
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? "name-error" : undefined}
+                  className="w-full bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-orange-500 min-h-[44px] text-base"
+                />
+                {errors.name && (
+                  <p id="name-error" className="text-red-400 text-sm mt-2" role="alert">
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <Input
+                  type="email"
+                  placeholder="Your Email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  aria-label="Your email address"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
+                  className="w-full bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-orange-500 min-h-[44px] text-base"
+                />
+                {errors.email && (
+                  <p id="email-error" className="text-red-400 text-sm mt-2" role="alert">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <Textarea
+                  placeholder="Your Message"
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  required
+                  rows={5}
+                  aria-label="Your message"
+                  aria-invalid={!!errors.message}
+                  aria-describedby={errors.message ? "message-error" : undefined}
+                  className="w-full bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-orange-500 resize-none text-base"
+                />
+                {errors.message && (
+                  <p id="message-error" className="text-red-400 text-sm mt-2" role="alert">
+                    {errors.message}
+                  </p>
+                )}
+              </div>
+              
+              <Button 
+                type="submit"
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold min-h-[44px] text-base sm:text-lg"
+                aria-label="Send your message"
+              >
+                Send Message
+                <Send className="ml-2 w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+              </Button>
+            </form>
+          </AnimatedCard>
+        </div>
       </div>
     </section>
   );

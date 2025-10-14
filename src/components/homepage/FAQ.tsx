@@ -27,43 +27,45 @@ const FAQ = () => {
   ];
 
   return (
-    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 mx-auto max-w-7xl lg:px-8">
-      <div className="mx-auto max-w-3xl">
-        <div className="text-center mb-8 sm:mb-12">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-            <HelpCircle className="w-6 h-6 text-white" />
+    <section id="faq" className="scroll-mt-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl py-12 sm:py-14 lg:py-16">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+              <HelpCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 leading-tight">
+              <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                Frequently Asked Questions
+              </span>
+            </h2>
+            <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-prose mx-auto">
+              Everything you need to know about Myotopia
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
-            <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-              Frequently Asked Questions
-            </span>
-          </h2>
-          <p className="text-gray-400 text-sm sm:text-base">
-            Everything you need to know about Myotopia
-          </p>
-        </div>
 
-        <AnimatedCard 
-          className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 p-4 sm:p-6"
-          delay={100}
-        >
-          <Accordion type="single" collapsible className="w-full space-y-2">
-            {faqs.map((faq, index) => (
-              <AccordionItem 
-                key={index} 
-                value={`item-${index}`}
-                className="border-gray-700/50 bg-gray-800/30 rounded-lg px-4 data-[state=open]:bg-gray-800/50 transition-all"
-              >
-                <AccordionTrigger className="text-white hover:text-orange-400 text-left text-sm sm:text-base">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-gray-400 text-sm sm:text-base leading-relaxed">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </AnimatedCard>
+          <AnimatedCard 
+            className="bg-gray-900/50 backdrop-blur-sm border-gray-700/50 p-4 sm:p-6 lg:p-8"
+            delay={100}
+          >
+            <Accordion type="single" collapsible className="w-full space-y-3 sm:space-y-4">
+              {faqs.map((faq, index) => (
+                <AccordionItem 
+                  key={index} 
+                  value={`item-${index}`}
+                  className="border-gray-700/50 bg-gray-800/30 rounded-lg px-4 sm:px-6 data-[state=open]:bg-gray-800/50 transition-all"
+                >
+                  <AccordionTrigger className="text-white hover:text-orange-400 text-left text-sm sm:text-base lg:text-lg py-4 sm:py-5">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-400 text-sm sm:text-base leading-relaxed max-w-prose">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </AnimatedCard>
+        </div>
       </div>
     </section>
   );

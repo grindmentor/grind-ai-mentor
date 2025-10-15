@@ -10,7 +10,7 @@ interface AppShellProps {
 
 export const AppShell: React.FC<AppShellProps> = ({ 
   children, 
-  showHeader = true,
+  showHeader = false,
   showFooter = false 
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);

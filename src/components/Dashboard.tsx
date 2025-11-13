@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { useNavigate } from 'react-router-dom';
+import { logger } from '@/utils/logger';
 import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
@@ -158,7 +159,7 @@ const Dashboard = () => {
   };
 
   const handleFoodLogged = useCallback((data: any) => {
-    console.log('Food logged:', data);
+    logger.log('Food logged:', data);
   }, []);
 
   // Memoized computed values with caching - Optimized for performance
@@ -247,7 +248,7 @@ const Dashboard = () => {
 
   // Handle case where modules might not be loaded yet
   if (!modules || modules.length === 0) {
-    console.log('Modules not loaded yet, showing loading screen');
+    logger.debug('Modules not loaded yet, showing loading screen');
     return <EnhancedLoading type="dashboard" skeleton={true} message="Loading Myotopia modules..." />;
   }
 
@@ -262,7 +263,7 @@ const Dashboard = () => {
 
   // Show selected module with native transition
   if (selectedModule) {
-    console.log('Rendering selected module:', selectedModule.id);
+    logger.debug('Rendering selected module:', selectedModule.id);
     try {
       const ModuleComponent = selectedModule.component;
       return (
@@ -287,7 +288,7 @@ const Dashboard = () => {
         </ErrorBoundary>
       );
     } catch (error) {
-      console.error('Error rendering selected module:', error);
+      logger.error('Error rendering selected module:', error);
       setSelectedModule(null);
     }
   }

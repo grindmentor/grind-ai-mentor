@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { debounce } from '@/utils/performanceOptimizations';
+import { debounce } from '@/utils/performance';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AIResponse {

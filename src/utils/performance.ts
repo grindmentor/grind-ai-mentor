@@ -1,7 +1,10 @@
 /**
  * Consolidated Performance Utilities
  * All performance-related functions in one place
+ * Replaces both performance.ts and performanceOptimizations.ts
  */
+
+import { logger } from './logger';
 
 // ============================================
 // DEBOUNCE & THROTTLE
@@ -63,7 +66,7 @@ class PerformanceMonitor {
     }
   }
   
-  endMeasure(name: string) {
+  endMeasure(name: string): number {
     if ('performance' in window) {
       performance.mark(`${name}-end`);
       try {
@@ -71,16 +74,14 @@ class PerformanceMonitor {
         const measure = performance.getEntriesByName(name, 'measure')[0];
         if (measure) {
           this.metrics.set(name, measure.duration);
-          
-          // Only log slow operations in development
-          if (import.meta.env.DEV && measure.duration > 100) {
-            console.warn(`Slow operation: ${name} took ${measure.duration.toFixed(2)}ms`);
-          }
+          logger.perf(name, measure.duration);
+          return measure.duration;
         }
       } catch (error) {
         // Silently fail
       }
     }
+    return 0;
   }
   
   async measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
@@ -196,6 +197,72 @@ export const finalizeProdOptimizations = () => {
     performance.mark('app-optimized');
   }
 };
+
+// ============================================
+// IMAGE COMPRESSION
+// ============================================
+
+export function compressImage(
+  file: File,
+  maxWidth: number = 1024,
+  maxHeight: number = 1024,
+  quality: number = 0.8
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      let { width, height } = img;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx?.drawImage(img, 0, 0, width, height);
+      const base64 = canvas.toDataURL('image/jpeg', quality);
+      resolve(base64);
+    };
+
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// ============================================
+// CONNECTION & MEMORY MONITORING
+// ============================================
+
+export function detectConnectionSpeed(): 'slow' | 'fast' {
+  if ('connection' in navigator) {
+    const connection = (navigator as any).connection;
+    const effectiveType = connection?.effectiveType;
+    return ['slow-2g', '2g', '3g'].includes(effectiveType) ? 'slow' : 'fast';
+  }
+  return 'fast';
+}
+
+export function monitorMemoryUsage(): void {
+  if ('memory' in performance) {
+    const memory = (performance as any).memory;
+    logger.info('[Memory]', {
+      used: `${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)}MB`,
+      total: `${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)}MB`,
+      limit: `${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)}MB`
+    });
+  }
+}
 
 // ============================================
 // ANIMATION DURATION

@@ -1,6 +1,6 @@
 
 // Performance monitor initialization
-import { performanceMonitor } from '@/utils/performanceMonitor';
+import { performanceMonitor } from '@/utils/performance';
 
 // Start app loading measurement
 performanceMonitor.startMeasure('app-startup');

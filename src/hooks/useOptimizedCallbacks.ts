@@ -1,25 +1,16 @@
-import { useCallback, useMemo } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { debounce } from '@/utils/performance';
 
-// Performance-optimized utilities
+// Performance-optimized utilities - now using unified performance utils
 export const useOptimizedCallbacks = () => {
   // Memoized handlers factory
   const createStableHandler = useCallback((handler: Function) => {
     return handler;
   }, []);
 
-  // Optimized debounce that doesn't recreate functions
-  const useStableDebounce = useCallback((fn: Function, delay: number) => {
-    return useMemo(() => {
-      let timeoutId: NodeJS.Timeout;
-      return (...args: any[]) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => fn(...args), delay);
-      };
-    }, [fn, delay]);
-  }, []);
-
+  // Return utilities
   return {
     createStableHandler,
-    useStableDebounce
+    debounce
   };
 };

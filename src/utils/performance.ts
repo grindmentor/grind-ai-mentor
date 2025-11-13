@@ -73,7 +73,7 @@ class PerformanceMonitor {
           this.metrics.set(name, measure.duration);
           
           // Only log slow operations in development
-          if (process.env.NODE_ENV === 'development' && measure.duration > 100) {
+          if (import.meta.env.DEV && measure.duration > 100) {
             console.warn(`Slow operation: ${name} took ${measure.duration.toFixed(2)}ms`);
           }
         }
@@ -179,15 +179,8 @@ export class LRUCache<K, V> {
 // ============================================
 
 export const finalizeProdOptimizations = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // Disable excessive console logging
-    const originalConsoleLog = console.log;
-    console.log = (...args) => {
-      if (args[0]?.includes?.('error') || args[0]?.includes?.('warn')) {
-        originalConsoleLog(...args);
-      }
-    };
-
+  if (!import.meta.env.DEV) {
+    // Production optimizations already handled by logger utility
     // Cleanup unused resources
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => {

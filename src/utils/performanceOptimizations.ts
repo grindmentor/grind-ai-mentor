@@ -20,7 +20,9 @@ export class PerformanceMonitor {
     if (!start) return 0;
     
     const duration = performance.now() - start;
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
+    if (import.meta.env.DEV && duration > 100) {
+      console.warn(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
+    }
     this.metrics.delete(name);
     return duration;
   }
@@ -92,7 +94,9 @@ export function createLazyLoader<T>(
       })
       .catch(error => {
         loading = false;
-        console.error('Lazy load error:', error);
+        if (import.meta.env.DEV) {
+          console.error('Lazy load error:', error);
+        }
         return fallback;
       });
 

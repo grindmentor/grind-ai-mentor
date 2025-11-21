@@ -300,9 +300,9 @@ const Dashboard = () => {
       <NativeTransition routeKey="dashboard" type="fade">
         <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden" ref={gestureRef as React.RefObject<HTMLDivElement>}>
           {/* Enhanced header with notifications, profile, and settings */}
-          <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border shadow-sm">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
                   <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                     Myotopia
@@ -319,13 +319,13 @@ const Dashboard = () => {
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-1 sm:space-x-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   {/* Module Library */}
                   <Button
                     onClick={() => navigate('/modules')}
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 hidden sm:flex"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 px-3 py-2 hidden sm:flex min-h-[40px]"
                     title="Module Library"
                   >
                     <span className="text-xs sm:text-sm">Library</span>
@@ -336,7 +336,7 @@ const Dashboard = () => {
                     onClick={handleNotificationsClick}
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 min-h-[44px] min-w-[44px]"
                     title="Notifications"
                   >
                     <Bell className="w-5 h-5" />
@@ -347,7 +347,7 @@ const Dashboard = () => {
                     onClick={handleProfileClick}
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 min-h-[44px] min-w-[44px]"
                     title="Profile"
                   >
                     <User className="w-5 h-5" />
@@ -358,7 +358,7 @@ const Dashboard = () => {
                     onClick={handleSettingsClick}
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 min-h-[44px] min-w-[44px]"
                     title="Settings"
                   >
                     <Settings className="w-5 h-5" />
@@ -368,9 +368,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Main Content with optimized loading */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-full overflow-x-hidden">
-            <div className="max-w-7xl mx-auto">
+          {/* Main Content with optimized loading - extra padding bottom for YouButton */}
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-32 max-w-full overflow-x-hidden">
+            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 lg:space-y-12">
               {/* Welcome section with responsive text */}
               <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
                 <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight">

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { usePreferences } from './PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface UserData {
   // Basic info
@@ -62,25 +63,25 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("UserDataContext - Auth loading:", authLoading);
-    console.log("UserDataContext - User:", user?.email);
+    logger.debug("UserDataContext - Auth loading:", authLoading);
+    logger.debug("UserDataContext - User:", user?.email);
     
     // Wait for auth to complete loading
     if (authLoading) {
-      console.log("UserDataContext - Waiting for auth to complete");
+      logger.debug("UserDataContext - Waiting for auth to complete");
       return;
     }
 
     // If no user after auth loading is complete, stop loading
     if (!authLoading && !user) {
-      console.log("UserDataContext - No user found, stopping loading");
+      logger.debug("UserDataContext - No user found, stopping loading");
       setIsLoading(false);
       return;
     }
 
     // If we have a user, load their data
     if (user) {
-      console.log("UserDataContext - Loading data for user:", user.email);
+      logger.debug("UserDataContext - Loading data for user:", user.email);
       loadUserData();
     }
   }, [user, authLoading]);

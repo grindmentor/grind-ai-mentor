@@ -208,28 +208,43 @@ criticalFonts.forEach((fontUrl, index) => {
   }, index * 50);
 });
 
-// Ultra-aggressive critical component preloading
+// Smart preloading - only preload on user interaction
 if (typeof window !== 'undefined') {
-  // Immediate preloading without waiting for idle
-  const criticalImports = [
-    () => import('./components/Dashboard'),
-    () => import('./components/ui/loading-screen'),
-    () => import('./components/ai-modules/CoachGPT'),
-    () => import('./components/ai-modules/SmartTraining'),
-    () => import('./components/ai-modules/WorkoutLoggerAI'),
-    () => import('./components/ai-modules/TDEECalculator'),
-    () => import('./components/ai-modules/ProgressHub'),
-    () => import('./components/ai-modules/BlueprintAI')
-  ];
-
-  // Load all critical components immediately in parallel
-  criticalImports.forEach((importFn, index) => {
-    setTimeout(() => {
-      importFn().catch(() => {});
-    }, index * 10); // Minimal 10ms stagger
-  });
-
-  // Simple module loading - no aggressive preloading
+  // Preload critical components on hover/focus for instant navigation
+  const setupSmartPreloading = () => {
+    const navLinks = document.querySelectorAll('a[href^="/"], button[data-preload]');
+    
+    navLinks.forEach(link => {
+      const preloadModule = () => {
+        const href = link.getAttribute('href') || link.getAttribute('data-preload');
+        if (!href) return;
+        
+        // Map routes to their lazy-loaded components
+        const preloadMap: { [key: string]: () => Promise<any> } = {
+          '/app': () => import('./pages/App'),
+          '/workout-logger': () => import('./pages/WorkoutLogger'),
+          '/settings': () => import('./pages/Settings'),
+          '/profile': () => import('./pages/Profile'),
+        };
+        
+        const importFn = preloadMap[href];
+        if (importFn) {
+          importFn().catch(() => {});
+        }
+      };
+      
+      // Preload on hover (desktop) or touchstart (mobile)
+      link.addEventListener('mouseenter', preloadModule, { once: true, passive: true });
+      link.addEventListener('touchstart', preloadModule, { once: true, passive: true });
+    });
+  };
+  
+  // Set up smart preloading after initial render
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(setupSmartPreloading);
+  } else {
+    setTimeout(setupSmartPreloading, 1000);
+  }
 }
 
 // Performance measurement

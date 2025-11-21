@@ -3,34 +3,39 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { crashReporter } from "@/utils/crashReporter";
 import { logger } from "@/utils/logger";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+
+// Eager load critical routes for instant access
 import Index from "./pages/Index";
-import { default as AppPage } from "./pages/App";
-import PhysiqueAIDashboard from "./pages/PhysiqueAIDashboard";
-import PhysiqueAI from "./pages/PhysiqueAI";
-import WorkoutLogger from "./pages/WorkoutLogger";
-import SmartFoodLog from "./pages/SmartFoodLog";
-import BlueprintAI from "./components/ai-modules/BlueprintAI";
-import WorkoutDetail from "./pages/WorkoutDetail";
-import ExerciseDetail from "./pages/ExerciseDetail";
-import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
-import Pricing from "./pages/Pricing";
-import Support from "./pages/Support";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import About from "./pages/About";
-import ModuleLibrary from "./pages/ModuleLibrary";
-import Research from "./pages/Research";
-import CreateGoal from "./pages/CreateGoal";
-import AddFood from "./pages/AddFood";
-import CreateExercise from "./pages/CreateExercise";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import AuthCallback from "./pages/AuthCallback";
-import NotFound from "./pages/NotFound";
+
+// Lazy load all other routes for better performance
+const AppPage = lazy(() => import("./pages/App"));
+const PhysiqueAIDashboard = lazy(() => import("./pages/PhysiqueAIDashboard"));
+const PhysiqueAI = lazy(() => import("./pages/PhysiqueAI"));
+const WorkoutLogger = lazy(() => import("./pages/WorkoutLogger"));
+const SmartFoodLog = lazy(() => import("./pages/SmartFoodLog"));
+const BlueprintAI = lazy(() => import("./components/ai-modules/BlueprintAI"));
+const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
+const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Support = lazy(() => import("./pages/Support"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const About = lazy(() => import("./pages/About"));
+const ModuleLibrary = lazy(() => import("./pages/ModuleLibrary"));
+const Research = lazy(() => import("./pages/Research"));
+const CreateGoal = lazy(() => import("./pages/CreateGoal"));
+const AddFood = lazy(() => import("./pages/AddFood"));
+const CreateExercise = lazy(() => import("./pages/CreateExercise"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
@@ -86,7 +91,8 @@ function App() {
                       {/* PWA Titlebar area for window controls overlay */}
                       <div className="titlebar-area" />
                       <RouteTransition>
-                        <Routes>
+                        <Suspense fallback={<LoadingScreen />}>
+                          <Routes>
                           <Route path="/" element={<Index />} />
                           <Route path="/signin" element={<SignIn />} />
                           <Route path="/signup" element={<SignUp />} />
@@ -218,6 +224,7 @@ function App() {
                           />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
+                        </Suspense>
                       </RouteTransition>
                     </AppShell>
                   </BrowserRouter>

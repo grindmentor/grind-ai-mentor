@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface AuthContextType {
   user: User | null;
@@ -69,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setHasCompletedOnboarding(false);
       }
     } catch (error) {
-      console.warn('Could not check onboarding status:', error);
+      logger.warn('Could not check onboarding status:', error);
       setHasCompletedOnboarding(false);
     }
   };
@@ -81,23 +82,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem(`myotopia_onboarding_${user.id}`, 'completed');
         setHasCompletedOnboarding(true);
       } catch (error) {
-        console.warn('Could not save onboarding completion to localStorage:', error);
+        logger.warn('Could not save onboarding completion to localStorage:', error);
       }
     }
   };
 
   useEffect(() => {
-    console.log('Initializing auth context');
+    logger.debug('Initializing auth context');
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
+      logger.debug('Auth state changed:', event, session?.user?.email);
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('[AUTH DEBUG] SIGNED_IN event triggered for:', session.user.email);
+        logger.debug('[AUTH DEBUG] SIGNED_IN event triggered for:', session.user.email);
         
         try {
           const userCreatedAt = new Date(session.user.created_at);
@@ -105,40 +106,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const timeDiff = now.getTime() - userCreatedAt.getTime();
           const minutesDiff = timeDiff / (1000 * 60);
           
-          console.log('[AUTH DEBUG] User age in minutes:', minutesDiff);
+          logger.debug('[AUTH DEBUG] User age in minutes:', minutesDiff);
           setIsNewUser(minutesDiff < 5);
           setIsEmailUnconfirmed(!session.user.email_confirmed_at);
-          console.log('[AUTH DEBUG] Email confirmed:', !!session.user.email_confirmed_at);
+          logger.debug('[AUTH DEBUG] Email confirmed:', !!session.user.email_confirmed_at);
           
           // Defer Supabase call to prevent deadlock
           setTimeout(() => {
-            console.log('[AUTH DEBUG] Checking onboarding status...');
+            logger.debug('[AUTH DEBUG] Checking onboarding status...');
             checkOnboardingStatus(session.user.id).catch(err => {
-              console.error('[AUTH DEBUG] Onboarding check failed:', err);
+              logger.error('[AUTH DEBUG] Onboarding check failed:', err);
             });
           }, 0);
           
           // Defer redirect to allow state to settle
           setTimeout(() => {
             const currentPath = window.location.pathname;
-            console.log('[AUTH DEBUG] Current path:', currentPath);
+            logger.debug('[AUTH DEBUG] Current path:', currentPath);
             
             if (currentPath === '/' || currentPath === '/signin' || currentPath === '/signup') {
-              console.log('[AUTH DEBUG] Redirecting to /app...');
+              logger.debug('[AUTH DEBUG] Redirecting to /app...');
               try {
                 window.location.href = '/app';
               } catch (redirectError) {
-                console.error('[AUTH DEBUG] Redirect failed:', redirectError);
+                logger.error('[AUTH DEBUG] Redirect failed:', redirectError);
               }
             } else {
-              console.log('[AUTH DEBUG] No redirect needed, already on:', currentPath);
+              logger.debug('[AUTH DEBUG] No redirect needed, already on:', currentPath);
             }
           }, 200);
         } catch (error) {
-          console.error('[AUTH DEBUG] Error in SIGNED_IN handler:', error);
+          logger.error('[AUTH DEBUG] Error in SIGNED_IN handler:', error);
         }
       } else if (event === 'SIGNED_OUT') {
-        console.log('[AUTH DEBUG] SIGNED_OUT event triggered');
+        logger.debug('[AUTH DEBUG] SIGNED_OUT event triggered');
         setIsNewUser(false);
         setIsEmailUnconfirmed(false);
         setHasCompletedOnboarding(false);
@@ -156,44 +157,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Check for existing session immediately
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        console.error('Error getting session:', error);
+        logger.error('Error getting session:', error);
       }
       
       if (session?.user) {
-        console.log('[AUTH DEBUG] Initial session found:', session.user.email);
+        logger.debug('[AUTH DEBUG] Initial session found:', session.user.email);
         
         try {
           setSession(session);
           setUser(session.user);
           setIsEmailUnconfirmed(!session.user.email_confirmed_at);
-          console.log('[AUTH DEBUG] Initial session email confirmed:', !!session.user.email_confirmed_at);
+          logger.debug('[AUTH DEBUG] Initial session email confirmed:', !!session.user.email_confirmed_at);
           
           // Defer Supabase call to prevent deadlock
           setTimeout(() => {
-            console.log('[AUTH DEBUG] Initial session - checking onboarding status...');
+            logger.debug('[AUTH DEBUG] Initial session - checking onboarding status...');
             checkOnboardingStatus(session.user.id).catch(err => {
-              console.error('[AUTH DEBUG] Initial onboarding check failed:', err);
+              logger.error('[AUTH DEBUG] Initial onboarding check failed:', err);
             });
           }, 0);
           
           // Defer redirect for existing sessions
           setTimeout(() => {
             const currentPath = window.location.pathname;
-            console.log('[AUTH DEBUG] Initial session - Current path:', currentPath);
+            logger.debug('[AUTH DEBUG] Initial session - Current path:', currentPath);
             
             if (currentPath === '/' || currentPath === '/signin' || currentPath === '/signup') {
-              console.log('[AUTH DEBUG] Initial session - Redirecting to /app...');
+              logger.debug('[AUTH DEBUG] Initial session - Redirecting to /app...');
               try {
                 window.location.href = '/app';
               } catch (redirectError) {
-                console.error('[AUTH DEBUG] Initial session redirect failed:', redirectError);
+                logger.error('[AUTH DEBUG] Initial session redirect failed:', redirectError);
               }
             } else {
-              console.log('[AUTH DEBUG] Initial session - No redirect needed');
+              logger.debug('[AUTH DEBUG] Initial session - No redirect needed');
             }
           }, 200);
         } catch (error) {
-          console.error('[AUTH DEBUG] Error in initial session handler:', error);
+          logger.error('[AUTH DEBUG] Error in initial session handler:', error);
         }
       }
       
@@ -215,7 +216,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const baseUrl = window.location.origin;
     const redirectUrl = `${baseUrl}/auth/callback`;
     
-    console.log('Sign up attempt with redirect URL:', redirectUrl);
+    logger.debug('Sign up attempt with redirect URL:', redirectUrl);
     
     try {
       const { error } = await supabase.auth.signUp({
@@ -233,7 +234,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           await supabase.from('subscribers').insert({ email });
         } catch (subscriberError) {
-          console.warn('Could not add to subscribers:', subscriberError);
+          logger.warn('Could not add to subscribers:', subscriberError);
         }
         
         setCanResendEmail(false);
@@ -243,45 +244,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthPending(false);
       return { error };
     } catch (err) {
-      console.error('Sign up error:', err);
+      logger.error('Sign up error:', err);
       setAuthPending(false);
       return { error: { message: 'An unexpected error occurred during sign up' } };
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    console.log('[AUTH DEBUG] signIn called for:', email);
+    logger.debug('[AUTH DEBUG] signIn called for:', email);
     
     if (authPending) {
-      console.log('[AUTH DEBUG] Auth already pending, rejecting');
+      logger.debug('[AUTH DEBUG] Auth already pending, rejecting');
       return { error: { message: 'Authentication request already in progress.' } };
     }
 
     try {
       setAuthPending(true);
-      console.log('[AUTH DEBUG] Calling supabase.auth.signInWithPassword...');
+      logger.debug('[AUTH DEBUG] Calling supabase.auth.signInWithPassword...');
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      console.log('[AUTH DEBUG] signInWithPassword response - error:', error, 'data:', data?.user?.email);
+      logger.debug('[AUTH DEBUG] signInWithPassword response - error:', error, 'data:', data?.user?.email);
       
       if (error) {
         if (error.message.includes('Email not confirmed')) {
-          console.log('[AUTH DEBUG] Email not confirmed');
+          logger.debug('[AUTH DEBUG] Email not confirmed');
           setIsEmailUnconfirmed(true);
         }
-        console.log('[AUTH DEBUG] Sign in error:', error.message);
+        logger.debug('[AUTH DEBUG] Sign in error:', error.message);
       } else {
-        console.log('[AUTH DEBUG] Sign in successful - waiting for auth state change event...');
+        logger.debug('[AUTH DEBUG] Sign in successful - waiting for auth state change event...');
       }
       
       setAuthPending(false);
       return { error };
     } catch (err) {
-      console.error('[AUTH DEBUG] Sign in unexpected error:', err);
+      logger.error('[AUTH DEBUG] Sign in unexpected error:', err);
       setAuthPending(false);
       return { error: { message: 'An unexpected error occurred during sign in' } };
     }
@@ -294,7 +295,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthPending(false);
       setHasCompletedOnboarding(false);
     } catch (error) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error:', error);
     }
   };
 
@@ -319,7 +320,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthPending(false);
       return { error };
     } catch (err) {
-      console.error('Password reset error:', err);
+      logger.error('Password reset error:', err);
       setAuthPending(false);
       return { error: { message: 'An unexpected error occurred during password reset' } };
     }
@@ -350,7 +351,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthPending(false);
       return { error };
     } catch (err) {
-      console.error('Resend confirmation error:', err);
+      logger.error('Resend confirmation error:', err);
       setAuthPending(false);
       return { error: { message: 'An unexpected error occurred while resending confirmation' } };
     }

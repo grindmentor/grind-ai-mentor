@@ -21,11 +21,25 @@
   /* Enhanced touch targets - minimum 44px for accessibility */
   button, a, input, textarea, select, [role="button"] {
     min-height: 44px;
-    min-width: 44px;
     touch-action: manipulation;
     -webkit-user-select: none;
     user-select: none;
     cursor: pointer;
+  }
+  
+  /* Ensure clickable elements have proper spacing */
+  button, a[href], [role="button"] {
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Better spacing between interactive elements */
+  button + button,
+  a + a,
+  [role="button"] + [role="button"] {
+    margin-left: 8px;
   }
   
   /* Instant feedback on tap */
@@ -113,8 +127,26 @@
   
   /* Better spacing for mobile */
   .mobile-spacing {
-    padding: 12px !important;
-    margin: 8px 0 !important;
+    padding: 16px !important;
+    margin: 12px 0 !important;
+  }
+  
+  /* Responsive padding utilities */
+  .mobile-container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  
+  /* Improved card spacing */
+  [class*="card"] {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* Better form element spacing */
+  input, textarea, select {
+    padding: 12px 16px !important;
+    margin-bottom: 12px !important;
   }
   
   /* Enhanced mobile button styles */

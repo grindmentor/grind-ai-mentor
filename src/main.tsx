@@ -11,6 +11,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './styles/mobile-optimizations.css'
 import './styles/mobile-performance.css'
+import './styles/mobile-touch.css'
 import App from './App.tsx'
 import { finalizeProdOptimizations } from './utils/performance'
 finalizeProdOptimizations();

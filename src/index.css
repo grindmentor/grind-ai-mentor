@@ -16,91 +16,119 @@
 
 /* Define custom CSS variables for theming */
 :root {
+  /* Base colors - Dark theme */
   --background: 0 0% 3%;
   --foreground: 0 0% 98%;
   --card: 0 0% 7%;
   --card-foreground: 0 0% 98%;
   --popover: 0 0% 9%;
   --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 4%;
-  --secondary: 0 0% 14%;
-  --secondary-foreground: 0 0% 98%;
+  
+  /* Brand colors - Orange/Red gradient theme */
+  --primary: 24 95% 53%;        /* Vibrant orange #F97316 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 84% 60%;       /* Vibrant red #DC2626 */
+  --secondary-foreground: 0 0% 100%;
+  
+  /* UI element colors */
   --muted: 0 0% 10%;
   --muted-foreground: 0 0% 60%;
-  --accent: 0 0% 14%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 63% 31%;
-  --destructive-foreground: 0 0% 98%;
+  --accent: 24 95% 53%;         /* Match primary for consistency */
+  --accent-foreground: 0 0% 100%;
+  
+  /* State colors */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  
+  /* Borders and inputs */
   --border: 0 0% 14%;
   --input: 0 0% 14%;
-  --ring: 39 100% 50%;
-    --radius: 0.5rem;
+  --ring: 24 95% 53%;
+  
+  --radius: 0.5rem;
 
-    /* Enhanced Typography Scale */
-    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+  /* Enhanced Typography Scale */
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
 
-    /* Scientific Color Precision */
-    --success-light: 142 85% 55%;
-    --success-DEFAULT: 142 76% 36%;
-    --success-dark: 142 65% 25%;
-    
-    --warning-light: 47 100% 70%;
-    --warning-DEFAULT: 47 96% 53%;
-    --warning-dark: 47 85% 35%;
-    
-    --error-light: 0 100% 75%;
-    --error-DEFAULT: 0 84% 60%;
-    --error-dark: 0 75% 45%;
+  /* Brand gradient colors */
+  --brand-orange: 24 95% 53%;    /* #F97316 */
+  --brand-red: 0 84% 60%;        /* #DC2626 */
+  --brand-orange-light: 24 95% 60%;
+  --brand-orange-dark: 24 95% 45%;
+  --brand-red-light: 0 84% 70%;
+  --brand-red-dark: 0 84% 50%;
 
-    /* Interactive Element Colors */
-    --interactive-primary: var(--primary);
-    --interactive-secondary: var(--secondary);
-    --interactive-success: var(--success-DEFAULT);
-    --interactive-warning: var(--warning-DEFAULT);
-    --interactive-error: var(--error-DEFAULT);
+  /* Scientific Color Precision */
+  --success-light: 142 76% 60%;
+  --success-DEFAULT: 142 76% 45%;
+  --success-dark: 142 76% 35%;
+  
+  --warning-light: 47 96% 70%;
+  --warning-DEFAULT: 47 96% 53%;
+  --warning-dark: 47 96% 40%;
+  
+  --error-light: 0 84% 75%;
+  --error-DEFAULT: 0 84% 60%;
+  --error-dark: 0 84% 45%;
 
-    /* Enhanced Shadows and Glows */
-    --shadow-scientific: 0 10px 30px -10px hsl(var(--primary) / 0.3);
-    --shadow-elevated: 0 20px 40px -15px hsl(var(--primary) / 0.4);
-    --glow-primary: 0 0 40px hsl(var(--primary) / 0.6);
-    --glow-success: 0 0 30px hsl(var(--success-DEFAULT) / 0.5);
-    --glow-warning: 0 0 30px hsl(var(--warning-DEFAULT) / 0.5);
-    --glow-error: 0 0 30px hsl(var(--error-DEFAULT) / 0.5);
-    
-    /* Safe area support */
-    --safe-area-inset-top: env(safe-area-inset-top, 0px);
-    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-area-inset-left: env(safe-area-inset-left, 0px);
-    --safe-area-inset-right: env(safe-area-inset-right, 0px);
-    
-    /* Mobile optimizations */
-    --mobile-touch-target: 44px;
-  }
+  /* Interactive Element Colors */
+  --interactive-primary: var(--primary);
+  --interactive-secondary: var(--secondary);
+  --interactive-success: var(--success-DEFAULT);
+  --interactive-warning: var(--warning-DEFAULT);
+  --interactive-error: var(--error-DEFAULT);
+
+  /* Enhanced Shadows and Glows */
+  --shadow-scientific: 0 10px 30px -10px hsl(24 95% 53% / 0.3);
+  --shadow-elevated: 0 20px 40px -15px hsl(24 95% 53% / 0.4);
+  --glow-primary: 0 0 40px hsl(24 95% 53% / 0.6);
+  --glow-secondary: 0 0 40px hsl(0 84% 60% / 0.6);
+  --glow-success: 0 0 30px hsl(142 76% 45% / 0.5);
+  --glow-warning: 0 0 30px hsl(47 96% 53% / 0.5);
+  --glow-error: 0 0 30px hsl(0 84% 60% / 0.5);
+  
+  /* Safe area support */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  
+  /* Mobile optimizations */
+  --mobile-touch-target: 44px;
+}
 
 /* Apply dark theme using CSS variables */
 .dark {
+  /* Base colors - Dark theme */
   --background: 0 0% 3%;
   --foreground: 0 0% 98%;
   --card: 0 0% 7%;
   --card-foreground: 0 0% 98%;
   --popover: 0 0% 9%;
   --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 4%;
-  --secondary: 0 0% 14%;
-  --secondary-foreground: 0 0% 98%;
+  
+  /* Brand colors - Orange/Red gradient theme */
+  --primary: 24 95% 53%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 84% 60%;
+  --secondary-foreground: 0 0% 100%;
+  
+  /* UI element colors */
   --muted: 0 0% 10%;
   --muted-foreground: 0 0% 60%;
-  --accent: 0 0% 14%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 63% 31%;
-  --destructive-foreground: 0 0% 98%;
+  --accent: 24 95% 53%;
+  --accent-foreground: 0 0% 100%;
+  
+  /* State colors */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  
+  /* Borders and inputs */
   --border: 0 0% 14%;
   --input: 0 0% 14%;
-  --ring: 39 100% 50%;
+  --ring: 24 95% 53%;
 }
 
 /* Define custom layer styles for reusable components */
@@ -131,7 +159,14 @@
 
   /* Text gradient utility */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    background: linear-gradient(135deg, hsl(24 95% 53%), hsl(0 84% 60%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-reverse {
+    background: linear-gradient(135deg, hsl(0 84% 60%), hsl(24 95% 53%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -168,8 +203,17 @@
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)));
+    background: linear-gradient(90deg, hsl(24 95% 53%), hsl(0 84% 60%));
     opacity: 0.8;
+  }
+  
+  /* Brand gradient backgrounds */
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, hsl(24 95% 53%), hsl(0 84% 60%));
+  }
+  
+  .bg-brand-gradient-subtle {
+    background: linear-gradient(135deg, hsl(24 95% 53% / 0.1), hsl(0 84% 60% / 0.1));
   }
 }
 

@@ -62,7 +62,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Enhanced scientific color system
+				// Enhanced scientific color system with brand colors
+				brand: {
+					orange: 'hsl(var(--brand-orange))',
+					'orange-light': 'hsl(var(--brand-orange-light))',
+					'orange-dark': 'hsl(var(--brand-orange-dark))',
+					red: 'hsl(var(--brand-red))',
+					'red-light': 'hsl(var(--brand-red-light))',
+					'red-dark': 'hsl(var(--brand-red-dark))',
+				},
 				success: {
 					light: 'hsl(var(--success-light))',
 					DEFAULT: 'hsl(var(--success-DEFAULT))',
@@ -96,12 +104,14 @@ export default {
 				'scientific': 'var(--shadow-scientific)',
 				'elevated': 'var(--shadow-elevated)',
 				'glow-primary': 'var(--glow-primary)',
+				'glow-secondary': 'var(--glow-secondary)',
 				'glow-success': 'var(--glow-success)',
 				'glow-warning': 'var(--glow-warning)',
 				'glow-error': 'var(--glow-error)'
 			},
 			dropShadow: {
 				'glow-primary': 'var(--glow-primary)',
+				'glow-secondary': 'var(--glow-secondary)',
 				'glow-success': 'var(--glow-success)',
 				'glow-warning': 'var(--glow-warning)',
 				'glow-error': 'var(--glow-error)'

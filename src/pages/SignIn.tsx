@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Logo from '@/components/ui/logo';
+import { logger } from '@/utils/logger';
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -21,14 +22,14 @@ const SignIn = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[SIGNIN DEBUG] Form submitted');
+    logger.debug('[SIGNIN DEBUG] Form submitted');
     setLoading(true);
     setError('');
 
     try {
-      console.log('[SIGNIN DEBUG] Calling signIn...');
+      logger.debug('[SIGNIN DEBUG] Calling signIn...');
       const { error } = await signIn(email, password);
-      console.log('[SIGNIN DEBUG] signIn returned, error:', error);
+      logger.debug('[SIGNIN DEBUG] signIn returned, error:', error);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
@@ -42,40 +43,40 @@ const SignIn = () => {
       // Navigation handled by AuthContext
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
-      console.error('[SIGNIN DEBUG] Unexpected error:', err);
+      logger.error('[SIGNIN DEBUG] Unexpected error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-block mb-6">
             <Logo size="lg" />
           </Link>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign in to continue your fitness journey</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Welcome Back</h1>
+          <p className="text-muted-foreground">Sign in to continue your fitness journey</p>
         </div>
 
-        <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+        <Card className="bg-card/50 border-border backdrop-blur-sm shadow-elevated">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-white text-center">Sign In</CardTitle>
-            <CardDescription className="text-center text-gray-400">
+            <CardTitle className="text-2xl text-foreground text-center">Sign In</CardTitle>
+            <CardDescription className="text-center text-muted-foreground">
               Enter your email and password to access your account
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <Alert className="bg-red-900/20 border-red-800 text-red-400">
+                <Alert className="bg-destructive/20 border-destructive/50 text-destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">Email</Label>
+                <Label htmlFor="email" className="text-foreground">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -83,12 +84,12 @@ const SignIn = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                  className="bg-input border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">Password</Label>
+                <Label htmlFor="password" className="text-foreground">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -97,12 +98,12 @@ const SignIn = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     required
-                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 pr-10"
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -112,18 +113,18 @@ const SignIn = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold shadow-glow-primary"
               >
                 {loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Don't have an account?{' '}
                 <Link
                   to="/signup"
-                  className="text-orange-400 hover:text-orange-300 font-medium"
+                  className="text-primary hover:text-primary/90 font-medium transition-colors"
                 >
                   Sign up
                 </Link>
@@ -133,7 +134,7 @@ const SignIn = () => {
             <div className="mt-4 text-center">
               <Link
                 to="/"
-                className="inline-flex items-center text-gray-400 hover:text-white"
+                className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home

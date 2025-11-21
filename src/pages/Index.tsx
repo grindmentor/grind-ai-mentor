@@ -96,24 +96,24 @@ const Index = () => {
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground">
         {/* Mobile Navigation */}
-        <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/80 border-b border-gray-800/50 safe-top">
+        <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/90 border-b border-gray-800/50 shadow-sm safe-top">
           <nav className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl">
-            <div className="flex items-center justify-between h-16 sm:h-20">
+            <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
               <div className="flex items-center">
                 <Logo size="sm" />
               </div>
               
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
+              <div className="hidden md:flex items-center gap-4 lg:gap-6">
                 <button
                   onClick={() => navigate('/about')}
-                  className="text-sm lg:text-base text-gray-300 hover:text-orange-400 transition-colors"
+                  className="text-sm lg:text-base text-gray-300 hover:text-orange-400 transition-colors px-3 py-2 min-h-[40px]"
                 >
                   About
                 </button>
                 <button
                   onClick={() => navigate('/support')}
-                  className="text-sm lg:text-base text-gray-300 hover:text-orange-400 transition-colors"
+                  className="text-sm lg:text-base text-gray-300 hover:text-orange-400 transition-colors px-3 py-2 min-h-[40px]"
                 >
                   Support
                 </button>

@@ -8,21 +8,24 @@
     tap-highlight-color: rgba(249, 115, 22, 0.1);
   }
   
-  /* Better touch response for all interactive elements */
-  button,
-  a[href],
+  /* Better touch response for interactive elements */
+  button:not(.no-touch-target),
+  a[href]:not(.no-touch-target),
   input[type="button"],
   input[type="submit"],
   input[type="reset"],
-  [role="button"],
-  [role="link"],
-  [tabindex]:not([tabindex="-1"]) {
+  [role="button"]:not(.no-touch-target) {
     min-height: 44px;
-    min-width: 44px;
-    padding: 12px 16px;
     touch-action: manipulation;
     cursor: pointer;
     transition: transform 0.1s ease-out, background-color 0.15s ease-out;
+  }
+  
+  /* Ensure proper spacing between elements */
+  button + button,
+  a + button,
+  button + a {
+    margin-left: 0.5rem;
   }
   
   /* Active state feedback */
@@ -56,15 +59,16 @@
     padding-right: 1rem;
   }
   
-  /* Better grid gaps */
+  /* Better grid gaps with proper spacing */
   [class*="grid"] {
     gap: 1rem;
   }
   
-  /* Improved card layouts */
+  /* Improved card layouts with proper spacing */
   [class*="card"] {
-    padding: 1.25rem;
-    border-radius: 1rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
   }
   
   /* Better form controls */

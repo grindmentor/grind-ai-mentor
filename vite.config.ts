@@ -42,62 +42,26 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        // Ultra-optimized manual chunk splitting for better caching
+        // Simplified chunk splitting for faster loading
         manualChunks: {
-          // Core vendor chunks
           'vendor-react': ['react', 'react-dom'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
           'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-utils': ['clsx', 'tailwind-merge', 'date-fns', 'lodash'],
-          
-          // AI modules (most performance critical)
-          'ai-coach': ['./src/components/ai-modules/CoachGPT.tsx'],
-          'ai-training': ['./src/components/ai-modules/SmartTraining.tsx'],
-          'ai-logger': ['./src/components/ai-modules/WorkoutLoggerAI.tsx'],
-          'ai-food': ['./src/components/ai-modules/SmartFoodLog.tsx'],
-          'ai-blueprint': ['./src/components/ai-modules/BlueprintAI.tsx'],
-          
-          // Dashboard and core components
-          'dashboard': ['./src/components/Dashboard.tsx'],
-          'progress': ['./src/components/ai-modules/ProgressHub.tsx'],
-          
-          // Less frequently used modules
-          'secondary-modules': [
-            './src/components/ai-modules/MealPlanAI.tsx',
-            './src/components/ai-modules/RecoveryCoach.tsx',
-            './src/components/ai-modules/HabitTracker.tsx'
-          ]
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
         },
-        // Optimize asset naming
-        chunkFileNames: mode === 'production' ? 'assets/js/[name]-[hash].js' : 'assets/js/[name].js',
-        entryFileNames: mode === 'production' ? 'assets/js/[name]-[hash].js' : 'assets/js/[name].js',
-        assetFileNames: mode === 'production' ? 'assets/[ext]/[name]-[hash].[ext]' : 'assets/[ext]/[name].[ext]',
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
-    // Optimize chunk size (reduced for faster loading)
-    chunkSizeWarningLimit: 800,
-    // Enable source maps for production debugging (hidden)
-    sourcemap: mode === 'production' ? 'hidden' : true,
-    // Optimize assets (increased for better performance)
-    assetsInlineLimit: 8192,
-    // Enable CSS code splitting
+    // Smaller chunk size for mobile
+    chunkSizeWarningLimit: 500,
+    sourcemap: false,
+    assetsInlineLimit: 4096,
     cssCodeSplit: true,
   },
-  // Ultra-optimized dependencies
+  // Simplified dependencies
   optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      '@supabase/supabase-js',
-      'lucide-react',
-      'framer-motion',
-      'date-fns',
-      'clsx',
-      'tailwind-merge'
-    ],
-    exclude: ['@vite/client', '@vite/env'],
-    // Force optimization for better performance
-    force: mode === 'production',
+    include: ['react', 'react-dom', '@supabase/supabase-js'],
   },
   // Enhanced CSS processing
   css: {

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { crashReporter } from "@/utils/crashReporter";
+import { logger } from "@/utils/logger";
 import Index from "./pages/Index";
 import { default as AppPage } from "./pages/App";
 import PhysiqueAIDashboard from "./pages/PhysiqueAIDashboard";
@@ -56,7 +57,7 @@ function App() {
 
   useEffect(() => {
     // Initialize crash reporter
-    console.log('[APP] Initializing crash reporter...');
+    logger.info('[APP] Initializing crash reporter...');
     crashReporter.initialize();
     
     // Instant app initialization - zero artificial delay

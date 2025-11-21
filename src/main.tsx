@@ -1,6 +1,7 @@
 
 // Performance monitor initialization
 import { performanceMonitor } from '@/utils/performance';
+import { logger } from '@/utils/logger';
 
 // Start app loading measurement
 performanceMonitor.startMeasure('app-startup');
@@ -29,7 +30,7 @@ if ('serviceWorker' in navigator && !window.matchMedia('(display-mode: standalon
         updateViaCache: 'none'
       });
       
-      console.log('SW registered:', registration);
+      logger.info('SW registered:', registration);
       
       // Simplified update handling for mobile
       registration.addEventListener('updatefound', () => {
@@ -45,7 +46,7 @@ if ('serviceWorker' in navigator && !window.matchMedia('(display-mode: standalon
       });
       
     } catch (error) {
-      console.log('SW registration failed:', error);
+      logger.warn('SW registration failed:', error);
     }
   });
 }
@@ -117,7 +118,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        console.log(`Install outcome: ${outcome}`);
+        logger.info(`Install outcome: ${outcome}`);
         deferredPrompt = null;
         installButton.remove();
       }
@@ -143,7 +144,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
   window.addEventListener('appinstalled', () => {
-    console.log('Myotopia PWA installed successfully');
+    logger.info('Myotopia PWA installed successfully');
     deferredPrompt = null;
   });
 
@@ -247,5 +248,5 @@ performanceMonitor.endMeasure('app-startup');
 
 window.addEventListener('load', () => {
   const totalTime = performance.now() - appStart;
-  console.log(`[Performance] Total app initialization: ${totalTime.toFixed(2)}ms`);
+  logger.perf('app-initialization', totalTime);
 });

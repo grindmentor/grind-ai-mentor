@@ -1,0 +1,36 @@
+/* iOS Safe Area Insets - Critical for iPhone notch/status bar */
+
+/* Apply safe areas to root */
+:root {
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
+}
+
+/* Fixed headers should account for status bar */
+.fixed.top-0,
+.sticky.top-0 {
+  padding-top: env(safe-area-inset-top) !important;
+}
+
+/* Bottom elements should account for home indicator */
+.fixed.bottom-0,
+.sticky.bottom-0 {
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
+
+/* iOS-specific safe area classes */
+@supports (-webkit-touch-callout: none) {
+  .ios-header-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  
+  .ios-content-safe-top {
+    margin-top: env(safe-area-inset-top);
+  }
+  
+  .ios-footer-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+}

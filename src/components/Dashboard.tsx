@@ -144,7 +144,7 @@ const Dashboard = () => {
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
           {/* Enhanced header with notifications, profile, and settings */}
-          <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border shadow-sm">
+          <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
             <div className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
@@ -212,8 +212,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Main Content with optimized loading - extra padding bottom for YouButton */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-32 max-w-full overflow-x-hidden">
+          {/* Main Content with optimized loading - extra padding for fixed header */}
+          <div className="px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-32 max-w-full overflow-x-hidden" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))' }}>
             <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 lg:space-y-12">
               {/* Welcome section with responsive text */}
               <div className="mb-6 sm:mb-8 lg:mb-12 text-center">

@@ -1,43 +1,25 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { useNavigate } from 'react-router-dom';
-import { logger } from '@/utils/logger';
-import { PageTransition } from '@/components/ui/page-transition';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
-import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useLocation } from 'react-router-dom';
 import NotificationCenter from '@/components/NotificationCenter';
-import { SmoothTransition } from '@/components/ui/smooth-transition';
-import { BrandedLoading } from '@/components/ui/branded-loading';
 import { EnhancedLoading } from '@/components/ui/enhanced-loading';
-import { useSessionCache } from '@/hooks/useSessionCache';
-import { useModulePreloader } from '@/hooks/usePreloadComponents';
-import { useSessionPersistence } from '@/hooks/useSessionPersistence';
-import { SmoothPageTransition } from '@/components/ui/smooth-page-transition';
-import PremiumPromoCard from '@/components/PremiumPromoCard';
-import { toast } from 'sonner';
-import { useInstantLoading } from '@/hooks/useInstantLoading';
-import { NativeTransition, NativePageTransition } from '@/components/ui/native-transitions';
 import { NativeButton } from '@/components/ui/native-button';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import NativeInstallPrompt from '@/components/ui/native-install-prompt';
 
-// Lazy load heavy components with better loading states
+// Lazy load heavy components
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
 const RealGoalsAchievements = lazy(() => import('@/components/goals/RealGoalsAchievements'));
 const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch'));
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
+const PremiumPromoCard = lazy(() => import('@/components/PremiumPromoCard'));
 
 // Define the type for computed modules
 interface ComputedModules {
@@ -49,86 +31,36 @@ interface ComputedModules {
 const Dashboard = () => {
   const { user } = useAuth();
   const { modules } = useModules();
-  const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const queryClient = useQueryClient();
   const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library' | 'direct'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
-  const { lowDataMode, createDebouncedFunction } = usePerformanceContext();
-  const { currentTier, currentTierData } = useSubscription();
-  const { preloadModule } = useModulePreloader();
-  
-  // Simple loading without aggressive preloading
-  const { isShellReady } = useInstantLoading();
-  
-  // Session persistence for smooth navigation
-  const {
-    scrollElementRef,
-    sessionState,
-    toggleSection,
-    isSectionExpanded
-  } = useSessionPersistence('dashboard');
-  
-  // Session caching for dashboard data
-  const dashboardCache = useSessionCache('dashboard', 300000); // 5 minutes
+  const { currentTier } = useSubscription();
 
   // Helper function to get module by ID
   const getModuleById = (moduleId: string) => {
     return modules?.find(module => module.id === moduleId) || null;
   };
 
-  // Check if we should open notifications from navigation state or URL params
+  // Check for notifications from navigation
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (location.state?.openNotifications || urlParams.get('notifications') === 'true') {
+    if (urlParams.get('notifications') === 'true') {
       setShowNotifications(true);
-      // Clear the state to prevent reopening on subsequent renders
-      if (location.state?.openNotifications) {
-        window.history.replaceState({}, document.title);
-      }
     }
+  }, []);
 
-    // Handle module parameter for direct navigation to modules
-    const moduleParam = urlParams.get('module');
-    if (moduleParam && !selectedModule) {
-      const moduleData = getModuleById(moduleParam);
-      if (moduleData) {
-        setSelectedModule(moduleData);
-        setNavigationSource('direct');
-        
-        // Clear the module parameter from URL to prevent re-triggering
-        const newParams = new URLSearchParams(urlParams);
-        newParams.delete('module');
-        const newUrl = newParams.toString() 
-          ? `${window.location.pathname}?${newParams.toString()}`
-          : window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-      }
-    }
-  }, [location.state, selectedModule]);
-
-  // Optimized module click handler with immediate feedback
+  // Simplified module click handler
   const handleModuleClick = useCallback((module: any) => {
-    // Immediate UI response
     setSelectedModule(module);
     setNavigationSource('dashboard');
-    
-    // Defer preloading to not block UI
-    if (module.id && !lowDataMode) {
-      setTimeout(() => preloadModule(module.id), 0);
-    }
-  }, [preloadModule, lowDataMode]);
+  }, []);
 
   const handleBackToDashboard = useCallback(() => {
-    try {
-      setSelectedModule(null);
-      setShowNotifications(false);
-    } catch (error) {
-      console.error('Error returning to dashboard:', error);
-    }
+    setSelectedModule(null);
+    setShowNotifications(false);
   }, []);
 
   const handleNotificationsClick = () => {
@@ -144,30 +76,15 @@ const Dashboard = () => {
   };
 
   const handleFoodLogged = useCallback((data: any) => {
-    logger.log('Food logged:', data);
+    // Handle food logged
   }, []);
 
-  // Memoized computed values with caching - Optimized for performance
+  // Simplified computed modules
   const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
-    // Fast path with optimized cache key
-    const cacheKey = `v3-modules-${favorites.join(',')}-${modules?.length || 0}`;
-    const cached = dashboardCache.get(cacheKey);
-    
-    if (cached && !favoritesLoading) {
-      return cached as ComputedModules;
-    }
-
-    // Early return for empty modules
     if (!modules || modules.length === 0) {
-      const empty: ComputedModules = {
-        regularModules: [],
-        progressHubModule: null,
-        favoriteModules: []
-      };
-      return empty;
+      return { regularModules: [], progressHubModule: null, favoriteModules: [] };
     }
 
-    // Optimized single-pass filtering
     const regular: any[] = [];
     let progressHub: any = null;
     
@@ -179,111 +96,53 @@ const Dashboard = () => {
       }
     }
     
-    // Use Set for O(1) favorite lookups
     const favoriteSet = new Set(favorites);
     const favoritesList = regular.filter(m => favoriteSet.has(m.id));
 
-    const result: ComputedModules = {
+    return {
       regularModules: regular,
       progressHubModule: progressHub,
       favoriteModules: favoritesList
     };
+  }, [modules, favorites]);
 
-    // Cache only when favorites are loaded
-    if (!favoritesLoading) {
-      dashboardCache.set(cacheKey, result);
-    }
-    return result;
-  }, [modules, favorites, favoritesLoading, dashboardCache]);
-
-  // Optimized idle-time prefetch for Progress Hub
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    // Use requestIdleCallback for non-blocking prefetch during idle time (with Safari fallback)
-    let idleId: number;
-    
-    if ('requestIdleCallback' in window) {
-      idleId = requestIdleCallback(() => {
-        queryClient.prefetchQuery({
-          queryKey: ['progressData', user.id],
-          queryFn: async () => null,
-          staleTime: 5 * 60 * 1000
-        });
-      });
-    } else {
-      // Fallback for Safari/iOS
-      idleId = setTimeout(() => {
-        queryClient.prefetchQuery({
-          queryKey: ['progressData', user.id],
-          queryFn: async () => null,
-          staleTime: 5 * 60 * 1000
-        });
-      }, 100) as unknown as number;
-    }
-
-    return () => {
-      if ('cancelIdleCallback' in window) {
-        cancelIdleCallback(idleId);
-      } else {
-        clearTimeout(idleId);
-      }
-    };
-  }, [user?.id, queryClient]);
-
-  // Handle case where modules might not be loaded yet
+  // Loading state
   if (!modules || modules.length === 0) {
-    logger.debug('Modules not loaded yet, showing loading screen');
-    return <EnhancedLoading type="dashboard" skeleton={true} message="Loading Myotopia modules..." />;
+    return <LoadingScreen />;
   }
 
-  // Show notifications with native transition
+  // Show notifications
   if (showNotifications) {
-    return (
-      <NativeTransition routeKey="notifications" type="slide" direction="forward">
-        <NotificationCenter onBack={handleBackToDashboard} />
-      </NativeTransition>
-    );
+    return <NotificationCenter onBack={handleBackToDashboard} />;
   }
 
-  // Show selected module with native transition
+  // Show selected module
   if (selectedModule) {
-    logger.debug('Rendering selected module:', selectedModule.id);
     try {
       const ModuleComponent = selectedModule.component;
       return (
         <ErrorBoundary>
-          <NativeTransition 
-            routeKey={selectedModule.id} 
-            type="slide" 
-            direction={navigationSource === 'dashboard' ? 'forward' : 'backward'}
-          >
-            <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
-              <Suspense fallback={<EnhancedLoading type="module" skeleton={true} message={`Loading ${selectedModule.title}...`} />}>
-                <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
-                  <ModuleComponent 
-                    onBack={handleBackToDashboard}
-                    onFoodLogged={handleFoodLogged}
-                    navigationSource={navigationSource}
-                  />
-                </ModuleErrorBoundary>
-              </Suspense>
-            </div>
-          </NativeTransition>
+          <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
+            <Suspense fallback={<EnhancedLoading type="module" message={`Loading ${selectedModule.title}...`} />}>
+              <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
+                <ModuleComponent 
+                  onBack={handleBackToDashboard}
+                  onFoodLogged={handleFoodLogged}
+                  navigationSource={navigationSource}
+                />
+              </ModuleErrorBoundary>
+            </Suspense>
+          </div>
         </ErrorBoundary>
       );
     } catch (error) {
-      logger.error('Error rendering selected module:', error);
       setSelectedModule(null);
     }
   }
 
-  // Remove excessive console logs that cause performance issues
-
   return (
     <ErrorBoundary>
-      <NativeTransition routeKey="dashboard" type="fade">
-        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
           {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border shadow-sm">
             <div className="px-4 py-3 sm:px-6 sm:py-4">
@@ -447,7 +306,7 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Premium Promotion for Free Users - Moved to sidebar */}
+              {/* Premium Promotion for Free Users */}
               {currentTier === 'free' && (
                 <div className="mb-6 sm:mb-8">
                   <Suspense fallback={<div className="h-24 bg-gray-800/30 rounded-lg animate-pulse" />}>
@@ -456,24 +315,20 @@ const Dashboard = () => {
                 </div>
               )}
 
-              {/* Dashboard Content Grid - Performance optimized */}
-              {!lowDataMode && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-              <Suspense fallback={<EnhancedLoading type="default" size="sm" message="Loading achievements..." />}>
-                <RealGoalsAchievements />
-              </Suspense>
-              <Suspense fallback={<EnhancedLoading type="default" size="sm" message="Loading research..." />}>
-                <LatestResearch />
-              </Suspense>
-                </div>
-              )}
+              {/* Dashboard Content Grid - Simplified */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
+                <Suspense fallback={<div className="h-48 bg-gray-800/30 rounded-lg animate-pulse" />}>
+                  <RealGoalsAchievements />
+                </Suspense>
+                <Suspense fallback={<div className="h-48 bg-gray-800/30 rounded-lg animate-pulse" />}>
+                  <LatestResearch />
+                </Suspense>
+              </div>
             </div>
           </div>
           
-          {/* Native Install Prompt */}
           <NativeInstallPrompt />
         </div>
-      </NativeTransition>
     </ErrorBoundary>
   );
 };

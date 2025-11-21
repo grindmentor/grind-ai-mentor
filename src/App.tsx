@@ -62,11 +62,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize crash reporter
-    logger.info('[APP] Initializing crash reporter...');
-    crashReporter.initialize();
-    
-    // Instant app initialization - zero artificial delay
+    // Instant initialization
     setIsLoading(false);
   }, []);
 
@@ -83,16 +79,13 @@ function App() {
               <ModulesProvider>
                 <ExerciseShareProvider>
                   <TooltipProvider>
-                  <AppOptimizations />
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
                     <ScrollToTop />
-                    <ProtocolHandler />
                     <AppShell>
-                      {/* PWA Titlebar area for window controls overlay */}
+                      {/* PWA Titlebar area */}
                       <div className="titlebar-area" />
-                      <RouteTransition>
                         <Suspense fallback={<LoadingScreen />}>
                           <Routes>
                           <Route path="/" element={<Index />} />
@@ -227,7 +220,6 @@ function App() {
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                         </Suspense>
-                      </RouteTransition>
                     </AppShell>
                   </BrowserRouter>
                 </TooltipProvider>

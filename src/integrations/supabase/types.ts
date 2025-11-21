@@ -1253,14 +1253,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_age: {
-        Args: { birthdate: string }
-        Returns: number
-      }
-      cleanup_expired_password_resets: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      calculate_age: { Args: { birthdate: string }; Returns: number }
+      cleanup_expired_password_resets: { Args: never; Returns: undefined }
       get_current_usage: {
         Args: { p_user_id: string }
         Returns: {
@@ -1289,10 +1283,7 @@ export type Database = {
           weight: number
         }[]
       }
-      get_user_role: {
-        Args: { _user_id: string }
-        Returns: string
-      }
+      get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1332,6 +1323,12 @@ export type Database = {
           technique_notes: string | null
           updated_at: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "exercises"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       search_exercises_optimized: {
         Args: {
@@ -1361,10 +1358,7 @@ export type Database = {
           technique_notes: string
         }[]
       }
-      verify_user_age: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
+      verify_user_age: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "premium" | "free"

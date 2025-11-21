@@ -96,7 +96,7 @@ const Index = () => {
     <PageTransition>
       <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground">
         {/* Mobile Navigation */}
-        <header className="sticky top-0 z-50 backdrop-blur-lg bg-background/90 border-b border-gray-800/50 shadow-sm safe-top">
+        <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-lg bg-background/90 border-b border-gray-800/50 shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <nav className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl">
             <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
               <div className="flex items-center">
@@ -175,7 +175,7 @@ const Index = () => {
         </header>
 
         {/* Hero Section */}
-        <section id="hero" className="relative overflow-hidden scroll-mt-24">
+        <section id="hero" className="relative overflow-hidden" style={{ marginTop: 'env(safe-area-inset-top)', scrollMarginTop: '96px' }}>
           <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-transparent to-orange-600/10" />
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl relative py-16 sm:py-20 lg:py-24">
             <div className="mx-auto max-w-4xl text-center animate-fade-in">

@@ -12,7 +12,7 @@ const YouButton = ({ onProgressHubClick }: YouButtonProps) => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/95 to-transparent pt-6 pb-4 px-4 safe-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/95 to-transparent pt-6 pb-4 px-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
       <div className="max-w-md mx-auto">
         <SmoothButton
           onClick={handleClick}

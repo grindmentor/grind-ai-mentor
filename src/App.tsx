@@ -48,6 +48,7 @@ import { AppOptimizations } from "@/components/AppOptimizations";
 import ProtocolHandler from "@/components/ui/protocol-handler";
 import { AppShell } from "@/components/AppShell";
 import { RouteTransition } from "@/components/ui/route-transition";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import '@/utils/prefetch'; // Initialize prefetching
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ function App() {
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
+                    <ScrollToTop />
                     <ProtocolHandler />
                     <AppShell>
                       {/* PWA Titlebar area for window controls overlay */}

@@ -67,16 +67,15 @@ export const RouteTransition: React.FC<RouteTransitionProps> = ({
   return (
     <div
       className={cn(
-        "transition-all ease-out transform-gpu",
-        "will-change-transform",
+        "transition-opacity ease-out",
         isVisible && transitionStage === 'visible'
-          ? "opacity-100 translate-y-0" 
-          : "opacity-0 translate-y-2",
+          ? "opacity-100" 
+          : "opacity-0",
         className
       )}
       style={{
-        transitionDuration: '250ms',
-        transitionProperty: 'opacity, transform',
+        transitionDuration: '200ms',
+        transitionProperty: 'opacity',
       }}
     >
       {children}

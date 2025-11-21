@@ -23,7 +23,6 @@ import { EnhancedLoading } from '@/components/ui/enhanced-loading';
 import { useSessionCache } from '@/hooks/useSessionCache';
 import { useModulePreloader } from '@/hooks/usePreloadComponents';
 import { useSessionPersistence } from '@/hooks/useSessionPersistence';
-import { useMobileGestures } from '@/hooks/useMobileGestures';
 import { SmoothPageTransition } from '@/components/ui/smooth-page-transition';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
 import { toast } from 'sonner';
@@ -72,20 +71,6 @@ const Dashboard = () => {
     toggleSection,
     isSectionExpanded
   } = useSessionPersistence('dashboard');
-
-  // Mobile gestures for native app feel
-  const { elementRef: gestureRef, isRefreshing } = useMobileGestures({
-    onPullToRefresh: () => {
-      // Refresh functionality - could trigger a data refetch
-      toast.success('Dashboard refreshed');
-    },
-    onSwipeRight: () => {
-      if (selectedModule) {
-        setSelectedModule(null);
-        setNavigationSource('dashboard');
-      }
-    }
-  });
   
   // Session caching for dashboard data
   const dashboardCache = useSessionCache('dashboard', 300000); // 5 minutes
@@ -298,7 +283,7 @@ const Dashboard = () => {
   return (
     <ErrorBoundary>
       <NativeTransition routeKey="dashboard" type="fade">
-        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden" ref={gestureRef as React.RefObject<HTMLDivElement>}>
+        <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
           {/* Enhanced header with notifications, profile, and settings */}
           <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border shadow-sm">
             <div className="px-4 py-3 sm:px-6 sm:py-4">

@@ -25,8 +25,8 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/10 flex items-center justify-center p-4 animate-fade-in">
+      <div className="w-full max-w-md animate-scale-in">
         {showEmailVerification ? (
           <EmailVerificationSuccess 
             userEmail={userEmail}

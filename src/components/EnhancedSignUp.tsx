@@ -8,7 +8,8 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SoundButton } from "@/components/SoundButton";
 import { playSuccessSound, playErrorSound, playClickSound } from "@/utils/soundEffects";
-import { Shield, Heart, Zap, Check } from "lucide-react";
+import { Shield, Heart, Zap, Check, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EnhancedSignUpProps {
   onSuccess: (email: string) => void;
@@ -107,15 +108,15 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
   };
 
   return (
-    <Card className="bg-card border-border max-w-md mx-auto">
+    <Card className="bg-card/50 border-border backdrop-blur-sm shadow-elevated transition-all duration-300 hover:shadow-glow-primary/20">
       <CardHeader className="text-center space-y-4">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center shadow-glow-primary">
             <Heart className="w-8 h-8 text-white" />
           </div>
         </div>
-        <CardTitle className="text-foreground text-2xl">Join Myotopia</CardTitle>
-        <CardDescription className="text-muted-foreground">
+        <CardTitle className="text-foreground text-2xl sm:text-3xl">Join Myotopia</CardTitle>
+        <CardDescription className="text-muted-foreground text-sm sm:text-base">
           Start your science-backed fitness journey today
         </CardDescription>
       </CardHeader>
@@ -130,7 +131,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">Email Address</Label>
+              <Label htmlFor="email" className="text-foreground font-medium">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -138,7 +139,12 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="bg-input border-border text-foreground focus:border-orange-500 transition-colors"
+                className={cn(
+                  "bg-input border-border text-foreground",
+                  "focus:border-primary focus:ring-2 focus:ring-primary/50",
+                  "transition-all duration-200",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
                 disabled={isLoading}
               />
             </div>
@@ -280,15 +286,18 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
           
           <SoundButton 
             type="submit" 
-            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-medium py-3 transition-all hover:scale-105"
+            className={cn(
+              "w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90",
+              "text-primary-foreground font-semibold py-3 shadow-glow-primary",
+              "transition-all duration-200 min-h-[48px]",
+              "disabled:opacity-70 disabled:cursor-not-allowed"
+            )}
             disabled={isLoading || !agreedToTerms || !agreedToPrivacy}
             soundType="success"
           >
             {isLoading ? (
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-4 h-4 bg-white/30 rounded flex items-center justify-center animate-pulse">
-                  <div className="w-1.5 h-1.5 bg-white rounded animate-bounce"></div>
-                </div>
+                <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Creating Account...</span>
               </div>
             ) : (
@@ -306,7 +315,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
               playClickSound();
               onSwitchToSignIn();
             }}
-            className="text-orange-400 hover:text-orange-300 text-sm transition-colors"
+            className="text-primary hover:text-primary/90 text-sm transition-colors underline-offset-4 hover:underline min-h-[44px] inline-flex items-center disabled:opacity-50"
             disabled={isLoading}
           >
             Already have an account? Sign in

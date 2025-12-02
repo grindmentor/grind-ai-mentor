@@ -65,6 +65,17 @@ serve(async (req) => {
     });
   }
 
+  // Check for OpenAI API key first
+  if (!openAIApiKey) {
+    console.error('OPENAI_API_KEY environment variable is not set');
+    return new Response(JSON.stringify({ 
+      error: 'AI analysis service not configured. Please contact support.' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -139,8 +150,10 @@ serve(async (req) => {
 
     console.log('Analyzing physique with OpenAI Vision...');
 
-    // Construct detailed prompt
+    // Construct detailed prompt - ALWAYS attempt analysis
     const prompt = `You are an expert fitness coach analyzing a physique photo. Provide a detailed, evidence-based analysis.
+
+IMPORTANT: ALWAYS attempt to provide analysis, even if the image quality is not ideal or the pose is not optimal. If you have any uncertainty, include a "confidence" field and "notes" explaining what was unclear.
 
 USER CONTEXT:
 ${height ? `Height: ${height}` : ''}
@@ -151,6 +164,8 @@ ${goals ? `Goals: ${goals}` : ''}
 Analyze this physique photo and return a JSON object with the following structure:
 {
   "overall_score": <number 0-100>,
+  "confidence": "<high/medium/low - based on image clarity>",
+  "notes": "<any notes about image quality or limitations>",
   "attributes": {
     "muscle_development": <number 0-100>,
     "symmetry": <number 0-100>,
@@ -175,7 +190,12 @@ Analyze this physique photo and return a JSON object with the following structur
   "areas_to_improve": ["<area 1>", "<area 2>"]
 }
 
-Be honest, specific, and constructive. Focus on what's visible in the photo.`;
+RULES:
+- NEVER refuse to analyze. Always provide your best estimate.
+- If certain muscle groups are not visible, estimate based on what IS visible and note this in the "notes" field.
+- If image is blurry or dark, still provide analysis but set confidence to "low" and explain in notes.
+- Be honest, specific, and constructive. Focus on what's visible in the photo.
+- Return ONLY valid JSON, no additional text.`;
 
     // Call OpenAI Vision API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -191,11 +211,11 @@ Be honest, specific, and constructive. Focus on what's visible in the photo.`;
             role: 'user',
             content: [
               { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageUrl } }
+              { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } }
             ]
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.7
       }),
     });
@@ -209,6 +229,8 @@ Be honest, specific, and constructive. Focus on what's visible in the photo.`;
     const data = await response.json();
     const content = data.choices[0].message.content;
 
+    console.log('Raw AI response:', content);
+
     // Parse JSON response
     let analysis;
     try {
@@ -218,7 +240,34 @@ Be honest, specific, and constructive. Focus on what's visible in the photo.`;
       analysis = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error('Failed to parse AI response:', content);
-      throw new Error('Failed to parse AI analysis');
+      // Provide a fallback response instead of failing
+      analysis = {
+        overall_score: 50,
+        confidence: "low",
+        notes: "Unable to fully analyze the image. Please try with a clearer photo showing your full physique in good lighting.",
+        attributes: {
+          muscle_development: 50,
+          symmetry: 50,
+          definition: 50,
+          mass: 50,
+          conditioning: 50
+        },
+        muscle_groups: {
+          chest: 50,
+          shoulders: 50,
+          arms: 50,
+          back: 50,
+          core: 50,
+          legs: 50
+        },
+        recommendations: [
+          "Try uploading a clearer photo with better lighting",
+          "Ensure your full body is visible in the frame",
+          "Use natural lighting for best results"
+        ],
+        strengths: ["Unable to determine from current image"],
+        areas_to_improve: ["Image quality for better analysis"]
+      };
     }
 
     // Update usage tracking

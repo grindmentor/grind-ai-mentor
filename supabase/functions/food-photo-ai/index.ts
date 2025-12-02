@@ -71,7 +71,9 @@ serve(async (req) => {
   if (!openAIApiKey) {
     console.error('OPENAI_API_KEY environment variable is not set');
     return new Response(JSON.stringify({ 
-      error: 'AI analysis service not configured. Please contact support.' 
+      error: 'AI analysis service not configured. Please contact support.',
+      confidence: 'low',
+      foodsDetected: []
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
@@ -83,7 +85,9 @@ serve(async (req) => {
   if (!authHeader) {
     console.error('Missing Authorization header');
     return new Response(JSON.stringify({ 
-      error: 'Authentication required' 
+      error: 'Authentication required',
+      confidence: 'low',
+      foodsDetected: []
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 401,
@@ -100,7 +104,9 @@ serve(async (req) => {
     if (userError || !user) {
       console.error('Unauthorized user:', userError);
       return new Response(JSON.stringify({ 
-        error: 'Unauthorized' 
+        error: 'Unauthorized',
+        confidence: 'low',
+        foodsDetected: []
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -156,24 +162,31 @@ serve(async (req) => {
     const { image, mealType } = await req.json();
 
     if (!image) {
-      return new Response(JSON.stringify({ error: 'No image provided' }), {
+      return new Response(JSON.stringify({ 
+        error: 'No image provided',
+        confidence: 'low',
+        foodsDetected: []
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
     }
 
-    // Enhanced CalAI-style food detection prompt
-    const analysisPrompt = `You are a precise nutrition analysis AI. Analyze this food photo and provide CONSERVATIVE estimates.
+    console.log('Analyzing food photo with OpenAI Vision...');
+
+    // Enhanced food detection prompt - ALWAYS attempt analysis
+    const analysisPrompt = `You are a precise nutrition analysis AI. Analyze this food photo and provide your BEST estimates.
 
 CRITICAL RULES:
-1. Only identify foods you can clearly see
-2. Estimate portions SMALLER rather than larger (people tend to overestimate)
-3. Use common serving sizes (1 cup, 1 slice, 1 piece, etc.)
-4. If uncertain about a food, mark confidence as "low"
-5. Return ONLY valid JSON - no additional text
+1. ALWAYS attempt to identify foods - never refuse to analyze
+2. If image is unclear, blurry, or dark, still provide your best guess with low confidence
+3. Estimate portions conservatively (people tend to overestimate)
+4. Use common serving sizes (1 cup, 1 slice, 1 piece, etc.)
+5. Include a confidence level for each item AND overall
+6. Return ONLY valid JSON - no additional text
 
-For each food item, provide:
-- name: Clear, simple food name
+For each food item detected, provide:
+- name: Clear, simple food name (your best guess)
 - quantity: Conservative portion estimate with units
 - calories: Conservative calorie estimate
 - protein: Grams of protein
@@ -182,29 +195,29 @@ For each food item, provide:
 - fiber: Grams of fiber
 - confidence: "high", "medium", or "low"
 
-Example response format:
+REQUIRED response format:
 {
-  "confidence": "high",
+  "confidence": "<high/medium/low - overall confidence>",
+  "notes": "<any notes about image quality or what was unclear>",
   "foodsDetected": [
     {
-      "name": "Chicken breast",
-      "quantity": "4 oz",
-      "calories": 140,
-      "protein": 26,
-      "carbs": 0,
-      "fat": 3,
-      "fiber": 0,
-      "confidence": "high"
+      "name": "Food name",
+      "quantity": "portion estimate",
+      "calories": 100,
+      "protein": 10,
+      "carbs": 10,
+      "fat": 5,
+      "fiber": 2,
+      "confidence": "medium"
     }
   ]
 }
 
-If you cannot clearly identify foods or the image is unclear, return:
-{
-  "confidence": "low",
-  "foodsDetected": [],
-  "error": "Unable to clearly identify foods in image"
-}`;
+IMPORTANT:
+- If you can see ANY food, provide estimates for it
+- If image is very unclear, set confidence to "low" and explain in notes, but STILL try to identify what you can see
+- Never return an empty foodsDetected array unless there is truly NO food visible at all
+- When uncertain, err on the side of providing MORE information, not less`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -213,7 +226,7 @@ If you cannot clearly identify foods or the image is unclear, return:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'user',
@@ -229,8 +242,8 @@ If you cannot clearly identify foods or the image is unclear, return:
             ]
           }
         ],
-        max_completion_tokens: 1000
-        // Note: temperature parameter is NOT supported for GPT-4.1+ models
+        max_tokens: 1500,
+        temperature: 0.5
       }),
     });
 
@@ -238,7 +251,7 @@ If you cannot clearly identify foods or the image is unclear, return:
       const errorText = await response.text();
       console.error('OpenAI API error:', errorText);
       return new Response(JSON.stringify({ 
-        error: 'AI analysis service temporarily unavailable',
+        error: 'AI analysis service temporarily unavailable. Please try again.',
         confidence: 'low',
         foodsDetected: []
       }), {
@@ -250,22 +263,35 @@ If you cannot clearly identify foods or the image is unclear, return:
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
+    console.log('Raw AI response:', aiResponse);
+
     try {
-      // Parse and validate the JSON response
-      const analysisResult = JSON.parse(aiResponse);
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/) || aiResponse.match(/```\s*([\s\S]*?)\s*```/);
+      const jsonStr = jsonMatch ? jsonMatch[1] : aiResponse;
       
-      // Validate response structure
-      if (!analysisResult.confidence || !Array.isArray(analysisResult.foodsDetected)) {
-        throw new Error('Invalid response structure');
+      // Parse and validate the JSON response
+      const analysisResult = JSON.parse(jsonStr);
+      
+      // Ensure required fields exist
+      if (!analysisResult.confidence) {
+        analysisResult.confidence = 'medium';
+      }
+      if (!Array.isArray(analysisResult.foodsDetected)) {
+        analysisResult.foodsDetected = [];
       }
 
-      // Additional validation for food items
-      analysisResult.foodsDetected = analysisResult.foodsDetected.filter((food: any) =>
-        food.name && 
-        food.quantity && 
-        typeof food.calories === 'number' &&
-        food.calories > 0
-      );
+      // Validate and clean food items
+      analysisResult.foodsDetected = analysisResult.foodsDetected.map((food: any) => ({
+        name: food.name || 'Unknown food',
+        quantity: food.quantity || '1 serving',
+        calories: typeof food.calories === 'number' ? food.calories : 100,
+        protein: typeof food.protein === 'number' ? food.protein : 0,
+        carbs: typeof food.carbs === 'number' ? food.carbs : 0,
+        fat: typeof food.fat === 'number' ? food.fat : 0,
+        fiber: typeof food.fiber === 'number' ? food.fiber : 0,
+        confidence: food.confidence || 'low'
+      }));
 
       // Update usage tracking after successful analysis
       await supabase
@@ -288,10 +314,20 @@ If you cannot clearly identify foods or the image is unclear, return:
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError, 'Raw response:', aiResponse);
       
+      // Provide a helpful fallback instead of failing
       return new Response(JSON.stringify({
         confidence: 'low',
-        foodsDetected: [],
-        error: 'Unable to analyze image clearly'
+        notes: 'The AI had trouble analyzing this image. Please try with a clearer photo or add foods manually.',
+        foodsDetected: [{
+          name: 'Unable to identify (please edit)',
+          quantity: '1 serving',
+          calories: 200,
+          protein: 10,
+          carbs: 20,
+          fat: 10,
+          fiber: 2,
+          confidence: 'low'
+        }]
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

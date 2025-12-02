@@ -1,0 +1,62 @@
+{
+  "appName": "Myotopia - AI Fitness Coach",
+  "shortDescription": "Science-based AI fitness coaching with personalized workouts and nutrition tracking.",
+  "fullDescription": "Transform your fitness journey with Myotopia, the AI-powered fitness coach that brings science-based training directly to your pocket.\n\n🏋️ PERSONALIZED AI TRAINING\n• Get custom workout plans tailored to your goals, experience level, and available equipment\n• AI-powered exercise recommendations based on the latest fitness research\n• Smart progressive overload tracking to maximize your gains\n\n🍎 INTELLIGENT NUTRITION\n• AI-powered food photo analysis - snap a pic, get instant macros\n• Smart meal planning with personalized calorie and macro targets\n• TDEE calculator using scientifically-validated formulas\n\n📊 REAL PROGRESS TRACKING\n• Visual progress charts and analytics\n• Body composition tracking\n• Workout history and performance trends\n\n🎯 GOAL-ORIENTED FEATURES\n• Set and track fitness goals with AI guidance\n• Habit tracking for consistency\n• Achievement system to keep you motivated\n\n💪 SCIENCE-BACKED APPROACH\n• All recommendations based on peer-reviewed research\n• Evidence-based training principles\n• No pseudoscience, just results\n\nWhether you're just starting out or you're an experienced athlete, Myotopia adapts to your level and helps you achieve your fitness goals with science-backed guidance.\n\nStart your transformation today - download Myotopia and let AI revolutionize your fitness!",
+  "keywords": [
+    "fitness",
+    "workout",
+    "AI coach",
+    "nutrition tracking",
+    "meal planner",
+    "exercise",
+    "gym",
+    "bodybuilding",
+    "weight loss",
+    "muscle gain",
+    "health",
+    "wellness",
+    "personal trainer",
+    "macro tracker",
+    "calorie counter"
+  ],
+  "category": "Health & Fitness",
+  "contentRating": "Everyone",
+  "privacyPolicyUrl": "https://www.myotopia.app/privacy",
+  "supportUrl": "https://www.myotopia.app/support",
+  "termsOfServiceUrl": "https://www.myotopia.app/terms",
+  "developerName": "Myotopia",
+  "developerEmail": "support@myotopia.app",
+  "developerWebsite": "https://www.myotopia.app",
+  "pricing": {
+    "type": "freemium",
+    "freeFeatures": [
+      "5 AI coach queries per month",
+      "Basic workout logging",
+      "Food search (USDA database)",
+      "Essential fitness tracking"
+    ],
+    "premiumPrice": "$9.99/month",
+    "premiumFeatures": [
+      "Unlimited AI coaching",
+      "30 photo analyses per month",
+      "Physique AI analysis",
+      "Smart training & meal plans",
+      "Advanced progress tracking",
+      "Priority support"
+    ]
+  },
+  "ageRating": {
+    "ios": "4+",
+    "android": "Everyone"
+  },
+  "platforms": {
+    "ios": {
+      "minimumVersion": "14.0",
+      "supportedDevices": ["iPhone", "iPad"]
+    },
+    "android": {
+      "minimumSdkVersion": 24,
+      "targetSdkVersion": 34
+    }
+  }
+}

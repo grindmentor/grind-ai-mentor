@@ -51,6 +51,18 @@ const RealGoalsAchievements = () => {
   const [activeTab, setActiveTab] = useState<'goals' | 'achievements'>('goals');
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+
+  // Handle tab change with transition
+  const handleTabChange = (newTab: 'goals' | 'achievements') => {
+    if (newTab === activeTab) return;
+    setIsTabTransitioning(true);
+    setTimeout(() => {
+      setActiveTab(newTab);
+      setIsTabTransitioning(false);
+    }, 150);
+  };
 
   // Sync with global loading state
   const loading = state.loading.goals || state.loading.achievements;
@@ -171,6 +183,11 @@ const RealGoalsAchievements = () => {
   const handleDeleteGoal = async (goalId: string) => {
     if (!confirm('Are you sure you want to delete this goal?')) return;
 
+    // Optimistic update - remove immediately from UI
+    const previousGoals = [...goals];
+    setGoals(prev => prev.filter(goal => goal.id !== goalId));
+    setDeletingGoalId(goalId);
+
     try {
       const { error } = await supabase
         .from('user_goals')
@@ -179,14 +196,17 @@ const RealGoalsAchievements = () => {
 
       if (error) throw error;
 
-      setGoals(prev => prev.filter(goal => goal.id !== goalId));
       invalidateCache(`user-${user?.id}-goals-achievements`);
       emit('goals:updated');
       toast.success('Goal deleted successfully');
     } catch (error) {
+      // Rollback on error
+      setGoals(previousGoals);
       console.error('Error deleting goal:', error);
       toast.error('Failed to delete goal');
       actions.setError('goals', 'Failed to delete goal');
+    } finally {
+      setDeletingGoalId(null);
     }
   };
 
@@ -336,8 +356,8 @@ const RealGoalsAchievements = () => {
               <Button
                 variant={activeTab === 'goals' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setActiveTab('goals')}
-                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 ${
+                onClick={() => handleTabChange('goals')}
+                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 transition-all duration-200 ${
                   activeTab === 'goals' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'
                 }`}
               >
@@ -346,8 +366,8 @@ const RealGoalsAchievements = () => {
               <Button
                 variant={activeTab === 'achievements' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setActiveTab('achievements')}
-                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 ${
+                onClick={() => handleTabChange('achievements')}
+                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 transition-all duration-200 ${
                   activeTab === 'achievements' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'
                 }`}
               >
@@ -358,9 +378,27 @@ const RealGoalsAchievements = () => {
         </CardHeader>
         
         <CardContent className="space-y-4">
+          {isTabTransitioning ? (
+            <div className="space-y-4 animate-fade-in">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-lg bg-gray-800/30 border border-gray-700/30 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-lg" />
+                      <div className="space-y-2">
+                        <div className="h-5 w-32 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                        <div className="h-3 w-48 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
           {activeTab === 'goals' && (
             <>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 animate-fade-in">
                 <h3 className="text-white font-medium">Active Goals</h3>
                 <Button
                   onClick={() => navigate('/create-goal')}
@@ -485,7 +523,7 @@ const RealGoalsAchievements = () => {
           )}
 
           {activeTab === 'achievements' && (
-            <>
+            <div className="animate-fade-in">
               <h3 className="text-white font-medium">Recent Achievements</h3>
               
               {achievements.length === 0 ? (
@@ -519,6 +557,8 @@ const RealGoalsAchievements = () => {
                   ))}
                 </div>
               )}
+            </div>
+          )}
             </>
           )}
         </CardContent>

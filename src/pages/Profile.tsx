@@ -13,6 +13,7 @@ import { PageTransition } from '@/components/ui/page-transition';
 import BasicInformation from '@/components/settings/BasicInformation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { TabContentSkeleton } from '@/components/ui/tab-content-skeleton';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -22,27 +23,43 @@ const Profile = () => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
   const [preferences, setPreferences] = useState({
     weight_unit: 'lbs',
     height_unit: 'ft-in'
   });
+
+  // Handle tab change with transition
+  const handleTabChange = (newTab: string) => {
+    if (newTab === activeTab) return;
+    setIsTabTransitioning(true);
+    setTimeout(() => {
+      setActiveTab(newTab);
+      setIsTabTransitioning(false);
+    }, 150);
+  };
 
   // Load user preferences
   useEffect(() => {
     const loadPreferences = async () => {
       if (!user?.id) return;
       
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('weight_unit, height_unit')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (data && !error) {
-        setPreferences({
-          weight_unit: data.weight_unit || 'lbs',
-          height_unit: data.height_unit || 'ft-in'
-        });
+      try {
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('weight_unit, height_unit')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data && !error) {
+          setPreferences({
+            weight_unit: data.weight_unit || 'lbs',
+            height_unit: data.height_unit || 'ft-in'
+          });
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -200,13 +217,13 @@ const Profile = () => {
             </div>
 
             {/* Profile Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
               <TabsList className={`grid w-full grid-cols-2 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
                     value={tab.id} 
-                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30 p-2 sm:p-3"
+                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30 p-2 sm:p-3 transition-all duration-200"
                   >
                     {tab.label}
                   </TabsTrigger>
@@ -214,7 +231,11 @@ const Profile = () => {
               </TabsList>
 
               <div className="space-y-4 sm:space-y-6 mx-2 sm:mx-0">
-                <TabsContent value="overview" className="mt-0 space-y-4 sm:space-y-6">
+                {isLoading || isTabTransitioning ? (
+                  <TabContentSkeleton variant="profile" />
+                ) : (
+                  <>
+                    <TabsContent value="overview" className="mt-0 space-y-4 sm:space-y-6 animate-fade-in">
                   {/* Profile Overview */}
                   <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
                     <CardHeader>
@@ -343,7 +364,7 @@ const Profile = () => {
                   )}
                 </TabsContent>
 
-                <TabsContent value="info" className="mt-0">
+                <TabsContent value="info" className="mt-0 animate-fade-in">
                   <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6">
                     <BasicInformation 
                       profile={profileData}
@@ -357,6 +378,8 @@ const Profile = () => {
                     />
                   </div>
                 </TabsContent>
+                  </>
+                )}
               </div>
             </Tabs>
           </div>

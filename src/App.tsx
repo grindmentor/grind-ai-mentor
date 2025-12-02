@@ -7,6 +7,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { crashReporter } from "@/utils/crashReporter";
 import { logger } from "@/utils/logger";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 // Eager load critical routes for instant access
 import Index from "./pages/Index";
@@ -81,6 +82,7 @@ function App() {
                   <TooltipProvider>
                   <Toaster />
                   <Sonner />
+                  <OfflineIndicator />
                   <BrowserRouter>
                     <ScrollToTop />
                     <AppShell>

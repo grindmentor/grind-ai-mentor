@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { 
   CreditCard, 
   Smartphone, 
@@ -9,12 +11,14 @@ import {
   Clock, 
   CheckCircle, 
   Shield,
-  Zap 
+  Zap,
+  AlertTriangle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import ApplePayButton from "@/components/ui/apple-pay-button";
+import { Link } from "react-router-dom";
 
 interface EnhancedPaymentMethodsProps {
   tier: 'premium';
@@ -29,8 +33,12 @@ const EnhancedPaymentMethods = ({
 }: EnhancedPaymentMethodsProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStarted, setPaymentStarted] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToNoRefund, setAgreedToNoRefund] = useState(false);
   const { toast } = useToast();
   const { checkPaymentStatus } = usePaymentStatus();
+  
+  const canProceed = agreedToTerms && agreedToNoRefund;
 
   // Calculate pricing
   const monthlyPrice = 9.99;
@@ -39,6 +47,15 @@ const EnhancedPaymentMethods = ({
   const savings = billingPeriod === 'annual' ? (monthlyPrice * 12) - annualPrice : 0;
 
   const handleStripeSubscription = async () => {
+    if (!canProceed) {
+      toast({
+        title: "Agreement Required",
+        description: "Please agree to the terms and no-refund policy before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsProcessing(true);
     setPaymentStarted(true);
     
@@ -231,7 +248,7 @@ const EnhancedPaymentMethods = ({
                 </div>
                 <Button 
                   onClick={handleStripeSubscription}
-                  disabled={isProcessing || paymentStarted}
+                  disabled={isProcessing || paymentStarted || !canProceed}
                   className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:opacity-50"
                 >
                   {isProcessing ? "Opening Stripe..." : paymentStarted ? "In Progress" : "Subscribe Now"}
@@ -286,6 +303,57 @@ const EnhancedPaymentMethods = ({
               </CardContent>
             </Card>
           ))}
+        </CardContent>
+      </Card>
+
+      {/* Subscription Consent Section */}
+      <Card className="bg-gray-800/50 border-gray-700">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-orange-400 font-semibold text-sm mb-1">Before You Subscribe</p>
+              <p className="text-gray-400 text-xs">
+                Please review and agree to the following before proceeding with your subscription.
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="subscription-terms"
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                className="mt-1"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="subscription-terms" className="text-white text-sm leading-relaxed cursor-pointer">
+                  I agree to the <Link to="/terms" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="text-orange-400 hover:text-orange-300 underline" target="_blank">Privacy Policy</Link>
+                </Label>
+                <p className="text-gray-500 text-xs">
+                  I understand that Myotopia provides AI-generated fitness information for educational purposes only and is not medical advice.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="no-refund"
+                checked={agreedToNoRefund}
+                onCheckedChange={(checked) => setAgreedToNoRefund(checked as boolean)}
+                className="mt-1"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="no-refund" className="text-white text-sm leading-relaxed cursor-pointer">
+                  I understand and accept the no-refund policy
+                </Label>
+                <p className="text-gray-500 text-xs">
+                  I acknowledge that subscription payments are non-refundable. I can cancel at any time, and cancellation takes effect at the end of the current billing period.
+                </p>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

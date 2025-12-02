@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 
 interface FormattedAIResponseProps {
@@ -6,6 +7,10 @@ interface FormattedAIResponseProps {
   className?: string;
   moduleType?: string; // Optional prop for backward compatibility
 }
+
+// Configure DOMPurify to allow only safe tags for markdown rendering
+const ALLOWED_TAGS = ['h1', 'h2', 'h3', 'p', 'strong', 'em', 'ul', 'li', 'br'];
+const ALLOWED_ATTR = ['class'];
 
 export const FormattedAIResponse: React.FC<FormattedAIResponseProps> = ({ content, className, moduleType }) => {
   const formatText = (text: string) => {
@@ -39,7 +44,11 @@ export const FormattedAIResponse: React.FC<FormattedAIResponseProps> = ({ conten
       formatted = `<p class="text-foreground/90 mb-3">${formatted}</p>`;
     }
 
-    return formatted;
+    // Sanitize to prevent XSS attacks
+    return DOMPurify.sanitize(formatted, {
+      ALLOWED_TAGS,
+      ALLOWED_ATTR
+    });
   };
 
   return (

@@ -50,7 +50,7 @@ const Profile = () => {
           .from('user_preferences')
           .select('weight_unit, height_unit')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         if (data && !error) {
           setPreferences({

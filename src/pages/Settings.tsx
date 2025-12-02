@@ -90,7 +90,7 @@ const Settings = () => {
 
             {/* Settings Tabs */}
             <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5 bg-muted/50 rounded-xl p-1 h-auto">
+              <TabsList className="grid w-full grid-cols-6 bg-muted/50 rounded-xl p-1 h-auto">
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}

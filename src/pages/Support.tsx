@@ -54,43 +54,29 @@ const Support = () => {
     <div className="min-h-screen bg-black text-white">
       {/* Mobile-Optimized Header */}
       <nav 
-        className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800 px-4 py-3"
+        className="sticky top-0 z-50 bg-black/95 backdrop-blur border-b border-gray-800"
         style={{ 
-          paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)',
-          paddingLeft: 'max(env(safe-area-inset-left, 16px), 16px)',
-          paddingRight: 'max(env(safe-area-inset-right, 16px), 16px)'
+          paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <Link to="/app">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-white hover:bg-gray-800 min-h-[44px] px-3"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back
+            </Button>
+          </Link>
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
               <span className="font-bold text-white text-sm">M</span>
             </div>
             <span className="text-xl font-bold logo-text">Myotopia</span>
           </Link>
-          <div className="flex items-center space-x-1">
-            <Link to="/app">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-white hover:bg-gray-800 min-h-[44px] px-3 mobile-nav-button touch-manipulation"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Dashboard</span>
-                <span className="sm:hidden">Back</span>
-              </Button>
-            </Link>
-            <Link to="/">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-white hover:bg-gray-800 min-h-[44px] px-3 mobile-nav-button touch-manipulation"
-              >
-                <Home className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Home</span>
-              </Button>
-            </Link>
-          </div>
+          <div className="w-20" /> {/* Spacer for centering */}
         </div>
       </nav>
 

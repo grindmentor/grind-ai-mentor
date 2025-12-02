@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Globe, Zap, Brain, FileText, HelpCircle, LogOut, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Globe, Zap, Brain, FileText, HelpCircle, LogOut, BarChart3, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnitPreferences from '@/components/settings/UnitPreferences';
 import AppPreferences from '@/components/settings/AppPreferences';
 import AIMemoryReset from '@/components/settings/AIMemoryReset';
+import DisplayNameSection from '@/components/settings/DisplayNameSection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,8 +23,25 @@ const Settings = () => {
   const isMobile = useIsMobile();
   const { actions } = useGlobalState();
   const { invalidateCache } = useAppSync();
-  const [activeTab, setActiveTab] = useState('units');
+  const [activeTab, setActiveTab] = useState('profile');
   const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+
+  // Load display name
+  useEffect(() => {
+    const loadDisplayName = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (data?.display_name) {
+        setDisplayName(data.display_name);
+      }
+    };
+    loadDisplayName();
+  }, [user]);
 
   // Handle tab change with transition animation
   const handleTabChange = (newTab: string) => {
@@ -36,10 +54,10 @@ const Settings = () => {
   };
 
   const tabs = [
+    { id: 'profile', label: 'Profile', icon: User },
     { id: 'units', label: 'Units', icon: Globe },
     { id: 'app', label: 'App', icon: Zap },
-    { id: 'usage', label: 'Usage', icon: BarChart3 },
-    { id: 'ai', label: 'AI Memory', icon: Brain },
+    { id: 'ai', label: 'AI', icon: Brain },
     { id: 'legal', label: 'Legal', icon: FileText },
     { id: 'support', label: 'Support', icon: HelpCircle }
   ];
@@ -108,6 +126,13 @@ const Settings = () => {
                   <TabContentSkeleton variant="settings" />
                 ) : (
                   <>
+                    <TabsContent value="profile" className="mt-0 animate-fade-in">
+                      <DisplayNameSection 
+                        displayName={displayName} 
+                        onDisplayNameChange={setDisplayName} 
+                      />
+                    </TabsContent>
+
                     <TabsContent value="units" className="mt-0 animate-fade-in">
                       <Card className="bg-card border-border">
                         <CardContent className="pt-6">
@@ -120,24 +145,6 @@ const Settings = () => {
                       <Card className="bg-card border-border">
                         <CardContent className="pt-6">
                           <AppPreferences />
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    <TabsContent value="usage" className="mt-0 animate-fade-in">
-                      <Card className="bg-card border-border">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-foreground text-base">Usage Statistics</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <p className="text-muted-foreground text-sm">View your AI queries, meal plans, and app activity.</p>
-                          <Button
-                            onClick={() => navigate('/usage')}
-                            className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
-                          >
-                            <BarChart3 className="w-4 h-4 mr-2" />
-                            View Stats
-                          </Button>
                         </CardContent>
                       </Card>
                     </TabsContent>

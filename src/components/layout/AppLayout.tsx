@@ -12,7 +12,7 @@ interface AppLayoutProps {
 const BOTTOM_NAV_ROUTES = new Set([
   '/app',
   '/modules',
-  '/physique-ai-dashboard',
+  '/progress-hub-dashboard',
   '/profile',
   '/settings',
   '/usage'

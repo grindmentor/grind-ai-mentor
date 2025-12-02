@@ -174,7 +174,7 @@ const PhysiqueAIDashboard = () => {
 
   if (isLoading) {
     return (
-      <AppShell title="Physique AI">
+      <AppShell title="Progress Hub">
         <div className="min-h-screen bg-gradient-to-br from-background via-purple-900/10 to-blue-900/20 p-4">
           <div className="flex items-center justify-center h-96">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
@@ -186,7 +186,7 @@ const PhysiqueAIDashboard = () => {
 
   return (
     <AppShell 
-      title="Physique AI" 
+      title="Progress Hub" 
       showBackButton={true}
       customActions={
         <Button
@@ -209,11 +209,11 @@ const PhysiqueAIDashboard = () => {
         >
           <div className="flex items-center justify-center gap-3">
             <div className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500">
-              <Brain className="h-8 w-8 text-white" />
+              <TrendingUp className="h-8 w-8 text-white" />
             </div>
             <div className="text-left">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                Physique AI
+                Progress Hub
               </h1>
               <p className="text-muted-foreground">
                 Welcome back, {user?.email?.split('@')[0]}

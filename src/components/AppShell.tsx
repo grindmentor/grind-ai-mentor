@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -17,6 +17,38 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
   const lastScrollY = useRef(0);
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Swipe navigation refs
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  // Swipe back navigation
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+      
+      // Only trigger if horizontal swipe from left edge
+      if (touchStartX.current < 30 && deltaX > 80 && Math.abs(deltaY) < 100) {
+        if ('vibrate' in navigator) try { navigator.vibrate(10); } catch {}
+        navigate(-1);
+      }
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     let ticking = false;

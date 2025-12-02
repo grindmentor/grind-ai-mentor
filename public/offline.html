@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Myotopia - Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #000 0%, rgba(249, 115, 22, 0.15) 50%, rgba(220, 38, 38, 0.2) 100%);
+      color: white;
+      padding: 24px;
+      text-align: center;
+    }
+    .container { max-width: 400px; }
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 24px;
+      opacity: 0.8;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #f97316, #dc2626);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    button {
+      background: linear-gradient(135deg, #f97316, #dc2626);
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.97); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.58 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
+    </svg>
+    <h1>You're Offline</h1>
+    <p>No internet connection detected. Your data is saved locally and will sync when you're back online.</p>
+    <button onclick="location.reload()">Try Again</button>
+  </div>
+  <script>
+    window.addEventListener('online', () => location.reload());
+  </script>
+</body>
+</html>

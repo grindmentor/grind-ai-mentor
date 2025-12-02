@@ -1,17 +1,18 @@
-const CACHE_NAME = 'myotopia-v6-native-feel';
-const STATIC_CACHE = 'myotopia-static-v6';
-const DYNAMIC_CACHE = 'myotopia-dynamic-v6';
-const AI_CACHE = 'myotopia-ai-responses-v4';
-const IMAGE_CACHE = 'myotopia-images-v4';
-const INSTANT_CACHE = 'myotopia-instant-v2';
+const CACHE_NAME = 'myotopia-v7-offline';
+const STATIC_CACHE = 'myotopia-static-v7';
+const DYNAMIC_CACHE = 'myotopia-dynamic-v7';
+const AI_CACHE = 'myotopia-ai-responses-v5';
+const IMAGE_CACHE = 'myotopia-images-v5';
+const INSTANT_CACHE = 'myotopia-instant-v3';
 const API_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for API responses
 
 let aggressiveCacheEnabled = false;
 
-// Critical assets for immediate caching (reduced for faster install)
+// Critical assets for immediate caching
 const CRITICAL_ASSETS = [
   '/',
-  '/manifest.json'
+  '/manifest.json',
+  '/offline.html'
 ];
 
 // Static assets for background caching
@@ -19,7 +20,9 @@ const STATIC_ASSETS = [
   '/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png',
   '/favicon-32x32.png',
   '/favicon-16x16.png',
-  '/apple-touch-icon.png'
+  '/apple-touch-icon.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 // Ultra-fast install with instant cache initialization
@@ -287,11 +290,26 @@ async function handleNavigationFast(request) {
       fetch(request),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), 3000))
     ]);
+    
+    // Cache successful navigation responses
+    if (networkResponse.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
     return networkResponse;
   } catch (error) {
+    // Try cached version first
     const cache = await caches.open(STATIC_CACHE);
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) return cachedResponse;
+    
+    // Fallback to app shell
     const appShell = await cache.match('/');
-    return appShell || new Response('App not available offline', { status: 503 });
+    if (appShell) return appShell;
+    
+    // Final fallback to offline page
+    const offlinePage = await cache.match('/offline.html');
+    return offlinePage || new Response('App not available offline', { status: 503 });
   }
 }
 

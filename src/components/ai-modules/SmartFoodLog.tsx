@@ -168,48 +168,57 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const addFoodFromUSDA = async (foodItem: any) => {
     if (!user) return;
 
+    // Calculate based on portion size
+    const portionMultiplier = parseFloat(portionSize) / 100;
+    
+    // Create temp ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
+
+    const newEntry = {
+      id: tempId,
+      user_id: user.id,
+      food_name: `🥗 ${foodItem.name}${foodItem.brand ? ` (${foodItem.brand})` : ''}`,
+      portion_size: `${portionSize}g`,
+      meal_type: mealType,
+      logged_date: selectedDate,
+      calories: Math.round(foodItem.calories * portionMultiplier),
+      protein: Math.round(foodItem.protein * portionMultiplier * 10) / 10,
+      carbs: Math.round(foodItem.carbs * portionMultiplier * 10) / 10,
+      fat: Math.round(foodItem.fat * portionMultiplier * 10) / 10,
+      fiber: Math.round(foodItem.fiber * portionMultiplier * 10) / 10,
+    };
+
+    // Optimistic update - add immediately
+    setFoodEntries(prev => [...prev, newEntry as FoodEntry]);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+    setNoResultsMessage(null);
+    
+    toast({
+      title: 'Food Saved! 🥗',
+      description: `${foodItem.name} saved to your food log.`
+    });
+
     try {
-      // Calculate based on portion size
-      const portionMultiplier = parseFloat(portionSize) / 100;
-
-      const newEntry = {
-        user_id: user.id,
-        food_name: `🥗 ${foodItem.name}${foodItem.brand ? ` (${foodItem.brand})` : ''}`,
-        portion_size: `${portionSize}g`,
-        meal_type: mealType,
-        logged_date: selectedDate,
-        calories: Math.round(foodItem.calories * portionMultiplier),
-        protein: Math.round(foodItem.protein * portionMultiplier * 10) / 10,
-        carbs: Math.round(foodItem.carbs * portionMultiplier * 10) / 10,
-        fat: Math.round(foodItem.fat * portionMultiplier * 10) / 10,
-        fiber: Math.round(foodItem.fiber * portionMultiplier * 10) / 10,
-      };
-
       // Save to database
       const { data, error } = await supabase
         .from('food_log_entries')
-        .insert([newEntry])
+        .insert([{ ...newEntry, id: undefined }])
         .select()
         .single();
 
       if (error) throw error;
 
-      // Add to local state with database ID
-      setFoodEntries(prev => [...prev, data]);
-      setSearchQuery('');
-      setSearchResults([]);
-      setSearchError(null);
-      setNoResultsMessage(null);
+      // Replace temp entry with real one
+      setFoodEntries(prev => prev.map(e => e.id === tempId ? data : e));
       
       // Invalidate related caches
       invalidateCache(`food-log-${user.id}`);
       emit('nutrition:updated', user.id);
-      
-      toast({
-        title: 'Food Saved! 🥗',
-        description: `${foodItem.name} saved to your food log.`
-      });
     } catch (error) {
+      // Rollback on error
+      setFoodEntries(prev => prev.filter(e => e.id !== tempId));
       console.error('Error saving food from USDA:', error);
       toast({
         title: 'Error',
@@ -256,6 +265,16 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   };
 
   const removeFoodEntry = async (entryId: string) => {
+    // Store for rollback
+    const previousEntries = [...foodEntries];
+    
+    // Optimistic update - remove immediately
+    setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
+    toast({
+      title: 'Food Removed',
+      description: 'Food entry has been deleted.'
+    });
+
     try {
       // Remove from database
       const { error } = await supabase
@@ -264,14 +283,9 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         .eq('id', entryId);
 
       if (error) throw error;
-
-      // Remove from local state
-      setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
-      toast({
-        title: 'Food Removed',
-        description: 'Food entry has been deleted.'
-      });
     } catch (error) {
+      // Rollback on error
+      setFoodEntries(previousEntries);
       console.error('Error removing food entry:', error);
       toast({
         title: 'Error',

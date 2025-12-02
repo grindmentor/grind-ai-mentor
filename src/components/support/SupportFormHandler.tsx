@@ -98,6 +98,19 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
         throw new Error(`Failed to submit support request: ${error.message}`);
       }
 
+      // Send email notification (fire and forget - don't block on this)
+      supabase.functions.invoke('support-notification', {
+        body: {
+          name: sanitizedData.name,
+          email: sanitizedData.email,
+          subject: sanitizedData.subject,
+          message: sanitizedData.message,
+          userId: userId
+        }
+      }).catch(err => {
+        console.warn('Failed to send email notification:', err);
+      });
+
       // Reset form and show success
       setFormData({ name: '', email: '', subject: '', message: '' });
       setErrors({});

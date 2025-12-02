@@ -22,6 +22,7 @@ const PhysiqueAI = lazy(() => import("./pages/PhysiqueAI"));
 const WorkoutLogger = lazy(() => import("./pages/WorkoutLogger"));
 const SmartFoodLog = lazy(() => import("./pages/SmartFoodLog"));
 const BlueprintAI = lazy(() => import("./components/ai-modules/BlueprintAI"));
+const ProgressHub = lazy(() => import("./components/ai-modules/ProgressHub"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -249,6 +250,14 @@ function App() {
                             element={
                               <ProtectedRoute>
                                 <Usage />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/progress-hub" 
+                            element={
+                              <ProtectedRoute>
+                                <ProgressHub />
                               </ProtectedRoute>
                             } 
                           />

@@ -14,8 +14,8 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
 
   const sizes = sizeMap[size];
 
-  // Use consistent icon source for all sizes
-  const logoSrc = "/icons/icon-192.png";
+  // Use the clean bicep + brain logo
+  const logoSrc = "/lovable-uploads/myotopia-logo-clean.png";
 
   return (
     <div className={`flex items-center justify-center space-x-3 ${className}`}>

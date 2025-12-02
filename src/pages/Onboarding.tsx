@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,46 @@ const Onboarding = () => {
     weightUnit: "lbs" as 'kg' | 'lbs',
     heightUnit: "ft-in" as 'cm' | 'ft-in' | 'in'
   });
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, markOnboardingComplete } = useAuth();
+
+  // Load existing profile data (birthday from signup)
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('birthday, weight, height, experience, activity, goal')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          // Pre-fill birthday if already saved from signup
+          if (profile.birthday) {
+            setFormData(prev => ({ ...prev, birthday: profile.birthday }));
+          }
+          // Check if profile is already complete
+          if (profile.weight && profile.height && profile.experience && profile.activity && profile.goal) {
+            markOnboardingComplete();
+            navigate('/app');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user, markOnboardingComplete, navigate]);
 
   const handleNext = async () => {
     if (step === 1) {
@@ -49,18 +87,22 @@ const Onboarding = () => {
       if (user) {
         const { error } = await supabase
           .from('profiles')
-          .update({
+          .upsert({
+            id: user.id,
+            email: user.email || '',
             weight: Math.round(weightInLbs),
             birthday: formData.birthday,
             height: Math.round(heightInInches),
             experience: formData.experienceLevel,
             activity: formData.activityLevel,
             goal: formData.goal
-          })
-          .eq('id', user.id);
+          });
 
         if (error) {
           console.error('Error saving profile:', error);
+        } else {
+          // Mark onboarding complete
+          markOnboardingComplete();
         }
       }
       navigate("/app");
@@ -76,6 +118,14 @@ const Onboarding = () => {
 
   const canProceedStep1 = formData.weight && formData.birthday && getHeightValidation();
   const canProceedStep2 = formData.experienceLevel && formData.activityLevel && formData.goal;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">

@@ -41,6 +41,7 @@ const CreateExercise = lazy(() => import("./pages/CreateExercise"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Usage = lazy(() => import("./pages/Usage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
@@ -111,6 +112,14 @@ function App() {
                           <Route path="/signin" element={<SignIn />} />
                           <Route path="/signup" element={<SignUp />} />
                           <Route path="/auth/callback" element={<AuthCallback />} />
+                          <Route
+                            path="/onboarding"
+                            element={
+                              <ProtectedRoute skipOnboardingCheck>
+                                <Onboarding />
+                              </ProtectedRoute>
+                            }
+                          />
                           <Route
                             path="/app"
                             element={

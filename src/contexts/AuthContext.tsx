@@ -6,7 +6,7 @@ import { logger } from '@/utils/logger';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, birthDate?: string) => Promise<{ error: any; data?: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -206,7 +206,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, birthDate?: string) => {
     if (authPending || !canResendEmail) {
       return { error: { message: 'Please wait before sending another verification email.' } };
     }
@@ -219,22 +219,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logger.debug('Sign up attempt with redirect URL:', redirectUrl);
     
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            email_confirm: true
+            email_confirm: true,
+            birth_date: birthDate
           }
         }
       });
 
-      if (!error) {
+      if (!error && data.user) {
         try {
           await supabase.from('subscribers').insert({ email });
         } catch (subscriberError) {
           logger.warn('Could not add to subscribers:', subscriberError);
+        }
+        
+        // Save birthday to profile if provided
+        if (birthDate) {
+          try {
+            await supabase.from('profiles').upsert({
+              id: data.user.id,
+              email: email,
+              birthday: birthDate,
+              age_verified: true
+            });
+            logger.debug('Saved birthday to profile');
+          } catch (profileError) {
+            logger.warn('Could not save birthday to profile:', profileError);
+          }
         }
         
         setCanResendEmail(false);
@@ -242,7 +258,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       setAuthPending(false);
-      return { error };
+      return { error, data };
     } catch (err) {
       logger.error('Sign up error:', err);
       setAuthPending(false);

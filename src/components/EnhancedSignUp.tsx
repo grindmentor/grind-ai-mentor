@@ -85,7 +85,7 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
     playClickSound();
 
     try {
-      const { error } = await signUp(email, password);
+      const { error, data } = await signUp(email, password, birthDate);
       
       if (error) {
         if (error.message.includes("User already registered")) {

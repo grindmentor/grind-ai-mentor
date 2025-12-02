@@ -37,7 +37,7 @@ export const useOptimizedProgressData = (userId: string | null) => {
           .from('profiles')
           .select('weight, height, goal, experience, body_fat_percentage')
           .eq('id', userId)
-          .single(),
+          .maybeSingle(),
 
         // Fetch recent food logs
         supabase

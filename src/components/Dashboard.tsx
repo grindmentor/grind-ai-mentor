@@ -113,11 +113,11 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   const { trigger } = useNativeHaptics();
 
-  // Fetch display name from profile
+  // Fetch display name from profile with real-time subscription
   useEffect(() => {
+    if (!user?.id) return;
+    
     const fetchDisplayName = async () => {
-      if (!user?.id) return;
-      
       try {
         const { data } = await supabase
           .from('profiles')
@@ -134,6 +134,29 @@ const Dashboard = () => {
     };
     
     fetchDisplayName();
+    
+    // Subscribe to real-time changes on the user's profile
+    const channel = supabase
+      .channel('profile-display-name')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.new && payload.new.display_name) {
+            setDisplayName(payload.new.display_name);
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const handleRefresh = useCallback(async () => {

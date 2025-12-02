@@ -172,22 +172,34 @@ const LatestResearch = () => {
             <div className="space-y-3">
               <h4 className="text-gray-400 text-sm font-medium mb-3">Research Archive:</h4>
               {previousResearch.map((research, index) => (
-                <div key={index} className="p-3 bg-gray-900/20 rounded-lg border border-gray-700/30">
+                <a 
+                  key={index} 
+                  href={`https://doi.org/${research.doi}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 bg-gray-900/20 rounded-lg border border-gray-700/30 hover:bg-gray-900/40 hover:border-green-500/30 transition-all cursor-pointer group"
+                >
                   <div className="flex items-start justify-between mb-2">
-                    <h5 className="text-white font-medium text-sm line-clamp-2 mr-2">{research.title}</h5>
-                    <div className="text-xs text-gray-500 whitespace-nowrap">
-                      {new Date(research.publishedDate).toLocaleDateString()}
+                    <h5 className="text-white font-medium text-sm line-clamp-2 mr-2 group-hover:text-green-300 transition-colors">{research.title}</h5>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(research.publishedDate).toLocaleDateString()}
+                      </div>
+                      <ExternalLink className="w-3 h-3 text-gray-500 group-hover:text-green-400 transition-colors" />
                     </div>
                   </div>
                   <p className="text-gray-400 text-xs leading-relaxed mb-2 line-clamp-2">
                     {research.summary}
                   </p>
-                  <div className="text-xs text-gray-500">
-                    <span className="font-medium">{research.authors}</span>
-                    <span className="mx-2">•</span>
-                    <span>{research.journal}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-500">
+                      <span className="font-medium">{research.authors}</span>
+                      <span className="mx-2">•</span>
+                      <span>{research.journal}</span>
+                    </div>
+                    <span className="text-xs text-blue-400 group-hover:text-blue-300">Read Study →</span>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
           </div>

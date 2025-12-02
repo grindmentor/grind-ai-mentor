@@ -1,4 +1,3 @@
-
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   showText?: boolean;
@@ -15,13 +14,23 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
 
   const sizes = sizeMap[size];
 
+  // Use smaller icon for better performance (icon-192 is 192x192, much smaller than 1024x1024 original)
+  const logoSrc = size === "xl" || size === "lg" 
+    ? "/icons/icon-192.png" 
+    : "/apple-touch-icon.png"; // 180x180
+
   return (
     <div className={`flex items-center justify-center space-x-3 ${className}`}>
       <div className={`${sizes.logo} shadow-2xl shadow-orange-500/25 rounded-xl overflow-hidden`}>
         <img 
-          src="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" 
+          src={logoSrc}
           alt="Myotopia Logo"
           className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          width={size === "xl" ? 64 : size === "lg" ? 48 : size === "md" ? 32 : 24}
+          height={size === "xl" ? 64 : size === "lg" ? 48 : size === "md" ? 32 : 24}
         />
       </div>
       {showText && (

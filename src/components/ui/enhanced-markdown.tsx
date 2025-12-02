@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 
 interface EnhancedMarkdownProps {
@@ -6,13 +7,17 @@ interface EnhancedMarkdownProps {
   className?: string;
 }
 
+// Configure DOMPurify to allow only safe tags for markdown rendering
+const ALLOWED_TAGS = ['h1', 'h2', 'h3', 'p', 'strong', 'em', 'ul', 'li', 'br', 'code', 'span'];
+const ALLOWED_ATTR = ['class'];
+
 export const EnhancedMarkdown: React.FC<EnhancedMarkdownProps> = ({ 
   content, 
   className 
 }) => {
   // Process markdown formatting
   const processMarkdown = (text: string): string => {
-    return text
+    const formatted = text
       // Headers
       .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold text-white mt-4 mb-2">$1</h3>')
       .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold text-white mt-6 mb-3">$1</h2>')
@@ -35,6 +40,12 @@ export const EnhancedMarkdown: React.FC<EnhancedMarkdownProps> = ({
       // Line breaks
       .replace(/\n\n/g, '<br><br>')
       .replace(/\n/g, '<br>');
+
+    // Sanitize to prevent XSS attacks
+    return DOMPurify.sanitize(formatted, {
+      ALLOWED_TAGS,
+      ALLOWED_ATTR
+    });
   };
 
   return (

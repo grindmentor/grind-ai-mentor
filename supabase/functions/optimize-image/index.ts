@@ -6,10 +6,61 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple in-memory rate limiter
+const rateLimiter = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 30; // requests per minute (lower for image processing)
+const RATE_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB max
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimiter.get(ip);
+
+  // Cleanup old entries periodically
+  if (rateLimiter.size > 5000) {
+    for (const [key, value] of rateLimiter.entries()) {
+      if (value.resetTime < now) {
+        rateLimiter.delete(key);
+      }
+    }
+  }
+
+  if (!record || record.resetTime < now) {
+    rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         'unknown';
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting
+  const clientIP = getClientIP(req);
+  if (!checkRateLimit(clientIP)) {
+    console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+    return new Response(JSON.stringify({ 
+      error: 'Rate limit exceeded. Please try again later.',
+      success: false 
+    }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -28,9 +79,20 @@ serve(async (req) => {
         throw new Error('No image provided');
       }
 
-      quality = parseFloat(formData.get('quality') as string) || 0.8;
-      maxWidth = parseInt(formData.get('maxWidth') as string) || 1920;
-      maxHeight = parseInt(formData.get('maxHeight') as string) || 1920;
+      // Validate file size
+      if (file.size > MAX_IMAGE_SIZE) {
+        return new Response(JSON.stringify({ 
+          error: `Image too large. Maximum size is ${MAX_IMAGE_SIZE / 1024 / 1024}MB`,
+          success: false 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      quality = Math.min(Math.max(parseFloat(formData.get('quality') as string) || 0.8, 0.1), 1.0);
+      maxWidth = Math.min(Math.max(parseInt(formData.get('maxWidth') as string) || 1920, 100), 4096);
+      maxHeight = Math.min(Math.max(parseInt(formData.get('maxHeight') as string) || 1920, 100), 4096);
       
       imageData = await file.arrayBuffer();
     } else if (contentType.includes('application/json')) {
@@ -40,9 +102,20 @@ serve(async (req) => {
         throw new Error('No image data provided');
       }
 
-      quality = body.quality || 0.8;
-      maxWidth = body.maxWidth || 1920;
-      maxHeight = body.maxHeight || 1920;
+      // Validate base64 length (rough size estimate)
+      if (body.imageBase64.length > MAX_IMAGE_SIZE * 1.4) {
+        return new Response(JSON.stringify({ 
+          error: `Image too large. Maximum size is ${MAX_IMAGE_SIZE / 1024 / 1024}MB`,
+          success: false 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      quality = Math.min(Math.max(body.quality || 0.8, 0.1), 1.0);
+      maxWidth = Math.min(Math.max(body.maxWidth || 1920, 100), 4096);
+      maxHeight = Math.min(Math.max(body.maxHeight || 1920, 100), 4096);
       
       // Decode base64
       const base64Data = body.imageBase64.replace(/^data:image\/\w+;base64,/, '');
@@ -58,10 +131,6 @@ serve(async (req) => {
 
     console.log(`Processing image: ${imageData.byteLength} bytes, quality: ${quality}, max: ${maxWidth}x${maxHeight}`);
 
-    // Use Sharp-like processing via ImageMagick in Deno
-    // For edge functions, we'll use a different approach - encode to WebP using Canvas API simulation
-    // Since Deno doesn't have native image processing, we'll use a pure JS solution
-    
     const inputBytes = new Uint8Array(imageData);
     
     // Detect image format from magic bytes
@@ -85,21 +154,16 @@ serve(async (req) => {
       });
     }
 
-    // For server-side WebP conversion, we'll use an external service approach
-    // or return the image with metadata for client-side conversion if WebP encoding isn't available
-    
     // Calculate estimated compression based on format
     let estimatedRatio = 1.0;
     if (isPNG) {
-      estimatedRatio = 0.3; // PNGs typically compress 70% smaller as WebP
+      estimatedRatio = 0.3;
     } else if (isJPEG) {
-      estimatedRatio = 0.75; // JPEGs compress ~25% smaller
+      estimatedRatio = 0.75;
     }
 
     const estimatedSize = Math.round(imageData.byteLength * estimatedRatio);
 
-    // Return image metadata for client-side processing
-    // In production, you would use a library like sharp via npm or an image processing service
     const responseData = {
       success: true,
       originalSize: imageData.byteLength,
@@ -107,7 +171,7 @@ serve(async (req) => {
       compressionRatio: estimatedRatio,
       format: isJPEG ? 'jpeg' : isPNG ? 'png' : isWebP ? 'webp' : 'unknown',
       recommendation: 'Use client-side WebP conversion for optimal results',
-      serverSupportsWebP: false, // Deno edge functions don't have native image processing
+      serverSupportsWebP: false,
     };
 
     console.log('Image analysis complete:', responseData);

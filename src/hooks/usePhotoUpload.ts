@@ -14,6 +14,9 @@ interface UploadOptions {
   quality?: number;
 }
 
+// Signed URL expiry time in seconds (1 hour)
+const SIGNED_URL_EXPIRY = 3600;
+
 export const usePhotoUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -132,10 +135,20 @@ export const usePhotoUpload = () => {
       }
 
       if (data) {
-        // Get public URL for the uploaded file
-        const { data: { publicUrl } } = supabase.storage
+        // Generate signed URL for private bucket access
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
           .from(bucket)
-          .getPublicUrl(data.path);
+          .createSignedUrl(data.path, SIGNED_URL_EXPIRY);
+
+        if (signedUrlError || !signedUrlData?.signedUrl) {
+          console.error('Signed URL error:', signedUrlError);
+          toast({
+            title: "Upload Completed",
+            description: "Photo uploaded but URL generation failed. Please refresh.",
+            variant: "destructive",
+          });
+          return null;
+        }
 
         const originalSize = (file.size / 1024).toFixed(0);
         const finalSize = (fileToUpload.size / 1024).toFixed(0);
@@ -148,7 +161,7 @@ export const usePhotoUpload = () => {
           description: `Your photo has been uploaded successfully${compressionMsg}.`,
         });
 
-        return publicUrl;
+        return signedUrlData.signedUrl;
       }
 
       return null;
@@ -167,26 +180,52 @@ export const usePhotoUpload = () => {
     }
   };
 
+  // Get a fresh signed URL for an existing file path
+  const getSignedUrl = async (filePath: string, bucket: UploadOptions['bucket']): Promise<string | null> => {
+    if (!user) return null;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, SIGNED_URL_EXPIRY);
+
+      if (error || !data?.signedUrl) {
+        console.error('Get signed URL error:', error);
+        return null;
+      }
+
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Get signed URL error:', error);
+      return null;
+    }
+  };
+
   const deletePhoto = async (photoUrl: string, bucket: UploadOptions['bucket']): Promise<boolean> => {
     if (!user) return false;
 
     try {
-      // Extract path from URL
-      const urlParts = photoUrl.split('/');
-      const path = urlParts.slice(-2).join('/'); // Get user_id/filename.ext
+      // Extract path from URL (handle both signed and public URLs)
+      const url = new URL(photoUrl);
+      const pathMatch = url.pathname.match(/\/storage\/v1\/object\/(?:sign|public)\/[^/]+\/(.+)/);
+      const path = pathMatch ? pathMatch[1].split('?')[0] : null;
 
-      const { error } = await supabase.storage
-        .from(bucket)
-        .remove([path]);
+      if (!path) {
+        // Fallback: try extracting from URL parts
+        const urlParts = photoUrl.split('/');
+        const fallbackPath = urlParts.slice(-2).join('/').split('?')[0];
+        
+        const { error } = await supabase.storage
+          .from(bucket)
+          .remove([fallbackPath]);
 
-      if (error) {
-        console.error('Delete error:', error);
-        toast({
-          title: "Delete Failed",
-          description: "Failed to delete photo. Please try again.",
-          variant: "destructive",
-        });
-        return false;
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.storage
+          .from(bucket)
+          .remove([path]);
+
+        if (error) throw error;
       }
 
       toast({
@@ -197,6 +236,11 @@ export const usePhotoUpload = () => {
       return true;
     } catch (error) {
       console.error('Delete error:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete photo. Please try again.",
+        variant: "destructive",
+      });
       return false;
     }
   };
@@ -204,6 +248,7 @@ export const usePhotoUpload = () => {
   return {
     uploadPhoto,
     deletePhoto,
+    getSignedUrl,
     isUploading,
     isCompressing,
     uploadProgress

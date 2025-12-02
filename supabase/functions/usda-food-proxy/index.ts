@@ -11,6 +11,43 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
 }
 
+// Simple in-memory rate limiter
+const rateLimiter = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 60; // requests per minute
+const RATE_WINDOW_MS = 60 * 1000; // 1 minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimiter.get(ip);
+
+  // Cleanup old entries periodically
+  if (rateLimiter.size > 10000) {
+    for (const [key, value] of rateLimiter.entries()) {
+      if (value.resetTime < now) {
+        rateLimiter.delete(key);
+      }
+    }
+  }
+
+  if (!record || record.resetTime < now) {
+    rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         'unknown';
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 8000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
@@ -26,12 +63,24 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Use POST with JSON body' }, 405);
 
+  // Rate limiting
+  const clientIP = getClientIP(req);
+  if (!checkRateLimit(clientIP)) {
+    console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+    return json({ error: 'Rate limit exceeded. Please try again later.' }, 429);
+  }
+
   try {
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
     const term = String((body as any).query ?? (body as any).q ?? '').trim();
     const pageSize = Math.min(Math.max(Number((body as any).pageSize) || 20, 1), 50);
 
     if (!term) return json({ error: 'query is required' }, 400);
+    
+    // Input validation: limit query length to prevent abuse
+    if (term.length > 200) {
+      return json({ error: 'Query too long. Maximum 200 characters.' }, 400);
+    }
 
     const apiKey = Deno.env.get('USDA_API_KEY');
     if (!apiKey) return json({ error: 'Server not configured: missing USDA_API_KEY' }, 500);
@@ -48,7 +97,6 @@ serve(async (req) => {
         {
           headers: {
             'Accept': 'application/json',
-            // Helpful UA for troubleshooting with USDA if needed
             'User-Agent': 'Myotopia-USDA-Proxy/1.0 (+https://myotopia.app)'
           },
         },
@@ -69,7 +117,6 @@ serve(async (req) => {
       const isAbort = err && typeof err === 'object' && (err as any).name === 'AbortError';
       console.error('USDA upstream fetch failed', { message });
       if (isAbort) return json({ error: 'Upstream timeout' }, 504);
-      // Network-level failure – surface as 503 so client can retry
       return json({ error: 'Network unavailable', offline: true }, 503);
     }
   } catch (e) {

@@ -75,13 +75,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
       {/* Status bar safe area */}
-      <div className="h-safe-top bg-background" style={{ paddingTop: 'env(safe-area-inset-top)' }} />
+      <div style={{ paddingTop: 'env(safe-area-inset-top)' }} />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col px-6 pb-8">
         {/* Logo */}
         <motion.div 
-          className="pt-8 pb-6 flex justify-center"
+          className="pt-8 pb-8 flex justify-center"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -101,24 +101,24 @@ const Index = () => {
               className="text-center"
             >
               {/* Icon */}
-              <div className={`w-32 h-32 mx-auto mb-8 rounded-3xl bg-gradient-to-br ${slides[currentSlide].gradient} flex items-center justify-center shadow-2xl`}>
+              <div className={`w-28 h-28 mx-auto mb-8 rounded-3xl bg-gradient-to-br ${slides[currentSlide].gradient} flex items-center justify-center shadow-2xl`}>
                 <div className="text-white">
                   {slides[currentSlide].icon}
                 </div>
               </div>
               
               {/* Text */}
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 leading-tight">
                 {slides[currentSlide].title}
               </h1>
-              <p className="text-muted-foreground text-lg sm:text-xl max-w-sm mx-auto leading-relaxed">
+              <p className="text-muted-foreground text-base max-w-xs mx-auto leading-relaxed">
                 {slides[currentSlide].subtitle}
               </p>
             </motion.div>
           </AnimatePresence>
 
           {/* Slide indicators */}
-          <div className="flex justify-center gap-2 mt-12">
+          <div className="flex justify-center gap-2 mt-10">
             {slides.map((_, index) => (
               <button
                 key={index}
@@ -126,7 +126,7 @@ const Index = () => {
                 className={`h-2 rounded-full transition-all duration-300 ${
                   index === currentSlide 
                     ? 'w-8 bg-primary' 
-                    : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    : 'w-2 bg-muted hover:bg-muted-foreground/50'
                 }`}
               />
             ))}
@@ -143,7 +143,7 @@ const Index = () => {
           <Button
             onClick={() => navigate('/signup')}
             size="lg"
-            className="w-full h-14 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-lg font-semibold rounded-2xl shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-transform"
+            className="w-full h-14 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-primary-foreground text-base font-semibold rounded-2xl shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
           >
             Get Started
             <ArrowRight className="ml-2 w-5 h-5" />
@@ -153,7 +153,7 @@ const Index = () => {
             onClick={() => navigate('/signin')}
             variant="ghost"
             size="lg"
-            className="w-full h-14 text-muted-foreground hover:text-foreground text-lg rounded-2xl"
+            className="w-full h-12 text-muted-foreground hover:text-foreground text-base rounded-2xl"
           >
             I already have an account
             <ChevronRight className="ml-1 w-5 h-5" />
@@ -163,11 +163,11 @@ const Index = () => {
         {/* Legal links */}
         <div className="flex justify-center gap-4 pt-6 text-xs text-muted-foreground">
           <button onClick={() => navigate('/terms')} className="hover:text-foreground transition-colors">
-            Terms of Service
+            Terms
           </button>
-          <span>•</span>
+          <span className="text-border">•</span>
           <button onClick={() => navigate('/privacy')} className="hover:text-foreground transition-colors">
-            Privacy Policy
+            Privacy
           </button>
         </div>
       </div>

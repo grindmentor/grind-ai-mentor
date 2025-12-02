@@ -107,7 +107,7 @@ const ModuleLibrary = () => {
     const ModuleComponent = selectedModule.component;
     return (
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+        <div className="min-h-screen bg-background text-foreground">
           <ModuleComponent 
             onBack={handleBackToLibrary}
             navigationSource="library"
@@ -120,30 +120,28 @@ const ModuleLibrary = () => {
   if (stableLoading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-          <div className="p-4 sm:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="min-h-screen bg-background text-foreground">
+          <div className="px-4 py-6 pb-24">
+            <div className="max-w-2xl mx-auto space-y-5">
               {/* Header skeleton */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-muted/30 rounded-lg animate-shimmer" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-muted/50 rounded-full animate-shimmer" />
                   <div className="space-y-2">
-                    <div className="h-8 w-48 bg-muted/30 rounded animate-shimmer" />
-                    <div className="h-4 w-32 bg-muted/30 rounded animate-shimmer" />
+                    <div className="h-7 w-32 bg-muted/50 rounded-lg animate-shimmer" />
+                    <div className="h-4 w-24 bg-muted/50 rounded animate-shimmer" />
                   </div>
                 </div>
-                <div className="w-24 h-10 bg-muted/30 rounded-lg animate-shimmer" />
+                <div className="w-20 h-9 bg-muted/50 rounded-xl animate-shimmer" />
               </div>
               
               {/* Search skeleton */}
-              <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4 sm:p-6">
-                <div className="space-y-4">
-                  <div className="h-12 w-full bg-muted/30 rounded-xl animate-shimmer" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="h-12 w-full bg-muted/30 rounded-xl animate-shimmer" />
-                    <div className="h-12 w-full bg-muted/30 rounded-xl animate-shimmer" />
-                  </div>
-                </div>
+              <div className="h-12 w-full bg-muted/50 rounded-xl animate-shimmer" />
+              
+              {/* Filter skeleton */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-11 bg-muted/50 rounded-xl animate-shimmer" />
+                <div className="h-11 bg-muted/50 rounded-xl animate-shimmer" />
               </div>
               
               {/* Module grid skeleton */}
@@ -157,144 +155,137 @@ const ModuleLibrary = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-        <div className="p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {/* Mobile-optimized Header */}
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => navigate('/app')}
-                    className="text-white hover:bg-orange-500/20 backdrop-blur-sm hover:text-orange-400 transition-colors p-2"
-                    size="sm"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                      Module Library
-                    </h1>
-                    <p className="text-gray-400 text-sm">Discover AI fitness tools</p>
-                  </div>
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="px-4 py-6 pb-24">
+          <div className="max-w-2xl mx-auto space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate('/app')}
+                  className="p-2 h-10 w-10 rounded-full hover:bg-muted"
+                  size="icon"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    Modules
+                  </h1>
+                  <p className="text-muted-foreground text-sm">AI fitness tools</p>
                 </div>
-                
-                {/* View Mode Toggle */}
-                <div className="flex items-center space-x-2 bg-orange-900/20 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => handleViewModeChange('grid')}
-                    className={`p-2 transition-all duration-200 ${
-                      viewMode === 'grid' 
-                        ? 'bg-orange-500/30 text-orange-300' 
-                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
-                    }`}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => handleViewModeChange('list')}
-                    className={`p-2 transition-all duration-200 ${
-                      viewMode === 'list' 
-                        ? 'bg-orange-500/30 text-orange-300' 
-                        : 'hover:bg-orange-500/20 text-gray-400 hover:text-orange-400'
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
+              </div>
+              
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleViewModeChange('grid')}
+                  className={`p-2 h-8 w-8 rounded-lg transition-all ${
+                    viewMode === 'grid' 
+                      ? 'bg-background shadow-sm text-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleViewModeChange('list')}
+                  className={`p-2 h-8 w-8 rounded-lg transition-all ${
+                    viewMode === 'list' 
+                      ? 'bg-background shadow-sm text-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
-            {/* Enhanced Search and Filters */}
-            <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4 sm:p-6">
-              <div className="space-y-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-400 w-5 h-5" />
-                  <Input
-                    placeholder="Search modules..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 bg-orange-800/30 border-orange-500/40 text-white placeholder:text-orange-300/70 h-12 text-lg focus:border-orange-400 rounded-xl transition-all duration-200"
-                  />
-                </div>
-                
-                {/* Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
-                      <Filter className="w-4 h-4 mr-2 text-orange-400" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                      <SelectItem value="all">All Modules</SelectItem>
-                      <SelectItem value="free">Free</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
-                      <SelectItem value="favorites">Favorites</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="bg-orange-800/30 border-orange-500/40 text-white h-12 rounded-xl transition-all duration-200">
-                      <SelectValue placeholder="Sort by..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900/95 backdrop-blur-md border-orange-500/40 rounded-xl">
-                      <SelectItem value="name">Name</SelectItem>
-                      <SelectItem value="newest">Newest</SelectItem>
-                      <SelectItem value="premium">Premium First</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Input
+                placeholder="Search modules..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 h-12 bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+            
+            {/* Filters */}
+            <div className="grid grid-cols-2 gap-3">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="h-11 bg-card border-border rounded-xl">
+                  <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border rounded-xl">
+                  <SelectItem value="all">All Modules</SelectItem>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="favorites">Favorites</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-11 bg-card border-border rounded-xl">
+                  <SelectValue placeholder="Sort by..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border rounded-xl">
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="premium">Premium First</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Badge variant="outline" className="border-orange-500/40 text-orange-300 bg-orange-500/10 px-3 py-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-border text-muted-foreground bg-muted/30 px-3 py-1 text-xs">
                 {sortedModules.length} modules
               </Badge>
-              <Badge variant="outline" className="border-green-500/40 text-green-400 bg-green-500/10 px-3 py-1">
+              <Badge variant="outline" className="border-success/30 text-success bg-success/10 px-3 py-1 text-xs">
                 {sortedModules.filter(m => !m.isPremium).length} free
               </Badge>
-              <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 bg-yellow-500/10 px-3 py-1">
+              <Badge variant="outline" className="border-primary/30 text-primary bg-primary/10 px-3 py-1 text-xs">
                 <Crown className="w-3 h-3 mr-1" />
                 {sortedModules.filter(m => m.isPremium).length} premium
               </Badge>
-              <Badge variant="outline" className="border-orange-500/40 text-orange-400 bg-orange-500/10 px-3 py-1">
-                <Star className="w-3 h-3 mr-1" />
-                {favorites.length} favorites
+              <Badge variant="outline" className="border-yellow-500/30 text-yellow-500 bg-yellow-500/10 px-3 py-1 text-xs">
+                <Star className="w-3 h-3 mr-1 fill-current" />
+                {favorites.length}
               </Badge>
             </div>
 
             {/* Modules Display */}
             {sortedModules.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Search className="w-10 h-10 text-orange-500/50" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Search className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-2xl font-semibold text-white mb-2">No modules found</h3>
-                <p className="text-orange-300/70 text-lg">Try adjusting your search or filters</p>
+                <h3 className="text-lg font-semibold text-foreground mb-1">No modules found</h3>
+                <p className="text-muted-foreground text-sm">Try adjusting your search or filters</p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Premium Promotion for Free Users */}
                 {currentTier === 'free' && (
                   <PremiumPromoCard variant="compact" />
                 )}
                 
                 <ModuleGrid
-                modules={sortedModules}
-                favorites={favorites}
-                onModuleClick={handleModuleClick}
-                onToggleFavorite={toggleFavorite}
-                onModuleHover={() => {}} // Empty for library - preloading handled by Dashboard
-                onModuleInteraction={() => {}} // Empty for library - preloading handled by Dashboard
-                viewMode={viewMode}
+                  modules={sortedModules}
+                  favorites={favorites}
+                  onModuleClick={handleModuleClick}
+                  onToggleFavorite={toggleFavorite}
+                  onModuleHover={() => {}}
+                  onModuleInteraction={() => {}}
+                  viewMode={viewMode}
                 />
               </div>
             )}

@@ -14,7 +14,7 @@ interface TabItem {
 const tabs: TabItem[] = [
   { id: 'home', label: 'Home', icon: Home, path: '/app' },
   { id: 'modules', label: 'Modules', icon: Grid3X3, path: '/modules' },
-  { id: 'progress', label: 'Progress', icon: TrendingUp, path: '/physique-ai-dashboard' },
+  { id: 'progress', label: 'Progress', icon: TrendingUp, path: '/progress-hub-dashboard' },
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 

@@ -17,7 +17,7 @@ import AuthCallback from "./pages/AuthCallback";
 
 // Lazy load all other routes for better performance
 const AppPage = lazy(() => import("./pages/App"));
-const PhysiqueAIDashboard = lazy(() => import("./pages/PhysiqueAIDashboard"));
+const ProgressHubDashboard = lazy(() => import("./pages/ProgressHubDashboard"));
 const PhysiqueAI = lazy(() => import("./pages/PhysiqueAI"));
 const WorkoutLogger = lazy(() => import("./pages/WorkoutLogger"));
 const SmartFoodLog = lazy(() => import("./pages/SmartFoodLog"));
@@ -169,10 +169,10 @@ function App() {
                             }
                           />
                           <Route
-                            path="/physique-ai-dashboard"
+                            path="/progress-hub-dashboard"
                             element={
                               <ProtectedRoute>
-                                <PhysiqueAIDashboard />
+                                <ProgressHubDashboard />
                               </ProtectedRoute>
                             }
                           />

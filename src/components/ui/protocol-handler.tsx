@@ -58,7 +58,7 @@ const ProtocolHandler: React.FC = () => {
         navigate('/smart-food-log');
         break;
       case 'dashboard':
-        navigate('/physique-ai-dashboard');
+        navigate('/progress-hub-dashboard');
         break;
       case 'progress':
         navigate('/app?module=progress-hub');

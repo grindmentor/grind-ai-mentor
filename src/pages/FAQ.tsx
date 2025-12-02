@@ -120,7 +120,7 @@ const faqData: FAQCategory[] = [
       },
       {
         question: "Do you use cookies?",
-        answer: "We use essential cookies to maintain your session and preferences. We do not use third-party advertising cookies. Analytics data is collected in anonymized form to improve our services. You can manage your cookie preferences through the consent banner."
+        answer: "We use essential cookies to maintain your session and preferences. We do not use third-party advertising cookies. Analytics data is collected in anonymized form to improve our services."
       }
     ]
   },

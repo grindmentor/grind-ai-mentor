@@ -141,39 +141,39 @@ const Usage = () => {
     <div className="min-h-screen bg-background">
       <MobileHeader title="Usage Stats" onBack={() => navigate(-1)} />
       
-      <div className="px-4 pt-20 pb-8 max-w-2xl mx-auto" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))' }}>
+      <div className="px-4 pb-24 max-w-2xl mx-auto" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))' }}>
         {/* Summary Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="mb-6 bg-gradient-to-br from-primary/20 to-secondary/20 border-primary/30">
+          <Card className="mb-6 bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-muted-foreground text-sm">Current Plan</p>
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider">Plan</p>
                   <div className="flex items-center gap-2 mt-1">
                     {currentTier === 'premium' ? (
                       <Crown className="w-5 h-5 text-yellow-500" />
                     ) : (
                       <Zap className="w-5 h-5 text-muted-foreground" />
                     )}
-                    <span className="text-2xl font-bold text-foreground capitalize">
+                    <span className="text-xl font-bold text-foreground capitalize">
                       {currentTier}
                     </span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-muted-foreground text-sm">Total Interactions</p>
-                  <p className="text-3xl font-bold text-foreground">{totalInteractions}</p>
+                  <p className="text-muted-foreground text-xs uppercase tracking-wider">Interactions</p>
+                  <p className="text-2xl font-bold text-foreground">{totalInteractions}</p>
                 </div>
               </div>
 
               {currentTier === 'free' && (
                 <Button
                   onClick={() => navigate('/pricing')}
-                  className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                  className="w-full mt-2 bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                 >
                   <Crown className="w-4 h-4 mr-2" />
                   Upgrade to Premium
@@ -189,23 +189,23 @@ const Usage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            This Month's Usage
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            This Month
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {usageItems.map((item, index) => (
               <motion.div
                 key={item.key}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 + index * 0.05 }}
+                transition={{ delay: 0.1 + index * 0.03 }}
               >
-                <Card className="bg-card/50 border-border/50">
-                  <CardContent className="py-4">
+                <Card className="bg-card border-border">
+                  <CardContent className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl ${item.bgColor} flex items-center justify-center ${item.color}`}>
+                      <div className={`w-9 h-9 rounded-xl ${item.bgColor} flex items-center justify-center ${item.color}`}>
                         {item.icon}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -213,18 +213,18 @@ const Usage = () => {
                           <span className="text-sm font-medium text-foreground truncate">
                             {item.label}
                           </span>
-                          <span className="text-sm text-muted-foreground ml-2">
+                          <span className="text-xs text-muted-foreground ml-2">
                             {isUnlimited(item.key) ? (
-                              <span className="text-primary">Unlimited</span>
+                              <span className="text-primary font-medium">∞</span>
                             ) : (
-                              `${getUsageValue(item.key)} / ${getLimit(item.key)}`
+                              `${getUsageValue(item.key)}/${getLimit(item.key)}`
                             )}
                           </span>
                         </div>
                         {!isUnlimited(item.key) && (
                           <Progress 
                             value={getPercentage(item.key)} 
-                            className="h-2"
+                            className="h-1.5"
                           />
                         )}
                       </div>
@@ -241,10 +241,10 @@ const Usage = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-center text-muted-foreground text-sm mt-8 px-4"
+          className="text-center text-muted-foreground text-xs mt-6"
         >
-          Usage resets at the beginning of each month.
-          {currentTier === 'premium' && ' Premium users have unlimited access to all features.'}
+          Resets monthly.
+          {currentTier === 'premium' && ' Premium = unlimited.'}
         </motion.p>
       </div>
     </div>

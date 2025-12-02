@@ -59,143 +59,149 @@ const Settings = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-        <div className="p-2 sm:p-4 md:p-6">
-          <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="px-4 py-6 pb-24">
+          <div className="max-w-2xl mx-auto">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4 sm:mb-6 px-2 sm:px-0">
+            <div className="flex items-center gap-4 mb-6">
               <Button 
                 variant="ghost" 
                 onClick={() => navigate('/app')}
-                className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors w-fit"
+                className="p-2 h-10 w-10 rounded-full hover:bg-muted"
+                size="icon"
               >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
+                <ArrowLeft className="w-5 h-5" />
               </Button>
-              <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-foreground">
                   Settings
                 </h1>
-                <p className="text-gray-400 text-sm sm:text-base">Customize your app preferences</p>
+                <p className="text-muted-foreground text-sm">Customize your preferences</p>
               </div>
-            </div>
-
-            {/* Logout Button */}
-            <div className="flex items-center justify-between mb-4">
-              <div></div>
               <Button
                 onClick={handleLogout}
-                variant="outline"
-                className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Settings Tabs */}
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
-              <TabsList className={`grid w-full grid-cols-5 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-5 bg-muted/50 rounded-xl p-1 h-auto">
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
                     value={tab.id} 
-                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30 p-2 sm:p-3 transition-all duration-200"
+                    className="rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 flex flex-col items-center gap-1"
                   >
-                    <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    {!isMobile && tab.label}
+                    <tab.icon className="w-4 h-4" />
+                    <span className="text-[10px] font-medium">{tab.label}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6 mx-2 sm:mx-0">
+              <div className="space-y-4">
                 {isTabTransitioning ? (
                   <TabContentSkeleton variant="settings" />
                 ) : (
                   <>
                     <TabsContent value="units" className="mt-0 animate-fade-in">
-                      <UnitPreferences />
+                      <Card className="bg-card border-border">
+                        <CardContent className="pt-6">
+                          <UnitPreferences />
+                        </CardContent>
+                      </Card>
                     </TabsContent>
 
                     <TabsContent value="app" className="mt-0 animate-fade-in">
-                      <AppPreferences />
+                      <Card className="bg-card border-border">
+                        <CardContent className="pt-6">
+                          <AppPreferences />
+                        </CardContent>
+                      </Card>
                     </TabsContent>
 
                     <TabsContent value="usage" className="mt-0 animate-fade-in">
-                      <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                        <CardHeader>
-                          <CardTitle className="text-white">Usage Statistics</CardTitle>
+                      <Card className="bg-card border-border">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-foreground text-base">Usage Statistics</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          <p className="text-gray-400 text-sm">View detailed statistics about your app usage, including AI queries, meal plans generated, and more.</p>
+                          <p className="text-muted-foreground text-sm">View your AI queries, meal plans, and app activity.</p>
                           <Button
                             onClick={() => navigate('/usage')}
-                            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                            className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                           >
                             <BarChart3 className="w-4 h-4 mr-2" />
-                            View Usage Stats
+                            View Stats
                           </Button>
                         </CardContent>
                       </Card>
                     </TabsContent>
 
                     <TabsContent value="ai" className="mt-0 animate-fade-in">
-                      <AIMemoryReset />
+                      <Card className="bg-card border-border">
+                        <CardContent className="pt-6">
+                          <AIMemoryReset />
+                        </CardContent>
+                      </Card>
                     </TabsContent>
 
                     <TabsContent value="legal" className="mt-0 animate-fade-in">
-                  <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                    <CardHeader>
-                      <CardTitle className="text-white">Legal Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <Button
-                        onClick={() => navigate('/terms')}
-                        variant="outline"
-                        className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Terms of Service
-                      </Button>
-                      <Button
-                        onClick={() => navigate('/privacy')}
-                        variant="outline"
-                        className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Privacy Policy
-                      </Button>
-                      <Button
-                        onClick={() => navigate('/about')}
-                        variant="outline"
-                        className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        About Myotopia
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                      <Card className="bg-card border-border">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-foreground text-base">Legal</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <Button
+                            onClick={() => navigate('/terms')}
+                            variant="ghost"
+                            className="w-full justify-start h-12"
+                          >
+                            <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
+                            Terms of Service
+                          </Button>
+                          <Button
+                            onClick={() => navigate('/privacy')}
+                            variant="ghost"
+                            className="w-full justify-start h-12"
+                          >
+                            <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
+                            Privacy Policy
+                          </Button>
+                          <Button
+                            onClick={() => navigate('/about')}
+                            variant="ghost"
+                            className="w-full justify-start h-12"
+                          >
+                            <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
+                            About Myotopia
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
 
                     <TabsContent value="support" className="mt-0 animate-fade-in">
-                      <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                        <CardHeader>
-                          <CardTitle className="text-white">Support</CardTitle>
+                      <Card className="bg-card border-border">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-foreground text-base">Support</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <Button
                             onClick={() => navigate('/support')}
                             variant="outline"
-                            className="w-full justify-start text-white border-gray-600 hover:bg-gray-800/50"
+                            className="w-full justify-start h-12"
                           >
-                            <HelpCircle className="w-4 h-4 mr-2" />
+                            <HelpCircle className="w-4 h-4 mr-3" />
                             Contact Support
                           </Button>
-                          <div className="p-4 bg-gray-800/30 rounded-lg">
-                            <h3 className="text-white font-medium mb-2">Quick Help</h3>
-                            <p className="text-gray-400 text-sm leading-relaxed">
-                              For technical issues, account questions, or feature requests, 
-                              use the Contact Support button above to reach our team.
+                          <div className="p-4 bg-muted/30 rounded-xl">
+                            <h3 className="text-foreground font-medium text-sm mb-1">Quick Help</h3>
+                            <p className="text-muted-foreground text-xs leading-relaxed">
+                              For technical issues or questions, use Contact Support above.
                             </p>
                           </div>
                         </CardContent>

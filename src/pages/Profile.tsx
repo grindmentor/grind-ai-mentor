@@ -195,189 +195,186 @@ const Profile = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
-        <div className="p-2 sm:p-4 md:p-6">
-          <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="px-4 py-6 pb-24">
+          <div className="max-w-2xl mx-auto">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4 sm:mb-6 px-2 sm:px-0">
+            <div className="flex items-center gap-4 mb-6">
               <Button 
                 variant="ghost" 
                 onClick={() => navigate('/app')}
-                className="text-white hover:bg-gray-800/50 backdrop-blur-sm hover:text-orange-400 transition-colors w-fit"
+                className="p-2 h-10 w-10 rounded-full hover:bg-muted"
+                size="icon"
               >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
+                <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-foreground">
                   Profile
                 </h1>
-                <p className="text-gray-400 text-sm sm:text-base">Manage your account and preferences</p>
+                <p className="text-muted-foreground text-sm">Manage your account</p>
               </div>
             </div>
 
             {/* Profile Tabs */}
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
-              <TabsList className={`grid w-full grid-cols-2 bg-gray-900/40 backdrop-blur-sm mx-2 sm:mx-0 ${isMobile ? 'text-xs' : ''}`}>
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-xl p-1">
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
                     value={tab.id} 
-                    className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 data-[state=active]:border-orange-500/30 p-2 sm:p-3 transition-all duration-200"
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200"
                   >
                     {tab.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              <div className="space-y-4 sm:space-y-6 mx-2 sm:mx-0">
+              <div className="space-y-4">
                 {isLoading || isTabTransitioning ? (
                   <TabContentSkeleton variant="profile" />
                 ) : (
                   <>
-                    <TabsContent value="overview" className="mt-0 space-y-4 sm:space-y-6 animate-fade-in">
-                  {/* Profile Overview */}
-                  <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center">
-                        <User className="w-5 h-5 mr-2 text-orange-400" />
-                        Account Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-300">{user?.email}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-300">
-                          Member since {formatDate(user?.created_at)}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Subscription Status */}
-                  <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center">
-                        {React.createElement(getTierIcon(currentTier), { 
-                          className: `w-5 h-5 mr-2 text-${getTierColor(currentTier).split('-')[1]}-400`
-                        })}
-                        Subscription Status
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-300">Current Plan:</span>
-                        <span className={`px-3 py-1 text-sm font-semibold rounded-full bg-gradient-to-r ${getTierColor(currentTier)} text-white`}>
-                          {currentTier.toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      {currentTierData && (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-300">Monthly Price:</span>
-                            <span className="text-white">${currentTierData.monthlyPrice}</span>
+                    <TabsContent value="overview" className="mt-0 space-y-4 animate-fade-in">
+                      {/* Profile Overview */}
+                      <Card className="bg-card border-border">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-foreground flex items-center text-base">
+                            <User className="w-5 h-5 mr-2 text-primary" />
+                            Account
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-foreground text-sm">{user?.email}</span>
                           </div>
-                          
-                          {subscriptionEnd && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-300">Next Billing:</span>
-                              <span className="text-white">{formatDate(subscriptionEnd)}</span>
-                            </div>
-                          )}
-                          
-                          {billingCycle && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-300">Billing Cycle:</span>
-                              <span className="text-white capitalize">{billingCycle}</span>
-                            </div>
-                          )}
-                        </>
-                      )}
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-foreground text-sm">
+                              Member since {formatDate(user?.created_at)}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                      {currentTier === 'free' && (
-                        <div className="pt-4 border-t border-gray-700/50">
-                          <Button
-                            onClick={() => navigate('/pricing')}
-                            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
-                          >
-                            Upgrade to Premium
-                          </Button>
-                        </div>
-                      )}
-
-                      {currentTier === 'premium' && (
-                        <div className="pt-4 border-t border-gray-700/50 space-y-3">
-                          <Button
-                            onClick={handleManageSubscription}
-                            disabled={isManagingSubscription}
-                            className="w-full bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 flex items-center justify-center"
-                          >
-                            <Settings className="w-4 h-4 mr-2" />
-                            {isManagingSubscription ? 'Opening...' : 'Manage Subscription'}
-                          </Button>
-                          <p className="text-xs text-gray-400 text-center">
-                            Update payment method, billing, or cancel subscription
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Fitness Stats */}
-                  {(userData.weight || userData.height || calculatedAge) && (
-                    <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                      <CardHeader>
-                        <CardTitle className="text-white">Quick Stats</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                          {calculatedAge && (
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-orange-400">{calculatedAge}</div>
-                              <div className="text-sm text-gray-400">Years Old</div>
-                            </div>
-                          )}
-                          {userData.weight && (
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-orange-400">
-                                {userData.weight}{preferences.weight_unit}
+                      {/* Subscription Status */}
+                      <Card className="bg-card border-border">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-foreground flex items-center text-base">
+                            {React.createElement(getTierIcon(currentTier), { 
+                              className: "w-5 h-5 mr-2 text-primary"
+                            })}
+                            Subscription
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                            <span className="text-muted-foreground text-sm">Plan</span>
+                            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                              currentTier === 'premium' 
+                                ? 'bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/30' 
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              {currentTier.toUpperCase()}
+                            </span>
+                          </div>
+                      
+                          {currentTierData && (
+                            <>
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                                <span className="text-muted-foreground text-sm">Price</span>
+                                <span className="text-foreground font-medium">${currentTierData.monthlyPrice}/mo</span>
                               </div>
-                              <div className="text-sm text-gray-400">Weight</div>
-                            </div>
+                          
+                              {subscriptionEnd && (
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                                  <span className="text-muted-foreground text-sm">Next Billing</span>
+                                  <span className="text-foreground">{formatDate(subscriptionEnd)}</span>
+                                </div>
+                              )}
+                            </>
                           )}
-                          {userData.height && (
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-orange-400">
-                                {userData.height}{preferences.height_unit === 'cm' ? 'cm' : '"'}
-                              </div>
-                              <div className="text-sm text-gray-400">Height</div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
 
-                <TabsContent value="info" className="mt-0 animate-fade-in">
-                  <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 sm:p-6">
-                    <BasicInformation 
-                      profile={profileData}
-                      preferences={preferences}
-                      calculatedAge={calculatedAge}
-                      onInputChange={handleInputChange}
-                      onWeightChange={handleWeightChange}
-                      onHeightChange={handleHeightChange}
-                      getWeightDisplay={getWeightDisplay}
-                      getHeightDisplay={getHeightDisplay}
-                    />
-                  </div>
-                </TabsContent>
+                          {currentTier === 'free' && (
+                            <div className="pt-2">
+                              <Button
+                                onClick={() => navigate('/pricing')}
+                                className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                              >
+                                Upgrade to Premium
+                              </Button>
+                            </div>
+                          )}
+
+                          {currentTier === 'premium' && (
+                            <div className="pt-2 space-y-2">
+                              <Button
+                                onClick={handleManageSubscription}
+                                disabled={isManagingSubscription}
+                                variant="outline"
+                                className="w-full"
+                              >
+                                <Settings className="w-4 h-4 mr-2" />
+                                {isManagingSubscription ? 'Opening...' : 'Manage Subscription'}
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Fitness Stats */}
+                      {(userData.weight || userData.height || calculatedAge) && (
+                        <Card className="bg-card border-border">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-foreground text-base">Stats</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-3 gap-3">
+                              {calculatedAge && (
+                                <div className="text-center p-3 rounded-xl bg-muted/30">
+                                  <div className="text-xl font-bold text-primary">{calculatedAge}</div>
+                                  <div className="text-xs text-muted-foreground">Age</div>
+                                </div>
+                              )}
+                              {userData.weight && (
+                                <div className="text-center p-3 rounded-xl bg-muted/30">
+                                  <div className="text-xl font-bold text-primary">
+                                    {userData.weight}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">{preferences.weight_unit}</div>
+                                </div>
+                              )}
+                              {userData.height && (
+                                <div className="text-center p-3 rounded-xl bg-muted/30">
+                                  <div className="text-xl font-bold text-primary">
+                                    {userData.height}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">{preferences.height_unit === 'cm' ? 'cm' : 'in'}</div>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="info" className="mt-0 animate-fade-in">
+                      <Card className="bg-card border-border">
+                        <CardContent className="pt-6">
+                          <BasicInformation 
+                            profile={profileData}
+                            preferences={preferences}
+                            calculatedAge={calculatedAge}
+                            onInputChange={handleInputChange}
+                            onWeightChange={handleWeightChange}
+                            onHeightChange={handleHeightChange}
+                            getWeightDisplay={getWeightDisplay}
+                            getHeightDisplay={getHeightDisplay}
+                          />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
                   </>
                 )}
               </div>

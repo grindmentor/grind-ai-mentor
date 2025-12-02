@@ -1,6 +1,9 @@
+import { supabase } from "@/integrations/supabase/client";
+
 /**
- * Image compression utility for client-side image optimization
- * Reduces file size before upload to save bandwidth and storage
+ * Image compression utility for optimizing user uploads
+ * Supports both client-side (Canvas API) and server-side (Edge Function) optimization
+ * Reduces file size while maintaining acceptable quality
  */
 
 interface CompressionOptions {
@@ -151,4 +154,60 @@ export async function generateBlurPlaceholder(
 export function isWebPSupported(): boolean {
   const canvas = document.createElement('canvas');
   return canvas.toDataURL('image/webp').startsWith('data:image/webp');
+}
+
+/**
+ * Server-side image optimization via Edge Function
+ * Provides consistent compression across all devices
+ */
+export async function optimizeImageServerSide(
+  file: File,
+  options: CompressionOptions = {}
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('quality', (options.quality || 0.8).toString());
+    formData.append('maxWidth', (options.maxWidth || 1920).toString());
+    formData.append('maxHeight', (options.maxHeight || 1920).toString());
+
+    const { data, error } = await supabase.functions.invoke('optimize-image', {
+      body: formData,
+    });
+
+    if (error) {
+      console.error('Server-side optimization error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Server-side optimization result:', data);
+    return { success: true, data };
+  } catch (err) {
+    console.error('Failed to call optimize-image function:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
+/**
+ * Hybrid optimization: tries server-side first, falls back to client-side
+ * Ensures consistent WebP conversion across all devices
+ */
+export async function optimizeImageHybrid(
+  file: File,
+  options: CompressionOptions = {}
+): Promise<File> {
+  // For small files, skip optimization
+  if (file.size < 100 * 1024) {
+    console.log('Image already small, skipping optimization');
+    return file;
+  }
+
+  // Try client-side compression (more reliable and faster)
+  try {
+    const compressed = await compressImage(file, options);
+    return compressed;
+  } catch (err) {
+    console.warn('Client-side compression failed, returning original:', err);
+    return file;
+  }
 }

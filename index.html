@@ -4,10 +4,11 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- Optimized favicon and icons -->
-    <link rel="icon" type="image/png" href="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" />
-    <link rel="apple-touch-icon" href="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" />
-    <link rel="mask-icon" href="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" color="#F97316" />
+    <!-- Optimized favicon and icons - using smaller optimized versions -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/icon.svg" color="#F97316" />
     
     <!-- Essential meta tags - Optimized for mobile -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
@@ -112,9 +113,9 @@
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://api.openai.com">
     
-    <!-- Preload critical resources -->
-    <link rel="preload" href="/icons/icon-512.png" as="image" type="image/png">
-    <link rel="preload" href="/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png" as="image" type="image/png">
+    <!-- Preload critical resources - use smaller optimized icons -->
+    <link rel="preload" href="/icons/icon-192.png" as="image" type="image/png" fetchpriority="high">
+    <link rel="preload" href="/apple-touch-icon.png" as="image" type="image/png">
     
     <!-- Critical CSS inline -->
     <style>
@@ -200,29 +201,39 @@
     <noscript>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     </noscript>
-    
-    <!-- Google Analytics (GA4) - Replace G-XXXXXXXXXX with your actual Measurement ID -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX', {
-        'page_title': document.title,
-        'page_location': window.location.href
-      });
-      
-      // Helper function for tracking events (used throughout the app)
-      window.trackEvent = function(eventName, eventParams) {
-        if (typeof gtag === 'function') {
-          gtag('event', eventName, eventParams);
-        }
-      };
-    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Deferred Google Analytics (GA4) - loaded after main content -->
+    <script>
+      // Defer GA loading until after page is interactive
+      window.addEventListener('load', () => {
+        const script = document.createElement('script');
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX';
+        script.async = true;
+        document.head.appendChild(script);
+        
+        script.onload = () => {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', 'G-XXXXXXXXXX', {
+            'page_title': document.title,
+            'page_location': window.location.href
+          });
+        };
+      });
+      
+      // Helper function for tracking events
+      window.trackEvent = function(eventName, eventParams) {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', eventName, eventParams);
+        }
+      };
+    </script>
     
     <!-- Performance monitoring -->
     <script>

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Dumbbell, Target, Zap, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import Logo from "@/components/ui/logo";
 
 const Index = () => {
@@ -11,6 +10,7 @@ const Index = () => {
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -23,6 +23,8 @@ const Index = () => {
       }
       
       setIsCheckingAuth(false);
+      // Trigger animations after auth check
+      requestAnimationFrame(() => setIsVisible(true));
     };
     checkUser();
   }, [navigate]);
@@ -39,14 +41,10 @@ const Index = () => {
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center"
-        >
+        <div className="flex flex-col items-center animate-scale-in">
           <Logo size="lg" />
           <div className="mt-6 w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -80,43 +78,42 @@ const Index = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col px-6 pb-8">
         {/* Logo */}
-        <motion.div 
-          className="pt-8 pb-8 flex justify-center"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
+        <div 
+          className={`pt-8 pb-8 flex justify-center transition-all duration-300 ease-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'
+          }`}
         >
           <Logo size="md" />
-        </motion.div>
+        </div>
 
         {/* Slides */}
         <div className="flex-1 flex flex-col justify-center relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSlide}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              style={{ willChange: 'transform, opacity' }}
-              className="text-center"
+          <div className="text-center">
+            {/* Icon */}
+            <div 
+              key={`icon-${currentSlide}`}
+              className={`w-28 h-28 mx-auto mb-8 rounded-3xl bg-gradient-to-br ${slides[currentSlide].gradient} flex items-center justify-center shadow-2xl animate-scale-in`}
             >
-              {/* Icon */}
-              <div className={`w-28 h-28 mx-auto mb-8 rounded-3xl bg-gradient-to-br ${slides[currentSlide].gradient} flex items-center justify-center shadow-2xl`}>
-                <div className="text-white">
-                  {slides[currentSlide].icon}
-                </div>
+              <div className="text-white">
+                {slides[currentSlide].icon}
               </div>
-              
-              {/* Text */}
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 leading-tight">
-                {slides[currentSlide].title}
-              </h1>
-              <p className="text-muted-foreground text-base max-w-xs mx-auto leading-relaxed">
-                {slides[currentSlide].subtitle}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+            </div>
+            
+            {/* Text */}
+            <h1 
+              key={`title-${currentSlide}`}
+              className="text-2xl sm:text-3xl font-bold text-foreground mb-3 leading-tight animate-fade-in"
+            >
+              {slides[currentSlide].title}
+            </h1>
+            <p 
+              key={`subtitle-${currentSlide}`}
+              className="text-muted-foreground text-base max-w-xs mx-auto leading-relaxed animate-fade-in"
+              style={{ animationDelay: '0.1s' }}
+            >
+              {slides[currentSlide].subtitle}
+            </p>
+          </div>
 
           {/* Slide indicators */}
           <div className="flex justify-center gap-2 mt-10">
@@ -135,11 +132,10 @@ const Index = () => {
         </div>
 
         {/* CTA Buttons */}
-        <motion.div 
-          className="space-y-3 pt-8"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
+        <div 
+          className={`space-y-3 pt-8 transition-all duration-300 ease-out delay-200 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+          }`}
         >
           <Button
             onClick={() => navigate('/signup')}
@@ -159,7 +155,7 @@ const Index = () => {
             I already have an account
             <ChevronRight className="ml-1 w-5 h-5" />
           </Button>
-        </motion.div>
+        </div>
 
         {/* Legal links */}
         <div className="flex justify-center gap-4 pt-6 text-xs text-muted-foreground">

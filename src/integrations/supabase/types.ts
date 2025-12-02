@@ -1358,6 +1358,10 @@ export type Database = {
           technique_notes: string
         }[]
       }
+      validate_password_reset_token: {
+        Args: { p_email: string; p_token: string }
+        Returns: boolean
+      }
       verify_user_age: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {

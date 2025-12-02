@@ -14,10 +14,8 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
 
   const sizes = sizeMap[size];
 
-  // Use smaller icon for better performance (icon-192 is 192x192, much smaller than 1024x1024 original)
-  const logoSrc = size === "xl" || size === "lg" 
-    ? "/icons/icon-192.png" 
-    : "/apple-touch-icon.png"; // 180x180
+  // Use consistent icon source for all sizes
+  const logoSrc = "/icons/icon-192.png";
 
   return (
     <div className={`flex items-center justify-center space-x-3 ${className}`}>

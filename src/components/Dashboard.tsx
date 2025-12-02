@@ -4,7 +4,7 @@ import { useModules } from '@/contexts/ModulesContext';
 import { useNavigate } from 'react-router-dom';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, Bell, User, Settings, Plus, BarChart3, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -16,7 +16,8 @@ import NativeInstallPrompt from '@/components/ui/native-install-prompt';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { ModuleGridSkeleton } from '@/components/ui/module-card-skeleton';
-import { DataSkeleton, DashboardContentSkeleton, ProgressHubSkeleton, FavoritesSkeleton } from '@/components/ui/data-skeleton';
+import { DataSkeleton, FavoritesSkeleton } from '@/components/ui/data-skeleton';
+import { motion } from 'framer-motion';
 
 // Lazy load heavy components
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -25,7 +26,6 @@ const LatestResearch = lazy(() => import('@/components/homepage/LatestResearch')
 const ModuleErrorBoundary = lazy(() => import('@/components/ModuleErrorBoundary'));
 const PremiumPromoCard = lazy(() => import('@/components/PremiumPromoCard'));
 
-// Define the type for computed modules
 interface ComputedModules {
   regularModules: any[];
   progressHubModule: any;
@@ -44,19 +44,15 @@ const Dashboard = () => {
   const { currentTier } = useSubscription();
   const queryClient = useQueryClient();
 
-  // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries();
-    // Small delay for visual feedback
     await new Promise(resolve => setTimeout(resolve, 500));
   }, [queryClient]);
 
-  // Helper function to get module by ID
   const getModuleById = (moduleId: string) => {
     return modules?.find(module => module.id === moduleId) || null;
   };
 
-  // Check for notifications from navigation
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('notifications') === 'true') {
@@ -64,7 +60,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  // Simplified module click handler
   const handleModuleClick = useCallback((module: any) => {
     setSelectedModule(module);
     setNavigationSource('dashboard');
@@ -75,23 +70,8 @@ const Dashboard = () => {
     setShowNotifications(false);
   }, []);
 
-  const handleNotificationsClick = () => {
-    setShowNotifications(true);
-  };
+  const handleFoodLogged = useCallback((data: any) => {}, []);
 
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
-
-  const handleSettingsClick = () => {
-    navigate('/settings');
-  };
-
-  const handleFoodLogged = useCallback((data: any) => {
-    // Handle food logged
-  }, []);
-
-  // Simplified computed modules
   const { regularModules, progressHubModule, favoriteModules }: ComputedModules = useMemo(() => {
     if (!modules || modules.length === 0) {
       return { regularModules: [], progressHubModule: null, favoriteModules: [] };
@@ -118,23 +98,20 @@ const Dashboard = () => {
     };
   }, [modules, favorites]);
 
-  // Loading state
   if (!modules || modules.length === 0) {
     return <LoadingScreen />;
   }
 
-  // Show notifications
   if (showNotifications) {
     return <NotificationCenter onBack={handleBackToDashboard} />;
   }
 
-  // Show selected module
   if (selectedModule) {
     try {
       const ModuleComponent = selectedModule.component;
       return (
         <ErrorBoundary>
-          <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
+          <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
             <Suspense fallback={<EnhancedLoading type="module" message={`Loading ${selectedModule.title}...`} />}>
               <ModuleErrorBoundary moduleName={selectedModule.title} onBack={handleBackToDashboard}>
                 <ModuleComponent 
@@ -152,209 +129,205 @@ const Dashboard = () => {
     }
   }
 
+  const firstName = user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion';
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-background via-orange-900/10 to-orange-800/20 text-foreground overflow-x-hidden">
-          {/* Enhanced header with notifications, profile, and settings */}
-          <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border shadow-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-            <div className="px-4 py-3 sm:px-6 sm:py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center space-x-3">
-                  <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-                    Myotopia
-                  </h1>
-                  {/* Subscription tier indicator */}
-                  <div className="hidden sm:block">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        currentTier === 'premium' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
-                        
-                        'bg-muted text-muted-foreground'
-                    }`}>
-                      {currentTier.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-1 sm:gap-2">
-                  {/* Module Library */}
-                  <Button
-                    onClick={() => navigate('/modules')}
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 px-3 py-2 hidden sm:flex min-h-[40px]"
-                    title="Module Library"
-                  >
-                    <span className="text-xs sm:text-sm">Library</span>
-                  </Button>
-
-                  {/* Notifications */}
-                  <Button
-                    onClick={handleNotificationsClick}
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 min-h-[44px] min-w-[44px]"
-                    title="Notifications"
-                  >
-                    <Bell className="w-5 h-5" />
-                  </Button>
-
-                  {/* Profile */}
-                  <Button
-                    onClick={handleProfileClick}
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 min-h-[44px] min-w-[44px]"
-                    title="Profile"
-                  >
-                    <User className="w-5 h-5" />
-                  </Button>
-
-                  {/* Settings */}
-                  <Button
-                    onClick={handleSettingsClick}
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/50 p-2 min-h-[44px] min-w-[44px]"
-                    title="Settings"
-                  >
-                    <Settings className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
+      <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+        {/* Native-style header */}
+        <header 
+          className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-foreground">Myotopia</h1>
+              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
+                currentTier === 'premium' 
+                  ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 border border-yellow-500/30' 
+                  : 'bg-muted text-muted-foreground'
+              }`}>
+                {currentTier.toUpperCase()}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                onClick={() => navigate('/usage')}
+                variant="ghost"
+                size="sm"
+                className="p-2 h-10 w-10 rounded-full"
+              >
+                <BarChart3 className="w-5 h-5" />
+              </Button>
+              <Button
+                onClick={() => setShowNotifications(true)}
+                variant="ghost"
+                size="sm"
+                className="p-2 h-10 w-10 rounded-full"
+              >
+                <Bell className="w-5 h-5" />
+              </Button>
+              <Button
+                onClick={() => navigate('/profile')}
+                variant="ghost"
+                size="sm"
+                className="p-2 h-10 w-10 rounded-full"
+              >
+                <User className="w-5 h-5" />
+              </Button>
+              <Button
+                onClick={() => navigate('/settings')}
+                variant="ghost"
+                size="sm"
+                className="p-2 h-10 w-10 rounded-full"
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
             </div>
           </div>
+        </header>
 
-          {/* Main Content with pull-to-refresh */}
-          <PullToRefresh onRefresh={handleRefresh}>
-            <div className="px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-32 max-w-full overflow-x-hidden" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))' }}>
-            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 lg:space-y-12">
-              {/* Welcome section with responsive text */}
-              <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
-                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 lg:mb-4 leading-tight">
-                  Welcome back, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Champion'}! 👋
-                </h1>
-                <p className="text-muted-foreground text-sm sm:text-base lg:text-lg px-4">
-                  Ready to achieve your fitness goals with science-backed training?
+        <PullToRefresh onRefresh={handleRefresh}>
+          <div 
+            className="px-4 pb-32"
+            style={{ paddingTop: 'calc(72px + env(safe-area-inset-top))' }}
+          >
+            <div className="max-w-2xl mx-auto">
+              {/* Welcome Section */}
+              <motion.div 
+                className="py-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <h2 className="text-2xl font-bold text-foreground mb-1">
+                  Hey, {firstName} 👋
+                </h2>
+                <p className="text-muted-foreground">
+                  Ready to crush your goals today?
                 </p>
-              </div>
+              </motion.div>
 
-              {/* Favorites Section with skeleton loading */}
+              {/* Quick Actions */}
+              <motion.div 
+                className="grid grid-cols-2 gap-3 mb-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                {progressHubModule && (
+                  <button
+                    onClick={() => handleModuleClick(progressHubModule)}
+                    className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/20 text-left active:scale-[0.98] transition-transform"
+                  >
+                    <TrendingUp className="w-6 h-6 text-purple-400 mb-2" />
+                    <p className="font-semibold text-foreground text-sm">Progress</p>
+                    <p className="text-xs text-muted-foreground">Track results</p>
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate('/modules')}
+                  className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 text-left active:scale-[0.98] transition-transform"
+                >
+                  <Plus className="w-6 h-6 text-primary mb-2" />
+                  <p className="font-semibold text-foreground text-sm">Modules</p>
+                  <p className="text-xs text-muted-foreground">All features</p>
+                </button>
+              </motion.div>
+
+              {/* Favorites Section */}
               {favoritesLoading ? (
-                <div className="mb-6 sm:mb-8 lg:mb-12">
-                  <FavoritesSkeleton />
-                </div>
+                <FavoritesSkeleton />
               ) : favoriteModules.length > 0 ? (
-                <div className="mb-6 sm:mb-8 lg:mb-12">
-                  <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
-                      <Star className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-500 fill-current" />
-                      Your Favorites
-                    </h2>
+                <motion.div 
+                  className="mb-8"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                      Favorites
+                    </h3>
                     <Button
                       onClick={() => navigate('/modules')}
                       variant="ghost"
                       size="sm"
-                      className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center"
+                      className="text-muted-foreground text-sm h-8"
                     >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add More
+                      Edit
+                      <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   </div>
-                  <Suspense fallback={<ModuleGridSkeleton count={favoriteModules.length || 3} />}>
+                  <Suspense fallback={<ModuleGridSkeleton count={favoriteModules.length} />}>
                     <ModuleGrid
                       modules={favoriteModules}
                       favorites={favorites}
                       onModuleClick={handleModuleClick}
                       onToggleFavorite={toggleFavorite}
-                      enableReorder={true}
-                      onReorder={(reorderedModules) => {
-                        const newOrder = reorderedModules.map(m => m.id);
-                        reorderFavorites(newOrder);
-                      }}
+                      enableReorder={false}
                     />
                   </Suspense>
-                </div>
+                </motion.div>
               ) : (
-                <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
-                  <div className="bg-card border-border rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
-                    <Star className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-4" />
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-3 sm:mb-4">No Favorites Yet</h2>
-                    <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base px-2">
-                      Visit the Module Library to explore and favorite modules you'd like to see here.
-                    </p>
-                    <NativeButton
-                      onClick={() => navigate('/modules')}
-                      variant="primary"
-                      size="lg"
-                      haptic="medium"
-                      className="w-full sm:w-auto"
-                    >
-                      Browse Module Library
-                    </NativeButton>
-                  </div>
-                </div>
-              )}
-
-              {/* Progress Hub - Optimized */}
-              {progressHubModule && (
-                <div className="mb-6 sm:mb-8 lg:mb-12">
-                  <NativeButton
-                    onClick={() => handleModuleClick(progressHubModule)}
-                    variant="native"
-                    size="xl"
-                    haptic="medium"
-                    className="w-full h-16 sm:h-20 bg-gradient-to-r from-purple-900/60 to-purple-800/80 backdrop-blur-sm border border-purple-700/50 hover:from-purple-900/80 hover:to-purple-800/90 text-foreground rounded-xl group"
+                <motion.div 
+                  className="mb-8 p-6 rounded-2xl bg-card border border-border text-center"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  <Star className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-1">No favorites yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add modules to quick access them here
+                  </p>
+                  <Button
+                    onClick={() => navigate('/modules')}
+                    variant="outline"
+                    size="sm"
                   >
-                    <div className="flex items-center justify-between w-full px-4 sm:px-6">
-                      <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-r from-purple-800/80 to-purple-900/90 border border-purple-700/40 flex items-center justify-center flex-shrink-0">
-                          <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-200" />
-                        </div>
-                        <div className="text-left min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-semibold text-purple-100 group-hover:text-purple-50 transition-colors truncate">
-                            Progress Hub
-                          </h3>
-                          <p className="text-xs sm:text-sm text-purple-200/80 truncate">
-                            Track your fitness journey with detailed analytics
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300/80" />
-                        <span className="text-xs sm:text-sm text-purple-200/90 hidden sm:inline">View Progress</span>
-                      </div>
-                    </div>
-                  </NativeButton>
-                </div>
+                    Browse Modules
+                  </Button>
+                </motion.div>
               )}
 
-              {/* Premium Promotion for Free Users */}
+              {/* Premium CTA for free users */}
               {currentTier === 'free' && (
-                <div className="mb-6 sm:mb-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mb-8"
+                >
                   <Suspense fallback={<DataSkeleton variant="card" className="h-24" />}>
                     <PremiumPromoCard variant="compact" />
                   </Suspense>
-                </div>
+                </motion.div>
               )}
 
-              {/* Dashboard Content Grid with proper skeletons */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
+              {/* Goals & Research */}
+              <motion.div 
+                className="space-y-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
                 <Suspense fallback={<DataSkeleton variant="goals" />}>
                   <RealGoalsAchievements />
                 </Suspense>
                 <Suspense fallback={<DataSkeleton variant="research" />}>
                   <LatestResearch />
                 </Suspense>
-              </div>
+              </motion.div>
             </div>
           </div>
-          </PullToRefresh>
-          
-          <NativeInstallPrompt />
-        </div>
+        </PullToRefresh>
+        
+        <NativeInstallPrompt />
+      </div>
     </ErrorBoundary>
   );
 };
 
 export default Dashboard;
-

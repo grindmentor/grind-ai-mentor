@@ -1,12 +1,10 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Star, Crown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Star, Crown, Sparkles, Grid, List, Zap, GripVertical } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
-import { PerformanceOptimizedCard } from "@/components/ui/performance-optimized-card";
-import { DragToReorder, DragHandle, DragHandleProps } from "@/components/ui/drag-to-reorder";
+import { cn } from "@/lib/utils";
+
 interface Module {
   id: string;
   title: string;
@@ -17,6 +15,7 @@ interface Module {
   isNew?: boolean;
   component: React.ComponentType<any>;
 }
+
 interface ModuleGridProps {
   modules: Module[];
   favorites: string[];
@@ -29,153 +28,30 @@ interface ModuleGridProps {
   onReorder?: (modules: Module[]) => void;
 }
 
-// Updated function to get module-specific background colors that match AIModuleCard exactly
-const getModuleTheme = (title: string) => {
-  const moduleThemes: {
-    [key: string]: {
-      bg: string;
-      border: string;
-      iconBg: string;
-      iconColor: string;
-      accent: string;
-    };
-  } = {
-    // CoachGPT - Cyan theme
-    'CoachGPT': {
-      bg: 'bg-gradient-to-br from-cyan-900/50 to-blue-900/50',
-      border: 'border-cyan-500/30',
-      iconBg: 'bg-gradient-to-r from-cyan-500/30 to-blue-500/40 border-cyan-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    'Coach GPT': {
-      bg: 'bg-gradient-to-br from-cyan-900/50 to-blue-900/50',
-      border: 'border-cyan-500/30',
-      iconBg: 'bg-gradient-to-r from-cyan-500/30 to-blue-500/40 border-cyan-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Habit Tracker - Yellow theme
-    'Habit Tracker': {
-      bg: 'bg-gradient-to-br from-yellow-900/50 to-orange-900/50',
-      border: 'border-yellow-500/30',
-      iconBg: 'bg-gradient-to-r from-yellow-500/30 to-orange-500/40 border-yellow-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // CutCalc Pro - Red theme
-    'CutCalc Pro': {
-      bg: 'bg-gradient-to-br from-red-900/50 to-pink-900/50',
-      border: 'border-red-500/30',
-      iconBg: 'bg-gradient-to-r from-red-500/30 to-pink-500/40 border-red-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // TDEE Calculator - Purple theme (FIXED from green)
-    'TDEE Calculator': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-indigo-900/50',
-      border: 'border-purple-500/30',
-      iconBg: 'bg-gradient-to-r from-purple-500/30 to-indigo-500/40 border-purple-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Smart Training - Blue theme (FIXED from green) 
-    'Smart Training': {
-      bg: 'bg-gradient-to-br from-blue-900/50 to-indigo-900/50',
-      border: 'border-blue-500/30',
-      iconBg: 'bg-gradient-to-r from-blue-500/30 to-indigo-500/40 border-blue-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Blueprint AI - Blue to cyan theme
-    'Blueprint AI': {
-      bg: 'bg-gradient-to-br from-blue-900/50 to-cyan-900/50',
-      border: 'border-blue-500/30',
-      iconBg: 'bg-gradient-to-r from-blue-500/30 to-cyan-500/40 border-blue-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Workout Timer - Orange theme (FIXED colors)
-    'Workout Timer': {
-      bg: 'bg-gradient-to-br from-orange-900/50 to-yellow-900/50',
-      border: 'border-orange-500/30',
-      iconBg: 'bg-gradient-to-r from-orange-500/30 to-yellow-500/40 border-orange-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Meal Plan Generator - Green theme
-    'Meal Plan Generator': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
-      border: 'border-green-500/30',
-      iconBg: 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    'Meal Plan AI': {
-      bg: 'bg-gradient-to-br from-green-900/50 to-emerald-900/50',
-      border: 'border-green-500/30',
-      iconBg: 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Progress Hub - Purple theme
-    'Progress Hub': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-violet-900/50',
-      border: 'border-purple-500/30',
-      iconBg: 'bg-gradient-to-r from-purple-500/30 to-violet-500/40 border-purple-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Workout Logger AI - Teal theme (FIXED from green)
-    'Workout Logger AI': {
-      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/50',
-      border: 'border-teal-500/30',
-      iconBg: 'bg-gradient-to-r from-teal-500/30 to-cyan-500/40 border-teal-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    'Workout Logger': {
-      bg: 'bg-gradient-to-br from-teal-900/50 to-cyan-900/50',
-      border: 'border-teal-500/30',
-      iconBg: 'bg-gradient-to-r from-teal-500/30 to-cyan-500/40 border-teal-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Recovery Coach - Purple theme
-    'Recovery Coach': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-violet-900/50',
-      border: 'border-purple-500/30',
-      iconBg: 'bg-gradient-to-r from-purple-500/30 to-violet-500/40 border-purple-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Smart Food Log - Orange theme (FIXED from teal)
-    'Smart Food Log': {
-      bg: 'bg-gradient-to-br from-orange-900/50 to-amber-900/50',
-      border: 'border-orange-500/30',
-      iconBg: 'bg-gradient-to-r from-orange-500/30 to-amber-500/40 border-orange-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    },
-    // Physique AI - Purple theme
-    'Physique AI': {
-      bg: 'bg-gradient-to-br from-purple-900/50 to-violet-900/50',
-      border: 'border-purple-500/30',
-      iconBg: 'bg-gradient-to-r from-purple-500/30 to-violet-500/40 border-purple-500/30',
-      iconColor: 'text-white',
-      accent: 'text-white/90'
-    }
+const getAccentColor = (title: string) => {
+  const colorMap: { [key: string]: { bg: string; border: string; icon: string } } = {
+    'CoachGPT': { bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', icon: 'text-cyan-400' },
+    'Coach GPT': { bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', icon: 'text-cyan-400' },
+    'Habit Tracker': { bg: 'bg-yellow-500/15', border: 'border-yellow-500/30', icon: 'text-yellow-400' },
+    'CutCalc Pro': { bg: 'bg-red-500/15', border: 'border-red-500/30', icon: 'text-red-400' },
+    'TDEE Calculator': { bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: 'text-purple-400' },
+    'Smart Training': { bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: 'text-blue-400' },
+    'Blueprint AI': { bg: 'bg-indigo-500/15', border: 'border-indigo-500/30', icon: 'text-indigo-400' },
+    'Workout Timer': { bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: 'text-orange-400' },
+    'Meal Plan Generator': { bg: 'bg-green-500/15', border: 'border-green-500/30', icon: 'text-green-400' },
+    'Meal Plan AI': { bg: 'bg-green-500/15', border: 'border-green-500/30', icon: 'text-green-400' },
+    'Progress Hub': { bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: 'text-purple-400' },
+    'Workout Logger AI': { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: 'text-emerald-400' },
+    'Workout Logger': { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: 'text-emerald-400' },
+    'Recovery Coach': { bg: 'bg-violet-500/15', border: 'border-violet-500/30', icon: 'text-violet-400' },
+    'Smart Food Log': { bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: 'text-amber-400' },
+    'Food Photo Logger': { bg: 'bg-pink-500/15', border: 'border-pink-500/30', icon: 'text-pink-400' },
+    'Physique AI': { bg: 'bg-rose-500/15', border: 'border-rose-500/30', icon: 'text-rose-400' },
   };
-
-  // Return specific theme or fallback to default black theme
-  return moduleThemes[title] || {
-    bg: 'bg-gradient-to-br from-gray-900/50 to-gray-900/50',
-    border: 'border-gray-700/30',
-    iconBg: 'bg-black/20 border-white/20',
-    iconColor: 'text-white',
-    accent: 'text-gray-300'
-  };
+  
+  return colorMap[title] || { bg: 'bg-primary/15', border: 'border-primary/30', icon: 'text-primary' };
 };
+
 export const ModuleGrid: React.FC<ModuleGridProps> = ({
   modules,
   favorites,
@@ -183,154 +59,86 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
   onToggleFavorite,
   onModuleHover,
   onModuleInteraction,
-  viewMode = 'grid',
+  viewMode = 'list',
   enableReorder = false,
   onReorder
 }) => {
   const isMobile = useIsMobile();
-  const {
-    isSubscribed
-  } = useSubscription();
+  const { isSubscribed } = useSubscription();
 
-  // Render a single module card
-  const renderModuleCard = (module: Module, dragHandleProps?: DragHandleProps) => {
+  const renderModuleCard = (module: Module) => {
     const IconComponent = module.icon;
     const isFavorited = favorites.includes(module.id);
-    const theme = getModuleTheme(module.title);
+    const colors = getAccentColor(module.title);
 
     return (
-      <PerformanceOptimizedCard 
-        className={`group cursor-pointer ${theme.bg} ${theme.border}`} 
-        gradient={`${theme.bg} ${theme.border}`} 
-        hoverEffect={true} 
-        clickable={true} 
+      <button
+        key={module.id}
         onClick={() => {
           onModuleInteraction?.(module.id);
           onModuleClick(module);
         }}
         onMouseEnter={() => onModuleHover?.(module.id)}
+        className={cn(
+          "w-full p-4 rounded-2xl text-left transition-all duration-200",
+          "bg-card/50 border border-border/50 backdrop-blur-sm",
+          "active:scale-[0.98] active:bg-card/70",
+          "[@media(hover:hover)]:hover:bg-card/70 [@media(hover:hover)]:hover:border-border",
+          module.isPremium && !isSubscribed && 'opacity-70'
+        )}
       >
-        <CardHeader className="relative z-10 pb-2">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              {dragHandleProps && enableReorder && (
-                <DragHandle {...dragHandleProps} className="opacity-50 hover:opacity-100" />
-              )}
-              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${theme.iconBg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border`}>
-                <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${theme.iconColor} drop-shadow-lg`} />
-              </div>
-            </div>
-            <Button onClick={e => {
-              e.stopPropagation();
-              onToggleFavorite(module.id);
-            }} variant="ghost" size="sm" className={`transition-colors flex-shrink-0 ${isFavorited ? 'text-orange-400 hover:text-orange-300' : 'text-gray-400 hover:text-orange-400'}`}>
-              <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-            </Button>
+        <div className="flex items-center gap-4">
+          {/* Icon */}
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+            colors.bg, colors.border, "border"
+          )}>
+            <IconComponent className={cn("w-6 h-6", colors.icon)} />
           </div>
           
-          <div className="space-y-2 w-full">
-            <div className="flex items-center justify-between w-full">
-              <CardTitle className="text-white text-lg sm:text-xl font-bold group-hover:text-orange-100 transition-colors w-full truncate pr-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="font-semibold text-foreground text-sm truncate">
                 {module.title}
-              </CardTitle>
-              <div className="flex flex-col space-y-1 flex-shrink-0">
-                {module.title === 'Physique AI' && <Badge className="bg-gradient-to-r from-orange-500/50 to-amber-500/50 text-white border border-orange-400/60 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm">
-                    <Zap className="w-3 h-3 mr-1" />
-                    BETA
-                  </Badge>}
-                {module.isNew}
-                {module.isPremium && <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
-                    <Crown className="w-3 h-3 mr-1" />
-                    Premium
-                  </Badge>}
-              </div>
+              </h3>
+              {module.isPremium && (
+                <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
+              )}
             </div>
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {module.description}
+            </p>
           </div>
-        </CardHeader>
-        
-        <CardContent className="relative z-10 pt-0">
-          <CardDescription className={`text-sm leading-relaxed ${theme.accent} drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-medium`}>
-            {module.description}
-          </CardDescription>
-        </CardContent>
-      </PerformanceOptimizedCard>
+          
+          {/* Favorite button */}
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(module.id);
+            }}
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-9 w-9 p-0 rounded-full flex-shrink-0",
+              isFavorited ? "text-yellow-500" : "text-muted-foreground/50"
+            )}
+          >
+            <Star className={cn("w-4 h-4", isFavorited && "fill-current")} />
+          </Button>
+          
+          {/* Arrow */}
+          <ChevronRight className="w-5 h-5 text-muted-foreground/30 flex-shrink-0" />
+        </div>
+      </button>
     );
   };
 
-  if (viewMode === 'list') {
-    return <div className="space-y-3">
-        {modules.map(module => {
-        const IconComponent = module.icon;
-        const isFavorited = favorites.includes(module.id);
-        const theme = getModuleTheme(module.title);
-        return <Card 
-          key={module.id} 
-          className={`group cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl ${theme.bg} ${theme.border} backdrop-blur-sm border-opacity-30 hover:border-opacity-60`} 
-          onClick={() => {
-            onModuleInteraction?.(module.id);
-            onModuleClick(module);
-          }}
-          onMouseEnter={() => onModuleHover?.(module.id)}
-        >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-xl ${theme.iconBg} flex items-center justify-center flex-shrink-0 border`}>
-                    <IconComponent className={`w-6 h-6 ${theme.iconColor}`} />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-semibold text-white text-lg w-full truncate">
-                        {module.title}
-                      </h3>
-                      {module.isNew && <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs flex-shrink-0">
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          New
-                        </Badge>}
-                      {module.isPremium && <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs flex-shrink-0">
-                          <Crown className="w-3 h-3 mr-1" />
-                          Pro
-                        </Badge>}
-                    </div>
-                    <p className={`text-sm line-clamp-2 ${theme.accent}`}>
-                      {module.description}
-                    </p>
-                  </div>
-                  
-                  <Button onClick={e => {
-                e.stopPropagation();
-                onToggleFavorite(module.id);
-              }} variant="ghost" size="sm" className={`flex-shrink-0 transition-colors ${isFavorited ? 'text-orange-400 hover:text-orange-300' : 'text-gray-400 hover:text-orange-400'}`}>
-                    <Star className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>;
-      })}
-      </div>;
-  }
-
-  // Grid view with optional reorder support
-  if (enableReorder && onReorder) {
-    return (
-      <DragToReorder
-        items={modules}
-        onReorder={onReorder}
-        keyExtractor={(module) => module.id}
-        className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}
-        renderItem={(module, index, dragHandleProps) => renderModuleCard(module, dragHandleProps)}
-      />
-    );
-  }
-
-  return <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
-      {modules.map(module => (
-        <div key={module.id}>
-          {renderModuleCard(module)}
-        </div>
-      ))}
-    </div>;
+  return (
+    <div className="space-y-2">
+      {modules.map(module => renderModuleCard(module))}
+    </div>
+  );
 };
 
-// Add default export for lazy loading
 export default ModuleGrid;

@@ -6,10 +6,10 @@ interface LogoProps {
 
 const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
   const sizeMap = {
-    sm: { logo: "w-8 h-8", text: "text-sm" },
-    md: { logo: "w-10 h-10", text: "text-lg" },
-    lg: { logo: "w-14 h-14", text: "text-xl" },
-    xl: { logo: "w-20 h-20", text: "text-2xl" }
+    sm: { logo: "w-10 h-10", text: "text-sm" },
+    md: { logo: "w-12 h-12", text: "text-lg" },
+    lg: { logo: "w-16 h-16", text: "text-xl" },
+    xl: { logo: "w-24 h-24", text: "text-2xl" }
   };
 
   const sizes = sizeMap[size];

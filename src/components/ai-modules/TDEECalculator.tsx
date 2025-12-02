@@ -9,6 +9,7 @@ import { MobileHeader } from '@/components/MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Flame, User2, HeartHandshake, Activity, TrendingUp, TrendingDown, Target } from 'lucide-react';
 import { useUnitsPreference } from '@/hooks/useUnitsPreference';
+import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
 
 interface ActivityLevel {
   value: string;
@@ -106,17 +107,28 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
       <div className="p-4 sm:p-6 max-w-4xl mx-auto">
         <Card className="bg-gradient-to-br from-purple-900/20 to-indigo-900/30 backdrop-blur-sm border-purple-500/30">
           <CardHeader>
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500/30 to-indigo-500/40 rounded-xl flex items-center justify-center border border-purple-500/30">
-                <Flame className="w-5 h-5 text-purple-400" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500/30 to-indigo-500/40 rounded-xl flex items-center justify-center border border-purple-500/30">
+                  <Flame className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-white text-xl">TDEE Calculator</CardTitle>
+                  <CardDescription className="text-purple-200/80">
+                    Calculate your Total Daily Energy Expenditure with science-based insights
+                  </CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-white text-xl">TDEE Calculator</CardTitle>
-                <CardDescription className="text-purple-200/80">
-                  Calculate your Total Daily Energy Expenditure with science-based insights
-                </CardDescription>
-              </div>
+              <RateLimitBadge 
+                featureKey="tdee_calculations" 
+                featureName="TDEE calculations"
+                showProgress
+              />
             </div>
+            <RateLimitWarning 
+              featureKey="tdee_calculations" 
+              featureName="TDEE Calculator" 
+            />
           </CardHeader>
           
           <CardContent className="space-y-6">

@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MobileHeader } from '@/components/MobileHeader';
 import { Badge } from '@/components/ui/badge';
+import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
 import FoodEntryModal from './FoodEntryModal';
 import { Trash2 } from 'lucide-react';
 import FooterLinks from '@/components/dashboard/FooterLinks';
@@ -468,17 +469,28 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
           {/* USDA Search & Photo Analysis */}
           <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/30 backdrop-blur-sm border-orange-500/30">
             <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-orange-500/30 to-amber-500/40 rounded-xl flex items-center justify-center border border-orange-500/30">
-                  <Database className="w-5 h-5 text-orange-400" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500/30 to-amber-500/40 rounded-xl flex items-center justify-center border border-orange-500/30">
+                    <Database className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-xl">USDA Food Database</CardTitle>
+                    <CardDescription className="text-orange-200/80">
+                      Search live USDA nutrition data
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-white text-xl">USDA Food Database</CardTitle>
-                  <CardDescription className="text-orange-200/80">
-                    Search live USDA nutrition data
-                  </CardDescription>
-                </div>
+                <RateLimitBadge 
+                  featureKey="food_log_analyses" 
+                  featureName="Food analyses"
+                  showProgress
+                />
               </div>
+              <RateLimitWarning 
+                featureKey="food_log_analyses" 
+                featureName="Food Log" 
+              />
             </CardHeader>
             
             <CardContent className="space-y-6">

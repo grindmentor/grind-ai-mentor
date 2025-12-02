@@ -1,13 +1,12 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Skeleton, shimmerClass } from './skeleton';
 
 interface ModuleCardSkeletonProps {
   className?: string;
   variant?: 'grid' | 'list';
   style?: React.CSSProperties;
 }
-
-const shimmerClass = "bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer";
 
 export const ModuleCardSkeleton: React.FC<ModuleCardSkeletonProps> = ({ 
   className,
@@ -25,16 +24,16 @@ export const ModuleCardSkeleton: React.FC<ModuleCardSkeletonProps> = ({
       >
         <div className="flex items-center space-x-4">
           {/* Icon skeleton */}
-          <div className={cn("w-12 h-12 rounded-xl", shimmerClass)} />
+          <Skeleton className="w-12 h-12 rounded-xl" />
           
           {/* Content skeleton */}
           <div className="flex-1 space-y-2">
-            <div className={cn("h-5 w-2/3 rounded", shimmerClass)} />
-            <div className={cn("h-3 w-full rounded", shimmerClass)} />
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-3 w-full" />
           </div>
           
           {/* Action skeleton */}
-          <div className={cn("w-8 h-8 rounded-full", shimmerClass)} />
+          <Skeleton className="w-8 h-8 rounded-full" />
         </div>
       </div>
     );
@@ -43,32 +42,31 @@ export const ModuleCardSkeleton: React.FC<ModuleCardSkeletonProps> = ({
   return (
     <div 
       className={cn(
-        "rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm overflow-hidden animate-fade-in",
+        "rounded-xl border border-border/30 bg-gradient-to-br from-muted/20 to-muted/10 backdrop-blur-sm overflow-hidden animate-fade-in",
         className
       )}
       style={style}
     >
-      {/* Background pattern placeholder */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
-      </div>
-      
-      <div className="p-6 relative z-10">
-        <div className="flex flex-col items-center text-center space-y-4">
+      <div className="p-6 relative z-10 space-y-4">
+        <div className="flex items-start justify-between">
           {/* Icon skeleton */}
-          <div className={cn("w-16 h-16 rounded-2xl", shimmerClass)} />
-          
-          {/* Title skeleton */}
-          <div className={cn("h-6 w-3/4 rounded", shimmerClass)} />
-          
-          {/* Description skeleton */}
-          <div className="w-full space-y-2">
-            <div className={cn("h-3 w-full rounded mx-auto", shimmerClass)} />
-            <div className={cn("h-3 w-2/3 rounded mx-auto", shimmerClass)} />
+          <Skeleton className="w-14 h-14 rounded-xl" />
+          {/* Favorite button skeleton */}
+          <Skeleton className="w-6 h-6 rounded" />
+        </div>
+        
+        {/* Title and badge skeleton */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-6 w-2/3" />
+            <Skeleton className="h-5 w-16 rounded-full" />
           </div>
-          
-          {/* Badge skeleton (optional) */}
-          <div className={cn("h-5 w-20 rounded-full", shimmerClass)} />
+        </div>
+        
+        {/* Description skeleton */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
         </div>
       </div>
     </div>
@@ -110,7 +108,7 @@ export const ModuleGridSkeleton: React.FC<ModuleGridSkeletonProps> = ({
         <ModuleCardSkeleton 
           key={i} 
           variant="grid"
-          style={{ animationDelay: `${i * 50}ms` } as React.CSSProperties}
+          style={{ animationDelay: `${i * 75}ms` } as React.CSSProperties}
         />
       ))}
     </div>

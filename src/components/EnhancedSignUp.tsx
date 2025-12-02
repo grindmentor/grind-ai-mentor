@@ -156,10 +156,13 @@ export const EnhancedSignUp = ({ onSuccess, onSwitchToSignIn }: EnhancedSignUpPr
                 type="date"
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
+                onFocus={(e) => e.target.blur()}
+                onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
                 required
                 className="bg-input border-border text-foreground focus:border-orange-500 transition-colors"
                 disabled={isLoading}
-                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                max={new Date().toISOString().split('T')[0]}
+                tabIndex={-1}
               />
               <p className="text-xs text-muted-foreground">
                 You must be 18 years or older to use Myotopia

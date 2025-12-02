@@ -21,10 +21,22 @@ const AuthCallback = () => {
       try {
         console.log('Processing auth callback, iOS PWA:', isIOSPWA());
         
-        // Check URL params for auth tokens (email confirmation)
+        // Check URL hash for auth tokens (Supabase email confirmation uses hash fragments)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const urlParams = new URLSearchParams(window.location.search);
-        const accessToken = urlParams.get('access_token');
-        const refreshToken = urlParams.get('refresh_token');
+        
+        // Try hash first, then query params
+        const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
+        const errorDescription = hashParams.get('error_description') || urlParams.get('error_description');
+        
+        // Handle error from Supabase
+        if (errorDescription) {
+          console.error('Auth error from Supabase:', errorDescription);
+          setError(decodeURIComponent(errorDescription));
+          setTimeout(() => navigate('/signin'), 3000);
+          return;
+        }
         
         if (accessToken && refreshToken) {
           // Set the session using the tokens from URL

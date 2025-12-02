@@ -6,6 +6,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { Star, Bell, Settings, ChevronRight, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -44,14 +45,23 @@ const DashboardHeader = memo<{
       </div>
       
       <div className="flex items-center gap-1">
-        <Button
-          onClick={onModuleLibrary}
-          variant="ghost"
-          size="sm"
-          className="p-2 h-10 w-10 rounded-full"
-        >
-          <LayoutGrid className="w-5 h-5" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onModuleLibrary}
+                variant="ghost"
+                size="sm"
+                className="p-2 h-10 w-10 rounded-full bg-primary/10 hover:bg-primary/20 text-primary"
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Module Library</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Button
           onClick={onNotifications}
           variant="ghost"

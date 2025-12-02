@@ -1,4 +1,3 @@
-
 {
   "id": "/",
   "name": "Myotopia - AI Fitness Coach",
@@ -6,14 +5,11 @@
   "description": "Science-based AI fitness coaching with personalized workout plans and nutrition guidance",
   "start_url": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#F97316",
   "scope": "/",
   "lang": "en",
-  "dir": "ltr",
-  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/apple-touch-icon.png",
@@ -44,124 +40,36 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Myotopia Mobile Dashboard"
     },
     {
-      "src": "/icons/icon-512.png",
-      "sizes": "1024x768",
+      "src": "/icon-1024.png",
+      "sizes": "1024x1024",
       "type": "image/png",
-      "form_factor": "wide",
-      "label": "Myotopia Desktop Dashboard"
+      "purpose": "any"
     }
   ],
-  "categories": ["fitness", "health", "lifestyle", "productivity", "sports"],
+  "categories": ["fitness", "health", "lifestyle"],
   "shortcuts": [
     {
       "name": "CoachGPT",
       "short_name": "Coach",
       "description": "AI fitness coaching",
       "url": "/app?module=coachgpt",
-      "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Workout Timer",
       "short_name": "Timer",
       "description": "Smart workout timing",
       "url": "/app?module=timer",
-      "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Progress Hub",
       "short_name": "Progress",
       "description": "Track your fitness journey",
       "url": "/app?module=progress-hub",
-      "icons": [{ "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
-  ],
-  "related_applications": [
-    {
-      "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=app.lovable.myotopia",
-      "id": "app.lovable.myotopia"
-    },
-    {
-      "platform": "itunes",
-      "url": "https://apps.apple.com/app/myotopia-ai-fitness/id123456789",
-      "id": "123456789"
-    }
-  ],
-  "scope_extensions": [
-    { "origin": "https://myotopia.app" }
-  ],
-  "file_handlers": [
-    {
-      "action": "/app?handler=workout",
-      "accept": {
-        "application/json": [".json"],
-        "text/plain": [".txt"],
-        "text/csv": [".csv"]
-      }
-    }
-  ],
-  "handle_links": "preferred",
-  "protocol_handlers": [
-    {
-      "protocol": "myotopia",
-      "url": "/app?protocol=%s"
-    }
-  ],
-  "share_target": {
-    "action": "/app?share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "photos",
-          "accept": ["image/jpeg", "image/png", "image/webp"]
-        }
-      ]
-    }
-  },
-  "widgets": [
-    {
-      "name": "workout-progress",
-      "description": "Quick workout progress overview",
-      "tag": "workout-progress",
-      "template": "workout-progress-template",
-      "ms_ac_template": "workout-progress-adaptive-card.json",
-      "data": "/app/api/widget/workout-progress",
-      "type": "application/json",
-      "screenshots": [
-        {
-          "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-          "sizes": "256x256",
-          "label": "Workout Progress Widget"
-        }
-      ],
-      "icons": [
-        {
-          "src": "/lovable-uploads/f011887c-b33f-4514-a48a-42a9bbc6251f.png",
-          "sizes": "256x256"
-        }
-      ]
-    }
-  ],
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  }
+  ]
 }

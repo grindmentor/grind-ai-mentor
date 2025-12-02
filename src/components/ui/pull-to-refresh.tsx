@@ -1,16 +1,21 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { RefreshSkeleton } from './refresh-skeleton';
 
 interface PullToRefreshProps {
   children: React.ReactNode;
   onRefresh: () => Promise<void>;
   threshold?: number;
+  showSkeleton?: boolean;
+  skeletonVariant?: 'dashboard' | 'card' | 'list' | 'module';
 }
 
 export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   children,
   onRefresh,
-  threshold = 80
+  threshold = 80,
+  showSkeleton = true,
+  skeletonVariant = 'dashboard'
 }) => {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -97,6 +102,12 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
           transitionDuration: isPulling.current ? '0ms' : '200ms',
         }}
       >
+        {/* Show skeleton overlay during refresh */}
+        {isRefreshing && showSkeleton ? (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-40 p-4 overflow-hidden">
+            <RefreshSkeleton variant={skeletonVariant} />
+          </div>
+        ) : null}
         {children}
       </div>
     </div>

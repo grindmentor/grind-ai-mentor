@@ -1,21 +1,26 @@
 
 {
-  "id": "myotopia-ai-fitness-coach",
-  "name": "Myotopia - Science-Based AI Fitness Coach",
+  "id": "/",
+  "name": "Myotopia - AI Fitness Coach",
   "short_name": "Myotopia",
-  "description": "Transform your physique with personalized, science-based AI fitness coaching",
-  "start_url": "/app",
+  "description": "Science-based AI fitness coaching with personalized workout plans and nutrition guidance",
+  "start_url": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "fullscreen"],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#F97316",
   "scope": "/",
   "lang": "en",
   "dir": "ltr",
-  "iarc_rating_id": "e10plus",
   "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",

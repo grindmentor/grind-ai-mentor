@@ -56,6 +56,8 @@ const SmartFoodLog = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState('breakfast');
   const [customFood, setCustomFood] = useState({
     name: '',
@@ -149,49 +151,67 @@ const SmartFoodLog = () => {
       // Convert image to base64
       const reader = new FileReader();
       reader.onload = async () => {
-        const base64 = reader.result as string;
-        
-        // Call AI analysis function
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('food-photo-ai', {
-          body: { 
-            image: base64,
-            meal_type: selectedMealType
+        try {
+          const base64 = reader.result as string;
+          
+          // Call AI analysis function
+          const { data: analysisData, error: analysisError } = await supabase.functions.invoke('food-photo-ai', {
+            body: { 
+              image: base64,
+              mealType: selectedMealType
+            }
+          });
+
+          if (analysisError) throw analysisError;
+          if (analysisData.error) throw new Error(analysisData.error);
+
+          // Handle the response format - foodsDetected array
+          const foodsDetected = analysisData.foodsDetected || [];
+          
+          if (foodsDetected.length === 0) {
+            toast.error('No food detected. Try a clearer photo or add manually.');
+            setIsAnalyzing(false);
+            return;
           }
-        });
 
-        if (analysisError) throw analysisError;
+          // Add each detected food to entries
+          for (const food of foodsDetected) {
+            const foodEntry = {
+              user_id: user.id,
+              food_name: `📸 ${food.name}`,
+              calories: Math.round(food.calories || 0),
+              protein: Math.round((food.protein || 0) * 10) / 10,
+              carbs: Math.round((food.carbs || 0) * 10) / 10,
+              fat: Math.round((food.fat || 0) * 10) / 10,
+              fiber: Math.round((food.fiber || 0) * 10) / 10,
+              portion_size: food.quantity || '1 serving',
+              meal_type: selectedMealType,
+              logged_date: new Date().toISOString().split('T')[0]
+            };
 
-        // Add analyzed food to entries
-        const foodEntry = {
-          user_id: user.id,
-          food_name: analysisData.food_name,
-          calories: analysisData.calories,
-          protein: analysisData.protein,
-          carbs: analysisData.carbs,
-          fat: analysisData.fat,
-          fiber: analysisData.fiber || 0,
-          portion_size: analysisData.portion_size,
-          meal_type: selectedMealType,
-          logged_date: new Date().toISOString().split('T')[0]
-        };
+            const { error: dbError } = await supabase
+              .from('food_log_entries')
+              .insert(foodEntry);
 
-        const { error: dbError } = await supabase
-          .from('food_log_entries')
-          .insert(foodEntry);
+            if (dbError) throw dbError;
+          }
 
-        if (dbError) throw dbError;
-
-        toast.success('Food analyzed and logged successfully!');
-        loadTodayEntries();
-        setSelectedFile(null);
-        setPreviewUrl(null);
+          toast.success(`Added ${foodsDetected.length} food(s) to your log! 📸`);
+          loadTodayEntries();
+          setSelectedFile(null);
+          setPreviewUrl(null);
+        } catch (err) {
+          console.error('Analysis error:', err);
+          toast.error(err instanceof Error ? err.message : 'Failed to analyze food. Please try again.');
+        } finally {
+          setIsAnalyzing(false);
+        }
       };
 
       reader.readAsDataURL(selectedFile);
     } catch (error) {
       console.error('Analysis error:', error);
       toast.error('Failed to analyze food. Please try again.');
-    } finally {
       setIsAnalyzing(false);
     }
   };
@@ -232,24 +252,89 @@ const SmartFoodLog = () => {
   };
 
   const searchFood = async () => {
-    if (!searchQuery.trim()) {
-      toast.error('Please enter a search term');
+    if (!searchQuery.trim() || searchQuery.length < 3) {
+      toast.error('Please enter at least 3 characters');
       return;
     }
 
+    setIsSearching(true);
+    setSearchResults([]);
+    
     try {
       const { data, error } = await supabase.functions.invoke('usda-food-proxy', {
-        body: { query: searchQuery }
+        body: { query: searchQuery, pageSize: 15 }
       });
 
       if (error) throw error;
 
-      // Handle USDA API response
-      console.log('Food search results:', data);
-      toast.success('Found food items (implement selection UI)');
+      // Format USDA foods
+      const foods = data?.foods || [];
+      const formatted = foods.map((food: any) => {
+        const nutrients = food.foodNutrients || [];
+        const findNutrient = (ids: number[]) => {
+          for (const id of ids) {
+            const n = nutrients.find((n: any) => n.nutrientId === id);
+            if (n) return n.value || 0;
+          }
+          return 0;
+        };
+        
+        return {
+          fdcId: food.fdcId,
+          name: food.description,
+          brand: food.brandOwner || food.brandName || null,
+          dataType: food.dataType,
+          calories: Math.round(findNutrient([1008])),
+          protein: Math.round(findNutrient([1003]) * 10) / 10,
+          carbs: Math.round(findNutrient([1005, 1050]) * 10) / 10,
+          fat: Math.round(findNutrient([1004]) * 10) / 10,
+          fiber: Math.round(findNutrient([1079]) * 10) / 10,
+        };
+      });
+      
+      setSearchResults(formatted);
+      
+      if (formatted.length === 0) {
+        toast.info('No foods found. Try a different search term.');
+      }
     } catch (error) {
       console.error('Food search error:', error);
-      toast.error('Food search not available');
+      toast.error('Food search failed. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const addFoodFromSearch = async (food: any) => {
+    if (!user) return;
+    
+    try {
+      const foodEntry = {
+        user_id: user.id,
+        food_name: `🥗 ${food.name}${food.brand ? ` (${food.brand})` : ''}`,
+        calories: food.calories,
+        protein: food.protein,
+        carbs: food.carbs,
+        fat: food.fat,
+        fiber: food.fiber,
+        portion_size: '100g',
+        meal_type: selectedMealType,
+        logged_date: new Date().toISOString().split('T')[0]
+      };
+
+      const { error } = await supabase
+        .from('food_log_entries')
+        .insert(foodEntry);
+
+      if (error) throw error;
+
+      toast.success(`${food.name} added to your log! 🥗`);
+      setSearchResults([]);
+      setSearchQuery('');
+      loadTodayEntries();
+    } catch (error) {
+      console.error('Error adding food:', error);
+      toast.error('Failed to add food');
     }
   };
 
@@ -454,6 +539,19 @@ const SmartFoodLog = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <Select value={selectedMealType} onValueChange={setSelectedMealType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select meal type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mealTypes.map((meal) => (
+                      <SelectItem key={meal} value={meal}>
+                        {meal.charAt(0).toUpperCase() + meal.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
                 <div className="flex gap-2">
                   <Input
                     placeholder="Search for food (e.g., apple, chicken breast)"
@@ -462,14 +560,58 @@ const SmartFoodLog = () => {
                     onKeyPress={(e) => e.key === 'Enter' && searchFood()}
                     className="flex-1"
                   />
-                  <Button onClick={searchFood}>
-                    <Search className="h-4 w-4" />
+                  <Button onClick={searchFood} disabled={isSearching || searchQuery.length < 3}>
+                    {isSearching ? (
+                      <Zap className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 
-                <div className="text-center py-8 text-muted-foreground">
-                  Search results will appear here
-                </div>
+                {searchResults.length > 0 ? (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    <p className="text-sm text-muted-foreground">Found {searchResults.length} results (per 100g)</p>
+                    {searchResults.map((food) => (
+                      <div 
+                        key={food.fdcId} 
+                        className="p-3 bg-muted/50 hover:bg-muted rounded-lg border border-border/50 transition-colors"
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{food.name}</div>
+                            {food.brand && (
+                              <div className="text-sm text-muted-foreground truncate">{food.brand}</div>
+                            )}
+                            <div className="flex gap-3 text-xs text-muted-foreground mt-1">
+                              <span className="text-orange-400">{food.calories} cal</span>
+                              <span className="text-blue-400">{food.protein}g P</span>
+                              <span className="text-green-400">{food.carbs}g C</span>
+                              <span className="text-yellow-400">{food.fat}g F</span>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => addFoodFromSearch(food)}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 flex-shrink-0"
+                          >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : isSearching ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Zap className="h-8 w-8 mx-auto animate-pulse mb-2 text-orange-400" />
+                    Searching USDA database...
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Enter at least 3 characters and press Search
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

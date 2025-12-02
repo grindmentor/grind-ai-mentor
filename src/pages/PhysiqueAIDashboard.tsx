@@ -187,6 +187,7 @@ const PhysiqueAIDashboard = () => {
   return (
     <AppShell 
       title="Physique AI" 
+      showBackButton={true}
       customActions={
         <Button
           variant="outline"

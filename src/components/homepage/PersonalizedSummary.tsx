@@ -54,7 +54,7 @@ const PersonalizedSummary = () => {
         .from('profiles')
         .select('weight, goal')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       // Get active goals
       const { data: goals } = await supabase

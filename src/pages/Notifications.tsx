@@ -75,9 +75,9 @@ const Notifications = () => {
         .from('user_preferences')
         .select('notification_preferences')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading notification settings:', error);
         return;
       }

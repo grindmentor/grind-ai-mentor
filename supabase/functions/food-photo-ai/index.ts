@@ -113,14 +113,11 @@ serve(async (req) => {
       });
     }
 
-    // Check subscription status
-    const { data: subscriber } = await supabase
-      .from('subscribers')
-      .select('subscription_tier')
-      .eq('user_id', user.id)
-      .single();
-
-    const tier = subscriber?.subscription_tier || 'free';
+    // Check subscription status using the database function (checks user_roles table)
+    const { data: roleData } = await supabase.rpc('get_user_role', { _user_id: user.id });
+    const tier = roleData || 'free';
+    
+    console.log(`[FOOD-PHOTO-AI] User ${user.id} has role: ${tier}`);
 
     // Free users cannot use this feature
     if (tier === 'free') {

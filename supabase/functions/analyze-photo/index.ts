@@ -8,9 +8,59 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// IP-based rate limiting
+const rateLimiter = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 10; // requests per minute (stricter for image analysis)
+const RATE_WINDOW_MS = 60 * 1000; // 1 minute
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimiter.get(ip);
+
+  // Clean up old entries periodically
+  if (rateLimiter.size > 5000) {
+    for (const [key, value] of rateLimiter.entries()) {
+      if (value.resetTime < now) {
+        rateLimiter.delete(key);
+      }
+    }
+  }
+
+  if (!record || record.resetTime < now) {
+    rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         'unknown';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Check rate limit
+  const clientIP = getClientIP(req);
+  if (!checkRateLimit(clientIP)) {
+    console.log(`Rate limit exceeded for IP: ${clientIP}`);
+    return new Response(JSON.stringify({
+      error: 'Rate limit exceeded. Please try again later.',
+      confidence: 'low'
+    }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   // Check for OpenAI API key first

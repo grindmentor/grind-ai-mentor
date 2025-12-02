@@ -12,6 +12,7 @@ let aggressiveCacheEnabled = false;
 const CRITICAL_ASSETS = [
   '/',
   '/manifest.json',
+  '/manifest.webmanifest',
   '/offline.html'
 ];
 

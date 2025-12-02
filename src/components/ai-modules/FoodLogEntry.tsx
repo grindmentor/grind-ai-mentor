@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from 'sonner';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
 interface FoodLogEntryProps {
   entry: {
@@ -19,16 +20,64 @@ interface FoodLogEntryProps {
     fiber?: number;
     portion_size?: string;
     logged_date: string;
+    user_id?: string;
   };
   onDelete: (id: string) => void;
+  onRestore?: (entry: FoodLogEntryProps['entry']) => void;
 }
 
-const FoodLogEntry = ({ entry, onDelete }: FoodLogEntryProps) => {
+const FoodLogEntry = ({ entry, onDelete, onRestore }: FoodLogEntryProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
 
   const handleDelete = async () => {
+    // Trigger haptic feedback
+    triggerHapticFeedback('medium');
+    
     setIsDeleting(true);
+    
+    // Optimistic delete - notify parent immediately
+    onDelete(entry.id);
+    
+    // Show toast with undo action
+    toast.success(`${entry.food_name} removed`, {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          triggerHapticFeedback('light');
+          
+          // Restore locally via parent
+          if (onRestore) {
+            onRestore(entry);
+          }
+          
+          // Re-insert to database
+          try {
+            const { error } = await supabase
+              .from('food_log_entries')
+              .insert([{
+                food_name: entry.food_name,
+                meal_type: entry.meal_type,
+                calories: entry.calories,
+                protein: entry.protein,
+                carbs: entry.carbs,
+                fat: entry.fat,
+                fiber: entry.fiber,
+                portion_size: entry.portion_size,
+                logged_date: entry.logged_date,
+                user_id: entry.user_id,
+              }]);
+            
+            if (error) throw error;
+            toast.success('Food entry restored');
+          } catch (error) {
+            console.error('Failed to restore food entry:', error);
+            toast.error('Failed to restore');
+          }
+        }
+      },
+      duration: 5000,
+    });
+
     try {
       const { error } = await supabase
         .from('food_log_entries')
@@ -36,19 +85,15 @@ const FoodLogEntry = ({ entry, onDelete }: FoodLogEntryProps) => {
         .eq('id', entry.id);
 
       if (error) throw error;
-
-      onDelete(entry.id);
-      toast({
-        title: "Food removed",
-        description: `${entry.food_name} has been removed from your log`,
-      });
+      triggerHapticFeedback('success');
     } catch (error) {
       console.error('Error deleting food entry:', error);
-      toast({
-        title: "Error removing food",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+      // Restore on failure
+      if (onRestore) {
+        onRestore(entry);
+      }
+      triggerHapticFeedback('error');
+      toast.error('Failed to remove food');
     } finally {
       setIsDeleting(false);
     }

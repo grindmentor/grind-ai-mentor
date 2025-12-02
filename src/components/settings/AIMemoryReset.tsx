@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Brain, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useUserData } from '@/contexts/UserDataContext';
 import { toast } from 'sonner';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,12 +23,17 @@ const AIMemoryReset = () => {
   const [isResetting, setIsResetting] = useState(false);
 
   const handleReset = async () => {
+    // Trigger haptic feedback for destructive action
+    triggerHapticFeedback('heavy');
+    
     setIsResetting(true);
     try {
       await resetAIMemory();
+      triggerHapticFeedback('success');
       toast.success('AI memory has been successfully reset');
     } catch (error) {
       console.error('Error resetting AI memory:', error);
+      triggerHapticFeedback('error');
       toast.error('Failed to reset AI memory. Please try again.');
     } finally {
       setIsResetting(false);

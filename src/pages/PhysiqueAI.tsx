@@ -86,7 +86,24 @@ const PhysiqueAI = () => {
         }
       });
 
-      if (analysisError) throw analysisError;
+      // Handle error response from edge function
+      if (analysisError) {
+        throw new Error(analysisError.message || 'Analysis failed');
+      }
+      
+      // Check for error in response data (403, 429, etc.)
+      if (analysisData?.error) {
+        toast.error(analysisData.error);
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Validate analysis data
+      if (!analysisData?.analysis) {
+        throw new Error('Invalid analysis response');
+      }
+
+      const result = analysisData.analysis;
 
       // Store analysis in database
       const { error: dbError } = await supabase
@@ -95,19 +112,36 @@ const PhysiqueAI = () => {
           user_id: user.id,
           file_url: photoUrl,
           file_name: selectedFile.name,
-          analysis_result: JSON.stringify(analysisData),
+          analysis_result: JSON.stringify(result),
           photo_type: 'physique_analysis',
           taken_date: new Date().toISOString().split('T')[0]
         });
 
       if (dbError) throw dbError;
 
-      setAnalysis(analysisData);
+      // Map the response to our component's expected format
+      setAnalysis({
+        muscle_development: result.attributes?.muscle_development || 50,
+        symmetry: result.attributes?.symmetry || 50,
+        definition: result.attributes?.definition || 50,
+        mass: result.attributes?.mass || 50,
+        conditioning: result.attributes?.conditioning || 50,
+        overall_score: result.overall_score || 50,
+        muscle_groups: Object.entries(result.muscle_groups || {}).map(([name, score]) => ({
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          score: score as number,
+          progress_trend: 'stable' as const
+        })),
+        recommendations: result.recommendations || [],
+        analysis_date: result.analysis_date || new Date().toISOString()
+      });
+      
       toast.success('Physique analysis completed!');
       
     } catch (error) {
       console.error('Analysis error:', error);
-      toast.error('Failed to analyze physique. Please try again.');
+      const message = error instanceof Error ? error.message : 'Failed to analyze physique. Please try again.';
+      toast.error(message);
     } finally {
       setIsAnalyzing(false);
     }

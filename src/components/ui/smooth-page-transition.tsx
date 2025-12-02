@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SmoothPageTransitionProps {
@@ -7,28 +7,17 @@ interface SmoothPageTransitionProps {
   className?: string;
 }
 
+// Simple fade - no sliding for "strong" feel
 const pageVariants = {
-  initial: {
-    opacity: 0,
-    x: 10,
-    scale: 0.98
-  },
-  in: {
-    opacity: 1,
-    x: 0,
-    scale: 1
-  },
-  out: {
-    opacity: 0,
-    x: -10,
-    scale: 0.98
-  }
+  initial: { opacity: 0 },
+  in: { opacity: 1 },
+  out: { opacity: 0 }
 };
 
 const pageTransition = {
   type: "tween" as const,
-  ease: "anticipate" as const,
-  duration: 0.3
+  ease: "easeOut" as const,
+  duration: 0.15
 };
 
 export const SmoothPageTransition: React.FC<SmoothPageTransitionProps> = ({
@@ -36,12 +25,6 @@ export const SmoothPageTransition: React.FC<SmoothPageTransitionProps> = ({
   routeKey,
   className = ""
 }) => {
-  const [isVisible, setIsVisible] = useState(true);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, [routeKey]);
-
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -52,7 +35,6 @@ export const SmoothPageTransition: React.FC<SmoothPageTransitionProps> = ({
         variants={pageVariants}
         transition={pageTransition}
         className={`w-full h-full ${className}`}
-        onAnimationComplete={() => setIsVisible(true)}
       >
         {children}
       </motion.div>

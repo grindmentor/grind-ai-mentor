@@ -99,22 +99,45 @@ const PersonalizedSummary = () => {
   const calculateStreak = (workouts: any[]) => {
     if (workouts.length === 0) return 0;
     
-    const workoutDates = workouts.map(w => new Date(w.session_date).toDateString());
-    const uniqueDates = [...new Set(workoutDates)].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    // Get unique dates, sorted most recent first
+    const workoutDates = workouts.map(w => {
+      const date = new Date(w.session_date);
+      date.setHours(0, 0, 0, 0); // Normalize to midnight
+      return date.getTime();
+    });
+    const uniqueDates = [...new Set(workoutDates)].sort((a, b) => b - a);
     
-    let streak = 0;
-    let currentDate = new Date();
+    if (uniqueDates.length === 0) return 0;
     
-    for (const dateStr of uniqueDates) {
-      const workoutDate = new Date(dateStr);
-      const daysDiff = Math.floor((currentDate.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Get today at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    
+    // Check if the most recent workout was today or yesterday
+    const mostRecentWorkout = uniqueDates[0];
+    const daysSinceLastWorkout = Math.floor((todayTime - mostRecentWorkout) / oneDayMs);
+    
+    // If no workout today or yesterday, streak is 0
+    if (daysSinceLastWorkout > 1) return 0;
+    
+    // Count consecutive days backwards from the most recent workout
+    let streak = 1;
+    let expectedDate = mostRecentWorkout - oneDayMs;
+    
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const workoutDate = uniqueDates[i];
       
-      if (daysDiff === streak) {
+      // Check if this workout is on the expected previous day
+      if (workoutDate === expectedDate) {
         streak++;
-        currentDate = workoutDate;
-      } else if (daysDiff > streak + 1) {
+        expectedDate -= oneDayMs;
+      } else if (workoutDate < expectedDate) {
+        // Gap in streak, stop counting
         break;
       }
+      // If workoutDate > expectedDate, it's the same day (duplicate), skip it
     }
     
     return streak;

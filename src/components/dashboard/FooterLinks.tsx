@@ -47,6 +47,14 @@ export const FooterLinks: React.FC = () => {
         >
           Support & Help
         </SmoothButton>
+        <SmoothButton
+          variant="ghost"
+          size="sm"
+          onClick={() => handleNavigation('/faq')}
+          className={`${isMobile ? 'w-full justify-start' : ''} text-gray-400 hover:text-orange-400 hover:bg-gray-800/50 transition-colors p-2 h-auto font-normal cursor-pointer`}
+        >
+          FAQ
+        </SmoothButton>
       </div>
       <div className={`text-center mt-4 text-xs text-gray-500 ${isMobile ? 'pb-4' : ''}`}>
         © 2025 Myotopia. All rights reserved.

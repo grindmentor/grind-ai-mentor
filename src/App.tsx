@@ -31,6 +31,7 @@ const Support = lazy(() => import("./pages/Support"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const About = lazy(() => import("./pages/About"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 const ModuleLibrary = lazy(() => import("./pages/ModuleLibrary"));
 const Research = lazy(() => import("./pages/Research"));
 const CreateGoal = lazy(() => import("./pages/CreateGoal"));
@@ -50,6 +51,7 @@ import ProtocolHandler from "@/components/ui/protocol-handler";
 import { AppShell } from "@/components/AppShell";
 import { RouteTransition } from "@/components/ui/route-transition";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { CookieConsent } from "@/components/CookieConsent";
 import '@/utils/prefetch'; // Initialize prefetching
 
 const queryClient = new QueryClient();
@@ -83,6 +85,7 @@ function App() {
                   <Toaster />
                   <Sonner />
                   <OfflineIndicator />
+                  <CookieConsent />
                   <BrowserRouter>
                     <ScrollToTop />
                     <AppShell>
@@ -187,6 +190,7 @@ function App() {
                           <Route path="/terms" element={<Terms />} />
                           <Route path="/privacy" element={<Privacy />} />
                           <Route path="/about" element={<About />} />
+                          <Route path="/faq" element={<FAQ />} />
                           <Route 
                             path="/research" 
                             element={

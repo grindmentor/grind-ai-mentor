@@ -375,7 +375,7 @@ const PhysiqueAIDashboard = () => {
                     <Card 
                       className="cursor-pointer hover:scale-105 transition-all duration-300 bg-gradient-to-r border-0"
                       style={{ 
-                        background: `linear-gradient(135deg, ${action.color.split(' ')[0].replace('from-', '')}20, ${action.color.split(' ')[2].replace('to-', '')}20)`
+                        background: `linear-gradient(135deg, ${action.color.split(' ')[0].replace('from-', '')}20, ${action.color.split(' ')[1]?.replace('to-', '') || 'transparent'}20)`
                       }}
                       onClick={action.action}
                     >

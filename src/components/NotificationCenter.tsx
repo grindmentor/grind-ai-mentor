@@ -108,6 +108,45 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
   };
 
   const deleteNotification = async (notificationId: string) => {
+    // Get the notification for potential undo
+    const notificationToDelete = notifications.find(n => n.id === notificationId);
+    if (!notificationToDelete) return;
+    
+    // Optimistic delete
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    
+    // Show toast with undo
+    toast.success('Notification deleted', {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          // Restore locally first
+          setNotifications(prev => [...prev, notificationToDelete]);
+          
+          // Re-insert to database
+          try {
+            const { error } = await supabase
+              .from('user_notifications')
+              .insert([{
+                user_id: user?.id,
+                title: notificationToDelete.title,
+                message: notificationToDelete.message,
+                type: notificationToDelete.type,
+                read: notificationToDelete.read,
+              }]);
+            
+            if (error) throw error;
+            toast.success('Notification restored');
+          } catch (error) {
+            console.error('Failed to restore notification:', error);
+            setNotifications(prev => prev.filter(n => n.id !== notificationToDelete.id));
+            toast.error('Failed to restore');
+          }
+        }
+      },
+      duration: 5000,
+    });
+
     try {
       const { error } = await supabase
         .from('user_notifications')
@@ -115,10 +154,9 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
         .eq('id', notificationId);
 
       if (error) throw error;
-
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      toast.success('Notification deleted');
     } catch (error) {
+      // Rollback on error
+      setNotifications(prev => [...prev, notificationToDelete]);
       console.error('Error deleting notification:', error);
       toast.error('Failed to delete notification');
     }

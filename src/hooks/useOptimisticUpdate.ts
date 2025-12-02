@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
-type HapticType = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
+export type HapticType = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
 
 // Haptic feedback utility for mobile
 const triggerHaptic = (type: HapticType = 'light') => {

@@ -29,6 +29,7 @@ import WorkoutTemplateSelector from './WorkoutTemplateSelector';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { handleAsync } from '@/utils/errorHandler';
 import { useAppSync } from '@/utils/appSynchronization';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
 interface WorkoutSet {
   weight: string | number;
@@ -218,11 +219,41 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   };
 
   const removeExercise = (exerciseIndex: number) => {
-    setExercises(exercises.filter((_, index) => index !== exerciseIndex));
+    const exerciseToRemove = exercises[exerciseIndex];
+    
+    // Trigger haptic feedback
+    triggerHapticFeedback('light');
+    
+    // Optimistic remove
+    setExercises(prev => prev.filter((_, index) => index !== exerciseIndex));
+    
+    // Show toast with undo (only for current workout being built, not DB)
+    toast.success(`${exerciseToRemove.name} removed`, {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          triggerHapticFeedback('light');
+          // Restore at original position
+          setExercises(prev => {
+            const newExercises = [...prev];
+            newExercises.splice(exerciseIndex, 0, exerciseToRemove);
+            return newExercises;
+          });
+          toast.success('Exercise restored');
+        }
+      },
+      duration: 4000,
+    });
   };
 
   const removeSet = (exerciseIndex: number, setIndex: number) => {
     const updatedExercises = [...exercises];
+    const removedSet = updatedExercises[exerciseIndex].sets[setIndex];
+    const exerciseName = updatedExercises[exerciseIndex].name;
+    
+    // Trigger haptic
+    triggerHapticFeedback('light');
+    
     updatedExercises[exerciseIndex].sets = updatedExercises[exerciseIndex].sets.filter((_, index) => index !== setIndex);
     
     // If no sets left, remove the exercise
@@ -231,6 +262,34 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
     
     setExercises(updatedExercises);
+    
+    // Show toast with undo
+    toast.success('Set removed', {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          triggerHapticFeedback('light');
+          setExercises(prev => {
+            const restored = [...prev];
+            // Find exercise or recreate it
+            const existingExerciseIndex = restored.findIndex(e => e.name === exerciseName);
+            if (existingExerciseIndex >= 0) {
+              restored[existingExerciseIndex].sets.splice(setIndex, 0, removedSet);
+            } else {
+              // Exercise was removed, add it back
+              restored.splice(exerciseIndex, 0, {
+                name: exerciseName,
+                sets: [removedSet],
+                muscleGroup: exercises[exerciseIndex]?.muscleGroup
+              });
+            }
+            return restored;
+          });
+          toast.success('Set restored');
+        }
+      },
+      duration: 3000,
+    });
   };
 
   const logWorkout = async () => {
@@ -531,6 +590,56 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   };
 
   const deleteWorkoutSession = async (sessionId: string) => {
+    // Get the session for potential undo
+    const sessionToDelete = previousSessions.find(s => s.id === sessionId);
+    if (!sessionToDelete) return;
+    
+    // Trigger haptic feedback
+    triggerHapticFeedback('medium');
+    
+    // Optimistic delete
+    setPreviousSessions(prev => prev.filter(s => s.id !== sessionId));
+    
+    // Show toast with undo
+    toast.success('Workout deleted', {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          triggerHapticFeedback('light');
+          
+          // Restore locally first
+          setPreviousSessions(prev => [sessionToDelete, ...prev]);
+          
+          // Re-insert to database
+          try {
+            const { error } = await supabase
+              .from('workout_sessions')
+              .insert([{
+                user_id: user?.id,
+                workout_name: sessionToDelete.workout_name,
+                workout_type: sessionToDelete.workout_type,
+                duration_minutes: sessionToDelete.duration_minutes,
+                exercises_data: sessionToDelete.exercises_data,
+                notes: sessionToDelete.notes,
+                session_date: sessionToDelete.session_date,
+                calories_burned: sessionToDelete.calories_burned,
+              }]);
+            
+            if (error) throw error;
+            
+            // Refresh to get new IDs
+            loadPreviousSessions();
+            toast.success('Workout restored');
+          } catch (error) {
+            console.error('Failed to restore workout:', error);
+            setPreviousSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
+            toast.error('Failed to restore workout');
+          }
+        }
+      },
+      duration: 5000,
+    });
+
     try {
       const { error } = await supabase
         .from('workout_sessions')
@@ -540,9 +649,13 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
 
       if (error) throw error;
       
-      setPreviousSessions(previousSessions.filter(s => s.id !== sessionId));
-      toast.success('Workout deleted successfully');
+      triggerHapticFeedback('success');
+      invalidateCache(`workouts-${user?.id}`);
+      emit('workouts:updated');
     } catch (error) {
+      // Rollback on error
+      setPreviousSessions(prev => [sessionToDelete, ...prev]);
+      triggerHapticFeedback('error');
       console.error('Error deleting workout:', error);
       toast.error('Failed to delete workout');
     }

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
+import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
 import { MobileHeader } from '@/components/MobileHeader';
 import FeatureGate from '@/components/FeatureGate';
 import { DietCuesDisplay } from './DietCuesDisplay';
@@ -201,17 +202,28 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">
           <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
             <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
-                  <Utensils className="w-5 h-5 text-green-400" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
+                    <Utensils className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-xl">Meal Plan AI</CardTitle>
+                    <CardDescription className="text-green-200/80">
+                      Generate personalized meal plans based on your goals
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-white text-xl">Meal Plan AI</CardTitle>
-                  <CardDescription className="text-green-200/80">
-                    Generate personalized meal plans based on your goals
-                  </CardDescription>
-                </div>
+                <RateLimitBadge 
+                  featureKey="meal_plan_generations" 
+                  featureName="Meal plan generations"
+                  showProgress
+                />
               </div>
+              <RateLimitWarning 
+                featureKey="meal_plan_generations" 
+                featureName="Meal Plan" 
+              />
             </CardHeader>
             
             <CardContent className="space-y-6">

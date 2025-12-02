@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
 import UsageIndicator from '@/components/UsageIndicator';
+import { RateLimitBadge } from '@/components/ui/rate-limit-badge';
 
 interface HabitTrackerProps {
   onBack: () => void;
@@ -220,7 +221,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
               </div>
             </div>
             
-            <UsageIndicator featureKey="habit_checks" featureName="Habit Checks" compact />
+            <RateLimitBadge featureKey="habit_checks" featureName="Habit checks" showProgress />
           </div>
 
           {/* Status Badge */}

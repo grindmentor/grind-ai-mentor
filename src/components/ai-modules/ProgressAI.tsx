@@ -9,6 +9,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import FeatureGate from '@/components/FeatureGate';
+import { RateLimitBadge } from '@/components/ui/rate-limit-badge';
 
 interface ProgressAIProps {
   onBack: () => void;
@@ -208,10 +209,11 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
             </div>
           </div>
           
-          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 px-3 py-1 flex-shrink-0">
-            <Zap className="w-3 h-3 mr-1" />
-            <span className="hidden sm:inline">AI Analysis</span>
-          </Badge>
+          <RateLimitBadge 
+            featureKey="progress_analyses" 
+            featureName="Progress analyses"
+            showProgress
+          />
         </div>
 
         {/* Features Grid */}

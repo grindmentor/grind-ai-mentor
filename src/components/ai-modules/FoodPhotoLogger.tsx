@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Upload, Utensils, Zap, ArrowLeft, Sparkles, Target, Clock, CheckCircle, Award, AlertTriangle } from "lucide-react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
+import { RateLimitBadge } from "@/components/ui/rate-limit-badge";
 import { aiService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -228,6 +229,11 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
                 </div>
               </div>
             </div>
+            <RateLimitBadge 
+              featureKey="food_photo_analyses" 
+              featureName="Photo analyses"
+              showProgress
+            />
             
             <UsageIndicator featureKey="food_photo_analyses" featureName="Photo Analysis" compact />
           </div>

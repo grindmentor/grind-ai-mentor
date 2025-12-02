@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
+import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
 import FeatureGate from '@/components/FeatureGate';
@@ -191,17 +192,28 @@ Include complete program structure with all workouts, exercises, sets, reps, res
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">
           <Card className="bg-gradient-to-br from-blue-900/20 to-indigo-900/30 backdrop-blur-sm border-blue-500/30">
             <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500/30 to-indigo-500/40 rounded-xl flex items-center justify-center border border-blue-500/30">
-                  <Target className="w-5 h-5 text-blue-400" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500/30 to-indigo-500/40 rounded-xl flex items-center justify-center border border-blue-500/30">
+                    <Target className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-white text-xl">Smart Training</CardTitle>
+                    <CardDescription className="text-blue-200/80">
+                      Evidence-based programs using 2023-2025 research
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-white text-xl">Smart Training</CardTitle>
-                  <CardDescription className="text-blue-200/80">
-                    Evidence-based programs using 2023-2025 research
-                  </CardDescription>
-                </div>
+                <RateLimitBadge 
+                  featureKey="training_programs" 
+                  featureName="Training programs"
+                  showProgress
+                />
               </div>
+              <RateLimitWarning 
+                featureKey="training_programs" 
+                featureName="Smart Training" 
+              />
               
               <div className="mt-4 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
                 <div className="flex items-center space-x-2 mb-2">

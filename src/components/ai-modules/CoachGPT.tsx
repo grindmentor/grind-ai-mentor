@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
+import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
 import { aiService } from '@/services/aiService';
@@ -252,17 +253,28 @@ Format your response with clear headings and structure. Be encouraging and cite 
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">
           <Card className="bg-gradient-to-br from-cyan-900/20 to-blue-900/30 backdrop-blur-sm border-cyan-500/30 h-[calc(100vh-120px)] flex flex-col">
             <CardHeader className="flex-shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/30 to-blue-500/40 rounded-xl flex items-center justify-center border border-cyan-500/30">
-                  <MessageSquare className="w-5 h-5 text-cyan-400" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/30 to-blue-500/40 rounded-xl flex items-center justify-center border border-cyan-500/30">
+                    <MessageSquare className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-foreground text-xl">CoachGPT</CardTitle>
+                    <CardDescription className="text-cyan-200/80">
+                      Your AI fitness coach with research-based guidance
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-foreground text-xl">CoachGPT</CardTitle>
-                  <CardDescription className="text-cyan-200/80">
-                    Your AI fitness coach with research-based guidance
-                  </CardDescription>
-                </div>
+                <RateLimitBadge 
+                  featureKey="coach_gpt_queries" 
+                  featureName="CoachGPT queries"
+                  showProgress
+                />
               </div>
+              <RateLimitWarning 
+                featureKey="coach_gpt_queries" 
+                featureName="CoachGPT" 
+              />
             </CardHeader>
             
             <CardContent className="flex-1 flex flex-col overflow-hidden">

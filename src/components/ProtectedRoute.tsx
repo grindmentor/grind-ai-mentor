@@ -5,10 +5,11 @@ import LoadingSpinner from './LoadingSpinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  skipOnboardingCheck?: boolean;
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+export default function ProtectedRoute({ children, skipOnboardingCheck = false }: ProtectedRouteProps) {
+  const { user, loading, hasCompletedOnboarding } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -22,6 +23,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!user) {
     // Redirect to signin page but save the attempted location
     return <Navigate to="/signin" state={{ from: location }} replace />;
+  }
+
+  // Redirect to onboarding if not completed (skip for onboarding page itself)
+  if (!skipOnboardingCheck && !hasCompletedOnboarding && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;

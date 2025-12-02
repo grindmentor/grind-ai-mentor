@@ -573,14 +573,14 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                     <div>
                       <Label className="text-orange-200">Meal Type</Label>
                       <Select value={mealType} onValueChange={handleMealTypeChange}>
-                        <SelectTrigger className="bg-orange-800/50 border-orange-500/30 text-white">
-                          <SelectValue />
+                        <SelectTrigger className="bg-orange-800/50 border-orange-500/30 text-white [&>span]:text-white">
+                          <SelectValue placeholder="Select meal" />
                         </SelectTrigger>
-                        <SelectContent className="bg-orange-800 border-orange-500/30 z-50">
-                          <SelectItem value="breakfast">🌅 Breakfast</SelectItem>
-                          <SelectItem value="lunch">☀️ Lunch</SelectItem>
-                          <SelectItem value="dinner">🌙 Dinner</SelectItem>
-                          <SelectItem value="snack">🥨 Snack</SelectItem>
+                        <SelectContent className="bg-card border-border z-[100]">
+                          <SelectItem value="breakfast" className="text-foreground focus:bg-accent focus:text-accent-foreground">🌅 Breakfast</SelectItem>
+                          <SelectItem value="lunch" className="text-foreground focus:bg-accent focus:text-accent-foreground">☀️ Lunch</SelectItem>
+                          <SelectItem value="dinner" className="text-foreground focus:bg-accent focus:text-accent-foreground">🌙 Dinner</SelectItem>
+                          <SelectItem value="snack" className="text-foreground focus:bg-accent focus:text-accent-foreground">🥨 Snack</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

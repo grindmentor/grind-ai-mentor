@@ -85,9 +85,9 @@ function App() {
                   <Toaster />
                   <Sonner />
                   <OfflineIndicator />
-                  <CookieConsent />
                   <BrowserRouter>
                     <ScrollToTop />
+                    <CookieConsent />
                     <AppShell>
                       {/* PWA Titlebar area */}
                       <div className="titlebar-area" />

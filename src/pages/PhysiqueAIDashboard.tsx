@@ -62,31 +62,36 @@ const PhysiqueAIDashboard = () => {
   }, [user]);
 
   const loadDashboardStats = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
 
-      // Get workout count
-      const { data: workouts } = await supabase
-        .from('workout_sessions')
-        .select('id')
-        .eq('user_id', user.id);
+      // Run queries in parallel for better performance
+      const [workoutsResult, foodResult, analysisResult] = await Promise.all([
+        supabase
+          .from('workout_sessions')
+          .select('id')
+          .eq('user_id', user.id),
+        supabase
+          .from('food_log_entries')
+          .select('id')
+          .eq('user_id', user.id),
+        supabase
+          .from('progress_photos')
+          .select('analysis_result, taken_date')
+          .eq('user_id', user.id)
+          .eq('photo_type', 'physique_analysis')
+          .order('taken_date', { ascending: false })
+          .limit(1)
+      ]);
 
-      // Get food entries count
-      const { data: foodEntries } = await supabase
-        .from('food_log_entries')
-        .select('id')
-        .eq('user_id', user.id);
-
-      // Get latest physique analysis
-      const { data: latestAnalysis } = await supabase
-        .from('progress_photos')
-        .select('analysis_result, taken_date')
-        .eq('user_id', user.id)
-        .eq('photo_type', 'physique_analysis')
-        .order('taken_date', { ascending: false })
-        .limit(1);
+      const workouts = workoutsResult.data;
+      const foodEntries = foodResult.data;
+      const latestAnalysis = analysisResult.data;
 
       let analysisData = null;
       let muscleGroups = null;
@@ -107,7 +112,7 @@ const PhysiqueAIDashboard = () => {
         totalWorkouts: workouts?.length || 0,
         totalFoodEntries: foodEntries?.length || 0,
         weeklyProgress,
-        currentStreak: Math.floor(Math.random() * 7) + 1, // Placeholder
+        currentStreak: Math.floor(Math.random() * 7) + 1,
         lastPhysiqueAnalysis: analysisData ? {
           overall_score: analysisData.overall_score || 0,
           muscle_development: analysisData.muscle_development || 0,

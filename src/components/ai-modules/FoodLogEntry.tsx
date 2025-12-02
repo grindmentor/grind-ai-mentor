@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2 } from "lucide-react";
+import { Trash2, Copy, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 import { SwipeToDelete } from '@/components/ui/swipe-to-delete';
+import { LongPressMenu, createDeleteAction, createCopyAction } from '@/components/ui/long-press-menu';
 
 interface FoodLogEntryProps {
   entry: {
@@ -90,77 +91,90 @@ const FoodLogEntry = ({ entry, onDelete, onRestore }: FoodLogEntryProps) => {
     }
   };
 
+  const handleCopy = () => {
+    const nutritionInfo = `${entry.food_name} - ${entry.calories || 0} cal, ${entry.protein || 0}g protein, ${entry.carbs || 0}g carbs, ${entry.fat || 0}g fat`;
+    navigator.clipboard.writeText(nutritionInfo);
+    toast.success('Nutrition info copied');
+  };
+
+  const menuActions = [
+    createCopyAction(handleCopy),
+    createDeleteAction(handleDelete),
+  ];
+
   return (
     <SwipeToDelete 
       onDelete={handleDelete} 
       onUndo={handleUndo}
       deleteLabel="Remove"
     >
-      <Card className="bg-gray-800 border-gray-700">
-        <CardContent className="pt-4">
-          <div className="flex justify-between items-start mb-3">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <h3 className="font-semibold text-white">{entry.food_name}</h3>
-                <Badge className={getMealTypeColor(entry.meal_type)}>
-                  {entry.meal_type}
-                </Badge>
+      <LongPressMenu actions={menuActions}>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="pt-4">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <h3 className="font-semibold text-white">{entry.food_name}</h3>
+                  <Badge className={getMealTypeColor(entry.meal_type)}>
+                    {entry.meal_type}
+                  </Badge>
+                </div>
+                
+                {entry.portion_size && (
+                  <p className="text-sm text-gray-400 mb-2">Portion: {entry.portion_size}</p>
+                )}
+                
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                  {entry.calories && (
+                    <div>
+                      <div className="font-medium text-white">{entry.calories}</div>
+                      <div className="text-gray-400">Calories</div>
+                    </div>
+                  )}
+                  {entry.protein && (
+                    <div>
+                      <div className="font-medium text-white">{entry.protein}g</div>
+                      <div className="text-gray-400">Protein</div>
+                    </div>
+                  )}
+                  {entry.carbs && (
+                    <div>
+                      <div className="font-medium text-white">{entry.carbs}g</div>
+                      <div className="text-gray-400">Carbs</div>
+                    </div>
+                  )}
+                  {entry.fat && (
+                    <div>
+                      <div className="font-medium text-white">{entry.fat}g</div>
+                      <div className="text-gray-400">Fat</div>
+                    </div>
+                  )}
+                  {entry.fiber && (
+                    <div>
+                      <div className="font-medium text-white">{entry.fiber}g</div>
+                      <div className="text-gray-400">Fiber</div>
+                    </div>
+                  )}
+                </div>
               </div>
               
-              {entry.portion_size && (
-                <p className="text-sm text-gray-400 mb-2">Portion: {entry.portion_size}</p>
-              )}
-              
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                {entry.calories && (
-                  <div>
-                    <div className="font-medium text-white">{entry.calories}</div>
-                    <div className="text-gray-400">Calories</div>
-                  </div>
-                )}
-                {entry.protein && (
-                  <div>
-                    <div className="font-medium text-white">{entry.protein}g</div>
-                    <div className="text-gray-400">Protein</div>
-                  </div>
-                )}
-                {entry.carbs && (
-                  <div>
-                    <div className="font-medium text-white">{entry.carbs}g</div>
-                    <div className="text-gray-400">Carbs</div>
-                  </div>
-                )}
-                {entry.fat && (
-                  <div>
-                    <div className="font-medium text-white">{entry.fat}g</div>
-                    <div className="text-gray-400">Fat</div>
-                  </div>
-                )}
-                {entry.fiber && (
-                  <div>
-                    <div className="font-medium text-white">{entry.fiber}g</div>
-                    <div className="text-gray-400">Fiber</div>
-                  </div>
-                )}
-              </div>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHapticFeedback('medium');
+                  handleDelete();
+                }}
+                disabled={isDeleting}
+                variant="ghost"
+                size="sm"
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 hidden sm:flex"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
-            
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                triggerHapticFeedback('medium');
-                handleDelete();
-              }}
-              disabled={isDeleting}
-              variant="ghost"
-              size="sm"
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </LongPressMenu>
     </SwipeToDelete>
   );
 };

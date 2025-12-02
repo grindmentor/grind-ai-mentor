@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { RefreshSkeleton } from './refresh-skeleton';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
 interface PullToRefreshProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
 }) => {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasTriggeredHaptic, setHasTriggeredHaptic] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const isPulling = useRef(false);
@@ -27,6 +29,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     if (containerRef.current?.scrollTop === 0 && !isRefreshing) {
       startY.current = e.touches[0].clientY;
       isPulling.current = true;
+      setHasTriggeredHaptic(false);
     }
   }, [isRefreshing]);
 
@@ -39,9 +42,19 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     if (diff > 0 && containerRef.current?.scrollTop === 0) {
       // Apply resistance to pull
       const resistance = 0.4;
-      setPullDistance(Math.min(diff * resistance, threshold * 1.5));
+      const newDistance = Math.min(diff * resistance, threshold * 1.5);
+      setPullDistance(newDistance);
+      
+      // Trigger haptic when crossing threshold
+      if (newDistance >= threshold && !hasTriggeredHaptic) {
+        triggerHapticFeedback('medium');
+        setHasTriggeredHaptic(true);
+      } else if (newDistance < threshold && hasTriggeredHaptic) {
+        triggerHapticFeedback('light');
+        setHasTriggeredHaptic(false);
+      }
     }
-  }, [isRefreshing, threshold]);
+  }, [isRefreshing, threshold, hasTriggeredHaptic]);
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPulling.current) return;
@@ -51,19 +64,20 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
       setIsRefreshing(true);
       setPullDistance(threshold);
       
-      // Haptic feedback
-      if ('vibrate' in navigator) {
-        try { navigator.vibrate(20); } catch {}
-      }
+      // Strong haptic feedback for refresh trigger
+      triggerHapticFeedback('heavy');
       
       try {
         await onRefresh();
+        triggerHapticFeedback('success');
       } finally {
         setIsRefreshing(false);
         setPullDistance(0);
+        setHasTriggeredHaptic(false);
       }
     } else {
       setPullDistance(0);
+      setHasTriggeredHaptic(false);
     }
   }, [pullDistance, threshold, isRefreshing, onRefresh]);
 

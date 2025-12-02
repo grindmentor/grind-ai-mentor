@@ -5,8 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Upload, Utensils, Zap, ArrowLeft, Sparkles, Target, Clock, CheckCircle, Award, AlertTriangle } from "lucide-react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
-import UsageIndicator from "@/components/UsageIndicator";
-import { RateLimitBadge } from "@/components/ui/rate-limit-badge";
 import { aiService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,7 +23,7 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [additionalNotes, setAdditionalNotes] = useState("");
-  const { canUseFeature, incrementUsage } = useUsageTracking();
+  const { canUseFeature, incrementUsage, currentUsage, limits } = useUsageTracking();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -229,13 +227,20 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
                 </div>
               </div>
             </div>
-            <RateLimitBadge 
-              featureKey="food_photo_analyses" 
-              featureName="Photo analyses"
-              showProgress
-            />
-            
-            <UsageIndicator featureKey="food_photo_analyses" featureName="Photo Analysis" compact />
+            {/* Usage Counter */}
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-2 flex items-center gap-2">
+                <Camera className="w-4 h-4 text-pink-400" />
+                <span className="text-sm text-slate-300">
+                  <span className="font-semibold text-white">
+                    {currentUsage.food_photo_analyses || 0}
+                  </span>
+                  <span className="text-slate-400">
+                    /{limits?.food_photo_analyses === -1 ? '∞' : (limits?.food_photo_analyses || 30)} used this month
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Status Badge */}

@@ -37,6 +37,7 @@ const Research = lazy(() => import("./pages/Research"));
 const CreateGoal = lazy(() => import("./pages/CreateGoal"));
 const AddFood = lazy(() => import("./pages/AddFood"));
 const CreateExercise = lazy(() => import("./pages/CreateExercise"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
@@ -218,6 +219,14 @@ function App() {
                             element={
                               <ProtectedRoute>
                                 <CreateExercise />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/notifications" 
+                            element={
+                              <ProtectedRoute>
+                                <Notifications />
                               </ProtectedRoute>
                             } 
                           />

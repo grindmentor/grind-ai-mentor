@@ -12,8 +12,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -21,55 +20,97 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Ultra-optimized for production
     target: 'es2020',
-    minify: 'terser', // Always minify for better performance
+    minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: mode === 'production', // Keep console in dev for debugging
+        drop_console: mode === 'production',
         drop_debugger: true,
         pure_funcs: mode === 'production' ? ['console.log', 'console.info', 'console.debug'] : [],
         dead_code: true,
         unused: true,
-        passes: 2, // Multiple passes for better compression
+        passes: 3,
+        ecma: 2020,
+        module: true,
+        toplevel: true,
       },
       mangle: {
         safari10: true,
+        toplevel: true,
       },
       format: {
-        comments: false, // Remove all comments
+        comments: false,
+        ecma: 2020,
       },
     },
     rollupOptions: {
       output: {
-        // Simplified chunk splitting for faster loading
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+        // Optimized chunk splitting - smaller initial bundle
+        manualChunks(id) {
+          // Core React - loaded first
+          if (id.includes('react-dom') || id.includes('react/')) {
+            return 'vendor-react';
+          }
+          // Router - needed for navigation
+          if (id.includes('react-router')) {
+            return 'vendor-router';
+          }
+          // Supabase - loaded when auth needed
+          if (id.includes('@supabase')) {
+            return 'vendor-supabase';
+          }
+          // UI components - split by usage
+          if (id.includes('@radix-ui')) {
+            return 'vendor-ui';
+          }
+          // Animation library
+          if (id.includes('framer-motion')) {
+            return 'vendor-motion';
+          }
+          // Charts - loaded only when needed
+          if (id.includes('recharts')) {
+            return 'vendor-charts';
+          }
+          // Query library
+          if (id.includes('@tanstack')) {
+            return 'vendor-query';
+          }
+          // Form handling
+          if (id.includes('react-hook-form') || id.includes('zod')) {
+            return 'vendor-forms';
+          }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
-    // Smaller chunk size for mobile
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 400,
     sourcemap: false,
     assetsInlineLimit: 4096,
     cssCodeSplit: true,
+    cssMinify: true,
+    reportCompressedSize: false,
   },
-  // Simplified dependencies
   optimizeDeps: {
-    include: ['react', 'react-dom', '@supabase/supabase-js'],
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom',
+      '@supabase/supabase-js',
+      '@tanstack/react-query',
+    ],
+    exclude: ['@vite/client'],
   },
-  // Enhanced CSS processing
   css: {
     devSourcemap: mode === 'development',
   },
-  // PWA and performance configurations
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
+  esbuild: {
+    legalComments: 'none',
+    treeShaking: true,
   },
 }));

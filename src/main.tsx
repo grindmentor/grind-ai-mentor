@@ -1,4 +1,3 @@
-
 // Minimal performance tracking
 const appStart = performance.now();
 
@@ -9,18 +8,15 @@ import './styles/mobile-touch.css'
 import './styles/ios-safe-area.css'
 import App from './App.tsx'
 import { PerformanceProvider } from '@/components/ui/performance-provider'
+import { preloadCriticalRoutes, setupLinkPreloading } from '@/utils/routePreloader'
 
-// Service worker for offline support
+// Service worker for offline support - register immediately for caching
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
 
-
-// PWA install prompts - lightweight version
+// PWA install prompts
 let deferredPrompt: any;
-
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
@@ -38,24 +34,35 @@ if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
   }, { passive: false });
 }
 
-// Lightweight font loading
-const loadFonts = () => {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap';
-  document.head.appendChild(link);
-};
-
-if ('requestIdleCallback' in window) {
-  requestIdleCallback(loadFonts);
-} else {
-  setTimeout(loadFonts, 1000);
-}
-
-createRoot(document.getElementById('root')!).render(
+// Render immediately
+const root = createRoot(document.getElementById('root')!);
+root.render(
   <StrictMode>
     <PerformanceProvider>
       <App />
     </PerformanceProvider>
   </StrictMode>,
 );
+
+// Post-render optimizations (non-blocking)
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => {
+    // Preload critical routes after initial render
+    preloadCriticalRoutes();
+    // Setup hover preloading for instant navigation
+    setupLinkPreloading();
+  }, { timeout: 2000 });
+} else {
+  setTimeout(() => {
+    preloadCriticalRoutes();
+    setupLinkPreloading();
+  }, 100);
+}
+
+// Log performance in development
+if (import.meta.env.DEV) {
+  window.addEventListener('load', () => {
+    const loadTime = performance.now() - appStart;
+    console.log(`App ready in ${loadTime.toFixed(0)}ms`);
+  });
+}

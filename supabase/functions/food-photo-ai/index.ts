@@ -1,7 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -88,6 +91,68 @@ serve(async (req) => {
   }
 
   try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Get user from token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      console.error('Unauthorized user:', userError);
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    // Check subscription status
+    const { data: subscriber } = await supabase
+      .from('subscribers')
+      .select('subscription_tier')
+      .eq('user_id', user.id)
+      .single();
+
+    const tier = subscriber?.subscription_tier || 'free';
+
+    // Free users cannot use this feature
+    if (tier === 'free') {
+      console.log(`Free user ${user.id} attempted to use food-photo-ai`);
+      return new Response(JSON.stringify({ 
+        error: 'Photo analysis is a Premium feature. Upgrade to unlock food photo analysis.',
+        confidence: 'low',
+        foodsDetected: []
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
+
+    // Check monthly usage limits for premium users (30/month)
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const { data: usage } = await supabase
+      .from('user_usage')
+      .select('food_photo_analyses')
+      .eq('user_id', user.id)
+      .eq('month_year', currentMonth)
+      .maybeSingle();
+
+    const currentUsage = usage?.food_photo_analyses || 0;
+    const MONTHLY_LIMIT = 30;
+
+    if (currentUsage >= MONTHLY_LIMIT) {
+      console.log(`User ${user.id} exceeded food photo limit: ${currentUsage}/${MONTHLY_LIMIT}`);
+      return new Response(JSON.stringify({ 
+        error: `You've reached your monthly limit of ${MONTHLY_LIMIT} photo analyses. Your limit resets next month.`,
+        confidence: 'low',
+        foodsDetected: []
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 429,
+      });
+    }
+
     const { image, mealType } = await req.json();
 
     if (!image) {
@@ -202,7 +267,19 @@ If you cannot clearly identify foods or the image is unclear, return:
         food.calories > 0
       );
 
-      console.log('Food analysis result:', analysisResult);
+      // Update usage tracking after successful analysis
+      await supabase
+        .from('user_usage')
+        .upsert({
+          user_id: user.id,
+          month_year: currentMonth,
+          food_photo_analyses: currentUsage + 1,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,month_year'
+        });
+
+      console.log(`Food analysis completed for user ${user.id}. Usage: ${currentUsage + 1}/${MONTHLY_LIMIT}`);
       
       return new Response(JSON.stringify(analysisResult), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

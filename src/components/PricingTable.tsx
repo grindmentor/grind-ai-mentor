@@ -39,7 +39,7 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
     {
       id: 'premium',
       name: 'Premium',
-      price: '$19.99',
+      price: '$9.99',
       period: 'per month',
       description: 'Complete fitness transformation toolkit',
       icon: <Crown className="w-5 h-5" />,
@@ -51,7 +51,7 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
         { name: 'Everything in Free', included: true },
         { name: 'Unlimited AI Features', included: true },
         { name: 'Advanced Meal Planning', included: true },
-        { name: 'Photo Uploads (5/day)', included: true },
+        { name: 'Photo Uploads (30/month)', included: true },
         { name: 'Advanced Analytics', included: true },
         { name: 'Custom Programs', included: true },
         { name: 'Priority Support', included: true },
@@ -140,7 +140,7 @@ const PricingTable = ({ onUpgrade }: PricingTableProps) => {
       <div className="text-center mt-8">
         <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-lg p-4 max-w-2xl mx-auto">
           <p className="text-gray-400 text-sm">
-            💡 <strong>Image Upload Note:</strong> To keep our AI affordable and fast, image uploads are limited even on Premium (5/day). This helps cover AI processing costs.
+            💡 <strong>Image Upload Note:</strong> To keep our AI affordable and fast, image uploads are limited to 30/month on Premium. This helps cover AI processing costs.
           </p>
         </div>
       </div>

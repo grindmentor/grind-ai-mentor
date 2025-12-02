@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { MobileHeader } from '@/components/MobileHeader';
 import { Badge } from '@/components/ui/badge';
 import FoodEntryModal from './FoodEntryModal';
@@ -18,6 +18,7 @@ import { usdaFoodService } from '@/services/usdaFoodService';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { handleAsync } from '@/utils/errorHandler';
 import { useAppSync } from '@/utils/appSynchronization';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
 interface FoodEntry {
   id: string;
@@ -39,7 +40,6 @@ interface SmartFoodLogProps {
 export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const { actions } = useGlobalState();
   const { getCache, setCache, invalidateCache, emit } = useAppSync();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -130,11 +130,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       setFoodEntries(data || []);
     } catch (error) {
       console.error('Error loading food entries:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load food entries.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to load food entries');
     } finally {
       setIsLoadingEntries(false);
     }
@@ -195,10 +191,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     setSearchError(null);
     setNoResultsMessage(null);
     
-    toast({
-      title: 'Food Saved! 🥗',
-      description: `${foodItem.name} saved to your food log.`
-    });
+    toast.success(`${foodItem.name} saved to your food log 🥗`);
 
     try {
       // Save to database
@@ -220,11 +213,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       // Rollback on error
       setFoodEntries(prev => prev.filter(e => e.id !== tempId));
       console.error('Error saving food from USDA:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save food from USDA database.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to save food from USDA database');
     }
   };
 
@@ -250,29 +239,67 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       // Add to local state with database ID
       setFoodEntries(prev => [...prev, data]);
       
-      toast({
-        title: 'Custom Food Saved! 📝',
-        description: `${foodData.food_name.replace('📝 ', '')} saved to your food log.`
-      });
+      toast.success(`${foodData.food_name.replace('📝 ', '')} saved to your food log 📝`);
     } catch (error) {
       console.error('Error saving custom food:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save custom food.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to save custom food');
     }
   };
 
   const removeFoodEntry = async (entryId: string) => {
     // Store for rollback
     const previousEntries = [...foodEntries];
+    const removedEntry = foodEntries.find(e => e.id === entryId);
+    
+    // Trigger haptic feedback
+    triggerHapticFeedback('medium');
     
     // Optimistic update - remove immediately
     setFoodEntries(prev => prev.filter(entry => entry.id !== entryId));
-    toast({
-      title: 'Food Removed',
-      description: 'Food entry has been deleted.'
+
+    // Show toast with undo action
+    toast.success('Food entry removed', {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          // Trigger haptic for undo
+          triggerHapticFeedback('light');
+          
+          // Restore locally first
+          if (removedEntry) {
+            setFoodEntries(prev => [...prev, removedEntry]);
+          }
+          
+          // Re-insert to database if it was already deleted
+          if (removedEntry && !removedEntry.id.startsWith('temp-')) {
+            try {
+              const { error } = await supabase
+                .from('food_log_entries')
+                .insert([{
+                  user_id: user?.id,
+                  food_name: removedEntry.food_name,
+                  portion_size: removedEntry.portion_size,
+                  meal_type: removedEntry.meal_type,
+                  logged_date: removedEntry.logged_date,
+                  calories: removedEntry.calories,
+                  protein: removedEntry.protein,
+                  carbs: removedEntry.carbs,
+                  fat: removedEntry.fat,
+                  fiber: removedEntry.fiber,
+                }]);
+              
+              if (error) throw error;
+              toast.success('Food entry restored');
+              loadFoodEntries(); // Refresh to get new ID
+            } catch (error) {
+              console.error('Failed to restore food entry:', error);
+              setFoodEntries(prev => prev.filter(e => e.id !== removedEntry.id));
+              toast.error('Failed to restore food entry');
+            }
+          }
+        }
+      },
+      duration: 5000,
     });
 
     try {
@@ -283,15 +310,15 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         .eq('id', entryId);
 
       if (error) throw error;
+      
+      // Haptic success feedback
+      triggerHapticFeedback('success');
     } catch (error) {
       // Rollback on error
       setFoodEntries(previousEntries);
+      triggerHapticFeedback('error');
       console.error('Error removing food entry:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove food entry.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to remove food entry');
     }
   };
 
@@ -395,10 +422,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       setFoodEntries(prev => [...prev, ...savedEntries]);
       setSelectedPhoto(null);
       
-      toast({
-        title: 'Photo Analyzed! 📸',
-        description: `Added ${entries.length} foods to your log`
-      });
+      toast.success(`Added ${entries.length} foods to your log 📸`);
       
     } catch (error) {
       console.error('Photo analysis error:', error);
@@ -410,11 +434,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
       );
       setNoResultsMessage('Manual entry recommended for accuracy');
       
-      toast({
-        title: 'Analysis Failed',
-        description: 'Try manual entry or retake photo with better lighting',
-        variant: 'destructive'
-      });
+      toast.error('Analysis failed - try manual entry or better lighting');
     } finally {
       setIsAnalyzing(false);
     }

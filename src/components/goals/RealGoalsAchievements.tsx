@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useAppSync } from '@/utils/appSynchronization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import GoalProgressLogger from './GoalProgressLogger';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
 interface Goal {
   id: string;
@@ -181,12 +182,62 @@ const RealGoalsAchievements = () => {
   }, [user]);
 
   const handleDeleteGoal = async (goalId: string) => {
-    if (!confirm('Are you sure you want to delete this goal?')) return;
+    // Get the goal to delete for undo functionality
+    const goalToDelete = goals.find(g => g.id === goalId);
+    if (!goalToDelete) return;
+
+    // Trigger haptic feedback
+    triggerHapticFeedback('medium');
 
     // Optimistic update - remove immediately from UI
     const previousGoals = [...goals];
     setGoals(prev => prev.filter(goal => goal.id !== goalId));
     setDeletingGoalId(goalId);
+
+    // Show toast with undo action
+    toast.success('Goal deleted', {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          // Trigger haptic for undo
+          triggerHapticFeedback('light');
+          
+          // Restore locally first
+          setGoals(previousGoals);
+          
+          // Re-insert to database
+          try {
+            const { error } = await supabase
+              .from('user_goals')
+              .insert([{
+                user_id: user?.id,
+                title: goalToDelete.title,
+                description: goalToDelete.description,
+                target_value: goalToDelete.target_value,
+                current_value: goalToDelete.current_value,
+                unit: goalToDelete.unit,
+                category: goalToDelete.category,
+                deadline: goalToDelete.deadline,
+                status: goalToDelete.status,
+                goal_type: goalToDelete.goal_type,
+                frequency: goalToDelete.frequency,
+                tracking_unit: goalToDelete.tracking_unit,
+              }]);
+            
+            if (error) throw error;
+            
+            invalidateCache(`user-${user?.id}-goals-achievements`);
+            loadGoalsAndAchievements(); // Refresh to get new ID
+            toast.success('Goal restored');
+          } catch (error) {
+            console.error('Failed to restore goal:', error);
+            setGoals(prev => prev.filter(g => g.id !== goalToDelete.id));
+            toast.error('Failed to restore goal');
+          }
+        }
+      },
+      duration: 5000,
+    });
 
     try {
       const { error } = await supabase
@@ -196,12 +247,15 @@ const RealGoalsAchievements = () => {
 
       if (error) throw error;
 
+      // Haptic success feedback
+      triggerHapticFeedback('success');
+      
       invalidateCache(`user-${user?.id}-goals-achievements`);
       emit('goals:updated');
-      toast.success('Goal deleted successfully');
     } catch (error) {
       // Rollback on error
       setGoals(previousGoals);
+      triggerHapticFeedback('error');
       console.error('Error deleting goal:', error);
       toast.error('Failed to delete goal');
       actions.setError('goals', 'Failed to delete goal');

@@ -191,6 +191,34 @@ const Dashboard = () => {
     };
   }, [modules, favorites]);
 
+  // IMPORTANT: All useMemo/useCallback hooks MUST be before any conditional returns
+  const firstName = useMemo(() => 
+    displayName?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion',
+    [displayName, user?.user_metadata?.name, user?.email]
+  );
+
+  // Stable callbacks for header - must be before conditional returns
+  const handleNotificationsPress = useCallback(() => {
+    trigger('light');
+    setShowNotifications(true);
+  }, [trigger]);
+
+  const handleSettingsPress = useCallback(() => {
+    trigger('light');
+    navigate('/settings');
+  }, [trigger, navigate]);
+
+  const handleModuleLibraryPress = useCallback(() => {
+    trigger('light');
+    navigate('/modules');
+  }, [trigger, navigate]);
+
+  const handleEditFavorites = useCallback(() => {
+    trigger('light');
+    navigate('/modules');
+  }, [trigger, navigate]);
+
+  // Conditional returns AFTER all hooks
   if (!modules || modules.length === 0) {
     return <LoadingScreen />;
   }
@@ -222,31 +250,7 @@ const Dashboard = () => {
     }
   }
 
-  const firstName = useMemo(() => 
-    displayName?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion',
-    [displayName, user?.user_metadata?.name, user?.email]
-  );
-
-  // Stable callbacks for header
-  const handleNotificationsPress = useCallback(() => {
-    trigger('light');
-    setShowNotifications(true);
-  }, [trigger]);
-
-  const handleSettingsPress = useCallback(() => {
-    trigger('light');
-    navigate('/settings');
-  }, [trigger, navigate]);
-
-  const handleModuleLibraryPress = useCallback(() => {
-    trigger('light');
-    navigate('/modules');
-  }, [trigger, navigate]);
-
-  const handleEditFavorites = useCallback(() => {
-    trigger('light');
-    navigate('/modules');
-  }, [trigger, navigate]);
+  // All callbacks are now defined before conditional returns above
 
   return (
     <ErrorBoundary>

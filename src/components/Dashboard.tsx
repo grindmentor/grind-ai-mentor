@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense, memo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,52 @@ import { DataSkeleton, FavoritesSkeleton } from '@/components/ui/data-skeleton';
 import { motion } from 'framer-motion';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
 import PersonalizedFeed from '@/components/home/PersonalizedFeed';
+
+// Memoized header component to prevent re-renders
+const DashboardHeader = memo<{
+  currentTier: string;
+  onNotifications: () => void;
+  onSettings: () => void;
+}>(({ currentTier, onNotifications, onSettings }) => (
+  <header 
+    className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50"
+    style={{ paddingTop: 'env(safe-area-inset-top)' }}
+  >
+    <div className="px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <h1 className="text-xl font-bold text-foreground">Myotopia</h1>
+        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
+          currentTier === 'premium' 
+            ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 border border-yellow-500/30' 
+            : 'bg-muted text-muted-foreground'
+        }`}>
+          {currentTier.toUpperCase()}
+        </span>
+      </div>
+      
+      <div className="flex items-center gap-1">
+        <Button
+          onClick={onNotifications}
+          variant="ghost"
+          size="sm"
+          className="p-2 h-10 w-10 rounded-full"
+        >
+          <Bell className="w-5 h-5" />
+        </Button>
+        <Button
+          onClick={onSettings}
+          variant="ghost"
+          size="sm"
+          className="p-2 h-10 w-10 rounded-full"
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
+      </div>
+    </div>
+  </header>
+));
+
+DashboardHeader.displayName = 'DashboardHeader';
 
 // Lazy load heavy components
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -132,54 +178,35 @@ const Dashboard = () => {
     }
   }
 
-  const firstName = user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion';
+  const firstName = useMemo(() => 
+    user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion',
+    [user?.user_metadata?.name, user?.email]
+  );
+
+  // Stable callbacks for header
+  const handleNotificationsPress = useCallback(() => {
+    trigger('light');
+    setShowNotifications(true);
+  }, [trigger]);
+
+  const handleSettingsPress = useCallback(() => {
+    trigger('light');
+    navigate('/settings');
+  }, [trigger, navigate]);
+
+  const handleEditFavorites = useCallback(() => {
+    trigger('light');
+    navigate('/modules');
+  }, [trigger, navigate]);
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-        {/* Native-style header */}
-        <header 
-          className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50"
-          style={{ paddingTop: 'env(safe-area-inset-top)' }}
-        >
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-foreground">Myotopia</h1>
-              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
-                currentTier === 'premium' 
-                  ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 border border-yellow-500/30' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {currentTier.toUpperCase()}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <Button
-                onClick={() => {
-                  trigger('light');
-                  setShowNotifications(true);
-                }}
-                variant="ghost"
-                size="sm"
-                className="p-2 h-10 w-10 rounded-full"
-              >
-                <Bell className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => {
-                  trigger('light');
-                  navigate('/settings');
-                }}
-                variant="ghost"
-                size="sm"
-                className="p-2 h-10 w-10 rounded-full"
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-        </header>
+        <DashboardHeader 
+          currentTier={currentTier}
+          onNotifications={handleNotificationsPress}
+          onSettings={handleSettingsPress}
+        />
 
         <PullToRefresh onRefresh={handleRefresh}>
           <div 
@@ -220,10 +247,7 @@ const Dashboard = () => {
                       Quick Access
                     </h3>
                     <Button
-                      onClick={() => {
-                        trigger('light');
-                        navigate('/modules');
-                      }}
+                      onClick={handleEditFavorites}
                       variant="ghost"
                       size="sm"
                       className="text-muted-foreground text-xs h-7"
@@ -279,4 +303,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default memo(Dashboard);

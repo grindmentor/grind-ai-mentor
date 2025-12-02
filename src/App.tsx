@@ -56,7 +56,18 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { AppLayout } from "@/components/layout/AppLayout";
 import '@/utils/prefetch'; // Initialize prefetching
 
-const queryClient = new QueryClient();
+// Optimized QueryClient with aggressive caching defaults
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min default stale time
+      gcTime: 30 * 60 * 1000, // 30 min cache time
+      refetchOnWindowFocus: false, // Don't refetch on tab focus
+      refetchOnReconnect: 'always',
+      retry: 1,
+    },
+  },
+});
 
 const BlueprintAIWrapper = () => {
   const navigate = useNavigate();

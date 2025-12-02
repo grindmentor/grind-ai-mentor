@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Grid3X3, TrendingUp, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,22 +18,66 @@ const tabs: TabItem[] = [
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
-export const BottomTabBar: React.FC = () => {
+// Memoized tab button to prevent re-renders
+const TabButton = memo<{
+  tab: TabItem;
+  isActive: boolean;
+  onPress: (tab: TabItem) => void;
+}>(({ tab, isActive, onPress }) => {
+  const Icon = tab.icon;
+  
+  return (
+    <button
+      onClick={() => onPress(tab)}
+      className={cn(
+        "flex flex-col items-center justify-center flex-1 h-full transition-all duration-200",
+        "active:scale-90",
+        isActive ? "text-primary" : "text-muted-foreground"
+      )}
+    >
+      <div className="relative flex flex-col items-center">
+        <div className={cn(
+          "w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200",
+          isActive && "bg-primary/10"
+        )}>
+          <Icon className={cn(
+            "w-5 h-5 transition-all duration-200",
+            isActive && "text-primary"
+          )} />
+        </div>
+        <span className={cn(
+          "text-[10px] mt-0.5 transition-all duration-200",
+          isActive ? "font-semibold text-primary" : "font-medium"
+        )}>
+          {tab.label}
+        </span>
+      </div>
+    </button>
+  );
+});
+
+TabButton.displayName = 'TabButton';
+
+const BottomTabBarComponent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { trigger } = useNativeHaptics();
 
-  const handleTabPress = (tab: TabItem) => {
+  const handleTabPress = useCallback((tab: TabItem) => {
     trigger('selection');
     navigate(tab.path);
-  };
+  }, [trigger, navigate]);
 
-  const isActive = (path: string) => {
-    if (path === '/app') {
-      return location.pathname === '/app' || location.pathname === '/';
-    }
-    return location.pathname.startsWith(path);
-  };
+  const activeStates = useMemo(() => {
+    return tabs.reduce((acc, tab) => {
+      if (tab.path === '/app') {
+        acc[tab.id] = location.pathname === '/app' || location.pathname === '/';
+      } else {
+        acc[tab.id] = location.pathname.startsWith(tab.path);
+      }
+      return acc;
+    }, {} as Record<string, boolean>);
+  }, [location.pathname]);
 
   return (
     <nav 
@@ -41,43 +85,18 @@ export const BottomTabBar: React.FC = () => {
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 4px)' }}
     >
       <div className="flex items-center justify-around px-4 h-16">
-        {tabs.map((tab) => {
-          const active = isActive(tab.path);
-          const Icon = tab.icon;
-          
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabPress(tab)}
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full transition-all duration-200",
-                "active:scale-90",
-                active ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              <div className="relative flex flex-col items-center">
-                <div className={cn(
-                  "w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200",
-                  active && "bg-primary/10"
-                )}>
-                  <Icon className={cn(
-                    "w-5 h-5 transition-all duration-200",
-                    active && "text-primary"
-                  )} />
-                </div>
-                <span className={cn(
-                  "text-[10px] mt-0.5 transition-all duration-200",
-                  active ? "font-semibold text-primary" : "font-medium"
-                )}>
-                  {tab.label}
-                </span>
-              </div>
-            </button>
-          );
-        })}
+        {tabs.map((tab) => (
+          <TabButton
+            key={tab.id}
+            tab={tab}
+            isActive={activeStates[tab.id]}
+            onPress={handleTabPress}
+          />
+        ))}
       </div>
     </nav>
   );
 };
 
+export const BottomTabBar = memo(BottomTabBarComponent);
 export default BottomTabBar;

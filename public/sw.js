@@ -23,7 +23,23 @@ const STATIC_ASSETS = [
   '/favicon-16x16.png',
   '/apple-touch-icon.png',
   '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icons/icon-512.png',
+  // iOS Splash Screens
+  '/splash/splash-640x1136.png',
+  '/splash/splash-750x1334.png',
+  '/splash/splash-828x1792.png',
+  '/splash/splash-1080x2340.png',
+  '/splash/splash-1125x2436.png',
+  '/splash/splash-1170x2532.png',
+  '/splash/splash-1179x2556.png',
+  '/splash/splash-1242x2208.png',
+  '/splash/splash-1242x2688.png',
+  '/splash/splash-1284x2778.png',
+  '/splash/splash-1290x2796.png',
+  '/splash/splash-1536x2048.png',
+  '/splash/splash-1668x2224.png',
+  '/splash/splash-1668x2388.png',
+  '/splash/splash-2048x2732.png'
 ];
 
 // Ultra-fast install with instant cache initialization

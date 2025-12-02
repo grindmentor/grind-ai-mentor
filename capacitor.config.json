@@ -1,6 +1,6 @@
 {
   "appId": "app.lovable.8121866124ca47f1bdc10449f8b1af91",
-  "appName": "myotopia-ai",
+  "appName": "Myotopia",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
@@ -9,34 +9,45 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 0,
+      "launchShowDuration": 2000,
       "launchAutoHide": true,
+      "launchFadeOutDuration": 500,
       "backgroundColor": "#000000",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
       "splashFullScreen": true,
-      "splashImmersive": true
+      "splashImmersive": true,
+      "iosSpinnerStyle": "small",
+      "spinnerColor": "#F97316"
     },
     "StatusBar": {
-      "style": "DARK",
-      "backgroundColor": "#000000"
+      "style": "Dark",
+      "backgroundColor": "#000000",
+      "overlaysWebView": false
     },
     "Keyboard": {
       "resize": "body",
       "style": "dark",
       "resizeOnFullScreen": true
+    },
+    "CapacitorHttp": {
+      "enabled": true
     }
   },
   "ios": {
     "scheme": "Myotopia",
     "contentInset": "automatic",
-    "backgroundColor": "#000000"
+    "backgroundColor": "#000000",
+    "preferredContentMode": "mobile",
+    "allowsLinkPreview": true,
+    "scrollEnabled": true,
+    "limitsNavigationsToAppBoundDomains": false
   },
   "android": {
     "backgroundColor": "#000000",
     "allowMixedContent": true,
     "captureInput": true,
-    "webContentsDebuggingEnabled": true
+    "webContentsDebuggingEnabled": false
   }
 }

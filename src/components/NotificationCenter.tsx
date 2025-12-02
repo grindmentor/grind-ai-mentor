@@ -9,6 +9,7 @@ import { ArrowLeft, Bell, Settings, Trash2, CheckCircle2, Clock, Target, Droplet
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SwipeToDelete } from '@/components/ui/swipe-to-delete';
 
 interface Notification {
   id: string;
@@ -367,56 +368,86 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
               ) : (
                 <div className="space-y-4">
                   {notifications.map((notification) => (
-                    <Card 
-                      key={notification.id} 
-                      className={`bg-gray-900 border-gray-800 ${getNotificationColor(notification.type)} ${
-                        !notification.read ? 'border-l-4' : ''
-                      }`}
+                    <SwipeToDelete
+                      key={notification.id}
+                      onDelete={() => deleteNotification(notification.id)}
+                      onUndo={async () => {
+                        // Restore notification to list
+                        setNotifications(prev => [...prev, notification]);
+                        try {
+                          const { error } = await supabase
+                            .from('user_notifications')
+                            .insert([{
+                              user_id: user?.id,
+                              title: notification.title,
+                              message: notification.message,
+                              type: notification.type,
+                              read: notification.read,
+                            }]);
+                          if (error) throw error;
+                          toast.success('Notification restored');
+                        } catch (error) {
+                          setNotifications(prev => prev.filter(n => n.id !== notification.id));
+                          toast.error('Failed to restore');
+                        }
+                      }}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3 flex-1">
-                            <div className="text-lg">{getNotificationIcon(notification.type)}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <h3 className={`font-semibold ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
-                                  {notification.title}
-                                </h3>
-                                {!notification.read && (
-                                  <Badge className="bg-blue-500/20 text-blue-400 text-xs">New</Badge>
-                                )}
+                      <Card 
+                        className={`bg-gray-900 border-gray-800 ${getNotificationColor(notification.type)} ${
+                          !notification.read ? 'border-l-4' : ''
+                        }`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3 flex-1">
+                              <div className="text-lg">{getNotificationIcon(notification.type)}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h3 className={`font-semibold ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
+                                    {notification.title}
+                                  </h3>
+                                  {!notification.read && (
+                                    <Badge className="bg-blue-500/20 text-blue-400 text-xs">New</Badge>
+                                  )}
+                                </div>
+                                <p className={`text-sm mb-2 ${!notification.read ? 'text-gray-300' : 'text-gray-400'}`}>
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {new Date(notification.created_at).toLocaleString()}
+                                </p>
                               </div>
-                              <p className={`text-sm mb-2 ${!notification.read ? 'text-gray-300' : 'text-gray-400'}`}>
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {new Date(notification.created_at).toLocaleString()}
-                              </p>
                             </div>
-                          </div>
-                          <div className="flex items-center space-x-2 ml-2">
-                            {!notification.read && (
+                            <div className="flex items-center space-x-2 ml-2">
+                              {!notification.read && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsRead(notification.id);
+                                  }}
+                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => markAsRead(notification.id)}
-                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteNotification(notification.id);
+                                }}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                               >
-                                <CheckCircle2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" />
                               </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => deleteNotification(notification.id)}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </SwipeToDelete>
                   ))}
                 </div>
               )}

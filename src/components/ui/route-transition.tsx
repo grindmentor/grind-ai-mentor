@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router-dom';
 
 interface RouteTransitionProps {
   children: React.ReactNode;
@@ -11,10 +11,11 @@ export const RouteTransition: React.FC<RouteTransitionProps> = ({
   children, 
   className 
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
   const location = useLocation();
-  const [displayLocation, setDisplayLocation] = useState(location);
-  const [transitionStage, setTransitionStage] = useState<'entering' | 'visible' | 'exiting'>('entering');
+  const navigationType = useNavigationType();
+  const [displayChildren, setDisplayChildren] = useState(children);
+  const [transitionClass, setTransitionClass] = useState('');
+  const isFirstRender = useRef(true);
 
   // Check for reduced motion preference
   const prefersReducedMotion = 
@@ -23,42 +24,30 @@ export const RouteTransition: React.FC<RouteTransitionProps> = ({
 
   useEffect(() => {
     if (prefersReducedMotion) {
-      // Skip animations if reduced motion is preferred
-      setIsVisible(true);
-      setTransitionStage('visible');
-      setDisplayLocation(location);
+      setDisplayChildren(children);
       return;
     }
 
-    if (location.pathname !== displayLocation.pathname) {
-      // Start exit animation
-      setTransitionStage('exiting');
-      setIsVisible(false);
-
-      const exitTimer = setTimeout(() => {
-        // Update content
-        setDisplayLocation(location);
-        setTransitionStage('entering');
-        
-        // Start enter animation
-        const enterTimer = setTimeout(() => {
-          setIsVisible(true);
-          setTransitionStage('visible');
-        }, 50);
-
-        return () => clearTimeout(enterTimer);
-      }, 200); // Exit duration
-
-      return () => clearTimeout(exitTimer);
-    } else {
-      // Initial mount
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-        setTransitionStage('visible');
-      }, 50);
-      return () => clearTimeout(timer);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      setDisplayChildren(children);
+      setTransitionClass('animate-slide-in');
+      return;
     }
-  }, [location.pathname, displayLocation.pathname, prefersReducedMotion]);
+
+    // Determine direction based on navigation type
+    const isBack = navigationType === 'POP';
+    
+    // Start exit animation
+    setTransitionClass(isBack ? 'animate-slide-out-right' : 'animate-slide-out-left');
+
+    const timer = setTimeout(() => {
+      setDisplayChildren(children);
+      setTransitionClass(isBack ? 'animate-slide-in-left' : 'animate-slide-in');
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname, children, navigationType, prefersReducedMotion]);
 
   if (prefersReducedMotion) {
     return <div className={className}>{children}</div>;
@@ -67,18 +56,12 @@ export const RouteTransition: React.FC<RouteTransitionProps> = ({
   return (
     <div
       className={cn(
-        "transition-opacity ease-out",
-        isVisible && transitionStage === 'visible'
-          ? "opacity-100" 
-          : "opacity-0",
+        "w-full",
+        transitionClass,
         className
       )}
-      style={{
-        transitionDuration: '200ms',
-        transitionProperty: 'opacity',
-      }}
     >
-      {children}
+      {displayChildren}
     </div>
   );
 };

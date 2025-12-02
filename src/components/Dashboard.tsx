@@ -13,6 +13,8 @@ import NotificationCenter from '@/components/NotificationCenter';
 import { EnhancedLoading } from '@/components/ui/enhanced-loading';
 import { NativeButton } from '@/components/ui/native-button';
 import NativeInstallPrompt from '@/components/ui/native-install-prompt';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Lazy load heavy components
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -38,6 +40,14 @@ const Dashboard = () => {
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library' | 'direct'>('dashboard');
   const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
   const { currentTier } = useSubscription();
+  const queryClient = useQueryClient();
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries();
+    // Small delay for visual feedback
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }, [queryClient]);
 
   // Helper function to get module by ID
   const getModuleById = (moduleId: string) => {
@@ -212,8 +222,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Main Content with optimized loading - extra padding for fixed header */}
-          <div className="px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-32 max-w-full overflow-x-hidden" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))' }}>
+          {/* Main Content with pull-to-refresh */}
+          <PullToRefresh onRefresh={handleRefresh}>
+            <div className="px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-32 max-w-full overflow-x-hidden" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))' }}>
             <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 lg:space-y-12">
               {/* Welcome section with responsive text */}
               <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
@@ -326,6 +337,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+          </PullToRefresh>
           
           <NativeInstallPrompt />
         </div>

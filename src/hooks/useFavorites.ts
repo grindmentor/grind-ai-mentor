@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
 export const useFavorites = () => {
   const { user } = useAuth();
@@ -112,6 +113,7 @@ export const useFavorites = () => {
     
     // Immediate UI update (optimistic)
     setFavorites(newFavorites);
+    triggerHapticFeedback('light');
     
     try {
       await saveFavorites(newFavorites);
@@ -133,6 +135,22 @@ export const useFavorites = () => {
     }
   }, [favorites, saveFavorites, toast]);
 
+  // Reorder favorites with haptic feedback
+  const reorderFavorites = useCallback(async (newOrder: string[]) => {
+    console.log('Reordering favorites:', newOrder);
+    
+    // Immediate UI update
+    setFavorites(newOrder);
+    
+    try {
+      await saveFavorites(newOrder);
+      console.log('Favorites order saved successfully');
+    } catch (error) {
+      console.error('Failed to save favorites order:', error);
+      // Don't revert as the visual order is still correct
+    }
+  }, [saveFavorites]);
+
   useEffect(() => {
     loadFavorites();
   }, [user]);
@@ -141,6 +159,7 @@ export const useFavorites = () => {
     favorites,
     loading,
     toggleFavorite,
+    reorderFavorites,
     reload: loadFavorites
   };
 };

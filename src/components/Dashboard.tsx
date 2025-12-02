@@ -40,7 +40,7 @@ const Dashboard = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library' | 'direct'>('dashboard');
-  const { favorites, loading: favoritesLoading, toggleFavorite } = useFavorites();
+  const { favorites, loading: favoritesLoading, toggleFavorite, reorderFavorites } = useFavorites();
   const { currentTier } = useSubscription();
   const queryClient = useQueryClient();
 
@@ -266,6 +266,11 @@ const Dashboard = () => {
                       favorites={favorites}
                       onModuleClick={handleModuleClick}
                       onToggleFavorite={toggleFavorite}
+                      enableReorder={true}
+                      onReorder={(reorderedModules) => {
+                        const newOrder = reorderedModules.map(m => m.id);
+                        reorderFavorites(newOrder);
+                      }}
                     />
                   </Suspense>
                 </div>

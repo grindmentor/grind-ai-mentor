@@ -2,10 +2,11 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Crown, Sparkles, Grid, List, Zap } from "lucide-react";
+import { Star, Crown, Sparkles, Grid, List, Zap, GripVertical } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PerformanceOptimizedCard } from "@/components/ui/performance-optimized-card";
+import { DragToReorder, DragHandle, DragHandleProps } from "@/components/ui/drag-to-reorder";
 interface Module {
   id: string;
   title: string;
@@ -19,11 +20,13 @@ interface Module {
 interface ModuleGridProps {
   modules: Module[];
   favorites: string[];
-    onModuleClick: (module: Module) => void;
-    onToggleFavorite: (moduleId: string) => void;
-    onModuleHover?: (moduleId: string) => void;
-    onModuleInteraction?: (moduleId: string) => void;
-    viewMode?: 'grid' | 'list';
+  onModuleClick: (module: Module) => void;
+  onToggleFavorite: (moduleId: string) => void;
+  onModuleHover?: (moduleId: string) => void;
+  onModuleInteraction?: (moduleId: string) => void;
+  viewMode?: 'grid' | 'list';
+  enableReorder?: boolean;
+  onReorder?: (modules: Module[]) => void;
 }
 
 // Updated function to get module-specific background colors that match AIModuleCard exactly
@@ -180,12 +183,80 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
   onToggleFavorite,
   onModuleHover,
   onModuleInteraction,
-  viewMode = 'grid'
+  viewMode = 'grid',
+  enableReorder = false,
+  onReorder
 }) => {
   const isMobile = useIsMobile();
   const {
     isSubscribed
   } = useSubscription();
+
+  // Render a single module card
+  const renderModuleCard = (module: Module, dragHandleProps?: DragHandleProps) => {
+    const IconComponent = module.icon;
+    const isFavorited = favorites.includes(module.id);
+    const theme = getModuleTheme(module.title);
+
+    return (
+      <PerformanceOptimizedCard 
+        className={`group cursor-pointer ${theme.bg} ${theme.border}`} 
+        gradient={`${theme.bg} ${theme.border}`} 
+        hoverEffect={true} 
+        clickable={true} 
+        onClick={() => {
+          onModuleInteraction?.(module.id);
+          onModuleClick(module);
+        }}
+        onMouseEnter={() => onModuleHover?.(module.id)}
+      >
+        <CardHeader className="relative z-10 pb-2">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-2">
+              {dragHandleProps && enableReorder && (
+                <DragHandle {...dragHandleProps} className="opacity-50 hover:opacity-100" />
+              )}
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${theme.iconBg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border`}>
+                <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${theme.iconColor} drop-shadow-lg`} />
+              </div>
+            </div>
+            <Button onClick={e => {
+              e.stopPropagation();
+              onToggleFavorite(module.id);
+            }} variant="ghost" size="sm" className={`transition-colors flex-shrink-0 ${isFavorited ? 'text-orange-400 hover:text-orange-300' : 'text-gray-400 hover:text-orange-400'}`}>
+              <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+            </Button>
+          </div>
+          
+          <div className="space-y-2 w-full">
+            <div className="flex items-center justify-between w-full">
+              <CardTitle className="text-white text-lg sm:text-xl font-bold group-hover:text-orange-100 transition-colors w-full truncate pr-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {module.title}
+              </CardTitle>
+              <div className="flex flex-col space-y-1 flex-shrink-0">
+                {module.title === 'Physique AI' && <Badge className="bg-gradient-to-r from-orange-500/50 to-amber-500/50 text-white border border-orange-400/60 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm">
+                    <Zap className="w-3 h-3 mr-1" />
+                    BETA
+                  </Badge>}
+                {module.isNew}
+                {module.isPremium && <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Premium
+                  </Badge>}
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="relative z-10 pt-0">
+          <CardDescription className={`text-sm leading-relaxed ${theme.accent} drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-medium`}>
+            {module.description}
+          </CardDescription>
+        </CardContent>
+      </PerformanceOptimizedCard>
+    );
+  };
+
   if (viewMode === 'list') {
     return <div className="space-y-3">
         {modules.map(module => {
@@ -238,64 +309,26 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
       })}
       </div>;
   }
+
+  // Grid view with optional reorder support
+  if (enableReorder && onReorder) {
+    return (
+      <DragToReorder
+        items={modules}
+        onReorder={onReorder}
+        keyExtractor={(module) => module.id}
+        className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}
+        renderItem={(module, index, dragHandleProps) => renderModuleCard(module, dragHandleProps)}
+      />
+    );
+  }
+
   return <div className={`grid gap-4 sm:gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
-      {modules.map(module => {
-      const IconComponent = module.icon;
-      const isFavorited = favorites.includes(module.id);
-      const theme = getModuleTheme(module.title);
-      return <PerformanceOptimizedCard 
-        key={module.id} 
-        className={`group cursor-pointer ${theme.bg} ${theme.border}`} 
-        gradient={`${theme.bg} ${theme.border}`} 
-        hoverEffect={true} 
-        clickable={true} 
-        onClick={() => {
-          onModuleInteraction?.(module.id);
-          onModuleClick(module);
-        }}
-        onMouseEnter={() => onModuleHover?.(module.id)}
-      >
-            
-            <CardHeader className="relative z-10 pb-2">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${theme.iconBg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border`}>
-                  <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 ${theme.iconColor} drop-shadow-lg`} />
-                </div>
-                <Button onClick={e => {
-              e.stopPropagation();
-              onToggleFavorite(module.id);
-            }} variant="ghost" size="sm" className={`transition-colors flex-shrink-0 ${isFavorited ? 'text-orange-400 hover:text-orange-300' : 'text-gray-400 hover:text-orange-400'}`}>
-                  <Star className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-                </Button>
-              </div>
-              
-              <div className="space-y-2 w-full">
-                <div className="flex items-center justify-between w-full">
-                  <CardTitle className="text-white text-lg sm:text-xl font-bold group-hover:text-orange-100 transition-colors w-full truncate pr-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                    {module.title}
-                  </CardTitle>
-                  <div className="flex flex-col space-y-1 flex-shrink-0">
-                    {module.title === 'Physique AI' && <Badge className="bg-gradient-to-r from-orange-500/50 to-amber-500/50 text-white border border-orange-400/60 text-xs font-semibold tracking-wide shadow-lg shadow-orange-500/20 backdrop-blur-sm">
-                        <Zap className="w-3 h-3 mr-1" />
-                        BETA
-                      </Badge>}
-                    {module.isNew}
-                    {module.isPremium && <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
-                        <Crown className="w-3 h-3 mr-1" />
-                        Premium
-                      </Badge>}
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="relative z-10 pt-0">
-              <CardDescription className={`text-sm leading-relaxed ${theme.accent} drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-medium`}>
-                {module.description}
-              </CardDescription>
-            </CardContent>
-          </PerformanceOptimizedCard>;
-    })}
+      {modules.map(module => (
+        <div key={module.id}>
+          {renderModuleCard(module)}
+        </div>
+      ))}
     </div>;
 };
 

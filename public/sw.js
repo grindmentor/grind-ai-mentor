@@ -502,139 +502,52 @@ async function handleProtocolOpen(request) {
   return Response.redirect('/app', 302);
 }
 
-// Background sync functions
+// Background sync functions - notify main thread to handle sync
 async function syncWorkouts() {
-  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
-  const workoutItems = syncQueue.filter(item => item.action === 'workout-save');
-  
-  for (const item of workoutItems) {
-    try {
-      await fetch('/api/workouts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item.data)
-      });
-      
-      // Remove from queue on success
-      removeFromSyncQueue(item);
-    } catch (error) {
-      console.error('[SW] Workout sync failed:', error);
-    }
-  }
+  await notifyClientsToSync('workout-sync');
 }
 
 async function syncFoodLogs() {
-  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
-  const foodItems = syncQueue.filter(item => item.action === 'food-log');
-  
-  for (const item of foodItems) {
-    try {
-      await fetch('/api/food-log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item.data)
-      });
-      
-      removeFromSyncQueue(item);
-    } catch (error) {
-      console.error('[SW] Food log sync failed:', error);
-    }
-  }
+  await notifyClientsToSync('food-log-sync');
 }
 
 async function syncProgress() {
-  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
-  const progressItems = syncQueue.filter(item => item.action === 'progress-update');
-  
-  for (const item of progressItems) {
-    try {
-      await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item.data)
-      });
-      
-      removeFromSyncQueue(item);
-    } catch (error) {
-      console.error('[SW] Progress sync failed:', error);
-    }
-  }
+  await notifyClientsToSync('progress-sync');
 }
 
 async function syncGoals() {
-  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
-  const goalItems = syncQueue.filter(item => item.action === 'goal-update');
-  
-  for (const item of goalItems) {
-    try {
-      await fetch('/api/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item.data)
-      });
-      
-      removeFromSyncQueue(item);
-    } catch (error) {
-      console.error('[SW] Goal sync failed:', error);
-    }
-  }
+  await notifyClientsToSync('goal-sync');
 }
 
 async function syncPreferences() {
-  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
-  const preferenceItems = syncQueue.filter(item => item.action === 'preference-update');
+  await notifyClientsToSync('preference-sync');
+}
+
+// Notify all clients to process their sync queues
+async function notifyClientsToSync(syncType) {
+  const allClients = await self.clients.matchAll({ type: 'window' });
   
-  for (const item of preferenceItems) {
-    try {
-      await fetch('/api/preferences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item.data)
-      });
-      
-      removeFromSyncQueue(item);
-    } catch (error) {
-      console.error('[SW] Preferences sync failed:', error);
-    }
+  for (const client of allClients) {
+    client.postMessage({
+      type: 'SYNC_REQUESTED',
+      syncType: syncType
+    });
   }
+  
+  console.log(`[SW] Notified ${allClients.length} clients to sync: ${syncType}`);
 }
 
 async function refreshAppData() {
-  try {
-    // Refresh critical app data in background
-    const endpoints = [
-      '/api/user/profile',
-      '/api/workouts/recent',
-      '/api/progress/summary',
-      '/api/goals/active'
-    ];
-    
-    await Promise.all(
-      endpoints.map(async (endpoint) => {
-        try {
-          const response = await fetch(endpoint);
-          if (response.ok) {
-            const cache = await caches.open(DYNAMIC_CACHE);
-            await cache.put(endpoint, response);
-          }
-        } catch (error) {
-          console.warn(`[SW] Failed to refresh ${endpoint}:`, error);
-        }
-      })
-    );
-    
-    console.log('[SW] Periodic data refresh completed');
-  } catch (error) {
-    console.error('[SW] Periodic sync failed:', error);
+  // Notify clients to refresh their data
+  const allClients = await self.clients.matchAll({ type: 'window' });
+  
+  for (const client of allClients) {
+    client.postMessage({
+      type: 'REFRESH_DATA'
+    });
   }
-}
-
-function removeFromSyncQueue(item) {
-  const syncQueue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
-  const updatedQueue = syncQueue.filter(queueItem => 
-    queueItem.timestamp !== item.timestamp || queueItem.action !== item.action
-  );
-  localStorage.setItem('syncQueue', JSON.stringify(updatedQueue));
+  
+  console.log('[SW] Notified clients to refresh data');
 }
 
 // Handle messages for cache updates

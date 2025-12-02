@@ -53,6 +53,7 @@ import ProtocolHandler from "@/components/ui/protocol-handler";
 import { AppShell } from "@/components/AppShell";
 import { RouteTransition } from "@/components/ui/route-transition";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AppLayout } from "@/components/layout/AppLayout";
 import '@/utils/prefetch'; // Initialize prefetching
 
 const queryClient = new QueryClient();
@@ -91,6 +92,7 @@ function App() {
                     <AppShell>
                       {/* PWA Titlebar area */}
                       <div className="titlebar-area" />
+                      <AppLayout>
                         <Suspense fallback={<LoadingScreen />}>
                           <Routes>
                           <Route path="/" element={<Index />} />
@@ -242,6 +244,7 @@ function App() {
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                         </Suspense>
+                      </AppLayout>
                     </AppShell>
                   </BrowserRouter>
                 </TooltipProvider>

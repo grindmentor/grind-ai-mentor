@@ -20,6 +20,7 @@ import { DataSkeleton, FavoritesSkeleton } from '@/components/ui/data-skeleton';
 import { motion } from 'framer-motion';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
 import PersonalizedFeed from '@/components/home/PersonalizedFeed';
+import { supabase } from '@/integrations/supabase/client';
 
 // Memoized header component to prevent re-renders
 const DashboardHeader = memo<{
@@ -106,10 +107,34 @@ const Dashboard = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [navigationSource, setNavigationSource] = useState<'dashboard' | 'library' | 'direct'>('dashboard');
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const { favorites, loading: favoritesLoading, toggleFavorite, reorderFavorites } = useFavorites();
   const { currentTier } = useSubscription();
   const queryClient = useQueryClient();
   const { trigger } = useNativeHaptics();
+
+  // Fetch display name from profile
+  useEffect(() => {
+    const fetchDisplayName = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (data?.display_name) {
+          setDisplayName(data.display_name);
+        }
+      } catch (error) {
+        console.error('Error fetching display name:', error);
+      }
+    };
+    
+    fetchDisplayName();
+  }, [user?.id]);
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries();
@@ -198,8 +223,8 @@ const Dashboard = () => {
   }
 
   const firstName = useMemo(() => 
-    user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion',
-    [user?.user_metadata?.name, user?.email]
+    displayName?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion',
+    [displayName, user?.user_metadata?.name, user?.email]
   );
 
   // Stable callbacks for header
@@ -316,6 +341,18 @@ const Dashboard = () => {
               >
                 <Suspense fallback={<DataSkeleton variant="goals" />}>
                   <RealGoalsAchievements />
+                </Suspense>
+              </motion.div>
+
+              {/* Latest Research Section */}
+              <motion.div 
+                className="mt-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Suspense fallback={<DataSkeleton variant="card" className="h-64" />}>
+                  <LatestResearch />
                 </Suspense>
               </motion.div>
             </div>

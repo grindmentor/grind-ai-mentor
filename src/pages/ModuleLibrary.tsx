@@ -208,7 +208,7 @@ const ModuleLibrary = () => {
 
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none z-10" />
               <Input
                 placeholder="Search modules..."
                 value={searchQuery}

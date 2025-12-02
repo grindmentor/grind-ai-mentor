@@ -1,11 +1,24 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
 
+/**
+ * Pre-defined blur placeholders for common images
+ * Generated from tiny base64 versions for instant display
+ */
+export const BLUR_PLACEHOLDERS = {
+  // Default gray gradient placeholder
+  default: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAUABQDASIAAhEBAxEB/8QAGAAAAgMAAAAAAAAAAAAAAAAAAAYEBQf/xAAjEAACAQQBBAMBAAAAAAAAAAABAgMABAUREhMhMUEiUWFx/8QAFgEBAQEAAAAAAAAAAAAAAAAAAwQF/8QAHBEAAgIDAQEAAAAAAAAAAAAAAQIAAxEhMQQS/9oADAMBAAIRAxEAPwDTcpiLq6yAnhuGgQqCGRgTv9FU+fyV9j7qOKG+eNXTekytyU/laPJYu2mlMskKs57kkfNIGVwVrdXCzSQgyL4O/Fc/5Y/f1S05U7mfZarYQDCc/9k=',
+  // Anatomy/muscle image - warm skin tone blur
+  anatomy: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAUABQDASIAAhEBAxEB/8QAGQAAAgMBAAAAAAAAAAAAAAAAAAUDBAYH/8QAJBAAAgIBAwQCAwAAAAAAAAAAAQIDBBEABSEGEjFBE1EiYXH/xAAWAQEBAQAAAAAAAAAAAAAAAAADAgT/xAAbEQACAgMBAAAAAAAAAAAAAAABAgADBBESIf/aAAwDAQACEQMRAD8A6Hd3K1t9OjLPHDLLG0kckhwrspBUE/R86oU+orU9OvYassdqGVwYzG3A+iCfGq/VlKS7tMlaSaSOtEwkljjYqZGIwASPpf8AdY7brVLb9qp1KdeKvDFEFSOMYUa8+f7O5+y8jTuuItdQ6nPWlpwmUcfI7cmzp9uqdsNO+rO00rLHBEGlkY4VFHkk6NGiZxA0kydhOyMfZ/Z/9tz/2Q==',
+  // Food/meal placeholder - warm colors
+  food: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAUABQDASIAAhEBAxEB/8QAGQAAAgMBAAAAAAAAAAAAAAAAAAUCAwYH/8QAJhAAAgEDAwMEAwAAAAAAAAAAAQIDAAQRBRIhEzFBBiJRYRRxgf/EABYBAQEBAAAAAAAAAAAAAAAAAAQDAP/EAB0RAAICAgMBAAAAAAAAAAAAAAECAAMEESExQVH/2gAMAwEAAhEDEQA/AOg6lrF1Z6m9vBbxyRqBhmJGTiqdR1q+nsJYobONZHUqrF85JHHasz6h1C4tNZuYbdykasAqjsAQD/a0WjXk9zpltNcMHlkjV3YAAFiMk4H7q/jYVdqkHvJM2W4YB/BNYakZZ5FaJUCMQADnI+TWO9R65fWOqSW1rDG8Sg5ZgcmtLqOo2OnkLeXcMDH+xXZj/BWN1vVtNuNSlntLyGVHYFTG4I4+anuyKm4oVeoPGDuB3P/Z'
+};
+
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
   placeholder?: string;
-  blurHash?: string;
+  blurPlaceholder?: string; // Base64 blur data URL
   aspectRatio?: string;
   priority?: boolean;
   onLoadComplete?: () => void;
@@ -15,6 +28,7 @@ export const LazyImage = memo<LazyImageProps>(({
   src,
   alt,
   placeholder,
+  blurPlaceholder,
   aspectRatio,
   priority = false,
   className,
@@ -80,8 +94,23 @@ export const LazyImage = memo<LazyImageProps>(({
       )}
       style={{ aspectRatio }}
     >
-      {/* Shimmer placeholder */}
-      {!isLoaded && !hasError && (
+      {/* Blur placeholder with blur-up effect */}
+      {blurPlaceholder && !isLoaded && !hasError && (
+        <div 
+          className="absolute inset-0 transition-opacity duration-500"
+          style={{
+            backgroundImage: `url(${blurPlaceholder})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(20px)',
+            transform: 'scale(1.1)' // Prevent blur edge artifacts
+          }}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Shimmer placeholder (when no blur placeholder) */}
+      {!blurPlaceholder && !isLoaded && !hasError && (
         <div 
           className={cn(
             "absolute inset-0 bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] animate-shimmer",

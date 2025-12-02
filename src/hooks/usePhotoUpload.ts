@@ -2,16 +2,22 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { compressImage, isWebPSupported } from '@/utils/imageCompression';
 
 interface UploadOptions {
   bucket: 'physique-photos' | 'progress-photos' | 'food-photos';
   maxSizeMB?: number;
   allowedTypes?: string[];
+  compress?: boolean;
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
 }
 
 export const usePhotoUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isCompressing, setIsCompressing] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -25,17 +31,15 @@ export const usePhotoUpload = () => {
       return null;
     }
 
-    const { bucket, maxSizeMB = 50, allowedTypes = ['image/jpeg', 'image/png', 'image/webp'] } = options;
-
-    // Validate file size (default 50MB limit)
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: `Please select a file smaller than ${maxSizeMB}MB.`,
-        variant: "destructive",
-      });
-      return null;
-    }
+    const { 
+      bucket, 
+      maxSizeMB = 50, 
+      allowedTypes = ['image/jpeg', 'image/png', 'image/webp'],
+      compress = true,
+      maxWidth = 1920,
+      maxHeight = 1920,
+      quality = 0.8
+    } = options;
 
     // Validate file type
     if (!allowedTypes.includes(file.type)) {
@@ -47,23 +51,61 @@ export const usePhotoUpload = () => {
       return null;
     }
 
+    // Validate initial file size (before compression)
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: `Please select a file smaller than ${maxSizeMB}MB.`,
+        variant: "destructive",
+      });
+      return null;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
+      let fileToUpload = file;
+
+      // Compress image if enabled and file is large enough
+      if (compress && file.size > 100 * 1024) { // > 100KB
+        setIsCompressing(true);
+        setUploadProgress(10);
+        
+        try {
+          const outputFormat = isWebPSupported() ? 'webp' : 'jpeg';
+          fileToUpload = await compressImage(file, {
+            maxWidth,
+            maxHeight,
+            quality,
+            outputFormat
+          });
+          
+          const savings = ((file.size - fileToUpload.size) / file.size * 100).toFixed(0);
+          console.log(`Compressed: ${(file.size / 1024).toFixed(0)}KB → ${(fileToUpload.size / 1024).toFixed(0)}KB (${savings}% saved)`);
+        } catch (compressError) {
+          console.warn('Compression failed, uploading original:', compressError);
+          // Continue with original file if compression fails
+        }
+        
+        setIsCompressing(false);
+        setUploadProgress(30);
+      }
+
       // Generate unique filename with user ID prefix
-      const fileExt = file.name.split('.').pop();
+      const fileExt = fileToUpload.name.split('.').pop() || 'webp';
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-      // Create a progress callback for large files
+      // Upload to Supabase Storage
       const uploadPromise = supabase.storage
         .from(bucket)
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
+        .upload(fileName, fileToUpload, {
+          cacheControl: '31536000', // 1 year cache
+          upsert: false,
+          contentType: fileToUpload.type
         });
 
-      // Simulate progress for better UX (Supabase doesn't provide real progress)
+      // Simulate progress for better UX
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
@@ -95,9 +137,15 @@ export const usePhotoUpload = () => {
           .from(bucket)
           .getPublicUrl(data.path);
 
+        const originalSize = (file.size / 1024).toFixed(0);
+        const finalSize = (fileToUpload.size / 1024).toFixed(0);
+        const compressionMsg = compress && file.size !== fileToUpload.size 
+          ? ` (compressed ${originalSize}KB → ${finalSize}KB)`
+          : '';
+
         toast({
           title: "Upload Successful",
-          description: "Your photo has been uploaded successfully.",
+          description: `Your photo has been uploaded successfully${compressionMsg}.`,
         });
 
         return publicUrl;
@@ -114,6 +162,7 @@ export const usePhotoUpload = () => {
       return null;
     } finally {
       setIsUploading(false);
+      setIsCompressing(false);
       setUploadProgress(0);
     }
   };
@@ -156,6 +205,7 @@ export const usePhotoUpload = () => {
     uploadPhoto,
     deletePhoto,
     isUploading,
+    isCompressing,
     uploadProgress
   };
 };

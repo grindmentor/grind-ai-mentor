@@ -262,12 +262,50 @@ const RealGoalsAchievements = () => {
   if (loading && !initialLoadComplete) {
     return (
       <Card className="bg-card border-border">
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <div className="h-4 bg-muted rounded w-1/4 animate-pulse"></div>
-            <div className="h-8 bg-muted rounded animate-pulse"></div>
-            <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-lg" />
+              <div className="h-6 w-40 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+            </div>
+            <div className="flex space-x-2">
+              <div className="h-8 w-20 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+              <div className="h-8 w-28 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Button skeleton */}
+          <div className="flex justify-between items-center">
+            <div className="h-5 w-24 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+            <div className="h-9 w-28 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-lg" />
+          </div>
+          {/* Goal items skeleton */}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div 
+              key={i} 
+              className="p-4 rounded-lg bg-gray-800/30 border border-gray-700/30 space-y-3"
+              style={{ animationDelay: `${i * 100}ms` }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-lg" />
+                  <div className="space-y-2">
+                    <div className="h-5 w-32 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                    <div className="h-3 w-48 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                  </div>
+                </div>
+                <div className="h-6 w-16 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-full" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-4 w-20 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                  <div className="h-4 w-12 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                </div>
+                <div className="h-2 w-full bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-full" />
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
     );

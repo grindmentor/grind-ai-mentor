@@ -44,6 +44,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const { getCache, setCache, invalidateCache, emit } = useAppSync();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -116,6 +117,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const loadFoodEntries = async () => {
     if (!user) return;
 
+    setIsLoadingEntries(true);
     try {
       const { data, error } = await supabase
         .from('food_log_entries')
@@ -133,6 +135,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         description: 'Failed to load food entries.',
         variant: 'destructive'
       });
+    } finally {
+      setIsLoadingEntries(false);
     }
   };
 
@@ -702,7 +706,29 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
               )}
 
               {/* Food Entries List */}
-              {foodEntries.length === 0 ? (
+              {isLoadingEntries ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="p-3 bg-orange-900/20 rounded-lg border border-orange-500/20 animate-fade-in"
+                      style={{ animationDelay: `${i * 100}ms` }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 space-y-2">
+                          <div className="h-5 w-3/4 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                          <div className="h-4 w-1/3 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
+                          <div className="h-5 w-16 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-full" />
+                        </div>
+                        <div className="space-y-2 text-right">
+                          <div className="h-5 w-16 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded ml-auto" />
+                          <div className="h-3 w-24 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded ml-auto" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : foodEntries.length === 0 ? (
                 <div className="text-center py-8 text-orange-300/70">
                   <Utensils className="w-12 h-12 mx-auto mb-3 text-orange-400/50" />
                   <p>No food entries for this date yet.</p>

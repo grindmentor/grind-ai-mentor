@@ -9,7 +9,7 @@ import { useModules } from '@/contexts/ModulesContext';
 import { ModuleGrid } from '@/components/dashboard/ModuleGrid';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PageTransition } from '@/components/ui/page-transition';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+import { ModuleGridSkeleton } from '@/components/ui/module-card-skeleton';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useSubscription } from '@/hooks/useSubscription';
 import PremiumPromoCard from '@/components/PremiumPromoCard';
@@ -120,14 +120,35 @@ const ModuleLibrary = () => {
   if (stableLoading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white flex items-center justify-center">
-          <div className="text-center space-y-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-orange-500/80 to-orange-600/60 rounded-xl flex items-center justify-center animate-pulse mx-auto">
-              <div className="text-white animate-bounce font-bold tracking-wider font-mono text-lg">
-                MYO
+        <div className="min-h-screen bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20 text-white">
+          <div className="p-4 sm:p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+              {/* Header skeleton */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-muted/30 rounded-lg animate-shimmer" />
+                  <div className="space-y-2">
+                    <div className="h-8 w-48 bg-muted/30 rounded animate-shimmer" />
+                    <div className="h-4 w-32 bg-muted/30 rounded animate-shimmer" />
+                  </div>
+                </div>
+                <div className="w-24 h-10 bg-muted/30 rounded-lg animate-shimmer" />
               </div>
+              
+              {/* Search skeleton */}
+              <div className="bg-gradient-to-r from-orange-900/20 to-red-900/20 backdrop-blur-sm border border-orange-500/30 rounded-xl p-4 sm:p-6">
+                <div className="space-y-4">
+                  <div className="h-12 w-full bg-muted/30 rounded-xl animate-shimmer" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="h-12 w-full bg-muted/30 rounded-xl animate-shimmer" />
+                    <div className="h-12 w-full bg-muted/30 rounded-xl animate-shimmer" />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Module grid skeleton */}
+              <ModuleGridSkeleton count={6} variant={viewMode} />
             </div>
-            <p className="text-orange-300 text-lg font-medium">Loading Modules...</p>
           </div>
         </div>
       </PageTransition>

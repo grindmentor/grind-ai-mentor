@@ -15,6 +15,8 @@ import { NativeButton } from '@/components/ui/native-button';
 import NativeInstallPrompt from '@/components/ui/native-install-prompt';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
+import { ModuleGridSkeleton } from '@/components/ui/module-card-skeleton';
+import { DataSkeleton, DashboardContentSkeleton, ProgressHubSkeleton, FavoritesSkeleton } from '@/components/ui/data-skeleton';
 
 // Lazy load heavy components
 const ModuleGrid = lazy(() => import('@/components/dashboard/ModuleGrid'));
@@ -236,8 +238,12 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {/* Favorites Section with performance optimization */}
-              {!favoritesLoading && favoriteModules.length > 0 ? (
+              {/* Favorites Section with skeleton loading */}
+              {favoritesLoading ? (
+                <div className="mb-6 sm:mb-8 lg:mb-12">
+                  <FavoritesSkeleton />
+                </div>
+              ) : favoriteModules.length > 0 ? (
                 <div className="mb-6 sm:mb-8 lg:mb-12">
                   <div className="flex items-center justify-between mb-4 sm:mb-6">
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center">
@@ -254,7 +260,7 @@ const Dashboard = () => {
                       Add More
                     </Button>
                   </div>
-                  <Suspense fallback={<EnhancedLoading type="module" size="sm" message="Loading favorites..." />}>
+                  <Suspense fallback={<ModuleGridSkeleton count={favoriteModules.length || 3} />}>
                     <ModuleGrid
                       modules={favoriteModules}
                       favorites={favorites}
@@ -263,7 +269,7 @@ const Dashboard = () => {
                     />
                   </Suspense>
                 </div>
-              ) : !favoritesLoading ? (
+              ) : (
                 <div className="mb-6 sm:mb-8 lg:mb-12 text-center">
                   <div className="bg-card border-border rounded-2xl p-6 sm:p-8 backdrop-blur-sm max-w-md mx-auto">
                     <Star className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-4" />
@@ -282,7 +288,7 @@ const Dashboard = () => {
                     </NativeButton>
                   </div>
                 </div>
-              ) : null}
+              )}
 
               {/* Progress Hub - Optimized */}
               {progressHubModule && (
@@ -320,18 +326,18 @@ const Dashboard = () => {
               {/* Premium Promotion for Free Users */}
               {currentTier === 'free' && (
                 <div className="mb-6 sm:mb-8">
-                  <Suspense fallback={<div className="h-24 bg-gray-800/30 rounded-lg animate-pulse" />}>
+                  <Suspense fallback={<DataSkeleton variant="card" className="h-24" />}>
                     <PremiumPromoCard variant="compact" />
                   </Suspense>
                 </div>
               )}
 
-              {/* Dashboard Content Grid - Simplified */}
+              {/* Dashboard Content Grid with proper skeletons */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <Suspense fallback={<div className="h-48 bg-gray-800/30 rounded-lg animate-pulse" />}>
+                <Suspense fallback={<DataSkeleton variant="goals" />}>
                   <RealGoalsAchievements />
                 </Suspense>
-                <Suspense fallback={<div className="h-48 bg-gray-800/30 rounded-lg animate-pulse" />}>
+                <Suspense fallback={<DataSkeleton variant="research" />}>
                   <LatestResearch />
                 </Suspense>
               </div>

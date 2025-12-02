@@ -27,15 +27,14 @@ const AppLayoutComponent: React.FC<AppLayoutProps> = ({
   const shouldShowBottomNav = useMemo(() => {
     if (!showBottomNav) return false;
     const path = location.pathname;
-    // Direct match or starts with route + /
     return BOTTOM_NAV_ROUTES.has(path) || 
       Array.from(BOTTOM_NAV_ROUTES).some(route => path.startsWith(route + '/'));
   }, [showBottomNav, location.pathname]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <main className={cn(
-        "min-h-screen",
+        "flex-1 overflow-y-auto overflow-x-hidden",
         shouldShowBottomNav && "pb-20"
       )}>
         {children}

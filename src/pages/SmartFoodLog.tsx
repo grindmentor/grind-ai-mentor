@@ -162,11 +162,20 @@ const SmartFoodLog = () => {
             }
           });
 
-          if (analysisError) throw analysisError;
-          if (analysisData.error) throw new Error(analysisData.error);
+          // Handle edge function error
+          if (analysisError) {
+            throw new Error(analysisError.message || 'Analysis failed');
+          }
+          
+          // Check for error in response (403 premium required, 429 rate limit, etc.)
+          if (analysisData?.error) {
+            toast.error(analysisData.error);
+            setIsAnalyzing(false);
+            return;
+          }
 
           // Handle the response format - foodsDetected array
-          const foodsDetected = analysisData.foodsDetected || [];
+          const foodsDetected = analysisData?.foodsDetected || [];
           
           if (foodsDetected.length === 0) {
             toast.error('No food detected. Try a clearer photo or add manually.');
@@ -202,7 +211,8 @@ const SmartFoodLog = () => {
           setPreviewUrl(null);
         } catch (err) {
           console.error('Analysis error:', err);
-          toast.error(err instanceof Error ? err.message : 'Failed to analyze food. Please try again.');
+          const message = err instanceof Error ? err.message : 'Failed to analyze food. Please try again.';
+          toast.error(message);
         } finally {
           setIsAnalyzing(false);
         }

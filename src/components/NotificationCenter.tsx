@@ -5,11 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Settings, Trash2, CheckCircle2, Clock, Target, Droplets, Activity } from 'lucide-react';
+import { ArrowLeft, Bell, Settings, Trash2, CheckCircle2, Clock, Target, Droplets, Activity, Copy } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SwipeToDelete } from '@/components/ui/swipe-to-delete';
+import { LongPressMenu, createDeleteAction, createCopyAction, MenuAction } from '@/components/ui/long-press-menu';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
 interface Notification {
   id: string;
@@ -346,6 +349,7 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
 
             {/* Notifications Tab */}
             <TabsContent value="notifications" className="space-y-4">
+              <PullToRefresh onRefresh={loadNotifications} skeletonVariant="list">
               {loading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
@@ -367,7 +371,27 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {notifications.map((notification) => (
+                  {notifications.map((notification) => {
+                    const menuActions: MenuAction[] = [
+                      {
+                        id: 'copy',
+                        label: 'Copy Message',
+                        icon: <Copy className="w-5 h-5" />,
+                        onClick: () => {
+                          navigator.clipboard.writeText(notification.message);
+                          toast.success('Message copied');
+                        }
+                      },
+                      ...(!notification.read ? [{
+                        id: 'markRead',
+                        label: 'Mark as Read',
+                        icon: <CheckCircle2 className="w-5 h-5" />,
+                        onClick: () => markAsRead(notification.id)
+                      }] : []),
+                      createDeleteAction(() => deleteNotification(notification.id)),
+                    ];
+                    
+                    return (
                     <SwipeToDelete
                       key={notification.id}
                       onDelete={() => deleteNotification(notification.id)}
@@ -392,65 +416,69 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
                         }
                       }}
                     >
-                      <Card 
-                        className={`bg-gray-900 border-gray-800 ${getNotificationColor(notification.type)} ${
-                          !notification.read ? 'border-l-4' : ''
-                        }`}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start space-x-3 flex-1">
-                              <div className="text-lg">{getNotificationIcon(notification.type)}</div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <h3 className={`font-semibold ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
-                                    {notification.title}
-                                  </h3>
-                                  {!notification.read && (
-                                    <Badge className="bg-blue-500/20 text-blue-400 text-xs">New</Badge>
-                                  )}
+                      <LongPressMenu actions={menuActions}>
+                        <Card 
+                          className={`bg-gray-900 border-gray-800 ${getNotificationColor(notification.type)} ${
+                            !notification.read ? 'border-l-4' : ''
+                          }`}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3 flex-1">
+                                <div className="text-lg">{getNotificationIcon(notification.type)}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <h3 className={`font-semibold ${!notification.read ? 'text-white' : 'text-gray-300'}`}>
+                                      {notification.title}
+                                    </h3>
+                                    {!notification.read && (
+                                      <Badge className="bg-blue-500/20 text-blue-400 text-xs">New</Badge>
+                                    )}
+                                  </div>
+                                  <p className={`text-sm mb-2 ${!notification.read ? 'text-gray-300' : 'text-gray-400'}`}>
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(notification.created_at).toLocaleString()}
+                                  </p>
                                 </div>
-                                <p className={`text-sm mb-2 ${!notification.read ? 'text-gray-300' : 'text-gray-400'}`}>
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {new Date(notification.created_at).toLocaleString()}
-                                </p>
                               </div>
-                            </div>
-                            <div className="flex items-center space-x-2 ml-2">
-                              {!notification.read && (
+                              <div className="flex items-center space-x-2 ml-2 hidden sm:flex">
+                                {!notification.read && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      markAsRead(notification.id);
+                                    }}
+                                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    markAsRead(notification.id);
+                                    deleteNotification(notification.id);
                                   }}
-                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                 >
-                                  <CheckCircle2 className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteNotification(notification.id);
-                                }}
-                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </LongPressMenu>
                     </SwipeToDelete>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
+              </PullToRefresh>
             </TabsContent>
 
             {/* Settings Tab */}

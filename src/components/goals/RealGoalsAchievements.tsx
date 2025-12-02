@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Target, Trophy, Calendar, Plus, TrendingUp, Weight, Flame, Activity, Edit, Trash2, Repeat, Clock } from 'lucide-react';
+import { Target, Trophy, Calendar, Plus, TrendingUp, Weight, Flame, Activity, Edit, Trash2, Repeat, Clock, Share2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import GoalProgressLogger from './GoalProgressLogger';
 import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 import { SwipeToDelete } from '@/components/ui/swipe-to-delete';
+import { LongPressMenu, createEditAction, createDeleteAction, createShareAction } from '@/components/ui/long-press-menu';
+import { DragToReorder, DragHandle } from '@/components/ui/drag-to-reorder';
 
 interface Goal {
   id: string;
@@ -477,107 +479,127 @@ const RealGoalsAchievements = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {goals.map((goal) => {
+                <DragToReorder
+                  items={goals}
+                  onReorder={setGoals}
+                  keyExtractor={(goal) => goal.id}
+                  renderItem={(goal, index, dragHandleProps) => {
                     const IconComponent = getCategoryIcon(goal.category);
                     const GoalTypeIcon = getGoalTypeIcon(goal.goal_type);
                     const progressPercentage = getProgressPercentage(goal.current_value, goal.target_value, goal.title);
                     
-                     return (
+                    const menuActions = [
+                      createEditAction(() => handleEditGoal(goal)),
+                      createShareAction(() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: goal.title,
+                            text: `Check out my fitness goal: ${goal.title} - ${progressPercentage.toFixed(0)}% complete!`,
+                          });
+                        } else {
+                          toast.success('Goal copied to clipboard');
+                        }
+                      }),
+                      createDeleteAction(() => handleDeleteGoal(goal.id)),
+                    ];
+                    
+                    return (
                       <SwipeToDelete
-                        key={goal.id}
                         onDelete={() => handleDeleteGoal(goal.id)}
                         deleteLabel="Delete Goal"
                       >
-                        <div 
-                          className="p-3 sm:p-4 rounded-lg bg-gray-800/50 border border-gray-700/50 cursor-pointer transition-all duration-200 hover:bg-gray-800/70 hover:border-orange-500/30"
-                          onClick={() => setSelectedGoal(goal)}
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center space-x-3 flex-1 min-w-0">
-                              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${getCategoryColor(goal.category).split(' ')[0]}`}>
-                                <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <h4 className="text-white font-medium text-sm sm:text-base truncate">{goal.title}</h4>
-                                  <GoalTypeIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                        <LongPressMenu actions={menuActions}>
+                          <div 
+                            className="p-3 sm:p-4 rounded-lg bg-gray-800/50 border border-gray-700/50 cursor-pointer transition-all duration-200 hover:bg-gray-800/70 hover:border-orange-500/30"
+                            onClick={() => setSelectedGoal(goal)}
+                          >
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                <DragHandle {...dragHandleProps} className="hidden sm:flex" />
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${getCategoryColor(goal.category).split(' ')[0]}`}>
+                                  <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
-                                <p className="text-gray-400 text-xs sm:text-sm truncate">{formatGoalDescription(goal)}</p>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span className="text-xs text-gray-500">
-                                    {getFrequencyText(goal.frequency)}
-                                  </span>
-                                  {goal.goal_type === 'habit' && (
-                                    <span className="text-xs text-blue-400">
-                                      • Habit Goal
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <h4 className="text-white font-medium text-sm sm:text-base truncate">{goal.title}</h4>
+                                    <GoalTypeIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                                  </div>
+                                  <p className="text-gray-400 text-xs sm:text-sm truncate">{formatGoalDescription(goal)}</p>
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <span className="text-xs text-gray-500">
+                                      {getFrequencyText(goal.frequency)}
                                     </span>
-                                  )}
+                                    {goal.goal_type === 'habit' && (
+                                      <span className="text-xs text-blue-400">
+                                        • Habit Goal
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
+                              <div className="flex items-center space-x-1 flex-shrink-0">
+                                <Badge className={`${getCategoryColor(goal.category)} text-xs`}>
+                                  {goal.category}
+                                </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditGoal(goal);
+                                  }}
+                                  className="text-gray-400 hover:text-white p-1 w-8 h-8 hidden sm:flex"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteGoal(goal.id);
+                                  }}
+                                  className="text-gray-400 hover:text-red-400 p-1 w-8 h-8 hidden sm:flex"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-1 flex-shrink-0">
-                              <Badge className={`${getCategoryColor(goal.category)} text-xs`}>
-                                {goal.category}
+                            
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-400 text-xs sm:text-sm">
+                                  {goal.current_value} / {goal.target_value} {goal.unit}
+                                </span>
+                                <span className="text-orange-400 text-xs sm:text-sm">
+                                  {progressPercentage.toFixed(0)}%
+                                </span>
+                              </div>
+                              <Progress 
+                                value={progressPercentage} 
+                                className="h-2"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+                              <span className="flex items-center">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                Due: {new Date(goal.deadline).toLocaleDateString()}
+                              </span>
+                              <Badge variant="outline" className={`text-xs ${
+                                goal.status === 'completed' ? 'text-green-400 border-green-500/50' :
+                                goal.status === 'paused' ? 'text-yellow-400 border-yellow-500/50' :
+                                'text-blue-400 border-blue-500/50'
+                              }`}>
+                                {goal.status}
                               </Badge>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditGoal(goal);
-                                }}
-                                className="text-gray-400 hover:text-white p-1 w-8 h-8"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteGoal(goal.id);
-                                }}
-                                className="text-gray-400 hover:text-red-400 p-1 w-8 h-8"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
                             </div>
                           </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-400 text-xs sm:text-sm">
-                                {goal.current_value} / {goal.target_value} {goal.unit}
-                              </span>
-                              <span className="text-orange-400 text-xs sm:text-sm">
-                                {progressPercentage.toFixed(0)}%
-                              </span>
-                            </div>
-                            <Progress 
-                              value={progressPercentage} 
-                              className="h-2"
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
-                            <span className="flex items-center">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              Due: {new Date(goal.deadline).toLocaleDateString()}
-                            </span>
-                            <Badge variant="outline" className={`text-xs ${
-                              goal.status === 'completed' ? 'text-green-400 border-green-500/50' :
-                              goal.status === 'paused' ? 'text-yellow-400 border-yellow-500/50' :
-                              'text-blue-400 border-blue-500/50'
-                            }`}>
-                              {goal.status}
-                            </Badge>
-                          </div>
-                        </div>
+                        </LongPressMenu>
                       </SwipeToDelete>
                     );
-                  })}
-                </div>
+                  }}
+                />
               )}
             </>
           )}

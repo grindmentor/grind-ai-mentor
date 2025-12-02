@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.usda-food-proxy]
 verify_jwt = false
+
+[functions.optimize-image]
+verify_jwt = false

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,19 +54,19 @@ const recommendations = [
   }
 ];
 
-export const PersonalizedFeed: React.FC = () => {
+const PersonalizedFeedComponent: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { trigger } = useNativeHaptics();
 
-  // Fetch recent workouts
+  // Fetch recent workouts with longer stale time
   const { data: recentWorkouts, isLoading: workoutsLoading } = useQuery({
     queryKey: ['recent-workouts', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('workout_sessions')
-        .select('*')
+        .select('id, workout_name, duration_minutes, calories_burned, session_date')
         .eq('user_id', user.id)
         .order('session_date', { ascending: false })
         .limit(3);
@@ -74,17 +74,18 @@ export const PersonalizedFeed: React.FC = () => {
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000
+    staleTime: 10 * 60 * 1000, // 10 min stale time
+    gcTime: 30 * 60 * 1000 // 30 min cache
   });
 
-  // Fetch recent food logs
+  // Fetch recent food logs with longer stale time
   const { data: recentMeals, isLoading: mealsLoading } = useQuery({
     queryKey: ['recent-meals', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('food_log_entries')
-        .select('*')
+        .select('id, food_name, calories, protein, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3);
@@ -92,8 +93,13 @@ export const PersonalizedFeed: React.FC = () => {
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
   });
+
+  // Memoized navigation callbacks - stable references
+  const navigateToWorkout = useCallback(() => navigate('/workout-logger'), [navigate]);
+  const navigateToFood = useCallback(() => navigate('/smart-food-log'), [navigate]);
 
   const feedItems = useMemo<FeedItem[]>(() => {
     const items: FeedItem[] = [];
@@ -108,7 +114,7 @@ export const PersonalizedFeed: React.FC = () => {
         timestamp: new Date(workout.session_date),
         icon: Dumbbell,
         color: 'text-blue-500 bg-blue-500/10',
-        action: () => navigate('/workout-logger')
+        action: navigateToWorkout
       });
     });
 
@@ -122,7 +128,7 @@ export const PersonalizedFeed: React.FC = () => {
         timestamp: new Date(meal.created_at),
         icon: Utensils,
         color: 'text-green-500 bg-green-500/10',
-        action: () => navigate('/smart-food-log')
+        action: navigateToFood
       });
     });
 
@@ -133,17 +139,17 @@ export const PersonalizedFeed: React.FC = () => {
     });
 
     return items.slice(0, 5);
-  }, [recentWorkouts, recentMeals, navigate]);
+  }, [recentWorkouts, recentMeals, navigateToWorkout, navigateToFood]);
 
-  const handleItemPress = (item: FeedItem) => {
+  const handleItemPress = useCallback((item: FeedItem) => {
     trigger('light');
     item.action?.();
-  };
+  }, [trigger]);
 
-  const handleRecommendationPress = (rec: typeof recommendations[0]) => {
+  const handleRecommendationPress = useCallback((rec: typeof recommendations[0]) => {
     trigger('light');
     navigate(rec.path);
-  };
+  }, [trigger, navigate]);
 
   const isLoading = workoutsLoading || mealsLoading;
 
@@ -281,4 +287,5 @@ export const PersonalizedFeed: React.FC = () => {
   );
 };
 
+export const PersonalizedFeed = memo(PersonalizedFeedComponent);
 export default PersonalizedFeed;

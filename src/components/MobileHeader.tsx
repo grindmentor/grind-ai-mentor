@@ -1,64 +1,64 @@
-
 import React from 'react';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import Logo from '@/components/ui/logo';
 
 interface MobileHeaderProps {
   title: string;
   onBack?: () => void;
   showNotifications?: boolean;
   onNotificationsClick?: () => void;
+  rightElement?: React.ReactNode;
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
   onBack,
   showNotifications = false,
-  onNotificationsClick
+  onNotificationsClick,
+  rightElement
 }) => {
-  const isMobile = useIsMobile();
-
   return (
-    <div className="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800/50">
-      <div className="px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 min-w-0 flex-1">
-            {onBack && (
-              <Button
-                onClick={onBack}
-                variant="ghost"
-                size="sm"
-                className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            )}
-            
-            {!onBack && (
-              <div className="flex-shrink-0">
-                <Logo size={isMobile ? "sm" : "md"} />
-              </div>
-            )}
-            
-            <h1 className="font-bold text-white truncate text-lg sm:text-xl">
-              {title}
-            </h1>
-          </div>
-
-          {showNotifications && (
+    <header 
+      className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      <div className="h-14 px-2 flex items-center justify-between">
+        {/* Left - Back button or spacer */}
+        <div className="w-12 flex items-center justify-start">
+          {onBack && (
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+              className="h-10 w-10 p-0 rounded-full text-foreground hover:bg-accent"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
+        
+        {/* Center - Title */}
+        <h1 className="flex-1 text-center font-semibold text-foreground truncate text-base">
+          {title}
+        </h1>
+        
+        {/* Right - Actions or spacer */}
+        <div className="w-12 flex items-center justify-end">
+          {rightElement}
+          {showNotifications && !rightElement && (
             <Button
               onClick={onNotificationsClick}
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 flex-shrink-0"
+              className="h-10 w-10 p-0 rounded-full text-muted-foreground hover:bg-accent"
             >
               <Bell className="w-5 h-5" />
             </Button>
           )}
         </div>
       </div>
-    </div>
+    </header>
   );
 };
+
+export default MobileHeader;

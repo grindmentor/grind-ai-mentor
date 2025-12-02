@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Globe, Zap, Brain, FileText, HelpCircle, LogOut } from 'lucide-react';
+import { ArrowLeft, Globe, Zap, Brain, FileText, HelpCircle, LogOut, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnitPreferences from '@/components/settings/UnitPreferences';
@@ -38,6 +38,7 @@ const Settings = () => {
   const tabs = [
     { id: 'units', label: 'Units', icon: Globe },
     { id: 'app', label: 'App', icon: Zap },
+    { id: 'usage', label: 'Usage', icon: BarChart3 },
     { id: 'ai', label: 'AI Memory', icon: Brain },
     { id: 'legal', label: 'Legal', icon: FileText },
     { id: 'support', label: 'Support', icon: HelpCircle }
@@ -118,6 +119,24 @@ const Settings = () => {
 
                     <TabsContent value="app" className="mt-0 animate-fade-in">
                       <AppPreferences />
+                    </TabsContent>
+
+                    <TabsContent value="usage" className="mt-0 animate-fade-in">
+                      <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
+                        <CardHeader>
+                          <CardTitle className="text-white">Usage Statistics</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-gray-400 text-sm">View detailed statistics about your app usage, including AI queries, meal plans generated, and more.</p>
+                          <Button
+                            onClick={() => navigate('/usage')}
+                            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            View Usage Stats
+                          </Button>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
 
                     <TabsContent value="ai" className="mt-0 animate-fade-in">

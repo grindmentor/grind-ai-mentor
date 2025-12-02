@@ -1,8 +1,6 @@
-
 import React, { memo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown } from 'lucide-react';
+import { Crown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AIModuleCardProps {
@@ -30,161 +28,78 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
   onHover,
   onInteraction
 }) => {
-  // Enhanced module color mapping with proper 50% opacity to match interior themes
-  const getModuleGradient = (originalGradient: string, title: string) => {
-    const moduleColorMap: { [key: string]: string } = {
-      // CoachGPT - Cyan theme with 50% opacity to match interior
-      'CoachGPT': 'from-cyan-900/50 to-blue-900/50',
-      // Habit Tracker - Yellow theme with 50% opacity to match interior
-      'Habit Tracker': 'from-yellow-900/50 to-orange-900/50',
-      // CutCalc Pro - Red theme with 50% opacity to match interior
-      'CutCalc Pro': 'from-red-900/50 to-pink-900/50',
-      // TDEE Calculator - Green theme with 50% opacity to match interior
-      'TDEE Calculator': 'from-green-900/50 to-emerald-900/50',
-      // Smart Training - Green theme with 50% opacity to match interior
-      'Smart Training': 'from-green-900/50 to-emerald-900/50',
-      // Blueprint AI - Blue to cyan theme with 50% opacity to match interior
-      'Blueprint AI': 'from-blue-900/50 to-cyan-900/50',
-      // Workout Timer - Orange theme with 50% opacity to match interior
-      'Workout Timer': 'from-orange-900/50 to-yellow-900/50',
-      // Meal Plan Generator - Green theme with 50% opacity to match interior
-      'Meal Plan Generator': 'from-green-900/50 to-emerald-900/50',
-      'Meal Plan AI': 'from-green-900/50 to-emerald-900/50',
-      // Progress Hub - Purple theme with 50% opacity to match interior
-      'Progress Hub': 'from-purple-900/50 to-violet-900/50',
-      // Workout Logger AI - Green theme with 50% opacity to match interior
-      'Workout Logger AI': 'from-green-900/50 to-emerald-900/50',
-      // Recovery Coach - Purple theme with 50% opacity to match interior
-      'Recovery Coach': 'from-purple-900/50 to-violet-900/50',
-      // Smart Food Log - Teal theme with 50% opacity to match interior
-      'Smart Food Log': 'from-teal-900/50 to-cyan-900/50',
+  // Simplified color mapping for native feel
+  const getAccentColor = (title: string) => {
+    const colorMap: { [key: string]: { bg: string; border: string; icon: string } } = {
+      'CoachGPT': { bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', icon: 'text-cyan-400' },
+      'Habit Tracker': { bg: 'bg-yellow-500/15', border: 'border-yellow-500/30', icon: 'text-yellow-400' },
+      'CutCalc Pro': { bg: 'bg-red-500/15', border: 'border-red-500/30', icon: 'text-red-400' },
+      'TDEE Calculator': { bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: 'text-purple-400' },
+      'Smart Training': { bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: 'text-blue-400' },
+      'Blueprint AI': { bg: 'bg-indigo-500/15', border: 'border-indigo-500/30', icon: 'text-indigo-400' },
+      'Workout Timer': { bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: 'text-orange-400' },
+      'Meal Plan Generator': { bg: 'bg-green-500/15', border: 'border-green-500/30', icon: 'text-green-400' },
+      'Meal Plan AI': { bg: 'bg-green-500/15', border: 'border-green-500/30', icon: 'text-green-400' },
+      'Progress Hub': { bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: 'text-purple-400' },
+      'Workout Logger AI': { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: 'text-emerald-400' },
+      'Recovery Coach': { bg: 'bg-violet-500/15', border: 'border-violet-500/30', icon: 'text-violet-400' },
+      'Smart Food Log': { bg: 'bg-teal-500/15', border: 'border-teal-500/30', icon: 'text-teal-400' },
+      'Food Photo Logger': { bg: 'bg-pink-500/15', border: 'border-pink-500/30', icon: 'text-pink-400' },
+      'Physique AI': { bg: 'bg-rose-500/15', border: 'border-rose-500/30', icon: 'text-rose-400' },
     };
     
-    return moduleColorMap[title] || originalGradient.replace(/\/\d+/g, '/50');
+    return colorMap[title] || { bg: 'bg-primary/15', border: 'border-primary/30', icon: 'text-primary' };
   };
 
-  const getBorderColor = (gradient: string, title: string) => {
-    const borderMap: { [key: string]: string } = {
-      'CoachGPT': 'border-cyan-500/30',
-      'Habit Tracker': 'border-yellow-500/30',
-      'CutCalc Pro': 'border-red-500/30',
-      'TDEE Calculator': 'border-green-500/30',
-      'Smart Training': 'border-green-500/30',
-      'Blueprint AI': 'border-blue-500/30',
-      'Workout Timer': 'border-orange-500/30',
-      'Meal Plan Generator': 'border-green-500/30',
-      'Meal Plan AI': 'border-green-500/30',
-      'Progress Hub': 'border-purple-500/30',
-      'Workout Logger AI': 'border-green-500/30',
-      'Recovery Coach': 'border-purple-500/30',
-      'Smart Food Log': 'border-teal-500/30',
-    };
-    
-    return borderMap[title] || 'border-white/20';
-  };
-
-  const getIconBgColor = (title: string) => {
-    const iconBgMap: { [key: string]: string } = {
-      'CoachGPT': 'bg-gradient-to-r from-cyan-500/30 to-blue-500/40 border-cyan-500/30',
-      'Habit Tracker': 'bg-gradient-to-r from-yellow-500/30 to-orange-500/40 border-yellow-500/30',
-      'CutCalc Pro': 'bg-gradient-to-r from-red-500/30 to-pink-500/40 border-red-500/30',
-      'TDEE Calculator': 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
-      'Smart Training': 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
-      'Blueprint AI': 'bg-gradient-to-r from-blue-500/30 to-cyan-500/40 border-blue-500/30',
-      'Workout Timer': 'bg-gradient-to-r from-orange-500/30 to-yellow-500/40 border-orange-500/30',
-      'Meal Plan Generator': 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
-      'Meal Plan AI': 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
-      'Progress Hub': 'bg-gradient-to-r from-purple-500/30 to-violet-500/40 border-purple-500/30',
-      'Workout Logger AI': 'bg-gradient-to-r from-green-500/30 to-emerald-500/40 border-green-500/30',
-      'Recovery Coach': 'bg-gradient-to-r from-purple-500/30 to-violet-500/40 border-purple-500/30',
-      'Smart Food Log': 'bg-gradient-to-r from-teal-500/30 to-cyan-500/40 border-teal-500/30',
-    };
-    
-    return iconBgMap[title] || 'bg-black/20 border-white/20';
-  };
-
-  const moduleGradient = getModuleGradient(gradient, title);
-  const borderColor = getBorderColor(moduleGradient, title);
-  const iconBgColor = getIconBgColor(title);
+  const colors = getAccentColor(title);
 
   const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Remove hover state immediately on touch devices
-    const target = e.currentTarget as HTMLElement;
-    target.blur();
-    
-    // Immediate click response
     onClick();
-    // Defer analytics
     setTimeout(() => onInteraction?.(id), 0);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    // Mark as touched to prevent hover states
-    const target = e.currentTarget as HTMLElement;
-    target.style.pointerEvents = 'auto';
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const target = e.currentTarget as HTMLElement;
-    // Clear any hover states
-    target.blur();
-    // Brief delay to ensure click happens before blur
-    setTimeout(() => {
-      target.style.pointerEvents = '';
-    }, 50);
-  };
-
-  const handleMouseEnter = () => {
-    onHover?.(id);
-  };
-
   return (
-    <Card 
-      className={cn(
-        `bg-gradient-to-br ${moduleGradient} backdrop-blur-sm cursor-pointer transition-transform duration-200 active:scale-95 [@media(hover:hover)]:hover:scale-105 [@media(hover:hover)]:hover:shadow-2xl group relative overflow-hidden border ${borderColor}`,
-        "animate-fade-in transform-gpu",
-        isPremium && !isSubscribed ? 'opacity-75' : ''
-      )}
+    <button
       onClick={handleClick}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseEnter={handleMouseEnter}
+      onMouseEnter={() => onHover?.(id)}
+      className={cn(
+        "w-full p-4 rounded-2xl text-left transition-all duration-200",
+        "bg-card/50 border border-border/50 backdrop-blur-sm",
+        "active:scale-[0.98] active:bg-card/70",
+        "[@media(hover:hover)]:hover:bg-card/70 [@media(hover:hover)]:hover:border-border",
+        isPremium && !isSubscribed && 'opacity-70'
+      )}
     >
-      {/* Background pattern with reduced opacity */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
-      </div>
-      
-      <CardContent className="p-6 relative z-10">
-        <div className="flex flex-col items-center text-center space-y-4">
-          {/* Icon */}
-          <div className={`w-16 h-16 ${iconBgColor} backdrop-blur-sm rounded-2xl flex items-center justify-center border group-hover:scale-110 transition-transform duration-300`}>
-            <Icon className="w-8 h-8 text-white drop-shadow-lg" />
+      <div className="flex items-center gap-4">
+        {/* Icon */}
+        <div className={cn(
+          "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+          colors.bg, colors.border, "border"
+        )}>
+          <Icon className={cn("w-6 h-6", colors.icon)} />
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-semibold text-foreground text-sm truncate">
+              {title}
+            </h3>
+            {isPremium && (
+              <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
+            )}
           </div>
-          
-          {/* Title */}
-          <h3 className="text-white font-bold text-lg leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            {title}
-          </h3>
-          
-          {/* Description */}
-          <p className="text-white/90 text-sm leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] font-medium">
+          <p className="text-xs text-muted-foreground line-clamp-1">
             {description}
           </p>
-          
-          {/* Premium Badge */}
-          {isPremium && (
-            <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 backdrop-blur-sm drop-shadow-lg">
-              <Crown className="w-3 h-3 mr-1" />
-              Premium
-            </Badge>
-          )}
         </div>
-      </CardContent>
-    </Card>
+        
+        {/* Arrow */}
+        <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
+      </div>
+    </button>
   );
 };
 

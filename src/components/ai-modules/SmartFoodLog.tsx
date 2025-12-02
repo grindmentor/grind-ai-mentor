@@ -619,41 +619,49 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                   
                   {/* USDA Search Results */}
                   {searchResults.length > 0 && (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      <Label className="text-orange-200">Live USDA Results</Label>
-                      {searchResults.map((item) => (
-                        <div key={item.fdcId} className="p-3 bg-orange-800/30 rounded-lg border border-orange-500/20 hover:bg-orange-800/40 transition-colors">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-white truncate">{item.name}</div>
-                              {item.brand && (
-                                <div className="text-sm text-orange-300 truncate">Brand: {item.brand}</div>
-                              )}
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-xs border-green-400/30 text-green-300 bg-green-500/10">
-                                  {item.dataType}
-                                </Badge>
-                              </div>
-                              <div className="text-xs text-orange-400 mt-1">
-                                Per 100g: {item.calories} cal, {item.protein}g protein, {item.carbs}g carbs, {item.fat}g fat
-                              </div>
-                              {item.householdServing && (
-                                <div className="text-xs text-orange-400">
-                                  Serving: {item.householdServing}
-                                </div>
-                              )}
-                            </div>
-                            <Button
-                              onClick={() => addFoodFromUSDA(item)}
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 flex-shrink-0 ml-2"
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              Add
-                            </Button>
-                          </div>
+                    <div className="relative">
+                      <div className="absolute top-0 left-0 right-0 z-50 bg-card border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto">
+                        <div className="p-2 border-b border-border sticky top-0 bg-card">
+                          <Label className="text-sm font-medium text-foreground">USDA Results ({searchResults.length})</Label>
                         </div>
-                      ))}
+                        <div className="p-2 space-y-2">
+                          {searchResults.map((item) => (
+                            <div key={item.fdcId} className="p-3 bg-muted/50 hover:bg-muted rounded-lg cursor-pointer transition-colors border border-border/50">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-foreground truncate">{item.name}</div>
+                                  {item.brand && (
+                                    <div className="text-sm text-muted-foreground truncate">Brand: {item.brand}</div>
+                                  )}
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-xs border-green-400/30 text-green-500 bg-green-500/10">
+                                      {item.dataType}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    Per 100g: {item.calories} cal, {item.protein}g protein, {item.carbs}g carbs, {item.fat}g fat
+                                  </div>
+                                  {item.householdServing && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Serving: {item.householdServing}
+                                    </div>
+                                  )}
+                                </div>
+                                <Button
+                                  onClick={() => addFoodFromUSDA(item)}
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 flex-shrink-0 ml-2"
+                                >
+                                  <Plus className="w-4 h-4 mr-1" />
+                                  Add
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Spacer to prevent content jump */}
+                      <div className="h-80" />
                     </div>
                   )}
                 </div>

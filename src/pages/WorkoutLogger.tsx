@@ -379,13 +379,13 @@ const WorkoutLogger = () => {
                       Add Exercise
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <CardContent className="space-y-4">
+                    <div className="space-y-3">
                       <Select value={selectedExercise} onValueChange={setSelectedExercise}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select exercise" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-popover border-border z-[100]">
                           {savedExercises.length > 0 && (
                             <>
                               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
@@ -420,7 +420,7 @@ const WorkoutLogger = () => {
                       
                       <Button onClick={addExercise} className="w-full">
                         <Plus className="h-4 w-4 mr-2" />
-                        Add
+                        Add Exercise
                       </Button>
                     </div>
                   </CardContent>

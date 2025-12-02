@@ -13,6 +13,8 @@ export const OfflineIndicator: React.FC = () => {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
+      // Only show online banner if we were offline
+      if (!navigator.onLine) return;
       setBannerType('online');
       setShowBanner(true);
       setTimeout(() => setShowBanner(false), 3000);
@@ -26,7 +28,8 @@ export const OfflineIndicator: React.FC = () => {
 
     const unsubscribe = backgroundSync.subscribe((status) => {
       setSyncStatus(status);
-      if (status.isSyncing) {
+      // Only show syncing banner if actually syncing with pending items
+      if (status.isSyncing && status.pending > 0) {
         setBannerType('syncing');
         setShowBanner(true);
       } else if (status.pending === 0 && bannerType === 'syncing') {
@@ -38,6 +41,7 @@ export const OfflineIndicator: React.FC = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Only show offline banner if actually offline
     if (!navigator.onLine) {
       setShowBanner(true);
       setBannerType('offline');

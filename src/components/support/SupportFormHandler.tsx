@@ -1,11 +1,22 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SupportFormData {
   name: string;
@@ -18,6 +29,9 @@ interface SupportFormHandlerProps {
   onSuccess: () => void;
 }
 
+const MAX_MESSAGE_LENGTH = 1000;
+const MAX_REQUESTS_PER_WEEK = 3;
+
 const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState<SupportFormData>({
@@ -28,14 +42,21 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<SupportFormData>>({});
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [requestCount, setRequestCount] = useState(0);
+  const [isCheckingLimit, setIsCheckingLimit] = useState(true);
   const { toast } = useToast();
 
-  // Autofill name and email from user profile
+  // Autofill name and email from user profile and check request limit
   useEffect(() => {
-    const loadUserData = async () => {
-      if (!user) return;
+    const loadUserDataAndCheckLimit = async () => {
+      if (!user) {
+        setIsCheckingLimit(false);
+        return;
+      }
 
       try {
+        // Load user profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('display_name, email')
@@ -55,18 +76,33 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
             email: user.email || ''
           }));
         }
+
+        // Check request limit (last 7 days)
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        const { count, error } = await supabase
+          .from('support_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('created_at', oneWeekAgo.toISOString());
+
+        if (!error && count !== null) {
+          setRequestCount(count);
+        }
       } catch (error) {
         console.error('Error loading user data:', error);
-        // Fallback to auth user data
         setFormData(prev => ({
           ...prev,
           name: user.user_metadata?.full_name || '',
           email: user.email || ''
         }));
+      } finally {
+        setIsCheckingLimit(false);
       }
     };
 
-    loadUserData();
+    loadUserDataAndCheckLimit();
   }, [user]);
 
   const validateForm = (): boolean => {
@@ -80,6 +116,8 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       newErrors.message = 'Message is required';
     } else if (formData.message.trim().length < 10) {
       newErrors.message = 'Message must be at least 10 characters long';
+    } else if (formData.message.length > MAX_MESSAGE_LENGTH) {
+      newErrors.message = `Message must be less than ${MAX_MESSAGE_LENGTH} characters`;
     }
 
     setErrors(newErrors);
@@ -90,7 +128,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     return text.trim().replace(/[<>]/g, '');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitClick = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -102,6 +140,21 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       return;
     }
 
+    // Check rate limit
+    if (user && requestCount >= MAX_REQUESTS_PER_WEEK) {
+      toast({
+        title: "Request Limit Reached",
+        description: `You can only submit ${MAX_REQUESTS_PER_WEEK} support requests per week. Please try again later.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmedSubmit = async () => {
+    setShowConfirmDialog(false);
     setIsSubmitting(true);
 
     try {
@@ -140,6 +193,7 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
       // Reset form (keep name and email)
       setFormData(prev => ({ ...prev, subject: '', message: '' }));
       setErrors({});
+      setRequestCount(prev => prev + 1);
       
       toast({
         title: "Request Submitted Successfully",
@@ -163,6 +217,12 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Enforce max length for message
+    if (name === 'message' && value.length > MAX_MESSAGE_LENGTH) {
+      return;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
     
     if (errors[name as keyof SupportFormData]) {
@@ -170,65 +230,122 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="subject" className="block text-sm font-medium text-white mb-2">
-          Subject *
-        </label>
-        <Input
-          id="subject"
-          name="subject"
-          value={formData.subject}
-          onChange={handleChange}
-          required
-          disabled={isSubmitting}
-          className={`bg-gray-800 border-gray-700 text-white min-h-[48px] ${
-            errors.subject ? 'border-red-500' : ''
-          }`}
-          placeholder="What can we help you with?"
-        />
-        {errors.subject && <p className="text-red-400 text-sm mt-1">{errors.subject}</p>}
-      </div>
-      
-      <div>
-        <label htmlFor="message" className="block text-sm font-medium text-white mb-2">
-          Message *
-        </label>
-        <Textarea
-          id="message"
-          name="message"
-          value={formData.message}
-          onChange={handleChange}
-          required
-          rows={5}
-          disabled={isSubmitting}
-          className={`bg-gray-800 border-gray-700 text-white resize-none ${
-            errors.message ? 'border-red-500' : ''
-          }`}
-          placeholder="Please describe your issue or question in detail..."
-        />
-        {errors.message && <p className="text-red-400 text-sm mt-1">{errors.message}</p>}
-      </div>
+  const remainingRequests = MAX_REQUESTS_PER_WEEK - requestCount;
+  const isLimitReached = user && requestCount >= MAX_REQUESTS_PER_WEEK;
 
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 min-h-[48px] disabled:opacity-50"
-      >
-        {isSubmitting ? (
-          <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            Sending...
-          </>
-        ) : (
-          <>
-            <Send className="w-4 h-4 mr-2" />
-            Send Message
-          </>
+  return (
+    <>
+      <form onSubmit={handleSubmitClick} className="space-y-4">
+        {/* Rate limit warning */}
+        {user && !isCheckingLimit && (
+          <div className={`p-3 rounded-lg text-sm ${
+            isLimitReached 
+              ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+              : 'bg-gray-800/50 text-gray-400'
+          }`}>
+            {isLimitReached ? (
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>You've reached your weekly limit of {MAX_REQUESTS_PER_WEEK} support requests.</span>
+              </div>
+            ) : (
+              <span>{remainingRequests} support request{remainingRequests !== 1 ? 's' : ''} remaining this week</span>
+            )}
+          </div>
         )}
-      </Button>
-    </form>
+
+        <div>
+          <label htmlFor="subject" className="block text-sm font-medium text-white mb-2">
+            Subject *
+          </label>
+          <Input
+            id="subject"
+            name="subject"
+            value={formData.subject}
+            onChange={handleChange}
+            required
+            disabled={isSubmitting || isLimitReached}
+            className={`bg-gray-800 border-gray-700 text-white min-h-[48px] ${
+              errors.subject ? 'border-red-500' : ''
+            }`}
+            placeholder="What can we help you with?"
+          />
+          {errors.subject && <p className="text-red-400 text-sm mt-1">{errors.subject}</p>}
+        </div>
+        
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <label htmlFor="message" className="block text-sm font-medium text-white">
+              Message *
+            </label>
+            <span className={`text-xs ${
+              formData.message.length > MAX_MESSAGE_LENGTH * 0.9 
+                ? 'text-orange-400' 
+                : 'text-gray-500'
+            }`}>
+              {formData.message.length}/{MAX_MESSAGE_LENGTH}
+            </span>
+          </div>
+          <Textarea
+            id="message"
+            name="message"
+            value={formData.message}
+            onChange={handleChange}
+            required
+            rows={5}
+            disabled={isSubmitting || isLimitReached}
+            className={`bg-gray-800 border-gray-700 text-white resize-none ${
+              errors.message ? 'border-red-500' : ''
+            }`}
+            placeholder="Please describe your issue or question in detail..."
+          />
+          {errors.message && <p className="text-red-400 text-sm mt-1">{errors.message}</p>}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSubmitting || isLimitReached}
+          className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 min-h-[48px] disabled:opacity-50"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Sending...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4 mr-2" />
+              Send Message
+            </>
+          )}
+        </Button>
+      </form>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="bg-gray-900 border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Submit Support Request?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Your message will be sent to our support team. We'll respond within 7 days.
+              <br /><br />
+              <strong className="text-white">Subject:</strong> {formData.subject}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-800 text-white border-gray-700 hover:bg-gray-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmedSubmit}
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+            >
+              Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

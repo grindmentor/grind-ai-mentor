@@ -85,8 +85,20 @@ const NotificationCenter = ({ onBack }: NotificationCenterProps) => {
         return;
       }
       
-      if (data?.notification_preferences) {
-        setNotificationSettings(data.notification_preferences);
+      if (data?.notification_preferences && typeof data.notification_preferences === 'object') {
+        // Safely merge with defaults to avoid undefined properties
+        const prefs = data.notification_preferences as Record<string, boolean>;
+        setNotificationSettings(prev => ({
+          ...prev,
+          hydrationReminders: prefs.hydrationReminders ?? false,
+          workoutReminders: prefs.workoutReminders ?? false,
+          achievementAlerts: prefs.achievementAlerts ?? false,
+          progressUpdates: prefs.progressUpdates ?? false,
+          nutritionTips: prefs.nutritionTips ?? false,
+          recoveryAlerts: prefs.recoveryAlerts ?? false,
+          goalDeadlines: prefs.goalDeadlines ?? false,
+          weeklyReports: prefs.weeklyReports ?? false
+        }));
       }
     } catch (error) {
       console.error('Error in loadNotificationSettings:', error);

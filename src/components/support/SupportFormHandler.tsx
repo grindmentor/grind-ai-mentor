@@ -1,11 +1,11 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SupportFormData {
   name: string;
@@ -19,6 +19,7 @@ interface SupportFormHandlerProps {
 }
 
 const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<SupportFormData>({
     name: '',
     email: '',
@@ -29,18 +30,47 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
   const [errors, setErrors] = useState<Partial<SupportFormData>>({});
   const { toast } = useToast();
 
+  // Autofill name and email from user profile
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!user) return;
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name, email')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile) {
+          setFormData(prev => ({
+            ...prev,
+            name: profile.display_name || user.user_metadata?.full_name || '',
+            email: profile.email || user.email || ''
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            name: user.user_metadata?.full_name || '',
+            email: user.email || ''
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        // Fallback to auth user data
+        setFormData(prev => ({
+          ...prev,
+          name: user.user_metadata?.full_name || '',
+          email: user.email || ''
+        }));
+      }
+    };
+
+    loadUserData();
+  }, [user]);
+
   const validateForm = (): boolean => {
     const newErrors: Partial<SupportFormData> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
 
     if (!formData.subject.trim()) {
       newErrors.subject = 'Subject is required';
@@ -75,21 +105,17 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     setIsSubmitting(true);
 
     try {
-      // Get current user if logged in (for user_id, but it's optional now)
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id || null;
-
       // Sanitize form data
       const sanitizedData = {
-        name: sanitizeText(formData.name),
-        email: sanitizeText(formData.email),
+        name: sanitizeText(formData.name) || 'Anonymous',
+        email: sanitizeText(formData.email) || 'no-email@provided.com',
         subject: sanitizeText(formData.subject),
         message: sanitizeText(formData.message),
-        user_id: userId, // Can be null for anonymous submissions
+        user_id: user?.id || null,
         file_url: null
       };
 
-      // Submit to Supabase (RLS is disabled, so this should work)
+      // Submit to Supabase
       const { error } = await supabase
         .from('support_requests')
         .insert([sanitizedData]);
@@ -98,21 +124,21 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
         throw new Error(`Failed to submit support request: ${error.message}`);
       }
 
-      // Send email notification (fire and forget - don't block on this)
+      // Send email notification (fire and forget)
       supabase.functions.invoke('support-notification', {
         body: {
           name: sanitizedData.name,
           email: sanitizedData.email,
           subject: sanitizedData.subject,
           message: sanitizedData.message,
-          userId: userId
+          userId: user?.id
         }
       }).catch(err => {
         console.warn('Failed to send email notification:', err);
       });
 
-      // Reset form and show success
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      // Reset form (keep name and email)
+      setFormData(prev => ({ ...prev, subject: '', message: '' }));
       setErrors({});
       
       toast({
@@ -139,7 +165,6 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user starts typing
     if (errors[name as keyof SupportFormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -147,46 +172,6 @@ const SupportFormHandler: React.FC<SupportFormHandlerProps> = ({ onSuccess }) =>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
-            Name *
-          </label>
-          <Input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            disabled={isSubmitting}
-            className={`bg-gray-800 border-gray-700 text-white min-h-[48px] ${
-              errors.name ? 'border-red-500' : ''
-            }`}
-            placeholder="Your full name"
-          />
-          {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-            Email *
-          </label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            disabled={isSubmitting}
-            className={`bg-gray-800 border-gray-700 text-white min-h-[48px] ${
-              errors.email ? 'border-red-500' : ''
-            }`}
-            placeholder="your@email.com"
-          />
-          {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
-        </div>
-      </div>
-      
       <div>
         <label htmlFor="subject" className="block text-sm font-medium text-white mb-2">
           Subject *

@@ -157,15 +157,9 @@ const Support = () => {
                   <CardTitle className="text-white">Response Time</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-400">Average Response Time</p>
-                  <p className="text-white font-medium">Within 7 days</p>
-                </div>
-                <div className="pt-2">
-                  <p className="text-sm text-gray-400">Support Hours</p>
-                  <p className="text-white font-medium">Monday - Friday, 9 AM - 5 PM EST</p>
-                </div>
+              <CardContent>
+                <p className="text-sm text-gray-400">Average Response Time</p>
+                <p className="text-white font-medium">Within 7 days</p>
               </CardContent>
             </Card>
           </div>

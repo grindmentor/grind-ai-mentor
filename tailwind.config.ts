@@ -177,6 +177,51 @@ export default {
 						transform: 'scale(1) translateZ(0)',
 						opacity: '1'
 					}
+				},
+				// iOS-style slide transitions
+				'slide-in-right': {
+					from: {
+						transform: 'translateX(100%)',
+						opacity: '0'
+					},
+					to: {
+						transform: 'translateX(0)',
+						opacity: '1'
+					}
+				},
+				'slide-out-right': {
+					from: {
+						transform: 'translateX(0)',
+						opacity: '1'
+					},
+					to: {
+						transform: 'translateX(100%)',
+						opacity: '0'
+					}
+				},
+				'slide-in-left': {
+					from: {
+						transform: 'translateX(-30%)',
+						opacity: '0.5'
+					},
+					to: {
+						transform: 'translateX(0)',
+						opacity: '1'
+					}
+				},
+				'slide-out-left': {
+					from: {
+						transform: 'translateX(0)',
+						opacity: '1'
+					},
+					to: {
+						transform: 'translateX(-30%)',
+						opacity: '0.5'
+					}
+				},
+				'spin': {
+					from: { transform: 'rotate(0deg)' },
+					to: { transform: 'rotate(360deg)' }
 				}
 			},
 			animation: {
@@ -186,6 +231,11 @@ export default {
 				"slide-down": "slideDown 0.3s ease-out", 
 				"fade-in": "fadeIn 0.3s ease-out",
 				"scale-in": "scaleIn 0.2s ease-out",
+				"slide-in": "slide-in-right 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+				"slide-in-left": "slide-in-left 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+				"slide-out-right": "slide-out-right 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+				"slide-out-left": "slide-out-left 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+				"spin": "spin 1s linear infinite",
 			},
 			spacing: {
 				'safe-top': 'var(--safe-area-inset-top)',

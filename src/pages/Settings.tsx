@@ -108,15 +108,15 @@ const Settings = () => {
 
             {/* Settings Tabs */}
             <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-              <TabsList className="grid w-full grid-cols-6 bg-muted/50 rounded-xl p-1 h-auto">
+              <TabsList className="grid w-full grid-cols-6 bg-muted/50 rounded-xl p-1 h-auto overflow-hidden">
                 {tabs.map((tab) => (
                   <TabsTrigger 
                     key={tab.id}
                     value={tab.id} 
-                    className="rounded-lg py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 flex flex-col items-center gap-1"
+                    className="rounded-lg py-2 px-1 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200 flex flex-col items-center gap-0.5 overflow-hidden"
                   >
-                    <tab.icon className="w-4 h-4" />
-                    <span className="text-[10px] font-medium">{tab.label}</span>
+                    <tab.icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-[9px] sm:text-[10px] font-medium truncate max-w-full">{tab.label}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>

@@ -1,16 +1,27 @@
 
 /* Mobile-first responsive optimizations */
 @media screen and (max-width: 768px) {
-  /* Prevent horizontal scrolling */
+  /* Prevent horizontal scrolling and page shifting */
   * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
   }
   
-  html, body {
+  html {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    width: 100%;
+    max-width: 100vw;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  body {
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    position: relative;
+    overscroll-behavior-y: none;
   }
   
   /* Remove 300ms tap delay globally */
@@ -58,27 +69,39 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    overflow: hidden !important;
   }
   
-  /* Tab buttons scaling and overflow prevention */
+  /* Tab buttons - prevent overflow and ensure containment */
   .mobile-tab-button {
     min-height: 36px !important;
     padding: 6px 12px !important;
     font-size: 12px !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 50% !important;
   }
   
-  /* Goals & Achievements tab container */
+  /* Fix TabsList overflow */
+  [role="tablist"] {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+  
+  /* Fix TabsTrigger overflow when selected */
+  [role="tab"] {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+  }
+  
+  /* Goals & Achievements tab container - NO scroll */
   .mobile-tabs-container {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-  
-  .mobile-tabs-container::-webkit-scrollbar {
-    display: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
   }
   
   /* Notification center mobile improvements */

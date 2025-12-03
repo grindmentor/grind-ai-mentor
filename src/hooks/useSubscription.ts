@@ -76,8 +76,24 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
 
 export const useSubscription = () => {
   const { user } = useAuth();
-  const [currentTier, setCurrentTier] = useState<string>('free');
-  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  
+  // Initialize from localStorage cache for instant display
+  const getInitialState = () => {
+    if (typeof window !== 'undefined' && user?.id) {
+      const cached = localStorage.getItem(`myotopia_sub_${user.id}`);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch { /* ignore */ }
+      }
+    }
+    return { tier: 'free', end: null, billing: null };
+  };
+  
+  const initial = user ? getInitialState() : { tier: 'free', end: null, billing: null };
+  
+  const [currentTier, setCurrentTier] = useState<string>(initial.tier);
+  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(initial.end);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const lastCheckRef = useRef<number>(0);
@@ -142,6 +158,17 @@ export const useSubscription = () => {
         setBillingCycle(newBilling);
         cacheRef.current = { tier: newTier, end: newEnd, billing: newBilling };
         lastCheckRef.current = now;
+        
+        // Save to localStorage for instant loading on next visit
+        if (user?.id) {
+          try {
+            localStorage.setItem(`myotopia_sub_${user.id}`, JSON.stringify({ 
+              tier: newTier, 
+              end: newEnd, 
+              billing: newBilling 
+            }));
+          } catch { /* ignore storage errors */ }
+        }
       }
     } catch (error) {
       console.error('Error checking subscription:', error);

@@ -43,9 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Check onboarding completion status
   const checkOnboardingStatus = async (userId: string) => {
     try {
-      // Check localStorage first for immediate response
+      // Check localStorage first for immediate response - this is the primary check
       const localOnboarding = localStorage.getItem(`myotopia_onboarding_${userId}`);
-      if (localOnboarding) {
+      if (localOnboarding === 'completed') {
         setHasCompletedOnboarding(true);
         return;
       }
@@ -58,8 +58,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
       
       if (!error && profile) {
-        // If user has basic profile data, consider onboarding complete
-        const isComplete = profile.weight && profile.height && profile.experience && profile.activity && profile.goal;
+        // Consider onboarding complete if user has filled any 3 of the 5 fields
+        // This allows users to skip some optional fields
+        const filledFields = [
+          profile.weight,
+          profile.height,
+          profile.experience,
+          profile.activity,
+          profile.goal
+        ].filter(Boolean).length;
+        
+        const isComplete = filledFields >= 3;
         setHasCompletedOnboarding(isComplete);
         
         // Update localStorage to match database state
@@ -67,11 +76,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           localStorage.setItem(`myotopia_onboarding_${userId}`, 'completed');
         }
       } else {
+        // If no profile exists, check if this is a returning user by checking localStorage
+        // This prevents showing onboarding repeatedly for existing users
         setHasCompletedOnboarding(false);
       }
     } catch (error) {
       logger.warn('Could not check onboarding status:', error);
-      setHasCompletedOnboarding(false);
+      // On error, assume onboarding is complete to prevent blocking users
+      setHasCompletedOnboarding(true);
     }
   };
 

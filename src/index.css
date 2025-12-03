@@ -136,12 +136,26 @@
   * {
     @apply border-border;
   }
+  
+  /* Prevent page shifting on mobile - critical fix */
+  html {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+    overscroll-behavior-y: none;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+    overflow-x: hidden;
+    min-height: 100%;
+    position: relative;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Typography system */

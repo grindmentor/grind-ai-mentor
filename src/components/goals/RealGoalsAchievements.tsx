@@ -409,26 +409,26 @@ const RealGoalsAchievements = () => {
               <Target className="w-5 h-5 mr-2 text-orange-400" />
               Goals & Achievements
             </CardTitle>
-            <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto">
+            <div className="flex items-center gap-1">
               <Button
                 variant={activeTab === 'goals' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleTabChange('goals')}
-                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 transition-all duration-200 ${
+                className={`text-xs px-2 py-1.5 h-7 transition-all duration-200 ${
                   activeTab === 'goals' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'
                 }`}
               >
-                Goals ({goals.length})
+                Goals
               </Button>
               <Button
                 variant={activeTab === 'achievements' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleTabChange('achievements')}
-                className={`mobile-tab-button flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 transition-all duration-200 ${
+                className={`text-xs px-2 py-1.5 h-7 transition-all duration-200 ${
                   activeTab === 'achievements' ? 'bg-orange-500 hover:bg-orange-600' : 'text-gray-400'
                 }`}
               >
-                Achievements ({achievements.length})
+                Trophies
               </Button>
             </div>
           </div>

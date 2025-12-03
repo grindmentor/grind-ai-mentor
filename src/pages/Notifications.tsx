@@ -250,19 +250,25 @@ const Notifications = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className={`grid w-full grid-cols-2 bg-gray-900 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              <TabsTrigger value="notifications" className="data-[state=active]:bg-orange-500">
-                <Bell className="w-4 h-4 mr-1" />
-                Notifications
+            <TabsList className="grid w-full grid-cols-2 bg-gray-900 h-11 p-1 rounded-lg">
+              <TabsTrigger 
+                value="notifications" 
+                className="data-[state=active]:bg-orange-500 text-xs sm:text-sm h-9 rounded-md flex items-center justify-center gap-1 overflow-hidden"
+              >
+                <Bell className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">Notifications</span>
                 {unreadCount > 0 && (
-                  <Badge className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0.5">
+                  <Badge className="ml-1 bg-red-500 text-white text-[10px] px-1 py-0 h-4 min-w-4 flex-shrink-0">
                     {unreadCount}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500">
-                <Settings className="w-4 h-4 mr-1" />
-                Settings
+              <TabsTrigger 
+                value="settings" 
+                className="data-[state=active]:bg-orange-500 text-xs sm:text-sm h-9 rounded-md flex items-center justify-center gap-1 overflow-hidden"
+              >
+                <Settings className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">Settings</span>
               </TabsTrigger>
             </TabsList>
 

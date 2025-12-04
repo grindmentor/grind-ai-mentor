@@ -1,5 +1,6 @@
 @import url('./styles/performance-optimizations.css');
 @import url('./styles/instant-loading.css');
+@import url('./styles/premium-native.css');
 
 /* Critical above-the-fold styles inlined for instant rendering */
 @import url('./styles/critical-above-fold.css');

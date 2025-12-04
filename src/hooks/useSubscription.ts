@@ -74,11 +74,24 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
   }
 };
 
+// Test user emails that should always have premium access
+const PREMIUM_TEST_USERS = [
+  'analyzed71@gmail.com'
+];
+
 export const useSubscription = () => {
   const { user } = useAuth();
   
+  // Check if current user is a test user with premium access
+  const isTestPremiumUser = user?.email && PREMIUM_TEST_USERS.includes(user.email.toLowerCase());
+  
   // Initialize from localStorage cache for instant display
   const getInitialState = () => {
+    // Test users always get premium
+    if (isTestPremiumUser) {
+      return { tier: 'premium', end: null, billing: null };
+    }
+    
     if (typeof window !== 'undefined' && user?.id) {
       const cached = localStorage.getItem(`myotopia_sub_${user.id}`);
       if (cached) {
@@ -104,6 +117,15 @@ export const useSubscription = () => {
     if (user && !initRef.current) {
       initRef.current = true;
       
+      // Test users always get premium immediately
+      if (isTestPremiumUser) {
+        setCurrentTier('premium');
+        setSubscriptionEnd(null);
+        setBillingCycle(null);
+        cacheRef.current = { tier: 'premium', end: null, billing: null };
+        return;
+      }
+      
       // Set cached data immediately if available
       const cached = cacheRef.current;
       if (cached) {
@@ -121,10 +143,18 @@ export const useSubscription = () => {
       cacheRef.current = null;
       initRef.current = false;
     }
-  }, [user]);
+  }, [user, isTestPremiumUser]);
 
   const checkSubscription = async () => {
     if (!user) return;
+    
+    // Test users always have premium
+    if (isTestPremiumUser) {
+      setCurrentTier('premium');
+      setSubscriptionEnd(null);
+      setBillingCycle(null);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -181,12 +211,12 @@ export const useSubscription = () => {
     }
   };
 
-  const isSubscribed = currentTier !== 'free';
+  const isSubscribed = currentTier !== 'free' || isTestPremiumUser;
   const currentTierData = SUBSCRIPTION_TIERS[currentTier];
 
   return {
-    currentTier,
-    currentTierData,
+    currentTier: isTestPremiumUser ? 'premium' : currentTier,
+    currentTierData: isTestPremiumUser ? SUBSCRIPTION_TIERS.premium : currentTierData,
     subscriptionEnd,
     billingCycle,
     isSubscribed,

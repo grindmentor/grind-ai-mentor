@@ -6,7 +6,6 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { Star, Bell, Settings, ChevronRight, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -21,8 +20,9 @@ import { motion } from 'framer-motion';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
 import PersonalizedFeed from '@/components/home/PersonalizedFeed';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
-// Memoized header component to prevent re-renders
+// Memoized premium header component
 const DashboardHeader = memo<{
   currentTier: string;
   onNotifications: () => void;
@@ -30,54 +30,46 @@ const DashboardHeader = memo<{
   onModuleLibrary: () => void;
 }>(({ currentTier, onNotifications, onSettings, onModuleLibrary }) => (
   <header 
-    className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50"
+    className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl"
     style={{ paddingTop: 'env(safe-area-inset-top)' }}
   >
-    <div className="px-4 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl font-bold text-foreground">Myotopia</h1>
-        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
+    <div className="px-4 h-14 flex items-center justify-between border-b border-border/40">
+      <div className="flex items-center gap-2.5">
+        <h1 className="text-lg font-bold text-foreground tracking-tight">Myotopia</h1>
+        <span className={cn(
+          "px-2 py-0.5 text-[9px] font-bold rounded tracking-wide",
           currentTier === 'premium' 
-            ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-500 border border-yellow-500/30' 
-            : 'bg-muted text-muted-foreground'
-        }`}>
+            ? 'badge-tier-premium' 
+            : 'badge-tier-free'
+        )}>
           {currentTier.toUpperCase()}
         </span>
       </div>
       
-      <div className="flex items-center gap-1">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={onModuleLibrary}
-                variant="ghost"
-                size="sm"
-                className="p-2 h-10 w-10 rounded-full bg-primary/10 hover:bg-primary/20 text-primary"
-              >
-                <LayoutGrid className="w-5 h-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Module Library</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <div className="flex items-center gap-0.5">
+        <Button
+          onClick={onModuleLibrary}
+          variant="ghost"
+          size="sm"
+          className="h-10 w-10 rounded-full text-primary hover:bg-primary/10"
+        >
+          <LayoutGrid className="w-[18px] h-[18px]" />
+        </Button>
         <Button
           onClick={onNotifications}
           variant="ghost"
           size="sm"
-          className="p-2 h-10 w-10 rounded-full"
+          className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
         >
-          <Bell className="w-5 h-5" />
+          <Bell className="w-[18px] h-[18px]" />
         </Button>
         <Button
           onClick={onSettings}
           variant="ghost"
           size="sm"
-          className="p-2 h-10 w-10 rounded-full"
+          className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
         >
-          <Settings className="w-5 h-5" />
+          <Settings className="w-[18px] h-[18px]" />
         </Button>
       </div>
     </div>
@@ -214,13 +206,12 @@ const Dashboard = () => {
     };
   }, [modules, favorites]);
 
-  // IMPORTANT: All useMemo/useCallback hooks MUST be before any conditional returns
   const firstName = useMemo(() => 
     displayName?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Champion',
     [displayName, user?.user_metadata?.name, user?.email]
   );
 
-  // Stable callbacks for header - must be before conditional returns
+  // Stable callbacks for header
   const handleNotificationsPress = useCallback(() => {
     trigger('light');
     setShowNotifications(true);
@@ -273,8 +264,6 @@ const Dashboard = () => {
     }
   }
 
-  // All callbacks are now defined before conditional returns above
-
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -288,19 +277,20 @@ const Dashboard = () => {
         <PullToRefresh onRefresh={handleRefresh}>
           <div 
             className="px-4 pb-24"
-            style={{ paddingTop: 'calc(72px + env(safe-area-inset-top))' }}
+            style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
           >
             <div className="max-w-2xl mx-auto">
-              {/* Welcome Section */}
+              {/* Welcome Section - Compact */}
               <motion.div 
-                className="py-4"
-                initial={{ opacity: 0, y: 10 }}
+                className="py-5"
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
               >
-                <h2 className="text-2xl font-bold text-foreground mb-1">
+                <h2 className="text-xl font-bold text-foreground tracking-tight">
                   Hey, {firstName} 👋
                 </h2>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-sm mt-0.5">
                   Ready to crush your goals today?
                 </p>
               </motion.div>
@@ -312,25 +302,25 @@ const Dashboard = () => {
               {favoritesLoading ? (
                 <FavoritesSkeleton />
               ) : favoriteModules.length > 0 && (
-                <motion.div 
+                <motion.section 
                   className="mt-6"
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
+                  transition={{ delay: 0.1, duration: 0.25 }}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    <h3 className="caption-premium flex items-center gap-1.5">
+                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
                       Quick Access
                     </h3>
                     <Button
                       onClick={handleEditFavorites}
                       variant="ghost"
                       size="sm"
-                      className="text-muted-foreground text-xs h-7"
+                      className="text-muted-foreground text-xs h-7 px-2 hover:text-foreground"
                     >
                       Edit
-                      <ChevronRight className="w-3 h-3 ml-1" />
+                      <ChevronRight className="w-3 h-3 ml-0.5" />
                     </Button>
                   </div>
                   <Suspense fallback={<ModuleGridSkeleton count={favoriteModules.length} />}>
@@ -342,15 +332,15 @@ const Dashboard = () => {
                       enableReorder={false}
                     />
                   </Suspense>
-                </motion.div>
+                </motion.section>
               )}
 
               {/* Premium CTA for free users */}
               {currentTier === 'free' && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
+                  transition={{ delay: 0.15, duration: 0.25 }}
                   className="mt-6"
                 >
                   <Suspense fallback={<DataSkeleton variant="card" className="h-24" />}>
@@ -360,28 +350,28 @@ const Dashboard = () => {
               )}
 
               {/* Goals */}
-              <motion.div 
-                className="mt-6 space-y-6"
-                initial={{ opacity: 0, y: 10 }}
+              <motion.section 
+                className="mt-6"
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
+                transition={{ delay: 0.2, duration: 0.25 }}
               >
                 <Suspense fallback={<DataSkeleton variant="goals" />}>
                   <RealGoalsAchievements />
                 </Suspense>
-              </motion.div>
+              </motion.section>
 
               {/* Latest Research Section */}
-              <motion.div 
+              <motion.section 
                 className="mt-6"
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.25, duration: 0.25 }}
               >
                 <Suspense fallback={<DataSkeleton variant="card" className="h-64" />}>
                   <LatestResearch />
                 </Suspense>
-              </motion.div>
+              </motion.section>
             </div>
           </div>
         </PullToRefresh>

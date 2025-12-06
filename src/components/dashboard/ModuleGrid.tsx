@@ -74,14 +74,12 @@ const ModuleCard = memo<{
       onMouseEnter={() => onModuleHover?.(module.id)}
       className={cn(
         "w-full p-3 rounded-xl text-left transition-all duration-150",
-        "bg-card/60 border border-border/50",
-        "active:scale-[0.98] active:bg-card/80",
-        "[@media(hover:hover)]:hover:bg-card/80 [@media(hover:hover)]:hover:border-border/80",
-        isPremiumLocked && 'opacity-60',
-        module.isPremium && isSubscribed && 'premium-module-card'
+        "bg-card border border-border/50",
+        "active:scale-[0.98] active:bg-muted/50",
+        "[@media(hover:hover)]:hover:bg-muted/30 [@media(hover:hover)]:hover:border-border/80",
+        isPremiumLocked && 'opacity-60'
       )}
       style={{ 
-        boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
         WebkitTapHighlightColor: 'transparent'
       }}
     >
@@ -148,7 +146,7 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
   const { isSubscribed } = useSubscription();
 
   return (
-    <div className="space-y-2 stagger-children">
+    <div className="space-y-2">
       {modules.map(module => (
         <ModuleCard
           key={module.id}

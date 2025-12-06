@@ -1,4 +1,4 @@
-/* Premium Native App Styles */
+/* Premium Native App Styles - iOS Quality Experience */
 
 /* ============================================
    PREMIUM DESIGN TOKENS
@@ -13,22 +13,30 @@
   /* Premium gold accent */
   --premium-gold: 45 93% 47%;
   --premium-gold-light: 45 93% 60%;
-  --premium-gold-glow: 45 93% 47% / 0.3;
+  --premium-gold-glow: 45 93% 47% / 0.15;
   
   /* Refined shadows */
   --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.3), 0 4px 16px -4px rgba(0, 0, 0, 0.2);
   --shadow-card-hover: 0 4px 12px -2px rgba(0, 0, 0, 0.4), 0 8px 24px -4px rgba(0, 0, 0, 0.3);
   --shadow-premium: 0 0 20px -4px hsl(var(--premium-gold) / 0.2);
+  --shadow-soft: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+  --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   
   /* Native timing functions */
   --ease-native: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-ios: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   
   /* Compact spacing */
   --spacing-card: 14px;
   --spacing-section: 20px;
   --spacing-tight: 8px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
 }
 
 /* ============================================
@@ -92,18 +100,21 @@
 .ios-button {
   position: relative;
   overflow: hidden;
+  transition: all 0.15s var(--ease-ios);
 }
 
-.ios-button::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: hsl(0 0% 100% / 0);
-  transition: background 0.15s ease;
+.ios-button:active {
+  transform: scale(0.96);
+  opacity: 0.85;
 }
 
-.ios-button:active::after {
-  background: hsl(0 0% 100% / 0.1);
+/* Micro-interaction feedback */
+.micro-press {
+  transition: transform 0.08s var(--ease-native);
+}
+
+.micro-press:active {
+  transform: scale(0.98);
 }
 
 /* ============================================
@@ -140,20 +151,36 @@
   }
 }
 
-/* Staggered children animation */
-.stagger-children > * {
-  opacity: 0;
-  animation: fadeInUp 0.3s var(--ease-out-expo) forwards;
+/* iOS-style page transition */
+.ios-slide-in {
+  animation: iosSlideIn 0.3s var(--ease-ios) forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0.02s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.04s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.06s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.08s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.10s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.12s; }
-.stagger-children > *:nth-child(7) { animation-delay: 0.14s; }
-.stagger-children > *:nth-child(8) { animation-delay: 0.16s; }
+@keyframes iosSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ios-slide-out {
+  animation: iosSlideOut 0.25s var(--ease-ios) forwards;
+}
+
+@keyframes iosSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30%);
+  }
+}
 
 /* ============================================
    PREMIUM SKELETON LOADING
@@ -199,11 +226,17 @@
 }
 
 .caption-premium {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 11px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: hsl(var(--muted-foreground));
+}
+
+.label-premium {
+  font-weight: 500;
+  font-size: 13px;
+  color: hsl(var(--foreground));
 }
 
 /* ============================================
@@ -240,6 +273,7 @@
   font-size: 16px;
   padding: 12px 16px;
   transition: all 0.2s ease;
+  color: hsl(var(--foreground));
 }
 
 .input-premium:focus {
@@ -279,6 +313,7 @@
   font-size: 9px;
   font-weight: 700;
   border-radius: 4px;
+  letter-spacing: 0.05em;
 }
 
 .badge-tier-free {
@@ -370,6 +405,11 @@
   margin: 16px 0;
 }
 
+.divider-solid {
+  height: 1px;
+  background: hsl(0 0% 14%);
+}
+
 /* ============================================
    MODULE ICON CONTAINERS
    ============================================ */
@@ -388,6 +428,18 @@
 .module-icon-container svg {
   width: 22px;
   height: 22px;
+}
+
+/* Compact variant */
+.module-icon-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.module-icon-sm svg {
+  width: 20px;
+  height: 20px;
 }
 
 /* ============================================
@@ -419,4 +471,238 @@
   background: hsl(0 0% 30%);
   border-radius: 2px;
   margin: 0 auto 16px;
+}
+
+/* ============================================
+   PREMIUM SECTION HEADERS
+   ============================================ */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ============================================
+   PREMIUM LIST ITEMS
+   ============================================ */
+
+.list-item-premium {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: hsl(var(--card));
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border) / 0.5);
+  transition: all 0.15s var(--ease-native);
+}
+
+.list-item-premium:active {
+  background: hsl(var(--muted) / 0.5);
+  transform: scale(0.98);
+}
+
+/* ============================================
+   TIMER DISPLAY
+   ============================================ */
+
+.timer-display {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.timer-display-xl {
+  font-size: 72px;
+  line-height: 1;
+}
+
+.timer-display-lg {
+  font-size: 48px;
+  line-height: 1;
+}
+
+/* ============================================
+   WORKOUT CARD STYLING
+   ============================================ */
+
+.workout-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.workout-card-header {
+  padding: 16px;
+  border-bottom: 1px solid hsl(var(--border) / 0.3);
+}
+
+.workout-card-content {
+  padding: 12px 16px;
+}
+
+.set-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr 40px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.set-row:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   AI RESPONSE STYLING
+   ============================================ */
+
+.ai-response {
+  line-height: 1.65;
+  color: hsl(var(--foreground));
+}
+
+.ai-response p {
+  margin-bottom: 12px;
+}
+
+.ai-response p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-response ul,
+.ai-response ol {
+  margin: 12px 0;
+  padding-left: 20px;
+}
+
+.ai-response li {
+  margin-bottom: 6px;
+}
+
+.ai-response strong {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+/* ============================================
+   STATS GRID
+   ============================================ */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  padding: 16px;
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border) / 0.3);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+
+.header-native {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 0.5px solid hsl(var(--border) / 0.4);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 16px;
+}
+
+/* ============================================
+   ONBOARDING STYLES
+   ============================================ */
+
+.onboarding-step {
+  animation: fadeInUp 0.4s var(--ease-out-expo) forwards;
+}
+
+.onboarding-option {
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid hsl(var(--border));
+  background: hsl(var(--card));
+  transition: all 0.2s var(--ease-native);
+  cursor: pointer;
+}
+
+.onboarding-option:hover {
+  border-color: hsl(var(--border) / 0.8);
+  background: hsl(var(--muted) / 0.3);
+}
+
+.onboarding-option.selected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+.onboarding-option:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.progress-bar-native {
+  height: 4px;
+  background: hsl(var(--muted));
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)));
+  border-radius: 2px;
+  transition: width 0.3s var(--ease-native);
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface MobileHeaderProps {
   title: string;
@@ -8,6 +9,8 @@ interface MobileHeaderProps {
   showNotifications?: boolean;
   onNotificationsClick?: () => void;
   rightElement?: React.ReactNode;
+  variant?: 'default' | 'transparent' | 'blur';
+  className?: string;
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -15,15 +18,26 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   onBack,
   showNotifications = false,
   onNotificationsClick,
-  rightElement
+  rightElement,
+  variant = 'default',
+  className
 }) => {
-  // Calculate header height for scroll padding
-  const headerHeight = 56; // 14 * 4 = 56px (h-14)
+  const headerHeight = 56;
+  
+  const variantStyles = {
+    default: 'bg-background/95 backdrop-blur-xl border-b border-border/40',
+    transparent: 'bg-transparent',
+    blur: 'bg-background/80 backdrop-blur-2xl saturate-150'
+  };
   
   return (
     <>
       <header 
-        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50"
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50",
+          variantStyles[variant],
+          className
+        )}
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="h-14 px-2 flex items-center justify-between">
@@ -34,7 +48,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 onClick={onBack}
                 variant="ghost"
                 size="sm"
-                className="h-10 w-10 p-0 rounded-full text-foreground hover:bg-accent"
+                className="h-10 w-10 p-0 rounded-full text-foreground hover:bg-muted/50 active:scale-95 transition-all"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -42,7 +56,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           </div>
           
           {/* Center - Title */}
-          <h1 className="flex-1 text-center font-semibold text-foreground truncate text-base">
+          <h1 className="flex-1 text-center font-semibold text-foreground truncate text-[15px] tracking-tight">
             {title}
           </h1>
           
@@ -54,7 +68,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 onClick={onNotificationsClick}
                 variant="ghost"
                 size="sm"
-                className="h-10 w-10 p-0 rounded-full text-muted-foreground hover:bg-accent"
+                className="h-10 w-10 p-0 rounded-full text-muted-foreground hover:bg-muted/50 active:scale-95 transition-all"
               >
                 <Bell className="w-5 h-5" />
               </Button>

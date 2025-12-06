@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Timer, Play, Pause, RotateCcw, BarChart3 } from 'lucide-react';
+import { Timer, Play, Pause, RotateCcw, SkipForward, Plus, Volume2, VolumeX } from 'lucide-react';
 import { MobileHeader } from '@/components/MobileHeader';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface WorkoutTimerProps {
   onBack: () => void;
@@ -12,7 +13,7 @@ interface WorkoutTimerProps {
 
 const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
   const [workDuration, setWorkDuration] = useState(30);
-  const [restDuration, setRestDuration] = useState(15);
+  const [restDuration, setRestDuration] = useState(60);
   const [displayTime, setDisplayTime] = useState(30);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -20,41 +21,34 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
   const [totalSets, setTotalSets] = useState(0);
   const [totalWorkTime, setTotalWorkTime] = useState(0);
   const [totalRestTime, setTotalRestTime] = useState(0);
-  const [sessionDuration, setSessionDuration] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [currentExercise, setCurrentExercise] = useState('');
-  const [startTime, setStartTime] = useState(0);
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setDisplayTime(workDuration);
-  }, [workDuration]);
+    if (!isRunning) {
+      setDisplayTime(currentPhase === 'work' ? workDuration : restDuration);
+    }
+  }, [workDuration, restDuration, currentPhase, isRunning]);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout | null = null;
 
-    if (isRunning) {
-      setStartTime(Date.now() - (isPaused ? (workDuration - displayTime) * 1000 : 0));
-
+    if (isRunning && !isPaused) {
       intervalId = setInterval(() => {
-        const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-        setSessionDuration(elapsedTime);
-
-        const remainingTime = (currentPhase === 'work' ? workDuration : restDuration) - (elapsedTime % (workDuration + restDuration));
-
-        if (remainingTime >= 0) {
-          setDisplayTime(remainingTime);
-        } else {
-          clearInterval(intervalId);
-          switchPhase();
-        }
-      }, 100);
-    } else {
-      clearInterval(intervalId);
+        setDisplayTime(prev => {
+          if (prev <= 1) {
+            switchPhase();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
 
-    return () => clearInterval(intervalId);
-  }, [isRunning, workDuration, restDuration, currentPhase, isPaused, startTime]);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isRunning, isPaused]);
 
   const formatTime = (timeInSeconds: number): string => {
     const minutes = Math.floor(timeInSeconds / 60);
@@ -64,11 +58,11 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
 
   const toggleTimer = () => {
     if (!isRunning) {
-      setStartTime(Date.now() - (isPaused ? (workDuration - displayTime) * 1000 : 0));
       setIsRunning(true);
       setIsPaused(false);
+    } else if (isPaused) {
+      setIsPaused(false);
     } else {
-      setIsRunning(false);
       setIsPaused(true);
     }
   };
@@ -81,35 +75,33 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
     setTotalSets(0);
     setTotalWorkTime(0);
     setTotalRestTime(0);
-    setSessionDuration(0);
   };
 
-  const switchPhase = () => {
+  const switchPhase = useCallback(() => {
     if (currentPhase === 'work') {
       setCurrentPhase('rest');
       setDisplayTime(restDuration);
       setTotalSets(prev => prev + 1);
       setTotalWorkTime(prev => prev + workDuration);
       if (soundEnabled) {
-        new Audio('/sounds/rest-start.mp3').play();
+        try { new Audio('/sounds/rest-start.mp3').play(); } catch {}
       }
     } else {
       setCurrentPhase('work');
       setDisplayTime(workDuration);
       setTotalRestTime(prev => prev + restDuration);
       if (soundEnabled) {
-        new Audio('/sounds/work-start.mp3').play();
+        try { new Audio('/sounds/work-start.mp3').play(); } catch {}
       }
     }
-  };
+  }, [currentPhase, workDuration, restDuration, soundEnabled]);
 
   const skipToRest = () => {
-    if (currentPhase === 'work') {
-      setIsRunning(false);
-      setDisplayTime(restDuration);
-      setCurrentPhase('rest');
+    if (currentPhase === 'work' && isRunning) {
       setTotalWorkTime(prev => prev + (workDuration - displayTime));
-      setIsRunning(true);
+      setCurrentPhase('rest');
+      setDisplayTime(restDuration);
+      setTotalSets(prev => prev + 1);
     }
   };
 
@@ -117,185 +109,201 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
     setDisplayTime(prev => prev + 30);
   };
 
+  const progress = currentPhase === 'work' 
+    ? (workDuration - displayTime) / workDuration * 100
+    : (restDuration - displayTime) / restDuration * 100;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-cyan-950/50 to-cyan-900/30">
+    <div className="min-h-screen bg-background">
       <MobileHeader 
         title="Workout Timer" 
         onBack={onBack}
       />
       
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Main Timer Card */}
-          <Card className="bg-gradient-to-br from-cyan-900/20 to-blue-900/30 backdrop-blur-sm border-cyan-500/30">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/30 to-blue-500/40 rounded-xl flex items-center justify-center border border-cyan-500/30">
-                  <Timer className="w-5 h-5 text-cyan-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-white text-xl">Workout Timer</CardTitle>
-                  <CardDescription className="text-cyan-200/80">
-                    Track your workout and rest periods
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* Timer Display */}
-              <div className="text-center p-8 bg-cyan-900/20 rounded-xl border border-cyan-500/20">
-                <div className="text-6xl font-mono font-bold text-cyan-400 mb-2">
+      <div className="px-4 pb-24" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top) + 16px)' }}>
+        <div className="max-w-md mx-auto space-y-6">
+          
+          {/* Main Timer Display */}
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Circular Progress Background */}
+            <div className="relative aspect-square max-w-[280px] mx-auto">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                {/* Background circle */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="4"
+                />
+                {/* Progress circle */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke={currentPhase === 'work' ? 'hsl(var(--primary))' : 'hsl(142 76% 45%)'}
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={`${progress * 2.83} 283`}
+                  className="transition-all duration-1000 ease-linear"
+                />
+              </svg>
+              
+              {/* Timer Content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentPhase}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={cn(
+                      "text-sm font-semibold uppercase tracking-wider mb-2",
+                      currentPhase === 'work' ? 'text-primary' : 'text-green-400'
+                    )}
+                  >
+                    {currentPhase === 'work' ? '💪 Work' : '😮‍💨 Rest'}
+                  </motion.div>
+                </AnimatePresence>
+                
+                <div className="timer-display timer-display-xl text-foreground">
                   {formatTime(displayTime)}
                 </div>
-                <div className="text-cyan-300 text-lg">
-                  {currentPhase === 'work' ? '💪 Work Phase' : '😮‍💨 Rest Phase'}
-                </div>
+                
                 {currentExercise && (
-                  <div className="text-cyan-200 mt-2">
+                  <div className="text-muted-foreground text-sm mt-2 max-w-[180px] truncate text-center">
                     {currentExercise}
                   </div>
                 )}
               </div>
+            </div>
+          </motion.div>
 
-              {/* Timer Controls */}
-              <div className="flex justify-center space-x-4">
-                <Button
-                  onClick={toggleTimer}
-                  size="lg"
-                  className={`px-8 py-4 text-lg font-semibold ${
-                    isRunning 
-                      ? 'bg-red-600 hover:bg-red-700' 
-                      : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700'
-                  }`}
-                >
-                  {isRunning ? (
-                    <>
-                      <Pause className="w-5 h-5 mr-2" />
-                      Pause
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-5 h-5 mr-2" />
-                      {isPaused ? 'Resume' : 'Start'}
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  onClick={resetTimer}
-                  variant="outline"
-                  size="lg"
-                  className="px-8 py-4 text-lg border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10"
-                >
-                  <RotateCcw className="w-5 h-5 mr-2" />
-                  Reset
-                </Button>
+          {/* Timer Controls */}
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              onClick={resetTimer}
+              variant="outline"
+              size="lg"
+              className="h-14 w-14 rounded-full border-border text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="w-5 h-5" />
+            </Button>
+            
+            <Button
+              onClick={toggleTimer}
+              size="lg"
+              className={cn(
+                "h-20 w-20 rounded-full text-lg font-semibold",
+                isRunning && !isPaused
+                  ? 'bg-destructive hover:bg-destructive/90' 
+                  : 'bg-primary hover:bg-primary/90'
+              )}
+            >
+              {isRunning && !isPaused ? (
+                <Pause className="w-8 h-8" />
+              ) : (
+                <Play className="w-8 h-8 ml-1" />
+              )}
+            </Button>
+            
+            <Button
+              onClick={skipToRest}
+              variant="outline"
+              size="lg"
+              className="h-14 w-14 rounded-full border-border text-muted-foreground hover:text-foreground"
+              disabled={currentPhase === 'rest' || !isRunning}
+            >
+              <SkipForward className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex gap-3">
+            <Button
+              onClick={addExtraTime}
+              variant="outline"
+              className="flex-1 h-12 rounded-xl border-border text-foreground"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              30 sec
+            </Button>
+            <Button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              variant="outline"
+              className={cn(
+                "h-12 w-12 rounded-xl border-border",
+                soundEnabled ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </Button>
+          </div>
+
+          {/* Session Stats */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-value">{totalSets}</div>
+              <div className="stat-label">Sets</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{formatTime(totalWorkTime)}</div>
+              <div className="stat-label">Work Time</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{formatTime(totalRestTime)}</div>
+              <div className="stat-label">Rest Time</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{formatTime(totalWorkTime + totalRestTime)}</div>
+              <div className="stat-label">Total</div>
+            </div>
+          </div>
+
+          {/* Timer Settings */}
+          <div className="bg-card rounded-2xl border border-border/50 p-4 space-y-4">
+            <h3 className="caption-premium">Timer Settings</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <Label className="label-premium mb-2 block">Work Duration (seconds)</Label>
+                <Input
+                  type="number"
+                  value={workDuration}
+                  onChange={(e) => setWorkDuration(parseInt(e.target.value) || 30)}
+                  className="input-premium h-12"
+                  disabled={isRunning}
+                />
+              </div>
+              
+              <div>
+                <Label className="label-premium mb-2 block">Rest Duration (seconds)</Label>
+                <Input
+                  type="number"
+                  value={restDuration}
+                  onChange={(e) => setRestDuration(parseInt(e.target.value) || 60)}
+                  className="input-premium h-12"
+                  disabled={isRunning}
+                />
               </div>
 
-              {/* Quick Actions */}
-              <div className="grid grid-cols-2 gap-4">
-                <Button
-                  onClick={skipToRest}
-                  variant="outline"
-                  className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10"
-                  disabled={currentPhase === 'rest'}
-                >
-                  Skip to Rest
-                </Button>
-                <Button
-                  onClick={addExtraTime}
-                  variant="outline"
-                  className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10"
-                >
-                  +30 seconds
-                </Button>
+              <div>
+                <Label className="label-premium mb-2 block">Current Exercise (optional)</Label>
+                <Input
+                  value={currentExercise}
+                  onChange={(e) => setCurrentExercise(e.target.value)}
+                  placeholder="e.g., Bench Press"
+                  className="input-premium h-12"
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Timer Settings & Stats */}
-          <div className="space-y-6">
-            {/* Timer Settings */}
-            <Card className="bg-gradient-to-br from-cyan-900/20 to-blue-900/30 backdrop-blur-sm border-cyan-500/30">
-              <CardHeader>
-                <CardTitle className="text-cyan-200">Timer Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-cyan-200">Work Duration (seconds)</Label>
-                  <Input
-                    type="number"
-                    value={workDuration}
-                    onChange={(e) => setWorkDuration(parseInt(e.target.value))}
-                    className="bg-cyan-900/30 border-cyan-500/50 text-white"
-                    disabled={isRunning}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-cyan-200">Rest Duration (seconds)</Label>
-                  <Input
-                    type="number"
-                    value={restDuration}
-                    onChange={(e) => setRestDuration(parseInt(e.target.value))}
-                    className="bg-cyan-900/30 border-cyan-500/50 text-white"
-                    disabled={isRunning}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-cyan-200">Current Exercise</Label>
-                  <Input
-                    value={currentExercise}
-                    onChange={(e) => setCurrentExercise(e.target.value)}
-                    placeholder="e.g., Push-ups, Squats"
-                    className="bg-cyan-900/30 border-cyan-500/50 text-white placeholder:text-cyan-300/50"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="sound"
-                    checked={soundEnabled}
-                    onChange={(e) => setSoundEnabled(e.target.checked)}
-                    className="rounded border-cyan-500/50"
-                  />
-                  <Label htmlFor="sound" className="text-cyan-200">Sound notifications</Label>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Session Stats */}
-            <Card className="bg-gradient-to-br from-cyan-900/20 to-blue-900/30 backdrop-blur-sm border-cyan-500/30">
-              <CardHeader>
-                <CardTitle className="text-cyan-200 flex items-center">
-                  <BarChart3 className="w-5 h-5 mr-2" />
-                  Session Stats
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-cyan-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-cyan-400">{totalSets}</div>
-                    <div className="text-sm text-cyan-300">Sets Completed</div>
-                  </div>
-                  <div className="text-center p-3 bg-cyan-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-cyan-400">{formatTime(totalWorkTime)}</div>
-                    <div className="text-sm text-cyan-300">Total Work Time</div>
-                  </div>
-                  <div className="text-center p-3 bg-cyan-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-cyan-400">{formatTime(totalRestTime)}</div>
-                    <div className="text-sm text-cyan-300">Total Rest Time</div>
-                  </div>
-                  <div className="text-center p-3 bg-cyan-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-cyan-400">{formatTime(sessionDuration)}</div>
-                    <div className="text-sm text-cyan-300">Session Duration</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            </div>
           </div>
         </div>
       </div>

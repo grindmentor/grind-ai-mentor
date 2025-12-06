@@ -53,10 +53,10 @@
   transition-duration: 0.1s;
 }
 
-/* Premium module card with gold accent */
+/* Premium module card with subtle gold border accent - no overlay */
 .premium-module-card {
   position: relative;
-  overflow: hidden;
+  border-color: hsl(var(--premium-gold) / 0.2) !important;
 }
 
 .premium-module-card::before {
@@ -65,25 +65,13 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 1px;
   background: linear-gradient(90deg, 
-    hsl(var(--premium-gold)), 
-    hsl(var(--premium-gold-light)),
-    hsl(var(--premium-gold))
+    transparent,
+    hsl(var(--premium-gold) / 0.4),
+    transparent
   );
-  opacity: 0.6;
-}
-
-.premium-module-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 40px;
-  background: radial-gradient(ellipse, hsl(var(--premium-gold-glow)), transparent);
-  pointer-events: none;
+  border-radius: 12px 12px 0 0;
 }
 
 /* ============================================

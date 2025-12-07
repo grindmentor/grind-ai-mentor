@@ -2,13 +2,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Moon, ArrowLeft, Download, MessageCircle, Sparkles, Brain, Heart, Zap } from "lucide-react";
+import { Moon, Download, MessageCircle, Sparkles, Brain, Heart, Zap } from "lucide-react";
 import { useState } from "react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import UsageIndicator from "@/components/UsageIndicator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import FormattedAIResponse from "@/components/FormattedAIResponse";
+import { MobileHeader } from "@/components/MobileHeader";
 
 interface RecoveryCoachProps {
   onBack: () => void;
@@ -220,78 +221,52 @@ This basic plan follows proven recovery science principles and can significantly
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-indigo-900/20 to-blue-700 animate-fade-in">
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                onClick={onBack} 
-                className="text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Dashboard
-              </Button>
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500/20 to-blue-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/20">
-                  <Moon className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent">
-                    Recovery Coach
-                  </h1>
-                  <p className="text-slate-400 text-lg">Science-backed recovery and sleep optimization</p>
-                </div>
-              </div>
-            </div>
-            
-            <UsageIndicator featureKey="coach_gpt_queries" featureName="Recovery Sessions" compact />
-          </div>
-
+    <div className="min-h-screen bg-background">
+      <MobileHeader title="Recovery Coach" onBack={onBack} />
+      
+      <div className="p-4 max-w-4xl mx-auto pb-24">
+        <div className="space-y-6">
           {/* Status Badge */}
           <div className="flex justify-center">
-            <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 px-4 py-2 text-sm">
+            <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 text-sm">
               <Sparkles className="w-4 h-4 mr-2" />
-              All recovery protocols based on sleep science and recovery research
+              Science-backed recovery optimization
             </Badge>
           </div>
 
-          {/* Main Content */}
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-6">
             {/* Input Panel */}
-            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+            <Card className="bg-card border-border">
               <CardHeader className="pb-4">
-                <CardTitle className="text-white text-xl flex items-center">
-                  <MessageCircle className="w-5 h-5 mr-3 text-indigo-400" />
+                <CardTitle className="text-foreground text-lg flex items-center">
+                  <MessageCircle className="w-5 h-5 mr-3 text-primary" />
                   Get Recovery Guidance
                 </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Describe your recovery challenges, sleep patterns, and stress levels
+                <CardDescription className="text-muted-foreground">
+                  Describe your recovery challenges and sleep patterns
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-5">
                 {/* Example Prompts */}
-                <div className="space-y-4">
-                  <h4 className="text-white font-medium flex items-center">
-                    <Brain className="w-4 h-4 mr-2 text-indigo-400" />
+                <div className="space-y-3">
+                  <h4 className="text-foreground font-medium flex items-center text-sm">
+                    <Brain className="w-4 h-4 mr-2 text-primary" />
                     Recovery Focus Areas
                   </h4>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-2">
                     {examplePrompts.map((example, index) => (
                       <button
                         key={index}
                         onClick={() => handleExampleClick(example.prompt)}
-                        className="text-left p-4 bg-slate-800/30 hover:bg-slate-700/50 rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-200 group backdrop-blur-sm"
+                        className="text-left p-3 bg-muted/30 hover:bg-muted/50 rounded-xl border border-border/50 hover:border-primary/30 transition-all native-press"
                       >
-                        <div className="flex items-center space-x-3 mb-2">
-                          <div className="text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                        <div className="flex items-center space-x-3 mb-1">
+                          <div className="text-primary">
                             {example.icon}
                           </div>
-                          <span className="text-white font-medium">{example.title}</span>
+                          <span className="text-foreground font-medium text-sm">{example.title}</span>
                         </div>
-                        <p className="text-slate-400 text-sm">"{example.prompt}"</p>
+                        <p className="text-muted-foreground text-xs pl-7">"{example.prompt}"</p>
                       </button>
                     ))}
                   </div>
@@ -300,20 +275,20 @@ This basic plan follows proven recovery science principles and can significantly
                 {/* Input Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Textarea
-                    placeholder="Tell me about your sleep quality, recovery challenges, stress levels, training intensity..."
+                    placeholder="Tell me about your sleep quality, recovery challenges, stress levels..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    className="bg-slate-800/30 border-slate-600/50 text-white min-h-32 focus:border-indigo-500 transition-colors resize-none backdrop-blur-sm"
+                    className="bg-muted/30 border-border text-foreground min-h-28 focus:border-primary transition-colors resize-none"
                     disabled={!canUseFeature('coach_gpt_queries')}
                   />
                   <Button 
                     type="submit" 
                     disabled={!input.trim() || isLoading || !canUseFeature('coach_gpt_queries')}
-                    className="w-full bg-gradient-to-r from-indigo-500/80 to-blue-600/80 hover:from-indigo-600/80 hover:to-blue-700/80 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/25 backdrop-blur-sm"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 rounded-xl native-press"
                   >
                     {isLoading ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                         Analyzing Recovery...
                       </>
                     ) : (
@@ -328,22 +303,22 @@ This basic plan follows proven recovery science principles and can significantly
             </Card>
 
             {/* Results Panel */}
-            <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+            <Card className="bg-card border-border">
               <CardHeader className="pb-4">
-                <CardTitle className="text-white text-xl flex items-center">
-                  <Sparkles className="w-5 h-5 mr-3 text-indigo-400" />
+                <CardTitle className="text-foreground text-lg flex items-center">
+                  <Sparkles className="w-5 h-5 mr-3 text-primary" />
                   Your Recovery Protocol
                 </CardTitle>
-                <CardDescription className="text-slate-400">
-                  Evidence-based recovery strategies with research citations
+                <CardDescription className="text-muted-foreground">
+                  Evidence-based recovery strategies
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {response ? (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Action Button */}
                     <div className="flex items-center justify-between">
-                      <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
+                      <Badge className="bg-primary/10 text-primary border-primary/20">
                         <Moon className="w-3 h-3 mr-1" />
                         Recovery Plan Ready
                       </Badge>
@@ -351,29 +326,26 @@ This basic plan follows proven recovery science principles and can significantly
                         onClick={handleDownload}
                         variant="outline" 
                         size="sm"
-                        className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-indigo-500/50 backdrop-blur-sm"
+                        className="border-border text-muted-foreground hover:bg-muted"
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        Download Plan
+                        Download
                       </Button>
                     </div>
 
                     {/* Response Content */}
-                    <div className="bg-slate-800/20 rounded-xl border border-slate-700/50 p-6 max-h-96 overflow-y-auto backdrop-blur-sm">
+                    <div className="bg-muted/30 rounded-xl border border-border/50 p-4 max-h-96 overflow-y-auto scroll-native">
                       <FormattedAIResponse content={response} />
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-16">
-                    <div className="w-16 h-16 bg-slate-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Moon className="w-8 h-8 text-slate-500" />
+                  <div className="empty-state-premium py-12">
+                    <div className="empty-state-icon">
+                      <Moon className="w-7 h-7 text-muted-foreground" />
                     </div>
-                    <h3 className="text-white font-medium mb-2">Ready to Optimize Recovery</h3>
-                    <p className="text-slate-400 text-sm mb-2">
-                      Enter your recovery concerns to get your personalized plan
-                    </p>
-                    <p className="text-slate-500 text-xs">
-                      Science-backed sleep and recovery optimization
+                    <h3 className="text-foreground font-medium mb-2">Ready to Optimize Recovery</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Enter your recovery concerns to get a personalized plan
                     </p>
                   </div>
                 )}

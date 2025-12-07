@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Zap, ArrowLeft, Plus, Check, X, Calendar, Sparkles } from 'lucide-react';
+import { Zap, Plus, Check, Calendar, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
-import UsageIndicator from '@/components/UsageIndicator';
 import { RateLimitBadge } from '@/components/ui/rate-limit-badge';
+import { MobileHeader } from '@/components/MobileHeader';
 
 interface HabitTrackerProps {
   onBack: () => void;
@@ -194,83 +193,58 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-yellow-900/20 to-yellow-700 text-white animate-fade-in">
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                onClick={onBack} 
-                className="text-yellow-200 hover:text-white hover:bg-yellow-800/50"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Dashboard
-              </Button>
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-yellow-500/20 to-yellow-700/40 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl shadow-yellow-500/25 border border-yellow-400/20">
-                  <Zap className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-300 to-yellow-100 bg-clip-text text-transparent">
-                    Habit Tracker
-                  </h1>
-                  <p className="text-yellow-200 text-lg">Build lasting fitness and wellness habits</p>
-                </div>
-              </div>
-            </div>
-            
-            <RateLimitBadge featureKey="habit_checks" featureName="Habit checks" showProgress />
-          </div>
-
+    <div className="min-h-screen bg-background">
+      <MobileHeader title="Habit Tracker" onBack={onBack} />
+      
+      <div className="p-4 max-w-4xl mx-auto pb-24">
+        <div className="space-y-6">
           {/* Status Badge */}
           <div className="flex justify-center">
-            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 px-4 py-2 text-sm">
+            <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 text-sm">
               <Sparkles className="w-4 h-4 mr-2" />
-              Track daily habits and build consistency
+              Build lasting habits
             </Badge>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-4">
             {/* Add New Habit */}
-            <Card className="bg-yellow-900/20 border-yellow-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white text-xl flex items-center">
-                  <Plus className="w-5 h-5 mr-3 text-yellow-400" />
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground text-base flex items-center">
+                  <Plus className="w-5 h-5 mr-2 text-primary" />
                   Add New Habit
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-yellow-200 text-sm font-medium">Habit Name</label>
+              <CardContent className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-muted-foreground text-xs font-medium">Habit Name</label>
                   <Input
                     placeholder="e.g., Drink 8 glasses of water"
                     value={newHabit.name}
                     onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
-                    className="bg-yellow-800/20 border-yellow-600/50 text-white focus:border-yellow-500 backdrop-blur-sm"
+                    className="bg-muted/30 border-border text-foreground focus:border-primary h-10"
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="text-yellow-200 text-sm font-medium">Description (Optional)</label>
+                <div className="space-y-1.5">
+                  <label className="text-muted-foreground text-xs font-medium">Description (Optional)</label>
                   <Input
                     placeholder="Why is this habit important?"
                     value={newHabit.description}
                     onChange={(e) => setNewHabit(prev => ({ ...prev, description: e.target.value }))}
-                    className="bg-yellow-800/20 border-yellow-600/50 text-white focus:border-yellow-500 backdrop-blur-sm"
+                    className="bg-muted/30 border-border text-foreground focus:border-primary h-10"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-yellow-200 text-sm font-medium">Category</label>
+                <div className="space-y-1.5">
+                  <label className="text-muted-foreground text-xs font-medium">Category</label>
                   <select
                     value={newHabit.category}
                     onChange={(e) => setNewHabit(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full p-3 bg-yellow-800/20 border border-yellow-600/50 text-white rounded-lg focus:border-yellow-500 backdrop-blur-sm"
+                    className="w-full p-2.5 bg-muted/30 border border-border text-foreground rounded-lg focus:border-primary text-sm"
                   >
                     {categories.map(category => (
-                      <option key={category} value={category} className="bg-yellow-800">
+                      <option key={category} value={category} className="bg-card">
                         {category.charAt(0).toUpperCase() + category.slice(1)}
                       </option>
                     ))}
@@ -280,7 +254,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
                 <Button
                   onClick={addHabit}
                   disabled={!newHabit.name.trim() || !canUseFeature('habit_checks')}
-                  className="w-full bg-gradient-to-r from-yellow-500/80 to-yellow-700/80 hover:from-yellow-600/80 hover:to-yellow-800/80 backdrop-blur-sm"
+                  className="w-full bg-primary hover:bg-primary/90 native-press"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Habit
@@ -289,43 +263,43 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
             </Card>
 
             {/* Daily Overview */}
-            <Card className="bg-yellow-900/20 border-yellow-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white text-xl flex items-center">
-                  <Calendar className="w-5 h-5 mr-3 text-yellow-400" />
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground text-base flex items-center">
+                  <Calendar className="w-5 h-5 mr-2 text-primary" />
                   Today's Progress
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-yellow-200 text-sm font-medium">Date</label>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-muted-foreground text-xs font-medium">Date</label>
                   <Input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="bg-yellow-800/20 border-yellow-600/50 text-white focus:border-yellow-500 backdrop-blur-sm"
+                    className="bg-muted/30 border-border text-foreground focus:border-primary h-10"
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">{streakData.completedToday}</div>
-                    <div className="text-yellow-200 text-sm">Completed</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 bg-muted/30 rounded-xl">
+                    <div className="text-2xl font-bold text-foreground">{streakData.completedToday}</div>
+                    <div className="text-muted-foreground text-xs">Completed</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">{streakData.totalHabits}</div>
-                    <div className="text-yellow-200 text-sm">Total</div>
+                  <div className="text-center p-3 bg-muted/30 rounded-xl">
+                    <div className="text-2xl font-bold text-foreground">{streakData.totalHabits}</div>
+                    <div className="text-muted-foreground text-xs">Total</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-white">{streakData.completionRate}%</div>
-                    <div className="text-yellow-200 text-sm">Rate</div>
+                  <div className="text-center p-3 bg-muted/30 rounded-xl">
+                    <div className="text-2xl font-bold text-primary">{streakData.completionRate}%</div>
+                    <div className="text-muted-foreground text-xs">Rate</div>
                   </div>
                 </div>
 
                 {streakData.totalHabits > 0 && (
-                  <div className="w-full bg-yellow-800/20 rounded-full h-3 backdrop-blur-sm">
+                  <div className="w-full bg-muted/50 rounded-full h-2">
                     <div 
-                      className="bg-gradient-to-r from-yellow-500 to-yellow-600 h-3 rounded-full transition-all duration-300"
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{ width: `${streakData.completionRate}%` }}
                     />
                   </div>
@@ -334,83 +308,74 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
             </Card>
 
             {/* Quick Stats */}
-            <Card className="bg-yellow-900/20 border-yellow-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white text-xl flex items-center">
-                  <Zap className="w-5 h-5 mr-3 text-yellow-400" />
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground text-base flex items-center">
+                  <Zap className="w-5 h-5 mr-2 text-primary" />
                   Quick Stats
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  {categories.map(category => {
-                    const categoryHabits = habits.filter(h => h.category === category);
-                    const categoryCompleted = habitLogs.filter(log => 
-                      log.completed && habits.find(h => h.id === log.habit_id)?.category === category
-                    ).length;
-                    
-                    if (categoryHabits.length === 0) return null;
-                    
-                    return (
-                      <div key={category} className="flex items-center justify-between p-3 bg-yellow-800/20 backdrop-blur-sm rounded-lg border border-yellow-600/30">
-                        <div>
-                          <Badge className={getCategoryColor(category)}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
-                          </Badge>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-white font-bold">{categoryCompleted}/{categoryHabits.length}</div>
-                          <div className="text-yellow-200 text-xs">completed</div>
-                        </div>
+              <CardContent className="space-y-2">
+                {categories.map(category => {
+                  const categoryHabits = habits.filter(h => h.category === category);
+                  const categoryCompleted = habitLogs.filter(log => 
+                    log.completed && habits.find(h => h.id === log.habit_id)?.category === category
+                  ).length;
+                  
+                  if (categoryHabits.length === 0) return null;
+                  
+                  return (
+                    <div key={category} className="flex items-center justify-between p-2.5 bg-muted/30 rounded-lg border border-border/50">
+                      <Badge className={getCategoryColor(category)}>
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </Badge>
+                      <div className="text-right">
+                        <div className="text-foreground font-semibold text-sm">{categoryCompleted}/{categoryHabits.length}</div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
           </div>
 
           {/* Habits List */}
           {habits.length > 0 && (
-            <Card className="bg-yellow-900/20 border-yellow-600/30 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white text-xl flex items-center">
-                  <Check className="w-5 h-5 mr-3 text-yellow-400" />
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground text-base flex items-center">
+                  <Check className="w-5 h-5 mr-2 text-primary" />
                   Your Habits - {new Date(selectedDate).toLocaleDateString()}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {habits.map((habit) => {
                     const isCompleted = getHabitStatus(habit.id);
                     
                     return (
                       <div 
                         key={habit.id} 
-                        className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
-                          isCompleted 
-                            ? 'bg-green-600/20 border-green-500/30 backdrop-blur-sm' 
-                            : 'bg-yellow-800/20 border-yellow-600/30 hover:bg-yellow-700/30 backdrop-blur-sm'
-                        }`}
                         onClick={() => toggleHabit(habit.id)}
+                        className={`p-3.5 rounded-xl border cursor-pointer transition-all native-press ${
+                          isCompleted 
+                            ? 'bg-green-500/10 border-green-500/30' 
+                            : 'bg-muted/30 border-border hover:border-primary/30'
+                        }`}
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="text-white font-medium mb-1">{habit.name}</h3>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-foreground font-medium text-sm truncate">{habit.name}</h3>
                             {habit.description && (
-                              <p className="text-yellow-200 text-sm">{habit.description}</p>
+                              <p className="text-muted-foreground text-xs truncate">{habit.description}</p>
                             )}
                           </div>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ml-2 ${
                             isCompleted 
-                              ? 'bg-green-500 border-green-400' 
-                              : 'border-yellow-600 hover:border-yellow-500'
+                              ? 'bg-green-500 text-white' 
+                              : 'border-2 border-muted-foreground/30'
                           }`}>
-                            {isCompleted ? (
-                              <Check className="w-4 h-4 text-white" />
-                            ) : (
-                              <div className="w-2 h-2 bg-yellow-600 rounded-full" />
-                            )}
+                            {isCompleted && <Check className="w-4 h-4" />}
                           </div>
                         </div>
                         
@@ -418,8 +383,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
                           <Badge className={getCategoryColor(habit.category)}>
                             {habit.category}
                           </Badge>
-                          <span className={`text-sm ${isCompleted ? 'text-green-300' : 'text-yellow-300'}`}>
-                            {isCompleted ? 'Completed' : 'Pending'}
+                          <span className={`text-xs ${isCompleted ? 'text-green-400' : 'text-muted-foreground'}`}>
+                            {isCompleted ? 'Done' : 'Pending'}
                           </span>
                         </div>
                       </div>
@@ -431,12 +396,14 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
           )}
 
           {habits.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-yellow-800/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-yellow-500" />
+            <div className="empty-state-premium">
+              <div className="empty-state-icon">
+                <Zap className="w-7 h-7" />
               </div>
-              <h3 className="text-white font-semibold text-lg mb-2">No habits yet</h3>
-              <p className="text-yellow-200">Add your first habit to start building consistency</p>
+              <h3 className="text-foreground font-semibold mb-2">No habits yet</h3>
+              <p className="text-muted-foreground text-sm">
+                Create your first habit to start tracking
+              </p>
             </div>
           )}
         </div>

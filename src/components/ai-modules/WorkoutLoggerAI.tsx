@@ -372,116 +372,108 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   };
 
   const ExerciseCard = ({ exercise, exerciseIndex }: { exercise: WorkoutExercise; exerciseIndex: number }) => (
-    <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-      <CardContent className="p-4">
+    <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden">
+      <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-white">{exercise.name}</h3>
+          <h3 className="font-semibold text-foreground text-base">{exercise.name}</h3>
           <Button
             onClick={() => removeExercise(exerciseIndex)}
-            size="sm"
+            size="icon"
             variant="ghost"
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-lg"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {exercise.sets.map((set, setIndex) => (
-            <div key={setIndex} className="grid grid-cols-5 gap-3 items-center p-3 bg-gray-800/30 rounded-lg">
-              <div className="text-center">
-                <Label className="text-xs text-gray-400 block mb-1">Set</Label>
-                <span className="text-white font-medium">{setIndex + 1}</span>
-              </div>
-              
-              <div>
-                <Label className="text-xs text-gray-400 block mb-1">Weight ({units.weightUnit})</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder={units.weightUnit === 'kg' ? 'kg' : 'lbs'}
-                  value={set.weight || ''}
-                  onChange={(e) => updateSet(exerciseIndex, setIndex, 'weight', e.target.value)}
-                  className="bg-gray-700/50 border-gray-600 text-white h-8 text-sm"
-                  onBlur={(e) => e.target.blur()} // Force blur on iOS
-                />
-              </div>
-              
-              <div>
-                <Label className="text-xs text-gray-400 block mb-1">Reps</Label>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="12"
-                  value={set.reps || ''}
-                  onChange={(e) => updateSet(exerciseIndex, setIndex, 'reps', e.target.value)}
-                  className="bg-gray-700/50 border-gray-600 text-white h-8 text-sm"
-                  onBlur={(e) => e.target.blur()} // Force blur on iOS
-                />
-              </div>
-              
-              <div className="relative">
-                <Label className="text-xs text-gray-400 block mb-1">
-                  RIR
-                  <span className="ml-1 text-orange-400 cursor-help" title="Reps in Reserve - How many more reps you could have done">ⓘ</span>
-                </Label>
-                <Select
-                  value={getRIRFromRPE(set.rpe).toString()}
-                  onValueChange={(value) => {
-                    // Convert RIR back to RPE for storage
-                    const rir = parseInt(value);
-                    const rpe = rir === 0 ? 10 : rir === 1 ? 9 : rir === 2 ? 8 : rir === 3 ? 7 : rir === 4 ? 6 : 5;
-                    updateSet(exerciseIndex, setIndex, 'rpe', rpe);
-                  }}
-                >
-                  <SelectTrigger className="bg-gray-700/50 border-gray-600 text-white h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="0" className="text-red-400">0 - Failure</SelectItem>
-                    <SelectItem value="1" className="text-orange-400">1 - Very Hard</SelectItem>
-                    <SelectItem value="2" className="text-yellow-400">2 - Hard</SelectItem>
-                    <SelectItem value="3" className="text-blue-400">3 - Moderate</SelectItem>
-                    <SelectItem value="4" className="text-green-400">4 - Easy</SelectItem>
-                    <SelectItem value="5" className="text-gray-400">5+ - Very Easy</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div key={setIndex} className="bg-muted/30 rounded-xl p-3 border border-border/30">
+              <div className="grid grid-cols-5 gap-2 items-center">
+                <div className="text-center">
+                  <span className="text-xs text-muted-foreground block mb-1">Set</span>
+                  <span className="text-foreground font-medium text-sm">{setIndex + 1}</span>
+                </div>
                 
-                {set.rpe && (
-                  <Badge className={`${getRIRColor(getRIRFromRPE(set.rpe))} text-xs mt-1 px-2 py-1`}>
-                    {getRIRLabel(getRIRFromRPE(set.rpe))}
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="text-center">
-                <Button
-                  onClick={() => removeSet(exerciseIndex, setIndex)}
-                  size="sm"
-                  variant="ghost"
-                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1 h-8 w-8"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <div>
+                  <Label className="text-xs text-muted-foreground block mb-1">{units.weightUnit}</Label>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={set.weight || ''}
+                    onChange={(e) => updateSet(exerciseIndex, setIndex, 'weight', e.target.value)}
+                    className="bg-background/50 border-border/50 text-foreground h-9 text-sm rounded-lg"
+                    onBlur={(e) => e.target.blur()}
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-muted-foreground block mb-1">Reps</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={set.reps || ''}
+                    onChange={(e) => updateSet(exerciseIndex, setIndex, 'reps', e.target.value)}
+                    className="bg-background/50 border-border/50 text-foreground h-9 text-sm rounded-lg"
+                    onBlur={(e) => e.target.blur()}
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-muted-foreground block mb-1">RIR</Label>
+                  <Select
+                    value={getRIRFromRPE(set.rpe).toString()}
+                    onValueChange={(value) => {
+                      const rir = parseInt(value);
+                      const rpe = rir === 0 ? 10 : rir === 1 ? 9 : rir === 2 ? 8 : rir === 3 ? 7 : rir === 4 ? 6 : 5;
+                      updateSet(exerciseIndex, setIndex, 'rpe', rpe);
+                    }}
+                  >
+                    <SelectTrigger className="bg-background/50 border-border/50 text-foreground h-9 text-xs rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border rounded-xl z-50">
+                      <SelectItem value="0" className="text-destructive">0</SelectItem>
+                      <SelectItem value="1" className="text-orange-400">1</SelectItem>
+                      <SelectItem value="2" className="text-yellow-400">2</SelectItem>
+                      <SelectItem value="3" className="text-primary">3</SelectItem>
+                      <SelectItem value="4" className="text-green-400">4</SelectItem>
+                      <SelectItem value="5" className="text-muted-foreground">5+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => removeSet(exerciseIndex, setIndex)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
           
           <Button
             onClick={() => {
-              const newSet = { weight: '', reps: '', rpe: 7 }; // Default to RPE 7 (RIR 3)
+              const newSet = { weight: '', reps: '', rpe: 7 };
               updateSet(exerciseIndex, exercise.sets.length, 'weight', '');
             }}
             variant="outline"
             size="sm"
-            className="w-full border-gray-600 text-gray-300 hover:bg-gray-700/50"
+            className="w-full border-dashed border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-xl h-10 mt-2"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Set
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 
   const loadWorkoutFromSession = (session: any) => {
@@ -662,55 +654,58 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   };
 
   const PreviousSessionCard = ({ session }: { session: any }) => (
-    <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="font-semibold text-white">{session.workout_name}</h3>
-            <p className="text-sm text-gray-400">
+    <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-foreground text-base truncate">{session.workout_name}</h3>
+            <p className="text-sm text-muted-foreground">
               {new Date(session.session_date).toLocaleDateString()} • {session.duration_minutes} min
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-orange-500/20 text-orange-400">
+          <div className="flex items-center gap-2 shrink-0 ml-3">
+            <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
               {session.exercises_data?.length || 0} exercises
             </Badge>
-            <Button
-              onClick={() => loadWorkoutFromSession(session)}
-              size="sm"
-              className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border-blue-500/40"
-            >
-              Reuse
-            </Button>
-            <Button
-              onClick={() => saveAsTemplate(session)}
-              size="sm"
-              variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
-            >
-              Save Template
-            </Button>
-            <Button
-              onClick={() => deleteWorkoutSession(session.id)}
-              size="sm"
-              variant="ghost"
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Button
+            onClick={() => loadWorkoutFromSession(session)}
+            size="sm"
+            className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 h-8 text-xs rounded-lg"
+          >
+            Reuse
+          </Button>
+          <Button
+            onClick={() => saveAsTemplate(session)}
+            size="sm"
+            variant="outline"
+            className="border-border/50 text-muted-foreground hover:bg-muted/30 h-8 text-xs rounded-lg"
+          >
+            Save Template
+          </Button>
+          <Button
+            onClick={() => deleteWorkoutSession(session.id)}
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-lg ml-auto"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
         </div>
 
         {session.exercises_data?.map((exercise: any, idx: number) => (
           <div key={idx} className="mb-3 last:mb-0">
-            <h4 className="text-sm font-medium text-white mb-2">{exercise.name}</h4>
+            <h4 className="text-sm font-medium text-foreground mb-2">{exercise.name}</h4>
             <div className="space-y-1">
               {exercise.sets?.map((set: any, setIdx: number) => (
-                <div key={setIdx} className="flex items-center justify-between text-xs text-gray-400 bg-gray-800/30 p-2 rounded">
+                <div key={setIdx} className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 p-2 rounded-lg border border-border/30">
                   <span>Set {setIdx + 1}</span>
                   <span>{set.weight}{units.weightUnit} × {set.reps} reps</span>
                   {set.rpe && (
-                    <Badge className={`${getRIRColor(getRIRFromRPE(set.rpe))} text-xs px-2 py-1`}>
+                    <Badge className={`${getRIRColor(getRIRFromRPE(set.rpe))} text-xs px-2 py-0.5 rounded-md`}>
                       {getRIRFromRPE(set.rpe)} RIR
                     </Badge>
                   )}
@@ -721,62 +716,68 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         ))}
 
         {session.notes && (
-          <div className="mt-3 pt-3 border-t border-gray-700/50">
-            <p className="text-xs text-gray-400">{session.notes}</p>
+          <div className="mt-3 pt-3 border-t border-border/30">
+            <p className="text-xs text-muted-foreground">{session.notes}</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 
   return (
-    <div className="p-4 space-y-6 bg-gradient-to-br from-black via-orange-900/5 to-orange-800/10 min-h-screen">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+      <header 
+        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="h-14 px-4 flex items-center gap-3">
           <Button
             onClick={onBack}
             variant="ghost"
-            size="sm"
-            className="text-white hover:bg-gray-800/50 hover:text-orange-400 transition-colors"
+            size="icon"
+            className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="w-12 h-12 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg flex items-center justify-center border border-orange-500/30">
-            <Dumbbell className="w-6 h-6 text-orange-400" />
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shrink-0">
+            <Dumbbell className="w-5 h-5 text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Workout Logger</h1>
-            <p className="text-gray-400 text-sm">Track sets, reps, and RIR</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-semibold text-foreground">Workout Logger</h1>
+            <p className="text-xs text-muted-foreground">Track sets, reps, and RIR</p>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-gray-900/40 backdrop-blur-sm mobile-tabs">
-          <TabsTrigger 
-            value="current" 
-            className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 mobile-tab-item"
-          >
-            Current Workout
-          </TabsTrigger>
-          <TabsTrigger 
-            value="history" 
-            className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 mobile-tab-item"
-          >
-            Previous Sessions
-          </TabsTrigger>
-        </TabsList>
+      {/* Content */}
+      <div 
+        className="p-4 space-y-5 pb-safe-bottom"
+        style={{ paddingTop: 'calc(56px + env(safe-area-inset-top) + 16px)' }}
+      >
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/30 border border-border/50 rounded-xl h-11 p-1">
+            <TabsTrigger 
+              value="current" 
+              className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg text-sm font-medium"
+            >
+              Current Workout
+            </TabsTrigger>
+            <TabsTrigger 
+              value="history" 
+              className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg text-sm font-medium"
+            >
+              History
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="current" className="space-y-6 mt-0">
-          {/* Workout Header */}
-          <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-            <CardContent className="p-4 space-y-4">
+          <TabsContent value="current" className="space-y-4 mt-0">
+            {/* Workout Header */}
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="workout-name" className="text-white mb-2 block">
+                  <Label htmlFor="workout-name" className="text-foreground mb-2 block text-sm font-medium">
                     Workout Name
                   </Label>
                   <Input
@@ -784,10 +785,10 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                     placeholder="e.g., Push Day, Leg Day"
                     value={workoutName}
                     onChange={(e) => setWorkoutName(e.target.value)}
-                    className="bg-gray-800/50 border-gray-600 text-white"
+                    className="bg-background/50 border-border/50 text-foreground rounded-xl h-11"
                   />
                 </div>
-                <div className="flex items-center space-x-2 text-gray-400">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   <span className="text-sm">
                     Duration: {Math.floor((Date.now() - startTime) / (1000 * 60))} min
@@ -796,7 +797,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               </div>
               
               <div>
-                <Label htmlFor="workout-notes" className="text-white mb-2 block">
+                <Label htmlFor="workout-notes" className="text-foreground mb-2 block text-sm font-medium">
                   Notes (Optional)
                 </Label>
                 <Textarea
@@ -804,41 +805,39 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   placeholder="How did the workout feel? Any observations?"
                   value={workoutNotes}
                   onChange={(e) => setWorkoutNotes(e.target.value)}
-                  className="bg-gray-800/50 border-gray-600 text-white"
+                  className="bg-background/50 border-border/50 text-foreground rounded-xl resize-none"
                   rows={2}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Template Selector */}
-          <WorkoutTemplateSelector 
-            onSelectTemplate={loadTemplateWorkout}
-            className="mb-4"
-          />
+            {/* Template Selector */}
+            <WorkoutTemplateSelector 
+              onSelectTemplate={loadTemplateWorkout}
+              className="mb-2"
+            />
 
-          {/* Add Exercise - Fixed z-index and positioning */}
-          <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50 relative z-10">
-            <CardContent className="p-4">
+            {/* Add Exercise */}
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-4 relative z-10">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold">Add Exercise</h3>
-                <div className="flex space-x-2">
+                <h3 className="text-foreground font-semibold text-sm">Add Exercise</h3>
+                <div className="flex gap-2">
                   <Button
                     onClick={() => setShowExerciseSearch(!showExerciseSearch)}
                     size="sm"
-                    className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border-orange-500/40"
+                    className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 h-8 text-xs rounded-lg"
                   >
-                    <Search className="w-4 h-4 mr-2" />
+                    <Search className="w-3.5 h-3.5 mr-1.5" />
                     Browse
                   </Button>
                   <Button
                     onClick={() => setShowCustomExerciseForm(!showCustomExerciseForm)}
                     size="sm"
                     variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
+                    className="border-border/50 text-muted-foreground hover:bg-muted/30 h-8 text-xs rounded-lg"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Custom
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    Custom
                   </Button>
                 </div>
               </div>
@@ -847,160 +846,154 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                 <div className="mb-4 relative z-20">
                   <ExerciseSearch
                     onExerciseSelect={addExercise}
-                    placeholder="Search exercises or muscle groups (e.g., 'chest', 'biceps', 'bench press')"
+                    placeholder="Search exercises or muscle groups..."
                     className="mb-3"
                   />
                 </div>
               )}
 
               {showCustomExerciseForm && (
-                <div className="space-y-3 p-4 bg-gray-800/30 rounded-lg">
-                  <h4 className="text-white font-medium">Create Custom Exercise</h4>
+                <div className="space-y-3 p-4 bg-muted/20 rounded-xl border border-border/30">
+                  <h4 className="text-foreground font-medium text-sm">Create Custom Exercise</h4>
                   
                   <div>
-                    <Label className="text-gray-300 text-sm">Exercise Name *</Label>
+                    <Label className="text-muted-foreground text-xs mb-1.5 block">Exercise Name *</Label>
                     <Input
                       placeholder="e.g., Cable Lateral Raises"
                       value={customExerciseName}
                       onChange={(e) => setCustomExerciseName(e.target.value)}
-                      className="bg-gray-700/50 border-gray-600 text-white"
+                      className="bg-background/50 border-border/50 text-foreground h-10 rounded-lg"
                     />
                   </div>
                   
                   <div>
-                    <Label className="text-gray-300 text-sm">Primary Muscles (optional)</Label>
+                    <Label className="text-muted-foreground text-xs mb-1.5 block">Primary Muscles (optional)</Label>
                     <Input
-                      placeholder="e.g., Shoulders, Chest (comma separated)"
+                      placeholder="e.g., Shoulders, Chest"
                       value={customExerciseMuscles}
                       onChange={(e) => setCustomExerciseMuscles(e.target.value)}
-                      className="bg-gray-700/50 border-gray-600 text-white"
+                      className="bg-background/50 border-border/50 text-foreground h-10 rounded-lg"
                     />
                   </div>
                   
                   <div>
-                    <Label className="text-gray-300 text-sm">Equipment (optional)</Label>
+                    <Label className="text-muted-foreground text-xs mb-1.5 block">Equipment (optional)</Label>
                     <Input
-                      placeholder="e.g., Cable Machine, Dumbbells"
+                      placeholder="e.g., Cable Machine"
                       value={customExerciseEquipment}
                       onChange={(e) => setCustomExerciseEquipment(e.target.value)}
-                      className="bg-gray-700/50 border-gray-600 text-white"
+                      className="bg-background/50 border-border/50 text-foreground h-10 rounded-lg"
                     />
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2 pt-1">
                     <Button
                       onClick={createCustomExercise}
                       size="sm"
-                      className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/40"
+                      className="bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 h-9 rounded-lg"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-3.5 h-3.5 mr-1.5" />
                       Create & Add
                     </Button>
                     <Button
                       onClick={() => setShowCustomExerciseForm(false)}
                       size="sm"
                       variant="ghost"
-                      className="text-gray-400 hover:text-white"
+                      className="text-muted-foreground hover:text-foreground h-9"
                     >
                       Cancel
                     </Button>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Exercises - Lower z-index so dropdown appears above */}
-          <div className="relative z-0">
-            {exercises.length === 0 ? (
-              <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-                <CardContent className="p-8 text-center">
-                  <Target className="w-12 h-12 mx-auto text-gray-500 mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No Exercises Added</h3>
-                  <p className="text-gray-400">Add your first exercise to start logging your workout.</p>
-                </CardContent>
-              </Card>
+            {/* Exercises */}
+            <div className="relative z-0">
+              {exercises.length === 0 ? (
+                <div className="bg-card/30 border border-border/30 rounded-2xl p-8 text-center">
+                  <Target className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <h3 className="text-base font-medium text-foreground mb-2">No Exercises Added</h3>
+                  <p className="text-muted-foreground text-sm">Add your first exercise to start logging your workout.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {exercises.map((exercise, index) => (
+                    <ExerciseCard key={index} exercise={exercise} exerciseIndex={index} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Log Workout Button */}
+            {exercises.length > 0 && (
+              <Button
+                onClick={logWorkout}
+                disabled={isLogging || !workoutName.trim()}
+                className="w-full h-12 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/20"
+              >
+                {isLogging ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    <span className="ml-2">Logging...</span>
+                  </>
+                ) : (
+                  <>
+                    <Dumbbell className="w-5 h-5 mr-2" />
+                    Log Workout
+                  </>
+                )}
+              </Button>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-4 mt-0">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Previous Sessions</h2>
+              <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
+                {previousSessions.length} logged
+              </Badge>
+            </div>
+
+            {isLoadingSessions ? (
+              <div className="p-8 flex justify-center">
+                <LoadingSpinner size="lg" text="Loading workout history..." />
+              </div>
+            ) : previousSessions.length === 0 ? (
+              <div className="bg-card/30 border border-border/30 rounded-2xl p-8 text-center">
+                <Calendar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                <h3 className="text-base font-medium text-foreground mb-2">No Previous Sessions</h3>
+                <p className="text-muted-foreground text-sm">Start logging workouts to see your training history here.</p>
+              </div>
             ) : (
-              <div className="space-y-4">
-                {exercises.map((exercise, index) => (
-                  <ExerciseCard key={index} exercise={exercise} exerciseIndex={index} />
+              <div className="space-y-3">
+                {previousSessions.map((session) => (
+                  <PreviousSessionCard key={session.id} session={session} />
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Log Workout Button */}
-          {exercises.length > 0 && (
-            <Button
-              onClick={logWorkout}
-              disabled={isLogging || !workoutName.trim()}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold py-3"
-            >
-              {isLogging ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  <span className="ml-2">Logging Workout...</span>
-                </>
-              ) : (
-                <>
-                  <Dumbbell className="w-5 h-5 mr-2" />
-                  Log Workout
-                </>
-              )}
-            </Button>
-          )}
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-6 mt-0">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Previous Sessions</h2>
-            <Badge className="bg-blue-500/20 text-blue-400">
-              {previousSessions.length} sessions logged
-            </Badge>
-          </div>
-
-          {isLoadingSessions ? (
-            <div className="p-8">
-              <LoadingSpinner size="lg" text="Loading workout history..." />
-            </div>
-          ) : previousSessions.length === 0 ? (
-            <Card className="bg-gray-900/40 backdrop-blur-sm border-gray-700/50">
-              <CardContent className="p-8 text-center">
-                <Calendar className="w-12 h-12 mx-auto text-gray-500 mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No Previous Sessions</h3>
-                <p className="text-gray-400">Start logging workouts to see your training history here.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {previousSessions.map((session) => (
-                <PreviousSessionCard key={session.id} session={session} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
+          </TabsContent>
       </Tabs>
 
       {/* RIR Info Card */}
-      <Card className="bg-blue-500/10 border-blue-500/30">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <Info className="w-5 h-5 text-blue-400 mt-1" />
-            <div>
-              <h3 className="text-blue-300 font-semibold mb-2">About RIR (Reps in Reserve)</h3>
-              <p className="text-blue-200/80 text-sm mb-3">
-                RIR indicates how many more reps you could have performed. It's a more intuitive way to track effort than RPE.
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="text-red-300">• 0 RIR: Absolute failure</div>
-                <div className="text-orange-300">• 1 RIR: Very close to failure</div>
-                <div className="text-yellow-300">• 2 RIR: Hard, 2 reps left</div>
-                <div className="text-blue-300">• 3+ RIR: Moderate effort</div>
-              </div>
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          <div>
+            <h3 className="text-foreground font-semibold mb-2 text-sm">About RIR (Reps in Reserve)</h3>
+            <p className="text-muted-foreground text-xs mb-3 leading-relaxed">
+              RIR indicates how many more reps you could have performed. It's a more intuitive way to track effort than RPE.
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="text-destructive">• 0 RIR: Absolute failure</div>
+              <div className="text-orange-400">• 1 RIR: Very close to failure</div>
+              <div className="text-yellow-400">• 2 RIR: Hard, 2 reps left</div>
+              <div className="text-primary">• 3+ RIR: Moderate effort</div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      </div>
     </div>
   );
 };

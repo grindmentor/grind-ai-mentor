@@ -25,6 +25,7 @@ const BlueprintAI = lazy(() => import("./components/ai-modules/BlueprintAI"));
 const ProgressHub = lazy(() => import("./components/ai-modules/ProgressHub"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
+const ExerciseDatabase = lazy(() => import("./pages/ExerciseDatabase"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -205,6 +206,14 @@ function App() {
                             element={
                               <ProtectedRoute>
                                 <ExerciseDetail />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/exercise-database"
+                            element={
+                              <ProtectedRoute>
+                                <ExerciseDatabase />
                               </ProtectedRoute>
                             }
                           />

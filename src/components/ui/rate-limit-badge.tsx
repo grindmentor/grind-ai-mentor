@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, Zap, Crown, TrendingUp } from "lucide-react";
+import { AlertTriangle, Zap, Crown, Infinity } from "lucide-react";
 import { useUsageTracking, type UsageLimits } from "@/hooks/useUsageTracking";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface RateLimitBadgeProps {
   featureKey: keyof UsageLimits;
@@ -21,36 +22,30 @@ export const RateLimitBadge = ({
   className 
 }: RateLimitBadgeProps) => {
   const { currentUsage, userTier, getRemainingUsage, getUsagePercentage, limits, loading } = useUsageTracking();
+  const { isSubscribed, currentTier } = useSubscription();
   const navigate = useNavigate();
-  const [showWarning, setShowWarning] = useState(false);
 
   const remaining = getRemainingUsage(featureKey);
   const percentage = getUsagePercentage(featureKey);
-  const isUnlimited = remaining === -1;
+  const isUnlimited = remaining === -1 || currentTier === 'premium';
   const isAtLimit = remaining === 0 && !isUnlimited;
   const isLow = !isUnlimited && percentage >= 70 && !isAtLimit;
   const isCritical = !isUnlimited && percentage >= 90 && !isAtLimit;
 
-  useEffect(() => {
-    if (isCritical || isAtLimit) {
-      setShowWarning(true);
-    }
-  }, [isCritical, isAtLimit]);
-
   if (loading || !currentUsage) return null;
 
-  // Don't show badge if unlimited and not showing progress
-  if (isUnlimited && !showProgress) {
+  // Premium users always see unlimited badge
+  if (isUnlimited || currentTier === 'premium') {
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge variant="outline" className={cn(
-              "bg-primary/10 text-primary border-primary/30 gap-1",
+              "bg-primary/10 text-primary border-primary/30 gap-1.5",
               className
             )}>
-              <Crown className="w-3 h-3" />
-              <span className="text-xs">Unlimited</span>
+              <Infinity className="w-3 h-3" />
+              <span className="text-xs font-medium">Unlimited</span>
             </Badge>
           </TooltipTrigger>
           <TooltipContent>
@@ -71,7 +66,7 @@ export const RateLimitBadge = ({
   const getIcon = () => {
     if (isAtLimit) return <AlertTriangle className="w-3 h-3" />;
     if (isCritical) return <AlertTriangle className="w-3 h-3" />;
-    if (isLow) return <TrendingUp className="w-3 h-3" />;
+    if (isLow) return <Zap className="w-3 h-3" />;
     return <Zap className="w-3 h-3" />;
   };
 
@@ -89,7 +84,7 @@ export const RateLimitBadge = ({
             <Badge 
               variant="outline" 
               className={cn(
-                "gap-1 transition-colors",
+                "gap-1.5 transition-colors",
                 getStatusColor()
               )}
             >
@@ -148,29 +143,31 @@ export const RateLimitWarning = ({
   onDismiss?: () => void;
 }) => {
   const { getRemainingUsage, getUsagePercentage, limits, currentUsage } = useUsageTracking();
+  const { currentTier } = useSubscription();
   const navigate = useNavigate();
 
   const remaining = getRemainingUsage(featureKey);
   const percentage = getUsagePercentage(featureKey);
-  const isUnlimited = remaining === -1;
+  const isUnlimited = remaining === -1 || currentTier === 'premium';
   const isAtLimit = remaining === 0 && !isUnlimited;
   const isCritical = !isUnlimited && percentage >= 90;
 
-  if (isUnlimited || (!isAtLimit && !isCritical)) return null;
+  // Premium users never see warnings
+  if (isUnlimited || currentTier === 'premium' || (!isAtLimit && !isCritical)) return null;
 
   const limit = limits?.[featureKey] || 0;
   const used = currentUsage[featureKey] || 0;
 
   return (
     <div className={cn(
-      "p-3 rounded-lg border flex items-center justify-between gap-3",
+      "p-3 rounded-xl border flex items-center justify-between gap-3",
       isAtLimit 
         ? "bg-destructive/10 border-destructive/30" 
         : "bg-orange-500/10 border-orange-500/30"
     )}>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <AlertTriangle className={cn(
-          "w-4 h-4",
+          "w-4 h-4 flex-shrink-0",
           isAtLimit ? "text-destructive" : "text-orange-400"
         )} />
         <div>
@@ -191,7 +188,7 @@ export const RateLimitWarning = ({
         <button
           onClick={() => navigate('/pricing')}
           className={cn(
-            "px-3 py-1 rounded text-xs font-medium transition-colors",
+            "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[32px]",
             isAtLimit 
               ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
               : "bg-orange-500 text-white hover:bg-orange-600"
@@ -202,7 +199,7 @@ export const RateLimitWarning = ({
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="text-muted-foreground hover:text-foreground text-xs"
+            className="text-muted-foreground hover:text-foreground text-xs min-h-[32px] px-2"
           >
             Dismiss
           </button>

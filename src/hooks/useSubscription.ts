@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,8 +74,10 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
 };
 
 // Test user emails that should always have premium access
+// Note: This is client-side for development only - actual premium access is verified server-side
 const PREMIUM_TEST_USERS = [
-  'analyzed71@gmail.com'
+  'analyzed71@gmail.com',
+  'lucas@myotopia.com'
 ];
 
 export const useSubscription = () => {
@@ -212,15 +213,20 @@ export const useSubscription = () => {
   };
 
   const isSubscribed = currentTier !== 'free' || isTestPremiumUser;
-  const currentTierData = SUBSCRIPTION_TIERS[currentTier];
+  const currentTierData = SUBSCRIPTION_TIERS[currentTier] || SUBSCRIPTION_TIERS.free;
+  const effectiveTier = isTestPremiumUser ? 'premium' : currentTier;
+  const effectiveTierData = isTestPremiumUser ? SUBSCRIPTION_TIERS.premium : currentTierData;
 
   return {
-    currentTier: isTestPremiumUser ? 'premium' : currentTier,
-    currentTierData: isTestPremiumUser ? SUBSCRIPTION_TIERS.premium : currentTierData,
+    currentTier: effectiveTier,
+    currentTierData: effectiveTierData,
     subscriptionEnd,
     billingCycle,
     isSubscribed,
     isLoading,
-    refreshSubscription: checkSubscription
+    refreshSubscription: checkSubscription,
+    isUnlimited: (featureKey: keyof SubscriptionTier['limits']) => {
+      return effectiveTierData.limits[featureKey] === -1;
+    }
   };
 };

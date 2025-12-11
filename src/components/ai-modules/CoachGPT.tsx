@@ -1,22 +1,22 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Send, Bot, User, Sparkles } from 'lucide-react';
+import { MessageSquare, Send, Bot, User, Sparkles, Infinity } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
-import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
 import { MobileHeader } from '@/components/MobileHeader';
 import FormattedAIResponse from '@/components/FormattedAIResponse';
 import { aiService } from '@/services/aiService';
-import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
+import { handleError } from '@/utils/standardErrorHandler';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
-import { handleAsync } from '@/utils/errorHandler';
 import { useAppSync } from '@/utils/appSynchronization';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;
@@ -34,7 +34,8 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const { toast } = useToast();
   const { optimizedSettings } = usePerformanceContext();
   const { state, actions } = useGlobalState();
-  const { getCache, setCache, invalidateCache } = useAppSync();
+  const { getCache, setCache } = useAppSync();
+  const { currentTier, isSubscribed } = useSubscription();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +60,6 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
   const loadConversationHistory = async () => {
     if (!user) return;
 
-    // Check cache first
     const cacheKey = `coach-conversations-${user.id}`;
     const cached = getCache(cacheKey);
     if (cached) {
@@ -111,7 +111,6 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
     setIsLoading(true);
 
     try {
-      // Save user message (optimized insert)
       const { error: saveError } = await supabase
         .from('coach_conversations')
         .insert({
@@ -125,7 +124,6 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         console.error('Error saving user message:', saveError);
       }
 
-      // Check for restricted requests and redirect appropriately
       const lowerInput = input.toLowerCase();
       if (lowerInput.includes('meal plan') || lowerInput.includes('diet plan') || lowerInput.includes('nutrition plan') || lowerInput.includes('calories') || lowerInput.includes('tdee')) {
         const redirectMessage: Message = {
@@ -173,7 +171,6 @@ export const CoachGPT: React.FC<CoachGPTProps> = ({ onBack }) => {
         return;
       }
 
-      // Get AI response with unified service
       const prompt = `You are CoachGPT, an expert fitness coach for Myotopia. You provide structured, motivational, and science-backed fitness coaching advice.
 
 IMPORTANT FORMATTING RULES:
@@ -214,7 +211,6 @@ Format your response with clear headings and structure. Be encouraging and cite 
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Save assistant message (optimized insert)
       await supabase
         .from('coach_conversations')
         .insert({
@@ -231,7 +227,6 @@ Format your response with clear headings and structure. Be encouraging and cite 
         actionLabel: 'Retry'
       });
       
-      // Remove the user message if there was an error
       setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
     } finally {
       setIsLoading(false);
@@ -244,78 +239,79 @@ Format your response with clear headings and structure. Be encouraging and cite 
 
   return (
     <UsageLimitGuard featureKey="coach_gpt_queries" featureName="CoachGPT">
-      <div className="min-h-screen bg-gradient-to-br from-background via-cyan-900/10 to-cyan-800/20">
+      <div className="min-h-screen bg-background">
         <MobileHeader 
-          title="CoachGPT" 
+          title="CoachGPT"
           onBack={onBack}
+          rightElement={
+            isSubscribed ? (
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 gap-1">
+                <Infinity className="w-3 h-3" />
+                <span className="text-xs">Unlimited</span>
+              </Badge>
+            ) : null
+          }
         />
         
-        <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-          <Card className="bg-gradient-to-br from-cyan-900/20 to-blue-900/30 backdrop-blur-sm border-cyan-500/30 h-[calc(100vh-120px)] flex flex-col">
-            <CardHeader className="flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-cyan-500/30 to-blue-500/40 rounded-xl flex items-center justify-center border border-cyan-500/30">
-                    <MessageSquare className="w-5 h-5 text-cyan-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-foreground text-xl">CoachGPT</CardTitle>
-                    <CardDescription className="text-cyan-200/80">
-                      Your AI fitness coach with research-based guidance
-                    </CardDescription>
-                  </div>
+        <div className="px-4 pb-24 max-w-2xl mx-auto">
+          <Card className="bg-card border-border flex flex-col" style={{ height: 'calc(100vh - 180px)' }}>
+            <CardHeader className="flex-shrink-0 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-primary" />
                 </div>
-                <RateLimitBadge 
-                  featureKey="coach_gpt_queries" 
-                  featureName="CoachGPT queries"
-                  showProgress
-                />
+                <div>
+                  <CardTitle className="text-foreground text-lg">CoachGPT</CardTitle>
+                  <CardDescription className="text-muted-foreground text-xs">
+                    AI fitness coach with research-based guidance
+                  </CardDescription>
+                </div>
               </div>
-              <RateLimitWarning 
-                featureKey="coach_gpt_queries" 
-                featureName="CoachGPT" 
-              />
             </CardHeader>
             
-            <CardContent className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+            <CardContent className="flex-1 flex flex-col overflow-hidden pt-0">
+              <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
                 {messages.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="w-20 h-20 bg-gradient-to-r from-cyan-500/20 to-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/30">
-                      <Sparkles className="w-10 h-10 text-cyan-400" />
+                  <div className="text-center py-6">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Sparkles className="w-8 h-8 text-primary" />
                     </div>
-                    <h3 className="text-2xl font-bold text-cyan-200 mb-2">Hello! I'm CoachGPT 💪</h3>
-                    <p className="text-cyan-300/70 mb-6 max-w-md mx-auto leading-relaxed">
-                      I'm your personal fitness coach, here to help with training advice, form tips, motivation, and answering your fitness questions!
+                    <h3 className="text-lg font-bold text-foreground mb-2">Hello! I'm CoachGPT 💪</h3>
+                    <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
+                      I'm your personal fitness coach, here to help with training advice, form tips, and motivation!
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
+                    <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
                       <Button
                         onClick={() => handleQuickPrompt("What's the best way to improve my squat form?")}
                         variant="outline"
-                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
+                        size="sm"
+                        className="text-xs h-auto py-2.5 px-3"
                       >
-                        <span className="text-sm">💪 Ask about form</span>
+                        💪 Ask about form
                       </Button>
                       <Button
                         onClick={() => handleQuickPrompt("How do I stay motivated to work out consistently?")}
                         variant="outline"
-                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
+                        size="sm"
+                        className="text-xs h-auto py-2.5 px-3"
                       >
-                        <span className="text-sm">🎯 Get motivation tips</span>
+                        🎯 Get motivation tips
                       </Button>
                       <Button
                         onClick={() => handleQuickPrompt("What are the key principles for muscle growth?")}
                         variant="outline"
-                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
+                        size="sm"
+                        className="text-xs h-auto py-2.5 px-3"
                       >
-                        <span className="text-sm">📚 Training principles</span>
+                        📚 Training principles
                       </Button>
                       <Button
                         onClick={() => handleQuickPrompt("How can I prevent workout injuries?")}
                         variant="outline"
-                        className="text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 bg-cyan-900/20 h-auto py-3 px-4"
+                        size="sm"
+                        className="text-xs h-auto py-2.5 px-3"
                       >
-                        <span className="text-sm">🛡️ Injury prevention</span>
+                        🛡️ Injury prevention
                       </Button>
                     </div>
                   </div>
@@ -323,31 +319,32 @@ Format your response with clear headings and structure. Be encouraging and cite 
                   messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={cn("flex", message.role === 'user' ? 'justify-end' : 'justify-start')}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl p-4 ${
+                        className={cn(
+                          "max-w-[85%] rounded-2xl p-3",
                           message.role === 'user'
-                            ? 'bg-gradient-to-r from-cyan-600/80 to-blue-600/80 text-white ml-4 shadow-lg border border-cyan-500/30'
-                            : 'bg-gradient-to-r from-cyan-900/40 to-blue-900/40 text-cyan-100 mr-4 border border-cyan-500/30 shadow-lg backdrop-blur-sm'
-                        }`}
+                            ? 'bg-primary text-primary-foreground ml-4'
+                            : 'bg-muted text-foreground mr-4'
+                        )}
                       >
-                        <div className="flex items-start space-x-3">
+                        <div className="flex items-start gap-2">
                           {message.role === 'assistant' && (
-                            <div className="w-6 h-6 bg-cyan-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                              <Bot className="w-4 h-4 text-cyan-400" />
+                            <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Bot className="w-4 h-4 text-primary" />
                             </div>
                           )}
                           {message.role === 'user' && (
-                            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                              <User className="w-4 h-4 text-white" />
+                            <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <User className="w-4 h-4" />
                             </div>
                           )}
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             {message.role === 'assistant' ? (
                               <FormattedAIResponse content={message.content} moduleType="coach" />
                             ) : (
-                              <div className="text-sm leading-relaxed">{message.content}</div>
+                              <div className="text-sm">{message.content}</div>
                             )}
                           </div>
                         </div>
@@ -357,15 +354,15 @@ Format your response with clear headings and structure. Be encouraging and cite 
                 )}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="max-w-[85%] bg-gradient-to-r from-cyan-900/40 to-blue-900/40 text-cyan-100 mr-4 border border-cyan-500/30 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-6 h-6 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                          <Bot className="w-4 h-4 text-cyan-400" />
+                    <div className="max-w-[85%] bg-muted text-foreground mr-4 rounded-2xl p-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center">
+                          <Bot className="w-4 h-4 text-primary" />
                         </div>
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                         </div>
                       </div>
                     </div>
@@ -374,18 +371,20 @@ Format your response with clear headings and structure. Be encouraging and cite 
                 <div ref={messagesEndRef} />
               </div>
 
-              <form onSubmit={handleSubmit} className="flex space-x-2">
+              <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask me about fitness, training, or motivation..."
-                  className="flex-1 bg-cyan-900/30 border-cyan-500/50 text-white placeholder:text-cyan-300/50 rounded-xl"
+                  className="flex-1 bg-muted border-border rounded-xl h-11"
                   disabled={isLoading}
+                  aria-label="Message input"
                 />
                 <Button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:opacity-50 rounded-xl px-6"
+                  className="rounded-xl px-4 h-11 min-w-[44px]"
+                  aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

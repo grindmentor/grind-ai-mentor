@@ -8,11 +8,12 @@ interface AppLayoutProps {
   showBottomNav?: boolean;
 }
 
-// Routes that should show the bottom navigation - expanded list
+// Routes that should show the bottom navigation - comprehensive list
 const BOTTOM_NAV_ROUTES = new Set([
   '/app',
   '/modules',
   '/progress-hub-dashboard',
+  '/progress-hub',
   '/profile',
   '/settings',
   '/usage',
@@ -21,8 +22,19 @@ const BOTTOM_NAV_ROUTES = new Set([
   '/smart-food-log',
   '/blueprint-ai',
   '/exercise-database',
-  '/progress-hub',
-  '/research'
+  '/research',
+  '/physique-ai',
+  '/coach-gpt',
+  '/meal-plan-ai',
+  '/recovery-coach',
+  '/smart-training',
+  '/habit-tracker',
+  '/tdee-calculator',
+  '/cut-calc-pro',
+  '/workout-timer',
+  '/create-goal',
+  '/add-food',
+  '/create-exercise'
 ]);
 
 // Routes that should NEVER show bottom nav (special purpose flows)
@@ -31,7 +43,8 @@ const NO_NAV_ROUTES = new Set([
   '/signin',
   '/signup',
   '/pricing',
-  '/auth/callback'
+  '/auth/callback',
+  '/'
 ]);
 
 const AppLayoutComponent: React.FC<AppLayoutProps> = ({ 
@@ -50,12 +63,30 @@ const AppLayoutComponent: React.FC<AppLayoutProps> = ({
     // Show on explicit routes
     if (BOTTOM_NAV_ROUTES.has(path)) return true;
     
-    // Show on route prefixes
-    const showOnPrefixes = ['/app', '/modules', '/progress', '/profile', '/settings'];
+    // Show on route prefixes for all app sections
+    const showOnPrefixes = [
+      '/app', 
+      '/modules', 
+      '/progress', 
+      '/profile', 
+      '/settings',
+      '/workout',
+      '/exercise',
+      '/smart',
+      '/blueprint',
+      '/physique',
+      '/coach',
+      '/meal',
+      '/recovery',
+      '/habit',
+      '/tdee',
+      '/cut',
+      '/research'
+    ];
     if (showOnPrefixes.some(prefix => path.startsWith(prefix))) return true;
     
     // Default to showing on authenticated routes (not landing page or auth)
-    if (path === '/' || path.startsWith('/signin') || path.startsWith('/signup')) {
+    if (path.startsWith('/signin') || path.startsWith('/signup')) {
       return false;
     }
     
@@ -66,7 +97,7 @@ const AppLayoutComponent: React.FC<AppLayoutProps> = ({
     <div className="min-h-screen flex flex-col bg-background overflow-hidden">
       <main className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden",
-        shouldShowBottomNav && "pb-20"
+        shouldShowBottomNav && "pb-[calc(80px+env(safe-area-inset-bottom))]"
       )}>
         {children}
       </main>

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Brain, 
   Dumbbell, 
@@ -11,54 +12,52 @@ import {
   Camera, 
   Target,
   Activity,
-  Calendar,
-  Settings,
-  Crown,
+  Moon,
+  Heart,
   Zap,
-  Star
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
-import { AppShell } from '@/components/ui/app-shell';
-import { HexagonProgress } from '@/components/ui/hexagon-progress';
+import { MobileHeader } from '@/components/MobileHeader';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
-import { RealisticMuscleMap } from '@/components/ui/realistic-muscle-map';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface DashboardStats {
   totalWorkouts: number;
   totalFoodEntries: number;
   weeklyProgress: number;
   currentStreak: number;
-  lastPhysiqueAnalysis?: {
-    overall_score: number;
-    muscle_development: number;
-    symmetry: number;
-    definition: number;
-    analysis_date: string;
-  };
-  recentMuscleGroups?: Array<{
-    name: string;
-    score: number;
-    progress_trend: 'up' | 'down' | 'stable';
-  }>;
+  avgSleepHours: number;
+  avgStressLevel: number;
+  avgRecoveryScore: number;
 }
 
-const PhysiqueAIDashboard = () => {
+const ProgressHubDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { currentTier, isSubscribed } = useSubscription();
+  const { isSubscribed } = useSubscription();
   const [stats, setStats] = useState<DashboardStats>({
     totalWorkouts: 0,
     totalFoodEntries: 0,
     weeklyProgress: 0,
-    currentStreak: 0
+    currentStreak: 0,
+    avgSleepHours: 0,
+    avgStressLevel: 0,
+    avgRecoveryScore: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    loadDashboardStats();
+    if (user) {
+      loadDashboardStats();
+    } else {
+      setIsLoading(false);
+    }
   }, [user]);
 
   const loadDashboardStats = async () => {
@@ -71,56 +70,80 @@ const PhysiqueAIDashboard = () => {
       setIsLoading(true);
 
       // Run queries in parallel for better performance
-      const [workoutsResult, foodResult, analysisResult] = await Promise.all([
+      const [workoutsResult, foodResult, recoveryResult] = await Promise.all([
         supabase
           .from('workout_sessions')
-          .select('id')
+          .select('id, session_date')
           .eq('user_id', user.id),
         supabase
           .from('food_log_entries')
           .select('id')
           .eq('user_id', user.id),
         supabase
-          .from('progress_photos')
-          .select('analysis_result, taken_date')
+          .from('recovery_data')
+          .select('sleep_hours, stress_level, energy_level')
           .eq('user_id', user.id)
-          .eq('photo_type', 'physique_analysis')
-          .order('taken_date', { ascending: false })
-          .limit(1)
+          .order('recorded_date', { ascending: false })
+          .limit(7)
       ]);
 
-      const workouts = workoutsResult.data;
-      const foodEntries = foodResult.data;
-      const latestAnalysis = analysisResult.data;
+      const workouts = workoutsResult.data || [];
+      const foodEntries = foodResult.data || [];
+      const recoveryData = recoveryResult.data || [];
 
-      let analysisData = null;
-      let muscleGroups = null;
-      
-      if (latestAnalysis && latestAnalysis[0]?.analysis_result) {
-        try {
-          analysisData = JSON.parse(latestAnalysis[0].analysis_result);
-          muscleGroups = analysisData.muscle_groups;
-        } catch (e) {
-          console.error('Error parsing analysis data:', e);
+      // Calculate streak based on consecutive days with workouts
+      const calculateStreak = () => {
+        if (workouts.length === 0) return 0;
+        
+        const sortedDates = workouts
+          .map(w => new Date(w.session_date).toDateString())
+          .filter((date, index, arr) => arr.indexOf(date) === index)
+          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+        
+        let streak = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        for (let i = 0; i < sortedDates.length; i++) {
+          const workoutDate = new Date(sortedDates[i]);
+          const expectedDate = new Date(today);
+          expectedDate.setDate(expectedDate.getDate() - i);
+          
+          if (workoutDate.toDateString() === expectedDate.toDateString()) {
+            streak++;
+          } else {
+            break;
+          }
         }
-      }
+        
+        return streak;
+      };
 
-      // Calculate weekly progress (simplified)
-      const weeklyProgress = Math.min(((workouts?.length || 0) * 10), 100);
+      // Calculate averages from recovery data
+      const avgSleep = recoveryData.length > 0 
+        ? recoveryData.reduce((sum, r) => sum + (r.sleep_hours || 0), 0) / recoveryData.length 
+        : 0;
+      const avgStress = recoveryData.length > 0 
+        ? recoveryData.reduce((sum, r) => sum + (r.stress_level || 0), 0) / recoveryData.length 
+        : 0;
+      const avgEnergy = recoveryData.length > 0 
+        ? recoveryData.reduce((sum, r) => sum + (r.energy_level || 0), 0) / recoveryData.length 
+        : 0;
+
+      // Calculate weekly progress
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const weeklyWorkouts = workouts.filter(w => new Date(w.session_date) > weekAgo).length;
+      const weeklyProgress = Math.min((weeklyWorkouts / 5) * 100, 100);
 
       setStats({
-        totalWorkouts: workouts?.length || 0,
-        totalFoodEntries: foodEntries?.length || 0,
+        totalWorkouts: workouts.length,
+        totalFoodEntries: foodEntries.length,
         weeklyProgress,
-        currentStreak: Math.floor(Math.random() * 7) + 1,
-        lastPhysiqueAnalysis: analysisData ? {
-          overall_score: analysisData.overall_score || 0,
-          muscle_development: analysisData.muscle_development || 0,
-          symmetry: analysisData.symmetry || 0,
-          definition: analysisData.definition || 0,
-          analysis_date: latestAnalysis[0].taken_date
-        } : undefined,
-        recentMuscleGroups: muscleGroups
+        currentStreak: calculateStreak(),
+        avgSleepHours: Math.round(avgSleep * 10) / 10,
+        avgStressLevel: Math.round(avgStress * 10) / 10,
+        avgRecoveryScore: Math.round(avgEnergy * 10) / 10
       });
 
     } catch (error) {
@@ -130,324 +153,332 @@ const PhysiqueAIDashboard = () => {
     }
   };
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     {
       title: 'Physique AI',
-      description: 'Analyze your physique with AI',
-      icon: <Brain className="h-6 w-6" />,
-      color: 'from-purple-500 to-blue-500',
-      action: () => navigate('/physique-ai'),
-      premium: false
+      description: 'AI-powered body analysis',
+      icon: Brain,
+      path: '/physique-ai',
+      color: 'from-purple-500/20 to-blue-500/20 border-purple-500/30'
     },
     {
       title: 'Log Workout',
-      description: 'Track your training session',
-      icon: <Dumbbell className="h-6 w-6" />,
-      color: 'from-blue-500 to-green-500',
-      action: () => navigate('/workout-logger'),
-      premium: false
+      description: 'Track your training',
+      icon: Dumbbell,
+      path: '/workout-logger',
+      color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30'
     },
     {
-      title: 'Smart Food Log',
-      description: 'AI-powered nutrition tracking',
-      icon: <Utensils className="h-6 w-6" />,
-      color: 'from-green-500 to-orange-500',
-      action: () => navigate('/smart-food-log'),
-      premium: false
+      title: 'Food Log',
+      description: 'Track nutrition',
+      icon: Utensils,
+      path: '/smart-food-log',
+      color: 'from-green-500/20 to-emerald-500/20 border-green-500/30'
     },
     {
-      title: 'Progress Hub',
-      description: 'View detailed progress analytics',
-      icon: <TrendingUp className="h-6 w-6" />,
-      color: 'from-orange-500 to-red-500',
-      action: () => navigate('/progress-hub'),
-      premium: false
+      title: 'Recovery',
+      description: 'Track recovery metrics',
+      icon: Heart,
+      path: '/recovery-coach',
+      color: 'from-red-500/20 to-pink-500/20 border-red-500/30'
     }
-  ];
+  ], []);
 
-  const hexagonMetrics = stats.lastPhysiqueAnalysis ? [
-    { label: 'Development', value: stats.lastPhysiqueAnalysis.muscle_development, color: '#3B82F6' },
-    { label: 'Symmetry', value: stats.lastPhysiqueAnalysis.symmetry, color: '#10B981' },
-    { label: 'Definition', value: stats.lastPhysiqueAnalysis.definition, color: '#F59E0B' },
-    { label: 'Overall', value: stats.lastPhysiqueAnalysis.overall_score, color: '#8B5CF6' }
-  ] : [];
+  const StatCard = ({ title, value, subtitle, icon: Icon, color }: {
+    title: string;
+    value: string | number;
+    subtitle?: string;
+    icon: React.ElementType;
+    color: string;
+  }) => (
+    <Card className="bg-card border-border">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", color)}>
+            <Icon className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">{title}</p>
+            <p className="text-xl font-bold text-foreground">
+              {value || (isLoading ? <Skeleton className="h-6 w-12" /> : '0')}
+            </p>
+            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const EmptyState = ({ title, description, icon: Icon }: { 
+    title: string; 
+    description: string;
+    icon: React.ElementType;
+  }) => (
+    <div className="p-8 text-center">
+      <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+        <Icon className="w-8 h-8 text-muted-foreground" />
+      </div>
+      <h3 className="font-semibold text-foreground mb-1">{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
 
   if (isLoading) {
     return (
-      <AppShell title="Progress Hub">
-        <div className="min-h-screen bg-gradient-to-br from-background via-purple-900/10 to-blue-900/20 p-4">
-          <div className="flex items-center justify-center h-96">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      <div className="min-h-screen bg-background">
+        <MobileHeader title="Progress Hub" />
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
           </div>
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
         </div>
-      </AppShell>
+      </div>
     );
   }
 
   return (
-    <AppShell 
-      title="Progress Hub" 
-      showBackButton={true}
-      customActions={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/settings')}
-          className="border-purple-500/30 hover:bg-purple-500/10"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
-      }
-    >
-      <div className="min-h-screen bg-gradient-to-br from-background via-purple-900/10 to-blue-900/20 p-4 space-y-6">
-        
-        {/* Welcome Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4"
-        >
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500">
-              <TrendingUp className="h-8 w-8 text-white" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                Progress Hub
-              </h1>
-              <p className="text-muted-foreground">
-                Welcome back, {user?.email?.split('@')[0]}
-              </p>
-            </div>
-          </div>
-          
-          {!isSubscribed && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border-orange-500/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Crown className="h-6 w-6 text-orange-400" />
-                      <div>
-                        <p className="font-semibold text-orange-400">Upgrade to Premium</p>
-                        <p className="text-sm text-muted-foreground">Unlock unlimited AI features</p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={() => navigate('/pricing')}
-                      className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
-                      size="sm"
-                    >
-                      <Zap className="h-4 w-4 mr-2" />
-                      Upgrade
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </motion.div>
-
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
-          <Card className="bg-card/50 backdrop-blur">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.totalWorkouts}</div>
-              <div className="text-sm text-muted-foreground">Workouts</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/50 backdrop-blur">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{stats.totalFoodEntries}</div>
-              <div className="text-sm text-muted-foreground">Meals Logged</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/50 backdrop-blur">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-400">{stats.weeklyProgress}%</div>
-              <div className="text-sm text-muted-foreground">Week Progress</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/50 backdrop-blur">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-400">{stats.currentStreak}</div>
-              <div className="text-sm text-muted-foreground">Day Streak</div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Latest Physique Analysis */}
-        {stats.lastPhysiqueAnalysis && (
+    <div className="min-h-screen bg-background">
+      <MobileHeader title="Progress Hub" />
+      
+      <div className="px-4 pb-24 space-y-5">
+        <div className="max-w-2xl mx-auto">
+          {/* Quick Stats Grid */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            className="grid grid-cols-2 gap-3"
           >
-            <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Latest Physique Analysis
-                  <Badge variant="secondary" className="ml-auto">
-                    {new Date(stats.lastPhysiqueAnalysis.analysis_date).toLocaleDateString()}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Overall Score */}
-                  <div className="text-center space-y-2">
-                    <div className="text-3xl font-bold text-purple-400">
-                      {stats.lastPhysiqueAnalysis.overall_score}/100
-                    </div>
-                    <div className="text-sm text-muted-foreground">Overall Score</div>
-                    <Progress value={stats.lastPhysiqueAnalysis.overall_score} className="h-2" />
-                  </div>
+            <StatCard
+              title="Workouts"
+              value={stats.totalWorkouts}
+              subtitle="Total logged"
+              icon={Dumbbell}
+              color="bg-blue-500/10 text-blue-500"
+            />
+            <StatCard
+              title="Streak"
+              value={`${stats.currentStreak} days`}
+              icon={Zap}
+              color="bg-orange-500/10 text-orange-500"
+            />
+            <StatCard
+              title="Meals"
+              value={stats.totalFoodEntries}
+              subtitle="Logged"
+              icon={Utensils}
+              color="bg-green-500/10 text-green-500"
+            />
+            <StatCard
+              title="Week Progress"
+              value={`${Math.round(stats.weeklyProgress)}%`}
+              icon={TrendingUp}
+              color="bg-purple-500/10 text-purple-500"
+            />
+          </motion.div>
 
-                  {/* Hexagon Chart */}
-                  {hexagonMetrics.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3 justify-center">
-                      {hexagonMetrics.map((metric, index) => (
-                        <HexagonProgress 
-                          key={metric.label}
-                          score={metric.value} 
-                          size="small" 
-                          label={metric.label}
-                        />
+          {/* Tabs for different sections */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/50 rounded-xl p-1 h-11">
+                <TabsTrigger value="overview" className="rounded-lg text-xs data-[state=active]:bg-background">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="physique" className="rounded-lg text-xs data-[state=active]:bg-background">
+                  Physique
+                </TabsTrigger>
+                <TabsTrigger value="mental" className="rounded-lg text-xs data-[state=active]:bg-background">
+                  Mental
+                </TabsTrigger>
+                <TabsTrigger value="science" className="rounded-lg text-xs data-[state=active]:bg-background">
+                  Science
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-4">
+                {/* Weekly Progress */}
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      Weekly Goal Progress
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Workouts this week</span>
+                        <span className="font-medium">{Math.round(stats.weeklyProgress)}%</span>
+                      </div>
+                      <Progress value={stats.weeklyProgress} className="h-2" />
+                      <p className="text-xs text-muted-foreground">
+                        {stats.weeklyProgress >= 100 
+                          ? "Goal reached! Keep it up!" 
+                          : `${Math.round((100 - stats.weeklyProgress) / 20)} more workouts to reach your weekly goal`}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Actions */}
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-primary" />
+                      Quick Actions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      {quickActions.map((action, index) => (
+                        <motion.button
+                          key={action.title}
+                          onClick={() => navigate(action.path)}
+                          className={cn(
+                            "p-4 rounded-xl border text-left transition-all active:scale-95",
+                            "bg-gradient-to-br",
+                            action.color
+                          )}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 + index * 0.05 }}
+                        >
+                          <action.icon className="w-5 h-5 mb-2" />
+                          <p className="font-medium text-sm text-foreground">{action.title}</p>
+                          <p className="text-xs text-muted-foreground">{action.description}</p>
+                        </motion.button>
                       ))}
                     </div>
-                  )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  {/* Muscle Map Preview */}
-                  {stats.recentMuscleGroups && (
-                    <div className="flex justify-center">
-                      <div className="scale-75">
-                        <RealisticMuscleMap 
-                          muscleGroups={stats.recentMuscleGroups.map(group => ({
-                            name: group.name,
-                            score: group.score,
-                            progressTrend: group.progress_trend
-                          }))}
-                          viewMode="front"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {quickActions.map((action, index) => (
-                  <motion.div
-                    key={action.title}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                  >
-                    <Card 
-                      className="cursor-pointer hover:scale-105 transition-all duration-300 bg-gradient-to-r border-0"
-                      style={{ 
-                        background: `linear-gradient(135deg, ${action.color.split(' ')[0].replace('from-', '')}20, ${action.color.split(' ')[1]?.replace('to-', '') || 'transparent'}20)`
-                      }}
-                      onClick={action.action}
+              <TabsContent value="physique" className="space-y-4">
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-primary" />
+                      Physique Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <EmptyState
+                      title="No physique data yet"
+                      description="Take a photo to get AI-powered body composition analysis"
+                      icon={Camera}
+                    />
+                    <Button
+                      onClick={() => navigate('/physique-ai')}
+                      className="w-full mt-4"
                     >
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
-                          <div className={`p-3 rounded-full bg-gradient-to-r ${action.color}`}>
-                            {action.icon}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold flex items-center gap-2">
-                              {action.title}
-                              {action.premium && !isSubscribed && (
-                                <Crown className="h-4 w-4 text-orange-400" />
-                              )}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {action.description}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                      <Camera className="w-4 h-4 mr-2" />
+                      Analyze Physique
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-        {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card className="bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                This Week's Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Weekly Goal Progress</span>
-                  <span className="text-sm font-medium">{stats.weeklyProgress}%</span>
+              <TabsContent value="mental" className="space-y-4">
+                <div className="grid grid-cols-1 gap-3">
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+                          <Moon className="w-5 h-5 text-indigo-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">Avg Sleep</p>
+                          <p className="text-xl font-bold text-foreground">
+                            {stats.avgSleepHours > 0 ? `${stats.avgSleepHours}h` : 'No data'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-red-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">Avg Stress Level</p>
+                          <p className="text-xl font-bold text-foreground">
+                            {stats.avgStressLevel > 0 ? `${stats.avgStressLevel}/10` : 'No data'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                          <Heart className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">Avg Energy Level</p>
+                          <p className="text-xl font-bold text-foreground">
+                            {stats.avgRecoveryScore > 0 ? `${stats.avgRecoveryScore}/10` : 'No data'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <Progress value={stats.weeklyProgress} className="h-3" />
-                
-                <div className="grid grid-cols-3 gap-4 text-center pt-4">
-                  <div>
-                    <div className="text-lg font-bold text-blue-400">{Math.ceil(stats.totalWorkouts / 4)}</div>
-                    <div className="text-xs text-muted-foreground">Avg Workouts/Week</div>
+
+                {stats.avgSleepHours === 0 && stats.avgStressLevel === 0 && (
+                  <div className="text-center pt-4">
+                    <Button
+                      onClick={() => navigate('/recovery-coach')}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      Log Recovery Data
+                    </Button>
                   </div>
-                  <div>
-                    <div className="text-lg font-bold text-green-400">{Math.ceil(stats.totalFoodEntries / 7)}</div>
-                    <div className="text-xs text-muted-foreground">Avg Meals/Day</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-purple-400">{stats.currentStreak}</div>
-                    <div className="text-xs text-muted-foreground">Current Streak</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="science" className="space-y-4">
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-primary" />
+                      Training Science
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Explore evidence-based training principles and the latest research in exercise science.
+                    </p>
+                    <Button
+                      onClick={() => navigate('/research')}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Brain className="w-4 h-4 mr-2" />
+                      View Research Library
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </div>
       </div>
-    </AppShell>
+    </div>
   );
 };
 
-export default PhysiqueAIDashboard;
+export default ProgressHubDashboard;

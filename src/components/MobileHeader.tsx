@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface MobileHeaderProps {
   title: string;
@@ -22,12 +23,26 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   variant = 'default',
   className
 }) => {
+  const navigate = useNavigate();
   const headerHeight = 56;
   
   const variantStyles = {
     default: 'bg-background/95 backdrop-blur-xl border-b border-border/40',
     transparent: 'bg-transparent',
     blur: 'bg-background/80 backdrop-blur-2xl saturate-150'
+  };
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      // Use browser history if available, otherwise go to app
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/app');
+      }
+    }
   };
   
   return (
@@ -38,25 +53,28 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           variantStyles[variant],
           className
         )}
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ 
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)'
+        }}
       >
         <div className="h-14 px-2 flex items-center justify-between">
           {/* Left - Back button or spacer */}
           <div className="w-12 flex items-center justify-start">
-            {onBack && (
-              <Button
-                onClick={onBack}
-                variant="ghost"
-                size="sm"
-                className="h-10 w-10 p-0 rounded-full text-foreground hover:bg-muted/50 active:scale-95 transition-all"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            )}
+            <Button
+              onClick={handleBack}
+              variant="ghost"
+              size="sm"
+              className="h-11 w-11 p-0 rounded-full text-foreground hover:bg-muted/50 active:scale-95 transition-all min-h-[44px] min-w-[44px]"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
           </div>
           
           {/* Center - Title */}
-          <h1 className="flex-1 text-center font-semibold text-foreground truncate text-[15px] tracking-tight">
+          <h1 className="flex-1 text-center font-semibold text-foreground truncate text-base tracking-tight">
             {title}
           </h1>
           
@@ -68,7 +86,8 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 onClick={onNotificationsClick}
                 variant="ghost"
                 size="sm"
-                className="h-10 w-10 p-0 rounded-full text-muted-foreground hover:bg-muted/50 active:scale-95 transition-all"
+                className="h-11 w-11 p-0 rounded-full text-muted-foreground hover:bg-muted/50 active:scale-95 transition-all min-h-[44px] min-w-[44px]"
+                aria-label="View notifications"
               >
                 <Bell className="w-5 h-5" />
               </Button>
@@ -78,7 +97,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
       </header>
       {/* Spacer to prevent content from going under fixed header */}
       <div 
-        className="w-full" 
+        className="w-full flex-shrink-0" 
         style={{ 
           height: `calc(${headerHeight}px + env(safe-area-inset-top))`,
           minHeight: `${headerHeight}px`

@@ -4,18 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MobileHeader } from '@/components/MobileHeader';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { 
   Search, 
-  ArrowLeft, 
   Dumbbell, 
   Target, 
-  Filter,
-  ChevronRight,
-  Activity,
-  Zap
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -32,35 +29,11 @@ interface Exercise {
   technique_notes: string | null;
 }
 
-const MUSCLE_GROUPS = [
-  'All',
-  'Chest',
-  'Back',
-  'Shoulders',
-  'Biceps',
-  'Triceps',
-  'Quadriceps',
-  'Hamstrings',
-  'Glutes',
-  'Calves',
-  'Core',
-  'Forearms'
-];
-
-const EQUIPMENT_OPTIONS = [
-  'All',
-  'Barbell',
-  'Dumbbell',
-  'Cable',
-  'Machine',
-  'Bodyweight',
-  'Kettlebell',
-  'Bands'
-];
+const MUSCLE_GROUPS = ['All', 'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Quadriceps', 'Hamstrings', 'Glutes', 'Calves', 'Core', 'Forearms'];
+const EQUIPMENT_OPTIONS = ['All', 'Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight', 'Kettlebell', 'Bands'];
 
 const ExerciseDatabase = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState('All');
   const [selectedEquipment, setSelectedEquipment] = useState('All');
@@ -87,6 +60,10 @@ const ExerciseDatabase = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    await loadExercises();
   };
 
   const filteredExercises = useMemo(() => {
@@ -130,49 +107,36 @@ const ExerciseDatabase = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        <div className="px-4 h-14 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-10 w-10 rounded-full"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Exercise Library</h1>
-            <p className="text-xs text-muted-foreground">{filteredExercises.length} exercises</p>
+      <MobileHeader 
+        title="Exercise Library" 
+        onBack={() => navigate(-1)}
+      />
+      
+      <PullToRefresh onRefresh={handleRefresh} skeletonVariant="list">
+        <div className="px-4 pb-28">
+          {/* Hero */}
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground">{filteredExercises.length} exercises available</p>
           </div>
-        </div>
-      </header>
 
-      <div 
-        className="px-4 pb-24"
-        style={{ paddingTop: 'calc(56px + env(safe-area-inset-top) + 16px)' }}
-      >
-        <div className="max-w-2xl mx-auto space-y-4">
           {/* Search */}
-          <div className="relative">
+          <div className="relative mb-4">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none" />
             <Input
               placeholder="Search exercises or muscles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground"
+              className="pl-12 h-12 bg-card border-border rounded-xl"
+              aria-label="Search exercises"
             />
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             <Select value={selectedMuscle} onValueChange={setSelectedMuscle}>
-              <SelectTrigger className="h-11 bg-card border-border rounded-xl">
+              <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Filter by muscle">
                 <Target className="w-4 h-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Muscle Group" />
+                <SelectValue placeholder="Muscle" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-xl">
                 {MUSCLE_GROUPS.map(muscle => (
@@ -182,7 +146,7 @@ const ExerciseDatabase = () => {
             </Select>
 
             <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
-              <SelectTrigger className="h-11 bg-card border-border rounded-xl">
+              <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Filter by equipment">
                 <Dumbbell className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="Equipment" />
               </SelectTrigger>
@@ -194,8 +158,8 @@ const ExerciseDatabase = () => {
             </Select>
           </div>
 
-          {/* Quick Muscle Group Pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Quick Pills */}
+          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
             {['Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Core'].map(muscle => (
               <Button
                 key={muscle}
@@ -203,13 +167,14 @@ const ExerciseDatabase = () => {
                 size="sm"
                 onClick={() => setSelectedMuscle(muscle === 'Legs' ? 'Quadriceps' : muscle === 'Arms' ? 'Biceps' : muscle)}
                 className={cn(
-                  "rounded-full px-4 whitespace-nowrap transition-all",
+                  "rounded-full px-4 whitespace-nowrap transition-all h-9",
                   (selectedMuscle === muscle || 
                    (muscle === 'Legs' && selectedMuscle === 'Quadriceps') ||
                    (muscle === 'Arms' && selectedMuscle === 'Biceps'))
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card border-border hover:border-primary/40"
                 )}
+                aria-label={`Filter by ${muscle}`}
               >
                 {muscle}
               </Button>
@@ -224,12 +189,12 @@ const ExerciseDatabase = () => {
               ))}
             </div>
           ) : filteredExercises.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
-                <Dumbbell className="w-8 h-8 text-muted-foreground" />
+            <div className="empty-state-premium py-12">
+              <div className="empty-state-icon">
+                <Dumbbell className="w-6 h-6 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-1">No exercises found</h3>
-              <p className="text-muted-foreground text-sm">Try adjusting your filters</p>
+              <h3 className="text-foreground font-medium mb-1">No exercises found</h3>
+              <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -238,25 +203,26 @@ const ExerciseDatabase = () => {
                   key={exercise.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.02 }}
+                  transition={{ delay: Math.min(index * 0.02, 0.3) }}
                   onClick={() => handleExerciseClick(exercise)}
-                  className="w-full p-4 bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30 rounded-xl text-left transition-all active:scale-[0.98]"
+                  className="w-full p-4 bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30 rounded-xl text-left transition-all native-press"
+                  aria-label={`View ${exercise.name} details`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate pr-2">
+                      <h3 className="font-semibold text-foreground text-sm truncate pr-2">
                         {exercise.name}
                       </h3>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <Badge variant="outline" className="text-xs border-primary/30 text-primary bg-primary/10">
+                        <Badge variant="outline" className="text-[10px] border-primary/30 text-primary bg-primary/10">
                           {exercise.primary_muscles[0] || 'General'}
                         </Badge>
-                        <span className="text-xs text-muted-foreground flex items-center">
+                        <span className="text-[10px] text-muted-foreground flex items-center">
                           <Dumbbell className="w-3 h-3 mr-1" />
                           {exercise.equipment}
                         </span>
                         {exercise.difficulty_level && (
-                          <Badge className={cn("text-xs", getDifficultyColor(exercise.difficulty_level))}>
+                          <Badge className={cn("text-[10px]", getDifficultyColor(exercise.difficulty_level))}>
                             {exercise.difficulty_level}
                           </Badge>
                         )}
@@ -269,7 +235,7 @@ const ExerciseDatabase = () => {
             </div>
           )}
         </div>
-      </div>
+      </PullToRefresh>
     </div>
   );
 };

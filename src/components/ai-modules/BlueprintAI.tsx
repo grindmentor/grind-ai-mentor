@@ -5,25 +5,23 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MobileHeader } from '@/components/MobileHeader';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { 
   Search, 
   Filter, 
-  Eye, 
-  Zap, 
   Target, 
   Dumbbell, 
   Timer, 
   Star, 
   Flame, 
-  TrendingUp,
   Calendar,
-  ArrowLeft,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { expandedWorkoutTemplates, WorkoutTemplate } from '@/data/expandedWorkoutTemplates';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -35,7 +33,6 @@ interface BlueprintAIProps {
 const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
@@ -62,18 +59,37 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     }
   };
 
-  // Group workouts by category
+  const handleRefresh = async () => {
+    await loadUserProfile();
+  };
+
+  // Group workouts by category with P/P/L emphasis
   const groupedWorkouts = useMemo(() => {
     const groups: Record<string, WorkoutTemplate[]> = {
-      'Split Programs': [],
+      'Push/Pull/Legs': [],
+      'Upper/Lower': [],
       'Full Body': [],
       'Single Workouts': [],
       'Cardio': []
     };
     
     expandedWorkoutTemplates.forEach(workout => {
-      if (groups[workout.category]) {
-        groups[workout.category].push(workout);
+      // Categorize PPL programs
+      if (workout.title.toLowerCase().includes('push pull legs') || 
+          workout.title.toLowerCase().includes('ppl')) {
+        groups['Push/Pull/Legs'].push(workout);
+      } else if (workout.title.toLowerCase().includes('upper') && 
+                 workout.title.toLowerCase().includes('lower')) {
+        groups['Upper/Lower'].push(workout);
+      } else if (workout.category === 'Full Body') {
+        groups['Full Body'].push(workout);
+      } else if (workout.category === 'Single Workouts') {
+        groups['Single Workouts'].push(workout);
+      } else if (workout.category === 'Cardio') {
+        groups['Cardio'].push(workout);
+      } else if (workout.category === 'Split Programs') {
+        // Add remaining split programs to Upper/Lower or PPL based on content
+        groups['Upper/Lower'].push(workout);
       }
     });
     
@@ -128,11 +144,13 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
+      case 'Push/Pull/Legs': return <Dumbbell className="w-4 h-4" />;
+      case 'Upper/Lower': 
       case 'Split Programs': return <Calendar className="w-4 h-4" />;
-      case 'Full Body': return <Dumbbell className="w-4 h-4" />;
-      case 'Single Workouts': return <Target className="w-4 h-4" />;
+      case 'Full Body': return <Target className="w-4 h-4" />;
+      case 'Single Workouts': return <Zap className="w-4 h-4" />;
       case 'Cardio': return <Flame className="w-4 h-4" />;
-      default: return <Zap className="w-4 h-4" />;
+      default: return <Dumbbell className="w-4 h-4" />;
     }
   };
 
@@ -140,44 +158,46 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30 rounded-xl p-4 transition-all"
+      transition={{ delay: index * 0.03 }}
+      className="bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30 rounded-2xl p-4 transition-all native-press"
+      role="article"
+      aria-label={`${workout.title} - ${workout.difficulty} level workout`}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center",
+            "w-11 h-11 rounded-xl flex items-center justify-center",
             "bg-gradient-to-br",
             workout.color
           )}>
             {getCategoryIcon(workout.category)}
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">{workout.title}</h3>
+            <h3 className="font-semibold text-foreground text-sm">{workout.title}</h3>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
               <Timer className="w-3 h-3" />
               <span>{workout.duration}</span>
               {workout.daysPerWeek && (
                 <>
-                  <span>•</span>
+                  <span className="text-border">•</span>
                   <span>{workout.daysPerWeek}x/week</span>
                 </>
               )}
             </div>
           </div>
         </div>
-        <Badge className={cn("text-xs", getDifficultyColor(workout.difficulty))}>
+        <Badge className={cn("text-[10px] px-2 py-0.5", getDifficultyColor(workout.difficulty))}>
           {workout.difficulty}
         </Badge>
       </div>
 
-      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+      <p className="text-xs text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
         {workout.description}
       </p>
 
       <div className="flex flex-wrap gap-1.5 mb-3">
         {workout.focus.slice(0, 3).map((focus, i) => (
-          <Badge key={i} variant="outline" className="text-xs border-border/50 bg-muted/30">
+          <Badge key={i} variant="outline" className="text-[10px] border-border/50 bg-muted/30 px-2 py-0.5">
             {focus}
           </Badge>
         ))}
@@ -190,32 +210,35 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
         <Button
           size="sm"
           onClick={() => navigate('/workout-detail', { state: { workout } })}
-          className="h-8 bg-primary/10 text-primary hover:bg-primary/20 border-0"
+          className="h-8 bg-primary/10 text-primary hover:bg-primary/20 border-0 text-xs"
+          aria-label={`View ${workout.title} details`}
         >
           View Plan
-          <ChevronRight className="w-4 h-4 ml-1" />
+          <ChevronRight className="w-3.5 h-3.5 ml-1" />
         </Button>
       </div>
     </motion.div>
   );
 
+  const SectionHeader = ({ icon, title, count, color = 'text-primary' }: { icon: React.ReactNode; title: string; count: number; color?: string }) => (
+    <div className="flex items-center gap-2 mb-4 mt-6 first:mt-0">
+      <div className={cn("w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center", color.replace('text-', 'text-'))}>
+        {icon}
+      </div>
+      <div className="flex-1">
+        <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+        <p className="text-xs text-muted-foreground">{count} programs available</p>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <header 
-          className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40"
-          style={{ paddingTop: 'env(safe-area-inset-top)' }}
-        >
-          <div className="px-4 h-14 flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10 rounded-full">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-lg font-bold">Blueprint AI</h1>
-          </div>
-        </header>
-        <div className="pt-20 p-4 space-y-4">
+        <MobileHeader title="Blueprint AI" onBack={onBack} />
+        <div className="p-4 space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-card/50 rounded-xl animate-pulse" />
+            <div key={i} className="h-32 bg-card/50 rounded-2xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -224,163 +247,182 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        <div className="px-4 h-14 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10 rounded-full">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Blueprint AI</h1>
-            <p className="text-xs text-muted-foreground">Science-based training programs</p>
-          </div>
+      <MobileHeader 
+        title="Blueprint AI" 
+        onBack={onBack}
+        rightElement={
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/exercise-database')}
-            className="h-9 text-primary"
+            className="h-9 w-auto px-2 text-primary text-xs"
+            aria-label="Open Exercise Library"
           >
-            <BookOpen className="w-4 h-4 mr-1.5" />
-            Exercises
+            <BookOpen className="w-4 h-4" />
           </Button>
-        </div>
-      </header>
-
-      <div 
-        className="pb-24"
-        style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
-      >
-        {/* Hero Section */}
-        <div className="px-4 pt-4 pb-6 text-center">
-          <div className="w-14 h-14 mx-auto bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mb-3 border border-primary/20">
-            <Zap className="w-7 h-7 text-primary" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground mb-1">AI Workout Programs</h2>
-          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-            Evidence-based programs designed for optimal results
-          </p>
-        </div>
-
-        {/* Recommended Section */}
-        {personalizedWorkouts.length > 0 && (
-          <div className="px-4 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              <h3 className="text-sm font-semibold text-foreground">Recommended for You</h3>
+        }
+      />
+      
+      <PullToRefresh onRefresh={handleRefresh} skeletonVariant="card">
+        <div className="px-4 pb-28">
+          {/* Hero Section */}
+          <div className="text-center py-6">
+            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mb-3 border border-primary/20">
+              <Zap className="w-7 h-7 text-primary" />
             </div>
-            <div className="space-y-3">
-              {personalizedWorkouts.map((workout, index) => (
-                <WorkoutCard key={workout.id} workout={workout} index={index} />
-              ))}
-            </div>
+            <h2 className="text-lg font-bold text-foreground mb-1">Science-Based Programs</h2>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              Evidence-based training programs optimized for results
+            </p>
           </div>
-        )}
 
-        {/* Tabs */}
-        <div className="px-4">
+          {/* Recommended Section */}
+          {personalizedWorkouts.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                <h3 className="text-sm font-semibold text-foreground">Recommended for You</h3>
+              </div>
+              <div className="space-y-3">
+                {personalizedWorkouts.map((workout, index) => (
+                  <WorkoutCard key={workout.id} workout={workout} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full bg-muted/50 p-1 rounded-xl mb-4">
-              <TabsTrigger value="programs" className="flex-1 rounded-lg data-[state=active]:bg-background">
+            <TabsList className="w-full bg-muted/50 p-1 rounded-xl mb-4 h-11">
+              <TabsTrigger 
+                value="programs" 
+                className="flex-1 rounded-lg data-[state=active]:bg-background text-xs h-9"
+              >
                 Programs
               </TabsTrigger>
-              <TabsTrigger value="workouts" className="flex-1 rounded-lg data-[state=active]:bg-background">
+              <TabsTrigger 
+                value="workouts" 
+                className="flex-1 rounded-lg data-[state=active]:bg-background text-xs h-9"
+              >
                 Workouts
               </TabsTrigger>
-              <TabsTrigger value="search" className="flex-1 rounded-lg data-[state=active]:bg-background">
+              <TabsTrigger 
+                value="search" 
+                className="flex-1 rounded-lg data-[state=active]:bg-background text-xs h-9"
+              >
                 Search
               </TabsTrigger>
             </TabsList>
 
             {/* Programs Tab */}
-            <TabsContent value="programs" className="space-y-6">
-              {/* Split Programs */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <h3 className="font-semibold text-foreground">Split Programs</h3>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {groupedWorkouts['Split Programs'].length}
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {groupedWorkouts['Split Programs'].map((workout, i) => (
-                    <WorkoutCard key={workout.id} workout={workout} index={i} />
-                  ))}
-                </div>
-              </div>
+            <TabsContent value="programs" className="space-y-2">
+              {/* Push/Pull/Legs Section */}
+              {groupedWorkouts['Push/Pull/Legs'].length > 0 && (
+                <section aria-label="Push Pull Legs Programs">
+                  <SectionHeader 
+                    icon={<Dumbbell className="w-4 h-4 text-blue-400" />} 
+                    title="Push / Pull / Legs" 
+                    count={groupedWorkouts['Push/Pull/Legs'].length}
+                    color="text-blue-400"
+                  />
+                  <div className="space-y-3">
+                    {groupedWorkouts['Push/Pull/Legs'].map((workout, i) => (
+                      <WorkoutCard key={workout.id} workout={workout} index={i} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-              {/* Full Body */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Dumbbell className="w-4 h-4 text-green-500" />
-                  <h3 className="font-semibold text-foreground">Full Body</h3>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {groupedWorkouts['Full Body'].length}
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {groupedWorkouts['Full Body'].map((workout, i) => (
-                    <WorkoutCard key={workout.id} workout={workout} index={i} />
-                  ))}
-                </div>
-              </div>
+              {/* Upper/Lower Section */}
+              {groupedWorkouts['Upper/Lower'].length > 0 && (
+                <section aria-label="Upper Lower Split Programs">
+                  <SectionHeader 
+                    icon={<Calendar className="w-4 h-4 text-purple-400" />} 
+                    title="Upper / Lower Split" 
+                    count={groupedWorkouts['Upper/Lower'].length}
+                    color="text-purple-400"
+                  />
+                  <div className="space-y-3">
+                    {groupedWorkouts['Upper/Lower'].map((workout, i) => (
+                      <WorkoutCard key={workout.id} workout={workout} index={i} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Full Body Section */}
+              {groupedWorkouts['Full Body'].length > 0 && (
+                <section aria-label="Full Body Programs">
+                  <SectionHeader 
+                    icon={<Target className="w-4 h-4 text-green-400" />} 
+                    title="Full Body Programs" 
+                    count={groupedWorkouts['Full Body'].length}
+                    color="text-green-400"
+                  />
+                  <div className="space-y-3">
+                    {groupedWorkouts['Full Body'].map((workout, i) => (
+                      <WorkoutCard key={workout.id} workout={workout} index={i} />
+                    ))}
+                  </div>
+                </section>
+              )}
             </TabsContent>
 
             {/* Workouts Tab */}
-            <TabsContent value="workouts" className="space-y-6">
+            <TabsContent value="workouts" className="space-y-2">
               {/* Single Workouts */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Target className="w-4 h-4 text-blue-500" />
-                  <h3 className="font-semibold text-foreground">Single Workouts</h3>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {groupedWorkouts['Single Workouts'].length}
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {groupedWorkouts['Single Workouts'].map((workout, i) => (
-                    <WorkoutCard key={workout.id} workout={workout} index={i} />
-                  ))}
-                </div>
-              </div>
+              {groupedWorkouts['Single Workouts'].length > 0 && (
+                <section aria-label="Single Workouts">
+                  <SectionHeader 
+                    icon={<Zap className="w-4 h-4 text-amber-400" />} 
+                    title="Single Workouts" 
+                    count={groupedWorkouts['Single Workouts'].length}
+                    color="text-amber-400"
+                  />
+                  <div className="space-y-3">
+                    {groupedWorkouts['Single Workouts'].map((workout, i) => (
+                      <WorkoutCard key={workout.id} workout={workout} index={i} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {/* Cardio */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Flame className="w-4 h-4 text-orange-500" />
-                  <h3 className="font-semibold text-foreground">Cardio</h3>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {groupedWorkouts['Cardio'].length}
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {groupedWorkouts['Cardio'].map((workout, i) => (
-                    <WorkoutCard key={workout.id} workout={workout} index={i} />
-                  ))}
-                </div>
-              </div>
+              {groupedWorkouts['Cardio'].length > 0 && (
+                <section aria-label="Cardio Workouts">
+                  <SectionHeader 
+                    icon={<Flame className="w-4 h-4 text-orange-400" />} 
+                    title="Cardio" 
+                    count={groupedWorkouts['Cardio'].length}
+                    color="text-orange-400"
+                  />
+                  <div className="space-y-3">
+                    {groupedWorkouts['Cardio'].map((workout, i) => (
+                      <WorkoutCard key={workout.id} workout={workout} index={i} />
+                    ))}
+                  </div>
+                </section>
+              )}
             </TabsContent>
 
             {/* Search Tab */}
             <TabsContent value="search" className="space-y-4">
               {/* Search Input */}
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none" />
                 <Input
                   placeholder="Search programs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 h-12 bg-card border-border rounded-xl"
+                  aria-label="Search workout programs"
                 />
               </div>
 
               {/* Filters */}
               <div className="grid grid-cols-2 gap-3">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-11 bg-card border-border rounded-xl">
+                  <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Filter by category">
                     <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
                     <SelectValue />
                   </SelectTrigger>
@@ -394,7 +436,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                 </Select>
 
                 <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                  <SelectTrigger className="h-11 bg-card border-border rounded-xl">
+                  <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Filter by difficulty">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border rounded-xl">
@@ -408,11 +450,11 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
 
               {/* Results */}
               {filteredWorkouts.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                <div className="empty-state-premium py-12">
+                  <div className="empty-state-icon">
                     <Search className="w-6 h-6 text-muted-foreground" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1">No results found</h3>
+                  <h3 className="text-foreground font-medium mb-1">No results found</h3>
                   <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
                 </div>
               ) : (
@@ -425,7 +467,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
+      </PullToRefresh>
     </div>
   );
 };

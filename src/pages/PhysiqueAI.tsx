@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RealisticMuscleMap } from '@/components/ui/realistic-muscle-map';
-import { HexagonProgress } from '@/components/ui/hexagon-progress';
-import { Camera, Upload, Zap, TrendingUp, Target, Activity, Eye, Brain } from 'lucide-react';
+import { Camera, Upload, TrendingUp, Target, Activity, Eye, Brain, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { AppShell } from '@/components/ui/app-shell';
+import { MobileHeader } from '@/components/MobileHeader';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface PhysiqueAnalysis {
   muscle_development: number;
@@ -31,6 +32,7 @@ interface PhysiqueAnalysis {
 }
 
 const PhysiqueAI = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { uploadPhoto, isUploading, uploadProgress } = usePhotoUpload();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -39,19 +41,27 @@ const PhysiqueAI = () => {
   const [analysis, setAnalysis] = useState<PhysiqueAnalysis | null>(null);
   const [viewMode, setViewMode] = useState<'front' | 'back'>('front');
 
+  const handleBackNavigation = useCallback(() => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/modules');
+    }
+  }, [navigate]);
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
+    // More lenient validation
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select a valid image file');
+      toast.error('Please select an image file');
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
+    // Increased size limit
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error('File size must be less than 25MB');
       return;
     }
 
@@ -60,17 +70,23 @@ const PhysiqueAI = () => {
     setPreviewUrl(url);
   };
 
+  const handleRefresh = async () => {
+    // Reset state for new analysis
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setAnalysis(null);
+  };
+
   const analyzePhysique = async () => {
     if (!selectedFile || !user) return;
 
     setIsAnalyzing(true);
     
     try {
-      // Upload photo to storage first
       const photoUrl = await uploadPhoto(selectedFile, {
         bucket: 'physique-photos',
         maxSizeMB: 50,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
+        allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
       });
 
       if (!photoUrl) {
@@ -78,7 +94,6 @@ const PhysiqueAI = () => {
         return;
       }
 
-      // Call AI analysis function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-physique', {
         body: { 
           imageUrl: photoUrl,
@@ -86,27 +101,23 @@ const PhysiqueAI = () => {
         }
       });
 
-      // Handle error response from edge function
       if (analysisError) {
         throw new Error(analysisError.message || 'Analysis failed');
       }
       
-      // Check for error in response data (403, 429, etc.)
       if (analysisData?.error) {
         toast.error(analysisData.error);
         setIsAnalyzing(false);
         return;
       }
 
-      // Validate analysis data
       if (!analysisData?.analysis) {
         throw new Error('Invalid analysis response');
       }
 
       const result = analysisData.analysis;
 
-      // Store analysis in database
-      const { error: dbError } = await supabase
+      await supabase
         .from('progress_photos')
         .insert({
           user_id: user.id,
@@ -117,9 +128,6 @@ const PhysiqueAI = () => {
           taken_date: new Date().toISOString().split('T')[0]
         });
 
-      if (dbError) throw dbError;
-
-      // Map the response to our component's expected format
       setAnalysis({
         muscle_development: result.attributes?.muscle_development || 50,
         symmetry: result.attributes?.symmetry || 50,
@@ -147,229 +155,207 @@ const PhysiqueAI = () => {
     }
   };
 
-  const hexagonMetrics = analysis ? [
-    { label: 'Development', value: analysis.muscle_development, color: '#3B82F6' },
-    { label: 'Symmetry', value: analysis.symmetry, color: '#10B981' },
-    { label: 'Definition', value: analysis.definition, color: '#F59E0B' },
-    { label: 'Mass', value: analysis.mass, color: '#EF4444' },
-    { label: 'Conditioning', value: analysis.conditioning, color: '#8B5CF6' },
-    { label: 'Overall', value: analysis.overall_score, color: '#06B6D4' }
-  ] : [];
+  // Score meter component
+  const ScoreMeter = ({ label, score, color }: { label: string; score: number; color: string }) => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className={cn("text-sm font-bold", color)}>{score}/100</span>
+      </div>
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <motion.div 
+          className={cn("h-full rounded-full", color.replace('text-', 'bg-'))}
+          initial={{ width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <AppShell title="Physique AI" showBackButton>
-      <div className="min-h-screen bg-gradient-to-br from-background via-purple-900/10 to-blue-900/20 p-4 space-y-6">
-        
-        {/* Header Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4"
-        >
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500">
-              <Brain className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              Physique AI
-            </h1>
-          </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Advanced AI-powered physique analysis using computer vision to assess muscle development, 
-            symmetry, and provide personalized recommendations.
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-background">
+      <MobileHeader 
+        title="Physique AI" 
+        onBack={handleBackNavigation}
+      />
 
-        {/* Upload Section */}
-        {!analysis && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+      <PullToRefresh onRefresh={handleRefresh} skeletonVariant="card">
+        <div className="px-4 pb-28">
+          {/* Hero Section */}
+          <motion.div 
+            className="text-center py-6"
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
           >
-            <Card className="bg-card/50 backdrop-blur border-purple-500/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5" />
-                  Upload Your Photo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="border-2 border-dashed border-purple-500/30 rounded-lg p-8 text-center hover:border-purple-500/50 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        id="photo-upload"
-                      />
-                      <label htmlFor="photo-upload" className="cursor-pointer space-y-4">
-                        <Upload className="h-12 w-12 mx-auto text-purple-500" />
-                        <div>
-                          <p className="font-medium">Click to upload photo</p>
-                          <p className="text-sm text-muted-foreground">
-                            JPG, PNG up to 10MB
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-                    
-                    {selectedFile && (
-                    <Button 
-                      onClick={analyzePhysique}
-                      disabled={isAnalyzing || isUploading}
-                      className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                    >
-                      {isUploading ? (
-                        <>
-                          <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                          Uploading {uploadProgress}%...
-                        </>
-                      ) : isAnalyzing ? (
-                        <>
-                          <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Brain className="h-4 w-4 mr-2" />
-                          Analyze Physique
-                        </>
-                      )}
-                    </Button>
-                    )}
-                  </div>
-                  
-                  {previewUrl && (
-                    <div className="space-y-2">
-                      <p className="font-medium">Preview</p>
+            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-rose-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-3 border border-rose-500/20">
+              <Brain className="w-7 h-7 text-rose-400" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground mb-1">AI Physique Analysis</h2>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              Get detailed feedback on your physique development
+            </p>
+          </motion.div>
+
+          {/* Upload Section */}
+          {!analysis && (
+            <motion.div 
+              className="space-y-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="bg-card/50 rounded-2xl border border-border/50 p-4">
+                <div className="border-2 border-dashed border-rose-500/30 rounded-xl p-6 text-center hover:border-rose-500/50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="photo-upload"
+                    aria-label="Upload photo for analysis"
+                  />
+                  <label htmlFor="photo-upload" className="cursor-pointer space-y-3">
+                    {previewUrl ? (
                       <img 
                         src={previewUrl} 
                         alt="Preview" 
-                        className="w-full h-64 object-cover rounded-lg border border-purple-500/20"
+                        className="w-full max-h-64 object-contain rounded-lg mx-auto"
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 mx-auto bg-rose-500/10 rounded-full flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-rose-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">Tap to upload photo</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            JPG, PNG, HEIC up to 25MB
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </label>
                 </div>
                 
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <h3 className="font-medium mb-2">Tips for Best Results:</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Use good lighting with even shadows</li>
-                    <li>• Stand in relaxed pose facing camera</li>
-                    <li>• Wear minimal, form-fitting clothing</li>
-                    <li>• Keep background simple and uncluttered</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Analysis Results */}
-        {analysis && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="body-map">Body Map</TabsTrigger>
-                <TabsTrigger value="recommendations">Insights</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Overall Score */}
-                  <Card className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-purple-500/20">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="h-5 w-5" />
-                        Overall Physique Score
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center space-y-4">
-                        <div className="text-4xl font-bold text-purple-400">
-                          {analysis.overall_score}/100
-                        </div>
-                        <Progress value={analysis.overall_score} className="h-3" />
-                        <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">
-                          {analysis.overall_score >= 80 ? 'Excellent' : 
-                           analysis.overall_score >= 60 ? 'Good' : 
-                           analysis.overall_score >= 40 ? 'Average' : 'Needs Improvement'}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Hexagon Chart */}
-                  <Card className="bg-card/50 backdrop-blur border-blue-500/20">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Activity className="h-5 w-5" />
-                        Detailed Metrics
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {hexagonMetrics.map((metric, index) => (
-                          <HexagonProgress 
-                            key={metric.label}
-                            score={metric.value} 
-                            size="medium" 
-                            label={metric.label}
-                          />
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Individual Metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {hexagonMetrics.slice(0, 5).map((metric, index) => (
-                    <Card key={metric.label} className="bg-card/30 backdrop-blur">
-                      <CardContent className="p-4 text-center">
-                        <div className="text-2xl font-bold" style={{ color: metric.color }}>
-                          {metric.value}
-                        </div>
-                        <div className="text-sm text-muted-foreground">{metric.label}</div>
-                      </CardContent>
-                    </Card>
+                {selectedFile && (
+                  <Button 
+                    onClick={analyzePhysique}
+                    disabled={isAnalyzing || isUploading}
+                    className="w-full mt-4 h-14 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-base font-semibold"
+                    aria-label="Analyze physique"
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Uploading {uploadProgress}%...
+                      </>
+                    ) : isAnalyzing ? (
+                      <>
+                        <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="w-5 h-5 mr-2" />
+                        Analyze Physique
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              {/* Tips */}
+              <div className="bg-card/50 rounded-xl border border-border/50 p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Tips for Best Results</h3>
+                <div className="space-y-2">
+                  {[
+                    'Use good, even lighting',
+                    'Stand in a relaxed pose',
+                    'Wear minimal clothing',
+                    'Keep background simple'
+                  ].map((tip, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                      <span>{tip}</span>
+                    </div>
                   ))}
                 </div>
-              </TabsContent>
+              </div>
+            </motion.div>
+          )}
 
-              <TabsContent value="body-map" className="space-y-6">
-                <Card className="bg-card/50 backdrop-blur">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Eye className="h-5 w-5" />
-                      Muscle Development Map
-                    </CardTitle>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={viewMode === 'front' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('front')}
+          {/* Analysis Results */}
+          {analysis && (
+            <motion.div 
+              className="space-y-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Tabs defaultValue="overview" className="space-y-4">
+                <TabsList className="w-full bg-muted/50 p-1 rounded-xl h-11">
+                  <TabsTrigger value="overview" className="flex-1 rounded-lg text-xs h-9">Overview</TabsTrigger>
+                  <TabsTrigger value="body-map" className="flex-1 rounded-lg text-xs h-9">Body Map</TabsTrigger>
+                  <TabsTrigger value="insights" className="flex-1 rounded-lg text-xs h-9">Insights</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="space-y-4">
+                  {/* Overall Score */}
+                  <div className="bg-gradient-to-br from-rose-500/10 to-pink-500/10 rounded-2xl border border-rose-500/20 p-5">
+                    <div className="text-center">
+                      <div className="text-5xl font-bold text-rose-400 mb-1">
+                        {analysis.overall_score}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">Overall Score</p>
+                      <Badge 
+                        className={cn(
+                          "px-3 py-1",
+                          analysis.overall_score >= 80 ? 'bg-green-500/15 text-green-400' : 
+                          analysis.overall_score >= 60 ? 'bg-amber-500/15 text-amber-400' : 
+                          'bg-rose-500/15 text-rose-400'
+                        )}
                       >
-                        Front View
-                      </Button>
-                      <Button
-                        variant={viewMode === 'back' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('back')}
-                      >
-                        Back View
-                      </Button>
+                        {analysis.overall_score >= 80 ? 'Excellent' : 
+                         analysis.overall_score >= 60 ? 'Good' : 
+                         analysis.overall_score >= 40 ? 'Average' : 'Needs Work'}
+                      </Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent>
+                  </div>
+
+                  {/* Detailed Metrics */}
+                  <div className="bg-card/50 rounded-2xl border border-border/50 p-4 space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground">Detailed Metrics</h3>
+                    <ScoreMeter label="Muscle Development" score={analysis.muscle_development} color="text-blue-400" />
+                    <ScoreMeter label="Symmetry" score={analysis.symmetry} color="text-green-400" />
+                    <ScoreMeter label="Definition" score={analysis.definition} color="text-amber-400" />
+                    <ScoreMeter label="Mass" score={analysis.mass} color="text-rose-400" />
+                    <ScoreMeter label="Conditioning" score={analysis.conditioning} color="text-purple-400" />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="body-map" className="space-y-4">
+                  <div className="bg-card/50 rounded-2xl border border-border/50 p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-semibold text-foreground">Muscle Map</h3>
+                      <div className="flex gap-1 bg-muted/50 rounded-lg p-0.5">
+                        <Button
+                          variant={viewMode === 'front' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setViewMode('front')}
+                          className="h-7 text-xs rounded-md"
+                        >
+                          Front
+                        </Button>
+                        <Button
+                          variant={viewMode === 'back' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setViewMode('back')}
+                          className="h-7 text-xs rounded-md"
+                        >
+                          Back
+                        </Button>
+                      </div>
+                    </div>
                     <RealisticMuscleMap 
                       muscleGroups={analysis.muscle_groups.map(group => ({
                         name: group.name,
@@ -378,32 +364,38 @@ const PhysiqueAI = () => {
                       }))}
                       viewMode={viewMode}
                     />
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="recommendations" className="space-y-6">
-                <Card className="bg-card/50 backdrop-blur">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      AI Recommendations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {analysis.recommendations.map((recommendation, index) => (
-                        <div key={index} className="p-4 rounded-lg bg-muted/50 border-l-4 border-purple-500">
-                          <p className="text-sm">{recommendation}</p>
-                        </div>
-                      ))}
+                <TabsContent value="insights" className="space-y-3">
+                  <div className="bg-card/50 rounded-2xl border border-border/50 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <TrendingUp className="w-4 h-4 text-rose-400" />
+                      <h3 className="text-sm font-semibold text-foreground">AI Recommendations</h3>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                    <div className="space-y-3">
+                      {analysis.recommendations.length > 0 ? (
+                        analysis.recommendations.map((rec, index) => (
+                          <motion.div 
+                            key={index} 
+                            className="p-3 rounded-xl bg-muted/30 border-l-2 border-rose-500"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                          >
+                            <p className="text-sm text-foreground">{rec}</p>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="text-center py-6">
+                          <p className="text-sm text-muted-foreground">No specific recommendations yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
 
-            <div className="flex justify-center">
               <Button 
                 onClick={() => {
                   setAnalysis(null);
@@ -411,15 +403,15 @@ const PhysiqueAI = () => {
                   setPreviewUrl(null);
                 }}
                 variant="outline"
-                className="border-purple-500/30 hover:bg-purple-500/10"
+                className="w-full h-12 rounded-xl border-rose-500/30 hover:bg-rose-500/10"
               >
                 Analyze New Photo
               </Button>
-            </div>
-          </motion.div>
-        )}
-      </div>
-    </AppShell>
+            </motion.div>
+          )}
+        </div>
+      </PullToRefresh>
+    </div>
   );
 };
 

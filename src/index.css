@@ -89,6 +89,20 @@
   --glow-success: 0 0 30px hsl(142 76% 45% / 0.5);
   --glow-warning: 0 0 30px hsl(47 96% 53% / 0.5);
   --glow-error: 0 0 30px hsl(0 84% 60% / 0.5);
+
+  /* Module Accent Colors - Controlled Premium System */
+  --module-blueprint: 238 76% 55%;    /* Indigo */
+  --module-food: 142 76% 45%;         /* Green */
+  --module-recovery: 263 76% 55%;     /* Violet */
+  --module-physique: 339 76% 55%;     /* Rose */
+  --module-progress: 280 76% 55%;     /* Purple */
+  --module-coach: 188 76% 45%;        /* Cyan */
+  --module-habit: 47 96% 53%;         /* Yellow */
+  --module-workout: 155 76% 45%;      /* Emerald */
+  --module-meal: 142 76% 45%;         /* Green */
+  --module-timer: 24 95% 53%;         /* Orange */
+  --module-tdee: 280 76% 55%;         /* Purple */
+  --module-cut: 0 84% 55%;            /* Red */
   
   /* Safe area support */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);

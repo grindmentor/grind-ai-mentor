@@ -36,11 +36,12 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
     if (onBack) {
       onBack();
     } else {
-      // Use browser history if available, otherwise go to app
-      if (window.history.length > 1) {
+      // Use browser history if available, otherwise fallback to modules
+      if (window.history.length > 2) {
         navigate(-1);
       } else {
-        navigate('/app');
+        // Fallback to modules page, not dashboard
+        navigate('/modules');
       }
     }
   };

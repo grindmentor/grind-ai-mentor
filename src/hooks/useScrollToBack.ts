@@ -5,14 +5,21 @@ interface ScrollToBackOptions {
   enabled?: boolean;
   threshold?: number;
   onBack?: () => void;
+  fallbackPath?: string;
 }
 
 export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
-  const { enabled = true, threshold = -80, onBack } = options;
+  const { 
+    enabled = true, 
+    threshold = 80, 
+    onBack, 
+    fallbackPath = '/modules' 
+  } = options;
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const isOverscrollingRef = useRef(false);
+  const pulledRef = useRef(false);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (!enabled) return;
@@ -23,6 +30,7 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     if (container.scrollTop <= 0) {
       startYRef.current = e.touches[0].clientY;
       isOverscrollingRef.current = true;
+      pulledRef.current = false;
     }
   }, [enabled]);
 
@@ -37,34 +45,48 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     const deltaY = e.touches[0].clientY - startYRef.current;
     
     // Visual feedback for pull-to-go-back
-    if (deltaY > 50) {
-      container.style.transform = `translateY(${Math.min(deltaY * 0.3, 40)}px)`;
+    if (deltaY > 30) {
+      const translateY = Math.min(deltaY * 0.4, 60);
+      container.style.transform = `translateY(${translateY}px)`;
       container.style.transition = 'none';
+      
+      // Indicate ready to go back
+      if (deltaY > threshold) {
+        pulledRef.current = true;
+        container.style.opacity = '0.8';
+      } else {
+        pulledRef.current = false;
+        container.style.opacity = '1';
+      }
     }
-  }, [enabled]);
+  }, [enabled, threshold]);
 
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
+  const handleTouchEnd = useCallback(() => {
     if (!enabled || !isOverscrollingRef.current) return;
     const container = containerRef.current;
     if (!container) return;
     
-    const deltaY = e.changedTouches[0].clientY - startYRef.current;
-    
-    // Reset transform
+    // Reset transform with smooth transition
     container.style.transform = '';
-    container.style.transition = 'transform 0.2s ease-out';
+    container.style.opacity = '1';
+    container.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
     
     // Trigger back navigation if pulled far enough
-    if (deltaY > Math.abs(threshold)) {
-      if (onBack) {
-        onBack();
-      } else {
-        navigate(-1);
-      }
+    if (pulledRef.current) {
+      setTimeout(() => {
+        if (onBack) {
+          onBack();
+        } else if (window.history.length > 2) {
+          navigate(-1);
+        } else {
+          navigate(fallbackPath);
+        }
+      }, 100);
     }
     
     isOverscrollingRef.current = false;
-  }, [enabled, threshold, onBack, navigate]);
+    pulledRef.current = false;
+  }, [enabled, onBack, navigate, fallbackPath]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -73,11 +95,13 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     container.addEventListener('touchstart', handleTouchStart, { passive: true });
     container.addEventListener('touchmove', handleTouchMove, { passive: true });
     container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    container.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, [enabled, handleTouchStart, handleTouchMove, handleTouchEnd]);
 

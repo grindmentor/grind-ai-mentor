@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Utensils, Zap, Target, Calendar, Apple, Clock } from 'lucide-react';
+import { Utensils, Zap, Target, Calendar, Apple, Clock, ChefHat, Leaf, ShoppingCart, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +20,9 @@ import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { handleAsync } from '@/utils/errorHandler';
 import { useAppSync } from '@/utils/appSynchronization';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface MealPlanAIProps {
   onBack: () => void;
@@ -77,6 +78,10 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
     } catch (error) {
       console.error('Error loading meal plans:', error);
     }
+  };
+
+  const handleRefresh = async () => {
+    await loadSavedPlans();
   };
 
   const generateMealPlan = async () => {
@@ -135,7 +140,6 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
       try {
         parsedPlan = JSON.parse(response);
       } catch (parseError) {
-        // If JSON parsing fails, create a structured plan from the text response
         parsedPlan = {
           title: `${planData.dietType} ${planData.goal} Plan`,
           duration: parseInt(planData.duration) || 7,
@@ -145,7 +149,7 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
       }
 
       setGeneratedPlan(parsedPlan);
-      handleSuccess('Meal Plan Generated! 🍽️', { 
+      handleSuccess('Meal Plan Generated!', { 
         description: 'Your personalized meal plan is ready!' 
       });
     } catch (error) {
@@ -175,7 +179,7 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
       if (error) throw error;
 
       toast({
-        title: 'Meal Plan Saved! 💾',
+        title: 'Meal Plan Saved!',
         description: 'Your meal plan has been saved to your library.'
       });
 
@@ -190,144 +194,164 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
     }
   };
 
+  const MacroCard = ({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) => (
+    <div className={cn("flex-1 p-3 rounded-xl bg-card/50 border border-border/50 text-center")}>
+      <div className={cn("text-lg font-bold", color)}>{value}{unit}</div>
+      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+    </div>
+  );
+
   return (
     <FeatureGate featureKey="meal_plan_generations" allowPreview={false}>
       <UsageLimitGuard featureKey="meal_plan_generations" featureName="Meal Plan AI">
-      <div className="min-h-screen bg-gradient-to-br from-black via-green-950/50 to-green-900/30">
-        <MobileHeader 
-          title="Meal Plan AI" 
-          onBack={onBack}
-        />
-        
-        <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-          <Card className="bg-gradient-to-br from-green-900/20 to-emerald-900/30 backdrop-blur-sm border-green-500/30">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-green-500/30 to-emerald-500/40 rounded-xl flex items-center justify-center border border-green-500/30">
-                    <Utensils className="w-5 h-5 text-green-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-white text-xl">Meal Plan AI</CardTitle>
-                    <CardDescription className="text-green-200/80">
-                      Generate personalized meal plans based on your goals
-                    </CardDescription>
-                  </div>
+        <div className="min-h-screen bg-background">
+          <MobileHeader 
+            title="Meal Plan AI" 
+            onBack={onBack}
+            rightElement={
+              <RateLimitBadge 
+                featureKey="meal_plan_generations" 
+                featureName="Plans"
+                showProgress={false}
+              />
+            }
+          />
+          
+          <PullToRefresh onRefresh={handleRefresh} skeletonVariant="card">
+            <div className="px-4 pb-28">
+              {/* Hero Section */}
+              <motion.div 
+                className="text-center py-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="w-14 h-14 mx-auto bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mb-3 border border-green-500/20">
+                  <Utensils className="w-7 h-7 text-green-400" />
                 </div>
-                <RateLimitBadge 
-                  featureKey="meal_plan_generations" 
-                  featureName="Meal plan generations"
-                  showProgress
-                />
-              </div>
+                <h2 className="text-lg font-bold text-foreground mb-1">AI Meal Planning</h2>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                  Personalized nutrition plans based on science
+                </p>
+              </motion.div>
+
               <RateLimitWarning 
                 featureKey="meal_plan_generations" 
                 featureName="Meal Plan" 
               />
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
+              
               {!generatedPlan ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <motion.div 
+                  className="space-y-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {/* Goal & Diet Type */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label className="text-green-200">Primary Goal</Label>
+                      <Label className="text-xs text-muted-foreground">Goal</Label>
                       <Select value={planData.goal} onValueChange={(value) => setPlanData({...planData, goal: value})}>
-                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
-                          <SelectValue placeholder="Select your goal" />
+                        <SelectTrigger className="h-12 bg-card border-border rounded-xl" aria-label="Select your goal">
+                          <SelectValue placeholder="Select goal" />
                         </SelectTrigger>
-                        <SelectContent className="bg-green-900 border-green-500">
+                        <SelectContent className="bg-popover border-border rounded-xl">
                           <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                          <SelectItem value="weight-gain-bulk">Weight Gain/Bulk</SelectItem>
+                          <SelectItem value="weight-gain-bulk">Weight Gain</SelectItem>
                           <SelectItem value="maintenance">Maintenance</SelectItem>
-                          <SelectItem value="performance">Athletic Performance</SelectItem>
+                          <SelectItem value="performance">Performance</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Diet Type</Label>
+                      <Label className="text-xs text-muted-foreground">Diet Type</Label>
                       <Select value={planData.dietType} onValueChange={(value) => setPlanData({...planData, dietType: value})}>
-                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
-                          <SelectValue placeholder="Select diet type" />
+                        <SelectTrigger className="h-12 bg-card border-border rounded-xl" aria-label="Select diet type">
+                          <SelectValue placeholder="Select diet" />
                         </SelectTrigger>
-                        <SelectContent className="bg-green-900 border-green-500">
-                          <SelectItem value="balanced">Balanced (High Protein)</SelectItem>
-                          <SelectItem value="keto">Ketogenic (High Protein)</SelectItem>
-                          <SelectItem value="vegetarian">Vegetarian (High Protein)</SelectItem>
-                          <SelectItem value="vegan">Vegan (High Protein)</SelectItem>
-                          <SelectItem value="paleo">Paleo (High Protein)</SelectItem>
+                        <SelectContent className="bg-popover border-border rounded-xl">
+                          <SelectItem value="balanced">Balanced</SelectItem>
+                          <SelectItem value="keto">Keto</SelectItem>
+                          <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                          <SelectItem value="vegan">Vegan</SelectItem>
+                          <SelectItem value="paleo">Paleo</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
-                  {/* Display diet cues */}
+                  {/* Diet Cues */}
                   {(planData.goal || planData.dietType) && (
                     <DietCuesDisplay 
                       goal={planData.goal} 
                       dietType={planData.dietType}
-                      className="mt-4"
+                      className="mt-2"
                     />
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Calories, Meals, Duration */}
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-2">
-                      <Label className="text-green-200">Target Calories</Label>
+                      <Label className="text-xs text-muted-foreground">Calories</Label>
                       <Input
                         type="number"
                         value={planData.calories}
                         onChange={(e) => setPlanData({...planData, calories: e.target.value})}
-                        placeholder="e.g., 2000"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        placeholder="2000"
+                        className="h-12 bg-card border-border rounded-xl text-center"
+                        aria-label="Target calories"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Meals per Day</Label>
+                      <Label className="text-xs text-muted-foreground">Meals/Day</Label>
                       <Select value={planData.meals} onValueChange={(value) => setPlanData({...planData, meals: value})}>
-                        <SelectTrigger className="bg-green-900/30 border-green-500/50 text-white">
+                        <SelectTrigger className="h-12 bg-card border-border rounded-xl" aria-label="Meals per day">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-green-900 border-green-500">
-                          <SelectItem value="3">3 Meals</SelectItem>
-                          <SelectItem value="4">4 Meals</SelectItem>
-                          <SelectItem value="5">5 Meals</SelectItem>
-                          <SelectItem value="6">6 Meals</SelectItem>
+                        <SelectContent className="bg-popover border-border rounded-xl">
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="6">6</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Duration (days)</Label>
+                      <Label className="text-xs text-muted-foreground">Days</Label>
                       <Input
                         type="number"
                         value={planData.duration}
                         onChange={(e) => setPlanData({...planData, duration: e.target.value})}
                         placeholder="7"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        className="h-12 bg-card border-border rounded-xl text-center"
+                        aria-label="Duration in days"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Allergies & Preferences */}
+                  <div className="space-y-3">
                     <div className="space-y-2">
-                      <Label className="text-green-200">Food Allergies/Restrictions</Label>
-                      <Textarea
+                      <Label className="text-xs text-muted-foreground">Allergies / Restrictions</Label>
+                      <Input
                         value={planData.allergies}
                         onChange={(e) => setPlanData({...planData, allergies: e.target.value})}
                         placeholder="e.g., nuts, dairy, gluten"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        className="h-12 bg-card border-border rounded-xl"
+                        aria-label="Food allergies or restrictions"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-green-200">Food Preferences</Label>
-                      <Textarea
+                      <Label className="text-xs text-muted-foreground">Preferences</Label>
+                      <Input
                         value={planData.preferences}
                         onChange={(e) => setPlanData({...planData, preferences: e.target.value})}
                         placeholder="e.g., loves chicken, dislikes fish"
-                        className="bg-green-900/30 border-green-500/50 text-white"
+                        className="h-12 bg-card border-border rounded-xl"
+                        aria-label="Food preferences"
                       />
                     </div>
                   </div>
@@ -335,107 +359,158 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
                   <Button
                     onClick={generateMealPlan}
                     disabled={isGenerating || !planData.goal || !planData.dietType}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3"
+                    className="w-full h-14 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-base font-semibold"
+                    aria-label="Generate meal plan"
                   >
                     {isGenerating ? (
                       <>
-                        <div className="w-4 h-4 mr-2 bg-orange-500/30 rounded flex items-center justify-center animate-pulse">
-                          <div className="w-1.5 h-1.5 bg-orange-500 rounded animate-bounce"></div>
-                        </div>
-                        Generating Meal Plan...
+                        <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Generating Plan...
                       </>
                     ) : (
                       <>
-                        <Zap className="w-4 h-4 mr-2" />
+                        <ChefHat className="w-5 h-5 mr-2" />
                         Generate Meal Plan
                       </>
                     )}
                   </Button>
-                </div>
+                </motion.div>
               ) : (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">{generatedPlan.title}</h2>
-                      <p className="text-green-200">{generatedPlan.duration} days • {generatedPlan.calories} calories/day</p>
+                <motion.div 
+                  className="space-y-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {/* Plan Header */}
+                  <div className="bg-card/50 rounded-2xl border border-border/50 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h2 className="text-lg font-bold text-foreground">{generatedPlan.title}</h2>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span>{generatedPlan.duration} days</span>
+                          <span className="text-border">•</span>
+                          <span>{generatedPlan.calories} kcal/day</span>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-500/15 text-green-400 border-green-500/30">
+                        <Leaf className="w-3 h-3 mr-1" />
+                        Active
+                      </Badge>
                     </div>
-                    <div className="space-x-2">
-                      <Button onClick={saveMealPlan} className="bg-green-600 hover:bg-green-700">
+                    
+                    <div className="flex gap-2">
+                      <Button onClick={saveMealPlan} size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
                         Save Plan
                       </Button>
-                      <Button onClick={() => setGeneratedPlan(null)} variant="outline">
-                        Generate New
+                      <Button onClick={() => setGeneratedPlan(null)} variant="outline" size="sm" className="flex-1">
+                        New Plan
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    {generatedPlan.meals.map((day: any, index: number) => (
-                      <Card key={index} className="bg-green-900/40 border-green-500/40">
-                        <CardHeader>
-                          <CardTitle className="text-green-200 flex items-center">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            {day.day}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {Object.entries(day).filter(([key]) => key !== 'day').map(([mealType, meal]: [string, any]) => (
-                              <div key={mealType} className="p-4 bg-green-800/30 rounded-lg">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-semibold text-white capitalize flex items-center">
-                                    <Apple className="w-4 h-4 mr-2" />
-                                    {mealType}: {meal.name}
-                                  </h4>
-                                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                                    {meal.calories} cal
-                                  </Badge>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
-                                  <div className="text-green-200">P: {meal.macros.protein}g</div>
-                                  <div className="text-green-200">C: {meal.macros.carbs}g</div>
-                                  <div className="text-green-200">F: {meal.macros.fat}g</div>
-                                </div>
-                                <div className="text-green-300 text-sm">
-                                  <strong>Ingredients:</strong> {meal.ingredients.join(', ')}
-                                </div>
+                  {/* Meals */}
+                  {generatedPlan.meals?.map((day: any, index: number) => (
+                    <motion.div 
+                      key={index} 
+                      className="bg-card/50 rounded-2xl border border-border/50 overflow-hidden"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <div className="px-4 py-3 bg-muted/30 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-green-400" />
+                          <span className="font-semibold text-foreground">{day.day}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="divide-y divide-border/30">
+                        {Object.entries(day).filter(([key]) => key !== 'day').map(([mealType, meal]: [string, any]) => (
+                          <div key={mealType} className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Apple className="w-4 h-4 text-green-400" />
+                                <span className="font-medium text-foreground capitalize">{mealType}</span>
                               </div>
-                            ))}
+                              <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-400 bg-green-500/10">
+                                {meal.calories} kcal
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-sm text-foreground mb-3">{meal.name}</p>
+                            
+                            {meal.macros && (
+                              <div className="flex gap-2 mb-3">
+                                <MacroCard label="Protein" value={meal.macros.protein} unit="g" color="text-blue-400" />
+                                <MacroCard label="Carbs" value={meal.macros.carbs} unit="g" color="text-amber-400" />
+                                <MacroCard label="Fat" value={meal.macros.fat} unit="g" color="text-rose-400" />
+                              </div>
+                            )}
+                            
+                            {meal.ingredients && (
+                              <div className="flex flex-wrap gap-1">
+                                {meal.ingredients.slice(0, 4).map((ing: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="text-[10px] border-border/50 bg-muted/30">
+                                    {ing}
+                                  </Badge>
+                                ))}
+                                {meal.ingredients.length > 4 && (
+                                  <Badge variant="outline" className="text-[10px] border-border/50 bg-muted/30">
+                                    +{meal.ingredients.length - 4} more
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
               )}
 
-              {savedPlans.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-green-200">Your Saved Meal Plans</h3>
-                  <div className="grid gap-3">
-                    {savedPlans.map((plan) => (
-                      <Card key={plan.id} className="bg-green-900/40 border-green-500/40">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium text-white">{plan.title}</h4>
-                              <p className="text-green-300 text-sm">{plan.user_requirements}</p>
-                            </div>
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                              Saved
-                            </Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
+              {/* Saved Plans */}
+              {savedPlans.length > 0 && !generatedPlan && (
+                <motion.div 
+                  className="mt-6 space-y-3"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <h3 className="text-sm font-semibold text-foreground">Saved Plans</h3>
+                  {savedPlans.map((plan, index) => (
+                    <button
+                      key={plan.id}
+                      onClick={() => {
+                        try {
+                          setGeneratedPlan(JSON.parse(plan.content));
+                        } catch {
+                          toast({
+                            title: 'Error',
+                            description: 'Could not load this plan',
+                            variant: 'destructive'
+                          });
+                        }
+                      }}
+                      className="w-full p-4 bg-card/50 rounded-xl border border-border/50 text-left hover:bg-card transition-colors"
+                      aria-label={`Load ${plan.title}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-foreground text-sm">{plan.title}</h4>
+                          <p className="text-xs text-muted-foreground">{plan.user_requirements}</p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    </button>
+                  ))}
+                </motion.div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </PullToRefresh>
         </div>
-      </div>
-    </UsageLimitGuard>
+      </UsageLimitGuard>
     </FeatureGate>
   );
 };

@@ -33,6 +33,17 @@ interface BlueprintAIProps {
 const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Smart back navigation - returns to previous page or modules as fallback
+  const handleBackNavigation = () => {
+    if (onBack) {
+      onBack();
+    } else if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/modules');
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
@@ -235,7 +246,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MobileHeader title="Blueprint AI" onBack={onBack} />
+        <MobileHeader title="Blueprint AI" onBack={handleBackNavigation} />
         <div className="p-4 space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-32 bg-card/50 rounded-2xl animate-pulse" />
@@ -249,7 +260,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     <div className="min-h-screen bg-background">
       <MobileHeader 
         title="Blueprint AI" 
-        onBack={onBack}
+        onBack={handleBackNavigation}
         rightElement={
           <Button
             variant="ghost"

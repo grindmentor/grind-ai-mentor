@@ -120,7 +120,7 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
         onBack={onBack}
       />
       
-      <div className="px-4 pb-24" style={{ paddingTop: 'calc(56px + env(safe-area-inset-top) + 16px)' }}>
+      <div className="px-4 pb-28">
         <div className="max-w-md mx-auto space-y-6">
           
           {/* Main Timer Display */}

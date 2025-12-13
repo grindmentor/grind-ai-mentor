@@ -6,12 +6,14 @@ import { Timer, Play, Pause, RotateCcw, SkipForward, Plus, Volume2, VolumeX } fr
 import { MobileHeader } from '@/components/MobileHeader';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 interface WorkoutTimerProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
+  const navigate = useNavigate();
   const [workDuration, setWorkDuration] = useState(30);
   const [restDuration, setRestDuration] = useState(60);
   const [displayTime, setDisplayTime] = useState(30);
@@ -23,6 +25,16 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
   const [totalRestTime, setTotalRestTime] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [currentExercise, setCurrentExercise] = useState('');
+
+  const handleBackNavigation = useCallback(() => {
+    if (onBack) {
+      onBack();
+    } else if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/modules');
+    }
+  }, [onBack, navigate]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -117,7 +129,7 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
     <div className="min-h-screen bg-background">
       <MobileHeader 
         title="Workout Timer" 
-        onBack={onBack}
+        onBack={handleBackNavigation}
       />
       
       <div className="px-4 pb-28">

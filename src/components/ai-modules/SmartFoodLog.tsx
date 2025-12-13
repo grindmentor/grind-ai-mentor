@@ -457,400 +457,320 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
   const totals = getTotalNutrition();
 
+  const handleBackNavigation = useCallback(() => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/modules');
+    }
+  }, [navigate]);
+
+  const handleRefresh = async () => {
+    await loadFoodEntries();
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-orange-950/50 to-amber-900/30">
+    <div className="min-h-screen bg-background">
       <MobileHeader 
         title="Smart Food Log" 
-        onBack={onBack}
+        onBack={handleBackNavigation}
       />
       
-      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* USDA Search & Photo Analysis */}
-          <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/30 backdrop-blur-sm border-orange-500/30">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500/30 to-amber-500/40 rounded-xl flex items-center justify-center border border-orange-500/30">
-                    <Database className="w-5 h-5 text-orange-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-white text-xl">USDA Food Database</CardTitle>
-                    <CardDescription className="text-orange-200/80">
-                      Search live USDA nutrition data
-                    </CardDescription>
-                  </div>
+      <div className="px-4 pb-28">
+        {/* Hero */}
+        <div className="text-center py-6">
+          <div className="w-14 h-14 mx-auto bg-gradient-to-br from-orange-500/20 to-amber-500/20 rounded-2xl flex items-center justify-center mb-3 border border-orange-500/20">
+            <Utensils className="w-7 h-7 text-orange-400" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground mb-1">Smart Food Log</h2>
+          <p className="text-sm text-muted-foreground">AI-powered nutrition tracking</p>
+          <div className="flex justify-center mt-3">
+            <RateLimitBadge 
+              featureKey="food_log_analyses" 
+              featureName="Food analyses"
+              showProgress
+            />
+          </div>
+        </div>
+
+        {/* Date Selection */}
+        <div className="mb-4">
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-muted/30 border-border h-11 rounded-xl"
+            aria-label="Select date"
+          />
+        </div>
+
+        {/* Daily Summary */}
+        {foodEntries.length > 0 && (
+          <Card className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/20 mb-4">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-foreground text-sm flex items-center mb-3">
+                <BarChart3 className="w-4 h-4 mr-2 text-orange-400" />
+                Daily Totals
+              </h3>
+              <div className="grid grid-cols-5 gap-2">
+                <div className="text-center p-2 bg-background/50 rounded-lg">
+                  <div className="text-lg font-bold text-foreground">{totals.calories}</div>
+                  <div className="text-[10px] text-muted-foreground">Cal</div>
                 </div>
-                <RateLimitBadge 
-                  featureKey="food_log_analyses" 
-                  featureName="Food analyses"
-                  showProgress
-                />
+                <div className="text-center p-2 bg-background/50 rounded-lg">
+                  <div className="text-lg font-bold text-foreground">{totals.protein.toFixed(0)}g</div>
+                  <div className="text-[10px] text-muted-foreground">Protein</div>
+                </div>
+                <div className="text-center p-2 bg-background/50 rounded-lg">
+                  <div className="text-lg font-bold text-foreground">{totals.carbs.toFixed(0)}g</div>
+                  <div className="text-[10px] text-muted-foreground">Carbs</div>
+                </div>
+                <div className="text-center p-2 bg-background/50 rounded-lg">
+                  <div className="text-lg font-bold text-foreground">{totals.fat.toFixed(0)}g</div>
+                  <div className="text-[10px] text-muted-foreground">Fat</div>
+                </div>
+                <div className="text-center p-2 bg-background/50 rounded-lg">
+                  <div className="text-lg font-bold text-foreground">{totals.fiber.toFixed(0)}g</div>
+                  <div className="text-[10px] text-muted-foreground">Fiber</div>
+                </div>
               </div>
-              <RateLimitWarning 
-                featureKey="food_log_analyses" 
-                featureName="Food Log" 
-              />
-            </CardHeader>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <Button
+            onClick={() => navigate(`/add-food?meal=${mealType}`)}
+            className="h-12 bg-primary hover:bg-primary/90 rounded-xl"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Food
+          </Button>
+          <Select value={mealType} onValueChange={handleMealTypeChange}>
+            <SelectTrigger className="h-12 bg-muted/30 border-border rounded-xl" aria-label="Select meal type">
+              <SelectValue placeholder="Meal type" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border rounded-xl">
+              <SelectItem value="breakfast">🌅 Breakfast</SelectItem>
+              <SelectItem value="lunch">☀️ Lunch</SelectItem>
+              <SelectItem value="dinner">🌙 Dinner</SelectItem>
+              <SelectItem value="snack">🥨 Snack</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* USDA Search */}
+        <Card className="bg-card/50 border-border/50 mb-4">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Database className="w-4 h-4 text-primary" />
+              <span className="font-medium text-foreground text-sm">USDA Database Search</span>
+            </div>
             
-            <CardContent className="space-y-6">
-              {/* Date Selection */}
-              <div className="space-y-2">
-                <Label className="text-orange-200 flex items-center">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Date
-                </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
                 <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-orange-900/30 border-orange-500/50 text-white"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search foods..."
+                  className="bg-muted/30 border-border h-11 rounded-xl pr-10"
+                  aria-label="Search USDA database"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.length >= 3) {
+                      performUSDASearch(searchQuery);
+                    }
+                  }}
                 />
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-3.5 w-4 h-4 animate-spin text-muted-foreground" />
+                )}
               </div>
+              <Button
+                onClick={() => performUSDASearch(searchQuery)}
+                disabled={searchQuery.length < 3 || isSearching}
+                className="h-11 px-4 bg-primary hover:bg-primary/90 rounded-xl"
+                aria-label="Search"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
 
-              {/* Quick Add Custom Food Button */}
-              <div className="p-4 bg-blue-900/20 rounded-lg border border-blue-500/20">
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="number"
+                value={portionSize}
+                onChange={(e) => setPortionSize(e.target.value)}
+                placeholder="Portion (g)"
+                className="bg-muted/30 border-border h-10 rounded-xl text-sm"
+                aria-label="Portion size in grams"
+              />
+            </div>
+
+            {/* Error Message */}
+            {searchError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-destructive text-xs">{searchError}</p>
+              </div>
+            )}
+
+            {/* No Results */}
+            {noResultsMessage && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <p className="text-amber-500 text-xs">{noResultsMessage}</p>
                 <Button
-                  onClick={() => navigate(`/add-food?meal=${mealType}`)}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                  onClick={() => navigate(`/add-food?meal=${mealType}&name=${searchQuery}`)}
+                  size="sm"
+                  className="mt-2 h-8 text-xs"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Custom Food Entry
+                  Add Custom
                 </Button>
-                <p className="text-blue-200/80 text-sm mt-2 text-center">
-                  Manually enter food with calories and macros
-                </p>
               </div>
+            )}
 
-              {/* USDA Live Search */}
-              <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
-                <h3 className="text-lg font-semibold text-orange-200 flex items-center">
-                  <Search className="w-5 h-5 mr-2" />
-                  Live USDA Search
-                </h3>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <Label className="text-orange-200">Search Food</Label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="e.g., semolina flour, chicken breast, apple"
-                          className="bg-orange-800/50 border-orange-500/30 text-white placeholder:text-orange-300/50"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && searchQuery.length >= 3) {
-                              performUSDASearch(searchQuery);
-                            }
-                          }}
-                        />
-                        {isSearching && (
-                          <Loader2 className="absolute right-3 top-3 w-4 h-4 animate-spin text-orange-400" />
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="bg-muted/30 rounded-xl border border-border/50 max-h-64 overflow-y-auto">
+                {searchResults.map((item) => (
+                  <div 
+                    key={item.fdcId} 
+                    className="p-3 border-b border-border/30 last:border-0 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-foreground text-sm truncate">{item.name}</div>
+                        {item.brand && (
+                          <div className="text-xs text-muted-foreground truncate">{item.brand}</div>
                         )}
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          {item.calories} cal | P: {item.protein}g | C: {item.carbs}g | F: {item.fat}g
+                        </div>
                       </div>
                       <Button
-                        onClick={() => performUSDASearch(searchQuery)}
-                        disabled={searchQuery.length < 3 || isSearching}
-                        className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
-                      >
-                        <Search className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Portion Size and Meal Type */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-orange-200">Portion (grams)</Label>
-                      <Input
-                        type="number"
-                        value={portionSize}
-                        onChange={(e) => setPortionSize(e.target.value)}
-                        className="bg-orange-800/50 border-orange-500/30 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-orange-200">Meal Type</Label>
-                      <Select value={mealType} onValueChange={handleMealTypeChange}>
-                        <SelectTrigger className="bg-orange-800/50 border-orange-500/30 text-white [&>span]:text-white">
-                          <SelectValue placeholder="Select meal" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border-border z-[100]">
-                          <SelectItem value="breakfast" className="text-foreground focus:bg-accent focus:text-accent-foreground">🌅 Breakfast</SelectItem>
-                          <SelectItem value="lunch" className="text-foreground focus:bg-accent focus:text-accent-foreground">☀️ Lunch</SelectItem>
-                          <SelectItem value="dinner" className="text-foreground focus:bg-accent focus:text-accent-foreground">🌙 Dinner</SelectItem>
-                          <SelectItem value="snack" className="text-foreground focus:bg-accent focus:text-accent-foreground">🥨 Snack</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  {/* Error Messages */}
-                  {searchError && (
-                    <div className="p-3 bg-red-900/30 border border-red-500/30 rounded-lg flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-red-200 text-sm">{searchError}</p>
-                        <Button
-                          onClick={() => navigate(`/add-food?meal=${mealType}`)}
-                          size="sm"
-                          className="mt-2 bg-red-600 hover:bg-red-700"
-                        >
-                          Add Custom Food
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No Results Message */}
-                  {noResultsMessage && (
-                    <div className="p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
-                      <p className="text-yellow-200 text-sm">{noResultsMessage}</p>
-                      <Button
-                        onClick={() => navigate(`/add-food?meal=${mealType}&name=${searchQuery}`)}
+                        onClick={() => addFoodFromUSDA(item)}
                         size="sm"
-                        className="mt-2 bg-yellow-600 hover:bg-yellow-700"
+                        className="h-8 px-3 bg-green-600 hover:bg-green-700 rounded-lg flex-shrink-0"
+                        aria-label={`Add ${item.name}`}
                       >
-                        Add Custom Food
+                        <Plus className="w-3 h-3" />
                       </Button>
                     </div>
-                  )}
-                  
-                  {/* USDA Search Results */}
-                  {searchResults.length > 0 && (
-                    <div className="relative">
-                      <div className="absolute top-0 left-0 right-0 z-50 bg-card border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto">
-                        <div className="p-2 border-b border-border sticky top-0 bg-card">
-                          <Label className="text-sm font-medium text-foreground">USDA Results ({searchResults.length})</Label>
-                        </div>
-                        <div className="p-2 space-y-2">
-                          {searchResults.map((item) => (
-                            <div key={item.fdcId} className="p-3 bg-muted/50 hover:bg-muted rounded-lg cursor-pointer transition-colors border border-border/50">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-foreground truncate">{item.name}</div>
-                                  {item.brand && (
-                                    <div className="text-sm text-muted-foreground truncate">Brand: {item.brand}</div>
-                                  )}
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Badge variant="outline" className="text-xs border-green-400/30 text-green-500 bg-green-500/10">
-                                      {item.dataType}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    Per 100g: {item.calories} cal, {item.protein}g protein, {item.carbs}g carbs, {item.fat}g fat
-                                  </div>
-                                  {item.householdServing && (
-                                    <div className="text-xs text-muted-foreground">
-                                      Serving: {item.householdServing}
-                                    </div>
-                                  )}
-                                </div>
-                                <Button
-                                  onClick={() => addFoodFromUSDA(item)}
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700 flex-shrink-0 ml-2"
-                                >
-                                  <Plus className="w-4 h-4 mr-1" />
-                                  Add
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Spacer to prevent content jump */}
-                      <div className="h-80" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Photo Analysis */}
-              <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
-                <h3 className="text-lg font-semibold text-orange-200 flex items-center">
-                  <Camera className="w-5 h-5 mr-2" />
-                  Photo Ingredient Analysis
-                  <Badge variant="secondary" className="ml-2 bg-orange-500/20 text-orange-300 border-orange-400/30 text-xs">
-                    BETA
-                  </Badge>
-                </h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-orange-200">Upload Food Photo</Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setSelectedPhoto(e.target.files?.[0] || null)}
-                      className="w-full p-2 bg-orange-800/50 border border-orange-500/30 rounded text-white"
-                    />
                   </div>
-                  
-                  {selectedPhoto && (
-                    <div className="space-y-2">
-                      <div className="text-sm text-orange-300">
-                        📸 {selectedPhoto.name} ({(selectedPhoto.size / 1024 / 1024).toFixed(2)} MB)
-                      </div>
-                      <Button
-                        onClick={analyzePhotoIngredients}
-                        disabled={isAnalyzing}
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
-                      >
-                        {isAnalyzing ? (
-                          <div className="flex items-center justify-center space-x-2">
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            <span>Analyzing photo...</span>
-                          </div>
-                        ) : (
-                          <>
-                            <Camera className="w-4 h-4 mr-2" />
-                            Analyze Photo
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Food Entries & Daily Summary */}
-          <Card className="bg-gradient-to-br from-orange-900/20 to-amber-900/30 backdrop-blur-sm border-orange-500/30">
-            <CardHeader>
-              <CardTitle className="text-white">Daily Food Log</CardTitle>
-              <CardDescription className="text-orange-200/80">
-                Your meals for {new Date(selectedDate).toLocaleDateString()}
-              </CardDescription>
-            </CardHeader>
+        {/* Photo Analysis */}
+        <Card className="bg-card/50 border-border/50 mb-4">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Camera className="w-4 h-4 text-primary" />
+              <span className="font-medium text-foreground text-sm">Photo Analysis</span>
+              <Badge variant="secondary" className="text-[10px]">BETA</Badge>
+            </div>
             
-            <CardContent className="space-y-4">
-              {/* Daily Totals */}
-              {foodEntries.length > 0 && (
-                <div className="space-y-4 p-4 bg-orange-900/20 rounded-lg border border-orange-500/20">
-                  <h3 className="text-lg font-semibold text-orange-200 flex items-center">
-                    <BarChart3 className="w-5 h-5 mr-2" />
-                    Daily Totals
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-400">{totals.calories}</div>
-                      <div className="text-sm text-orange-300">Calories</div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setSelectedPhoto(e.target.files?.[0] || null)}
+              className="w-full text-sm bg-muted/30 border border-border rounded-xl p-2 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-primary file:text-primary-foreground"
+              aria-label="Upload food photo"
+            />
+            
+            {selectedPhoto && (
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">
+                  📸 {selectedPhoto.name} ({(selectedPhoto.size / 1024 / 1024).toFixed(2)} MB)
+                </div>
+                <Button
+                  onClick={analyzePhotoIngredients}
+                  disabled={isAnalyzing}
+                  className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-xl"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4 mr-2" />
+                      Analyze Photo
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Food Entries List */}
+        <div className="space-y-2">
+          <h3 className="caption-premium px-1 mb-2">Today's Entries</h3>
+          
+          {isLoadingEntries ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-muted/30 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : foodEntries.length === 0 ? (
+            <div className="empty-state-premium">
+              <div className="empty-state-icon">
+                <Utensils className="w-7 h-7" />
+              </div>
+              <h3 className="text-foreground font-semibold mb-2">No food logged yet</h3>
+              <p className="text-muted-foreground text-sm">
+                Search the USDA database or add custom food
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {foodEntries.map((entry) => (
+                <div 
+                  key={entry.id} 
+                  className="p-3 bg-card/50 border border-border/50 rounded-xl group hover:bg-card transition-colors"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground text-sm truncate">{entry.food_name}</div>
+                      <div className="text-xs text-muted-foreground">{entry.portion_size}</div>
+                      <Badge className="mt-1 text-[10px] capitalize bg-muted/50 text-muted-foreground border-border/50">
+                        {entry.meal_type}
+                      </Badge>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-400">{totals.protein.toFixed(1)}g</div>
-                      <div className="text-sm text-orange-300">Protein</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-400">{totals.carbs.toFixed(1)}g</div>
-                      <div className="text-sm text-orange-300">Carbs</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-400">{totals.fat.toFixed(1)}g</div>
-                      <div className="text-sm text-orange-300">Fat</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-400">{totals.fiber.toFixed(1)}g</div>
-                      <div className="text-sm text-orange-300">Fiber</div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {entry.calories !== undefined && (
+                        <div className="text-right">
+                          <div className="font-medium text-foreground text-sm">{entry.calories} cal</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            P: {entry.protein?.toFixed(0)}g C: {entry.carbs?.toFixed(0)}g F: {entry.fat?.toFixed(0)}g
+                          </div>
+                        </div>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFoodEntry(entry.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0 rounded-lg"
+                        aria-label={`Remove ${entry.food_name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>
-              )}
-
-              {/* Food Entries List */}
-              {isLoadingEntries ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="p-3 bg-orange-900/20 rounded-lg border border-orange-500/20 animate-fade-in"
-                      style={{ animationDelay: `${i * 100}ms` }}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 space-y-2">
-                          <div className="h-5 w-3/4 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
-                          <div className="h-4 w-1/3 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded" />
-                          <div className="h-5 w-16 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded-full" />
-                        </div>
-                        <div className="space-y-2 text-right">
-                          <div className="h-5 w-16 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded ml-auto" />
-                          <div className="h-3 w-24 bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 bg-[length:200%_100%] animate-shimmer rounded ml-auto" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : foodEntries.length === 0 ? (
-                <div className="text-center py-8 text-orange-300/70">
-                  <Utensils className="w-12 h-12 mx-auto mb-3 text-orange-400/50" />
-                  <p>No food entries for this date yet.</p>
-                  <p className="text-sm mt-1">Search USDA database or add custom food!</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {foodEntries.map((entry) => (
-                    <div key={entry.id} className="p-3 bg-orange-900/30 rounded-lg border border-orange-500/20 group hover:bg-orange-900/40 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-white truncate">{entry.food_name}</div>
-                          <div className="text-sm text-orange-300 truncate">{entry.portion_size}</div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs border-orange-400/30 text-orange-300 bg-orange-500/10 capitalize">
-                              {entry.meal_type}
-                            </Badge>
-                            {entry.food_name.includes('📸') && (
-                              <Badge variant="outline" className="text-xs border-pink-400/30 text-pink-300 bg-pink-500/10">
-                                Photo Analysis
-                              </Badge>
-                            )}
-                            {entry.food_name.includes('🥗') && (
-                              <Badge variant="outline" className="text-xs border-green-400/30 text-green-300 bg-green-500/10">
-                                USDA Database
-                              </Badge>
-                            )}
-                            {entry.food_name.includes('📝') && (
-                              <Badge variant="outline" className="text-xs border-blue-400/30 text-blue-300 bg-blue-500/10">
-                                Custom Entry
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {entry.calories !== undefined && (
-                            <div className="text-right min-w-[80px]">
-                              <div className="text-orange-200 font-medium">{entry.calories} cal</div>
-                              <div className="text-xs text-orange-300">
-                                P: {entry.protein?.toFixed(1)}g | C: {entry.carbs?.toFixed(1)}g | F: {entry.fat?.toFixed(1)}g
-                              </div>
-                            </div>
-                          )}
-                           <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeFoodEntry(entry.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity text-red-400 hover:text-red-300 hover:bg-red-500/10 flex-shrink-0"
-                            aria-label={`Remove ${entry.food_name}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Legal Footer */}
-      <FooterLinks />
     </div>
   );
 };

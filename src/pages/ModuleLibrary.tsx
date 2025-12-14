@@ -98,7 +98,7 @@ const ModuleLibrary = () => {
 
   const handleModuleClick = (module) => {
     if (module.id === 'blueprint-ai') {
-      navigate('/blueprint-ai');
+      navigate('/blueprint-ai', { state: { returnTo: '/modules' } });
       return;
     }
     setSelectedModule(module);

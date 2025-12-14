@@ -176,11 +176,11 @@ const ProgressHubDashboard = () => {
       color: 'from-green-500/20 to-emerald-500/20 border-green-500/30'
     },
     {
-      title: 'Recovery',
-      description: 'Track recovery metrics',
-      icon: Heart,
-      path: '/recovery-coach',
-      color: 'from-red-500/20 to-pink-500/20 border-red-500/30'
+      title: 'Exercises',
+      description: 'Browse exercise library',
+      icon: Dumbbell,
+      path: '/exercise-database',
+      color: 'from-indigo-500/20 to-blue-500/20 border-indigo-500/30'
     }
   ], []);
 

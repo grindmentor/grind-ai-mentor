@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface MobileHeaderProps {
   title: string;
@@ -24,6 +24,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   className
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const headerHeight = 56;
   
   const variantStyles = {
@@ -35,14 +36,22 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   const handleBack = () => {
     if (onBack) {
       onBack();
+      return;
+    }
+    
+    // Check for returnTo state passed during navigation
+    const state = location.state as { returnTo?: string } | null;
+    if (state?.returnTo) {
+      navigate(state.returnTo);
+      return;
+    }
+    
+    // Use browser history if available (more than just the current page)
+    if (window.history.length > 2) {
+      navigate(-1);
     } else {
-      // Use browser history if available, otherwise fallback to modules
-      if (window.history.length > 2) {
-        navigate(-1);
-      } else {
-        // Fallback to modules page, not dashboard
-        navigate('/modules');
-      }
+      // Fallback to modules page, not dashboard
+      navigate('/modules');
     }
   };
   
@@ -61,7 +70,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
         }}
       >
         <div className="h-14 px-2 flex items-center justify-between">
-          {/* Left - Back button or spacer */}
+          {/* Left - Back button */}
           <div className="w-12 flex items-center justify-start">
             <Button
               onClick={handleBack}

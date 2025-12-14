@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { MobileHeader } from '@/components/MobileHeader';
 import { Badge } from '@/components/ui/badge';
 import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import FoodEntryModal from './FoodEntryModal';
 import { Trash2 } from 'lucide-react';
 import FooterLinks from '@/components/dashboard/FooterLinks';
@@ -476,7 +477,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         onBack={handleBackNavigation}
       />
       
-      <div className="px-4 pb-28">
+      <PullToRefresh onRefresh={handleRefresh} skeletonVariant="list">
+        <div className="px-4 pb-28">
         {/* Hero */}
         <div className="text-center py-6">
           <div className="w-14 h-14 mx-auto bg-gradient-to-br from-orange-500/20 to-amber-500/20 rounded-2xl flex items-center justify-center mb-3 border border-orange-500/20">
@@ -770,7 +772,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </PullToRefresh>
     </div>
   );
 };

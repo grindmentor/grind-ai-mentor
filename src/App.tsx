@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { crashReporter } from "@/utils/crashReporter";
 import { logger } from "@/utils/logger";
@@ -74,7 +74,21 @@ const queryClient = new QueryClient({
 
 const BlueprintAIWrapper = () => {
   const navigate = useNavigate();
-  return <BlueprintAI onBack={() => navigate('/app')} />;
+  const location = useLocation();
+  
+  // Respect returnTo state for proper back navigation
+  const handleBack = () => {
+    const state = location.state as { returnTo?: string } | null;
+    if (state?.returnTo) {
+      navigate(state.returnTo);
+    } else if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/modules');
+    }
+  };
+  
+  return <BlueprintAI onBack={handleBack} />;
 };
 
 function App() {

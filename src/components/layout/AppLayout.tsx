@@ -94,9 +94,9 @@ const AppLayoutComponent: React.FC<AppLayoutProps> = ({
   }, [showBottomNav, location.pathname]);
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background">
       <main className={cn(
-        "flex-1 overflow-y-auto overflow-x-hidden",
+        "flex-1 overflow-x-hidden",
         shouldShowBottomNav && "pb-[calc(80px+env(safe-area-inset-bottom))]"
       )}>
         {children}

@@ -219,17 +219,17 @@ const Dashboard = () => {
 
   const handleSettingsPress = useCallback(() => {
     trigger('light');
-    navigate('/settings');
+    navigate('/settings', { state: { returnTo: '/app' } });
   }, [trigger, navigate]);
 
   const handleModuleLibraryPress = useCallback(() => {
     trigger('light');
-    navigate('/modules');
+    navigate('/modules', { state: { returnTo: '/app' } });
   }, [trigger, navigate]);
 
   const handleEditFavorites = useCallback(() => {
     trigger('light');
-    navigate('/modules');
+    navigate('/modules', { state: { returnTo: '/app' } });
   }, [trigger, navigate]);
 
   // Conditional returns AFTER all hooks
@@ -303,16 +303,18 @@ const Dashboard = () => {
                 className="mb-5 grid grid-cols-2 gap-3"
               >
                 <Button
-                  onClick={() => navigate('/progress-hub-dashboard')}
+                  onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
                   className="h-14 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 touch-manipulation"
+                  aria-label="Open Progress Hub"
                 >
                   <Star className="w-4 h-4" />
                   <span className="text-sm">Progress Hub</span>
                 </Button>
                 <Button
-                  onClick={() => navigate('/exercise-database')}
+                  onClick={() => navigate('/exercise-database', { state: { returnTo: '/app' } })}
                   variant="outline"
                   className="h-14 border-border rounded-2xl font-semibold flex items-center justify-center gap-2 touch-manipulation"
+                  aria-label="Open Exercise Database"
                 >
                   <Book className="w-4 h-4" />
                   <span className="text-sm">Exercises</span>

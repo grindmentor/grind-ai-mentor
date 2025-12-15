@@ -97,10 +97,31 @@ const ModuleLibrary = () => {
   );
 
   const handleModuleClick = (module) => {
-    if (module.id === 'blueprint-ai') {
-      navigate('/blueprint-ai', { state: { returnTo: '/modules' } });
+    // Navigate with returnTo state for proper back navigation
+    const routeMap: { [key: string]: string } = {
+      'blueprint-ai': '/blueprint-ai',
+      'workout-logger': '/workout-logger',
+      'smart-food-log': '/smart-food-log',
+      'coach-gpt': '/coach-gpt',
+      'meal-plan-ai': '/meal-plan-ai',
+      'recovery-coach': '/recovery-coach',
+      'smart-training': '/smart-training',
+      'habit-tracker': '/habit-tracker',
+      'tdee-calculator': '/tdee-calculator',
+      'cut-calc-pro': '/cut-calc-pro',
+      'workout-timer': '/workout-timer',
+      'physique-ai': '/physique-ai',
+      'exercise-database': '/exercise-database',
+      'research': '/research',
+    };
+    
+    const route = routeMap[module.id];
+    if (route) {
+      navigate(route, { state: { returnTo: '/modules' } });
       return;
     }
+    
+    // Fallback to inline module rendering
     setSelectedModule(module);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

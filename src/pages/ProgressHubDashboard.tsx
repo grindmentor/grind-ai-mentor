@@ -21,10 +21,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { MobileHeader } from '@/components/MobileHeader';
-import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useModuleNavigation } from '@/hooks/useModuleNavigation';
 
 interface DashboardStats {
   totalWorkouts: number;
@@ -38,7 +38,7 @@ interface DashboardStats {
 
 const ProgressHubDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { navigateToModule, navigateWithReturn } = useModuleNavigation();
   const { isSubscribed } = useSubscription();
   const [stats, setStats] = useState<DashboardStats>({
     totalWorkouts: 0,
@@ -340,7 +340,7 @@ const ProgressHubDashboard = () => {
                       {quickActions.map((action, index) => (
                         <motion.button
                           key={action.title}
-                          onClick={() => navigate(action.path)}
+                          onClick={() => navigateToModule(action.path)}
                           className={cn(
                             "p-4 rounded-xl border text-left transition-all active:scale-95",
                             "bg-gradient-to-br",
@@ -375,7 +375,7 @@ const ProgressHubDashboard = () => {
                       icon={Camera}
                     />
                     <Button
-                      onClick={() => navigate('/physique-ai')}
+                      onClick={() => navigateToModule('/physique-ai')}
                       className="w-full mt-4"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -439,7 +439,7 @@ const ProgressHubDashboard = () => {
                 {stats.avgSleepHours === 0 && stats.avgStressLevel === 0 && (
                   <div className="text-center pt-4">
                     <Button
-                      onClick={() => navigate('/recovery-coach')}
+                      onClick={() => navigateToModule('/recovery-coach')}
                       variant="outline"
                       className="w-full"
                     >
@@ -463,7 +463,7 @@ const ProgressHubDashboard = () => {
                       Explore evidence-based training principles and the latest research in exercise science.
                     </p>
                     <Button
-                      onClick={() => navigate('/research')}
+                      onClick={() => navigateToModule('/research')}
                       variant="outline"
                       className="w-full"
                     >

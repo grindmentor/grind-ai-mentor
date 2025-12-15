@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useModuleNavigation } from '@/hooks/useModuleNavigation';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -56,7 +56,7 @@ const recommendations = [
 
 const PersonalizedFeedComponent: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { navigateToModule } = useModuleNavigation();
   const { trigger } = useNativeHaptics();
 
   // Fetch recent workouts with longer stale time
@@ -98,8 +98,8 @@ const PersonalizedFeedComponent: React.FC = () => {
   });
 
   // Memoized navigation callbacks - stable references
-  const navigateToWorkout = useCallback(() => navigate('/workout-logger'), [navigate]);
-  const navigateToFood = useCallback(() => navigate('/smart-food-log'), [navigate]);
+  const navigateToWorkout = useCallback(() => navigateToModule('/workout-logger'), [navigateToModule]);
+  const navigateToFood = useCallback(() => navigateToModule('/smart-food-log'), [navigateToModule]);
 
   const feedItems = useMemo<FeedItem[]>(() => {
     const items: FeedItem[] = [];
@@ -148,8 +148,8 @@ const PersonalizedFeedComponent: React.FC = () => {
 
   const handleRecommendationPress = useCallback((rec: typeof recommendations[0]) => {
     trigger('light');
-    navigate(rec.path);
-  }, [trigger, navigate]);
+    navigateToModule(rec.path);
+  }, [trigger, navigateToModule]);
 
   const isLoading = workoutsLoading || mealsLoading;
 

@@ -22,19 +22,25 @@ const ExerciseList = React.memo(({
 }: ExerciseListProps) => {
   if (exercises.length === 0) {
     return (
-      <div className="bg-card/30 border border-border/30 rounded-2xl p-8 text-center">
-        <Target className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+      <div 
+        className="bg-card/30 border border-border/30 rounded-2xl p-8 text-center"
+        role="status"
+        aria-label="No exercises added yet"
+      >
+        <Target className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" aria-hidden="true" />
         <h3 className="text-base font-medium text-foreground mb-2">No Exercises Added</h3>
-        <p className="text-muted-foreground text-sm">Add your first exercise to start logging your workout.</p>
+        <p className="text-muted-foreground text-sm">
+          Add your first exercise to start logging your workout.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="list" aria-label="Current workout exercises">
       {exercises.map((exercise, index) => (
         <ExerciseCard
-          key={index}
+          key={`${exercise.name}-${index}`}
           exercise={exercise}
           exerciseIndex={index}
           weightUnit={weightUnit}

@@ -7,9 +7,12 @@ import { ExerciseSearch } from '@/components/exercise/ExerciseSearch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+/** Exercise data from search - can be string (custom) or object from DB */
+type ExerciseInput = string | { name: string };
+
 interface ExerciseAddSectionProps {
   userId?: string;
-  onAddExercise: (exerciseData: any) => void;
+  onAddExercise: (exerciseData: ExerciseInput) => void;
 }
 
 const ExerciseAddSection = React.memo(({ userId, onAddExercise }: ExerciseAddSectionProps) => {
@@ -19,7 +22,7 @@ const ExerciseAddSection = React.memo(({ userId, onAddExercise }: ExerciseAddSec
   const [customExerciseMuscles, setCustomExerciseMuscles] = useState('');
   const [customExerciseEquipment, setCustomExerciseEquipment] = useState('');
 
-  const handleExerciseSelect = (exerciseData: any) => {
+  const handleExerciseSelect = (exerciseData: ExerciseInput) => {
     onAddExercise(exerciseData);
     setShowExerciseSearch(false);
   };
@@ -74,23 +77,27 @@ const ExerciseAddSection = React.memo(({ userId, onAddExercise }: ExerciseAddSec
   return (
     <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-4 relative z-10">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-foreground font-semibold text-sm">Add Exercise</h3>
+        <h3 className="text-foreground font-semibold text-sm" id="add-exercise-title">Add Exercise</h3>
         <div className="flex gap-2">
           <Button
             onClick={() => setShowExerciseSearch(!showExerciseSearch)}
             size="sm"
-            className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 h-8 text-xs rounded-lg"
+            className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 h-9 min-h-[36px] text-xs rounded-lg"
+            aria-label="Browse exercises"
+            aria-expanded={showExerciseSearch}
           >
-            <Search className="w-3.5 h-3.5 mr-1.5" />
+            <Search className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
             Browse
           </Button>
           <Button
             onClick={() => setShowCustomExerciseForm(!showCustomExerciseForm)}
             size="sm"
             variant="outline"
-            className="border-border/50 text-muted-foreground hover:bg-muted/30 h-8 text-xs rounded-lg"
+            className="border-border/50 text-muted-foreground hover:bg-muted/30 h-9 min-h-[36px] text-xs rounded-lg"
+            aria-label="Create custom exercise"
+            aria-expanded={showCustomExerciseForm}
           >
-            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            <Plus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
             Custom
           </Button>
         </div>

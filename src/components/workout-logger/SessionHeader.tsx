@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,13 +19,31 @@ const SessionHeader = React.memo(({
   onWorkoutNameChange,
   onWorkoutNotesChange
 }: SessionHeaderProps) => {
-  const durationMinutes = Math.floor((Date.now() - startTime) / (1000 * 60));
+  // Live duration update every 30 seconds
+  const [durationMinutes, setDurationMinutes] = useState(() => 
+    Math.floor((Date.now() - startTime) / (1000 * 60))
+  );
+
+  useEffect(() => {
+    // Update immediately
+    setDurationMinutes(Math.floor((Date.now() - startTime) / (1000 * 60)));
+    
+    // Then update every 30 seconds
+    const interval = setInterval(() => {
+      setDurationMinutes(Math.floor((Date.now() - startTime) / (1000 * 60)));
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
 
   return (
     <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-4 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="workout-name" className="text-foreground mb-2 block text-sm font-medium">
+          <Label 
+            htmlFor="workout-name" 
+            className="text-foreground mb-2 block text-sm font-medium"
+          >
             Workout Name
           </Label>
           <Input
@@ -34,10 +52,15 @@ const SessionHeader = React.memo(({
             value={workoutName}
             onChange={(e) => onWorkoutNameChange(e.target.value)}
             className="bg-background/50 border-border/50 text-foreground rounded-xl h-11"
+            autoComplete="off"
+            aria-describedby="workout-name-hint"
           />
+          <span id="workout-name-hint" className="sr-only">
+            Enter a name for your workout session
+          </span>
         </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Clock className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-muted-foreground" role="timer" aria-live="polite">
+          <Clock className="w-4 h-4" aria-hidden="true" />
           <span className="text-sm">
             Duration: {durationMinutes} min
           </span>
@@ -45,7 +68,10 @@ const SessionHeader = React.memo(({
       </div>
       
       <div>
-        <Label htmlFor="workout-notes" className="text-foreground mb-2 block text-sm font-medium">
+        <Label 
+          htmlFor="workout-notes" 
+          className="text-foreground mb-2 block text-sm font-medium"
+        >
           Notes (Optional)
         </Label>
         <Textarea
@@ -55,7 +81,11 @@ const SessionHeader = React.memo(({
           onChange={(e) => onWorkoutNotesChange(e.target.value)}
           className="bg-background/50 border-border/50 text-foreground rounded-xl resize-none"
           rows={2}
+          aria-describedby="workout-notes-hint"
         />
+        <span id="workout-notes-hint" className="sr-only">
+          Add optional notes about your workout
+        </span>
       </div>
     </div>
   );

@@ -27,23 +27,15 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 interface BlueprintAIProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Smart back navigation - returns to previous page or modules as fallback
-  const handleBackNavigation = () => {
-    if (onBack) {
-      onBack();
-    } else if (window.history.length > 2) {
-      navigate(-1);
-    } else {
-      navigate('/modules');
-    }
-  };
+  // MobileHeader will handle back navigation using location.state.returnTo
+  // Only use onBack if explicitly provided (inline component rendering)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
@@ -246,7 +238,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MobileHeader title="Blueprint AI" onBack={handleBackNavigation} />
+        <MobileHeader title="Blueprint AI" onBack={onBack} />
         <div className="p-4 space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-32 bg-card/50 rounded-2xl animate-pulse" />
@@ -260,7 +252,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     <div className="min-h-screen bg-background">
       <MobileHeader 
         title="Blueprint AI" 
-        onBack={handleBackNavigation}
+        onBack={onBack}
         rightElement={
           <Button
             variant="ghost"

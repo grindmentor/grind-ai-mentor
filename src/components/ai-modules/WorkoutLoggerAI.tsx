@@ -14,6 +14,10 @@ import {
   WorkoutExercise,
   WorkoutSession,
   WorkoutSet,
+  RawWorkoutExercise,
+  normalizeSessionExercises,
+  createEmptySet,
+  createExercise,
   SessionHeader,
   ExerciseAddSection,
   ExerciseList,
@@ -23,6 +27,24 @@ import {
 
 interface WorkoutLoggerAIProps {
   onBack: () => void;
+}
+
+/** Template exercise structure from training_programs */
+interface TemplateExercise {
+  name: string;
+  sets?: number;
+  muscleGroup?: string;
+  targetReps?: string;
+  notes?: string;
+  targetWeight?: string;
+  rpe?: number;
+}
+
+interface TrainingTemplate {
+  name: string;
+  program_data?: {
+    exercises?: TemplateExercise[];
+  };
 }
 
 const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
@@ -57,7 +79,20 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         .limit(10);
 
       if (error) throw error;
-      setPreviousSessions((data || []) as WorkoutSession[]);
+      
+      // Transform DB data to typed WorkoutSession[]
+      const sessions: WorkoutSession[] = (data || []).map(row => ({
+        id: row.id,
+        workout_name: row.workout_name,
+        session_date: row.session_date,
+        duration_minutes: row.duration_minutes,
+        exercises_data: normalizeSessionExercises(row.exercises_data as RawWorkoutExercise[] | null),
+        notes: row.notes ?? undefined,
+        workout_type: row.workout_type ?? undefined,
+        calories_burned: row.calories_burned ?? undefined
+      }));
+      
+      setPreviousSessions(sessions);
     } catch (error) {
       console.error('Error loading previous sessions:', error);
       toast.error('Failed to load previous sessions');
@@ -66,12 +101,9 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
   };
 
-  const addExercise = useCallback((exerciseData: any) => {
+  const addExercise = useCallback((exerciseData: string | { name: string }) => {
     const exerciseName = typeof exerciseData === 'string' ? exerciseData : exerciseData.name;
-    const newExercise: WorkoutExercise = {
-      name: exerciseName,
-      sets: [{ weight: '', reps: '', rpe: 7 }]
-    };
+    const newExercise = createExercise(exerciseName);
     setExercises(prev => [...prev, newExercise]);
   }, []);
 
@@ -79,7 +111,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     setExercises(prev => {
       const updated = [...prev];
       if (setIndex >= updated[exerciseIndex].sets.length) {
-        updated[exerciseIndex].sets.push({ weight: '', reps: '', rpe: 7 });
+        updated[exerciseIndex].sets.push(createEmptySet());
       }
       updated[exerciseIndex].sets[setIndex] = {
         ...updated[exerciseIndex].sets[setIndex],
@@ -152,7 +184,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   const addSet = useCallback((exerciseIndex: number) => {
     setExercises(prev => {
       const updated = [...prev];
-      updated[exerciseIndex].sets.push({ weight: '', reps: '', rpe: 7 });
+      updated[exerciseIndex].sets.push(createEmptySet());
       return updated;
     });
   }, []);
@@ -187,19 +219,20 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
 
       // Save individual exercise entries
       for (const exercise of exercises) {
-        for (const set of exercise.sets) {
+        for (let i = 0; i < exercise.sets.length; i++) {
+          const set = exercise.sets[i];
           if (set.weight && set.reps) {
             await supabase
               .from('progressive_overload_entries')
               .insert({
                 user_id: user.id,
                 exercise_name: exercise.name,
-                weight: parseFloat(set.weight.toString()),
-                reps: parseInt(set.reps.toString()),
+                weight: parseFloat(set.weight),
+                reps: parseInt(set.reps, 10),
                 sets: 1,
                 rpe: set.rpe,
                 workout_date: new Date().toISOString().split('T')[0],
-                notes: `${workoutName} - Set ${exercise.sets.indexOf(set) + 1}`
+                notes: `${workoutName} - Set ${i + 1}`
               });
           }
         }
@@ -228,26 +261,17 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
   };
 
   const loadWorkoutFromSession = useCallback((session: WorkoutSession) => {
-    if (!session.exercises_data) return;
+    if (!session.exercises_data || session.exercises_data.length === 0) return;
     
-    const loadedExercises = session.exercises_data.map((exercise: any) => ({
-      name: exercise.name,
-      sets: exercise.sets.map((set: any) => ({
-        weight: set.weight || '',
-        reps: set.reps || '',
-        rpe: set.rpe || 7
-      })),
-      muscleGroup: exercise.muscleGroup
-    }));
-    
-    setExercises(loadedExercises);
+    // exercises_data is already normalized from loadPreviousSessions
+    setExercises(session.exercises_data);
     setWorkoutName(session.workout_name);
     setActiveTab('current');
     toast.success(`Loaded: ${session.workout_name}`);
   }, []);
 
   const saveAsTemplate = useCallback(async (session: WorkoutSession) => {
-    if (!user?.id || !session.exercises_data) {
+    if (!user?.id || !session.exercises_data || session.exercises_data.length === 0) {
       toast.error('No workout data to save as template');
       return;
     }
@@ -257,13 +281,13 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         user_id: user.id,
         name: `${session.workout_name} Template`,
         program_data: {
-          exercises: session.exercises_data.map((exercise: any, index: number) => ({
+          exercises: session.exercises_data.map((exercise, index) => ({
             name: exercise.name || `Exercise ${index + 1}`,
             sets: exercise.sets?.length || 3,
             muscleGroup: exercise.muscleGroup || 'General',
-            targetReps: exercise.sets?.[0]?.reps?.toString() || '8-12',
+            targetReps: exercise.sets?.[0]?.reps || '8-12',
             notes: `Template from ${session.workout_name}`,
-            targetWeight: exercise.sets?.[0]?.weight?.toString() || '',
+            targetWeight: exercise.sets?.[0]?.weight || '',
             rpe: exercise.sets?.[0]?.rpe || 7
           }))
         },
@@ -284,16 +308,12 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
     }
   }, [user?.id]);
 
-  const loadTemplateWorkout = useCallback((template: any) => {
+  const loadTemplateWorkout = useCallback((template: TrainingTemplate) => {
     if (!template.program_data?.exercises) return;
     
-    const loadedExercises = template.program_data.exercises.map((exercise: any) => ({
+    const loadedExercises: WorkoutExercise[] = template.program_data.exercises.map((exercise) => ({
       name: exercise.name,
-      sets: Array(exercise.sets || 1).fill(null).map(() => ({
-        weight: '',
-        reps: '',
-        rpe: 7
-      })),
+      sets: Array(exercise.sets || 1).fill(null).map(() => createEmptySet()),
       muscleGroup: exercise.muscleGroup
     }));
     
@@ -375,12 +395,13 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
             onClick={onBack}
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0"
+            aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shrink-0">
-            <Dumbbell className="w-5 h-5 text-primary" />
+            <Dumbbell className="w-5 h-5 text-primary" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-semibold text-foreground">Workout Logger</h1>
@@ -390,7 +411,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
       </header>
 
       {/* Content */}
-      <div 
+      <main 
         className="p-4 space-y-5 pb-safe-bottom"
         style={{ paddingTop: 'calc(56px + env(safe-area-inset-top) + 16px)' }}
       >
@@ -444,7 +465,8 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
               <Button
                 onClick={logWorkout}
                 disabled={isLogging || !workoutName.trim()}
-                className="w-full h-12 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/20"
+                className="w-full h-12 min-h-[48px] bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/20"
+                aria-label={isLogging ? 'Logging workout...' : 'Log workout'}
               >
                 {isLogging ? (
                   <>
@@ -453,7 +475,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
                   </>
                 ) : (
                   <>
-                    <Dumbbell className="w-5 h-5 mr-2" />
+                    <Dumbbell className="w-5 h-5 mr-2" aria-hidden="true" />
                     Log Workout
                   </>
                 )}
@@ -474,7 +496,7 @@ const WorkoutLoggerAI = ({ onBack }: WorkoutLoggerAIProps) => {
         </Tabs>
 
         <RIRInfoCard />
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,8 +1,27 @@
 // Types
-export * from './types';
+export type { 
+  WorkoutSet, 
+  WorkoutExercise, 
+  WorkoutSession,
+  RawWorkoutSet,
+  RawWorkoutExercise 
+} from './types';
+
+export { 
+  normalizeSet, 
+  normalizeSessionExercises, 
+  createEmptySet, 
+  createExercise 
+} from './types';
 
 // Helpers
-export * from './rirHelpers';
+export { 
+  convertRPEtoRIR, 
+  getRIRFromRPE, 
+  getRIRLabel, 
+  getRIRColor, 
+  convertRIRtoRPE 
+} from './rirHelpers';
 
 // Components
 export { default as SetRow } from './SetRow';

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trash2 } from 'lucide-react';
-import { WorkoutSession } from './types';
+import { WorkoutSession, WorkoutExercise, WorkoutSet } from './types';
 import { getRIRFromRPE, getRIRColor } from './rirHelpers';
 
 interface PreviousSessionCardProps {
@@ -20,19 +20,27 @@ const PreviousSessionCard = React.memo(({
   onSaveAsTemplate,
   onDeleteSession
 }: PreviousSessionCardProps) => {
+  const exerciseCount = session.exercises_data?.length || 0;
+  const formattedDate = new Date(session.session_date).toLocaleDateString();
+  
   return (
-    <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden">
+    <article 
+      className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden"
+      aria-label={`Workout: ${session.workout_name} on ${formattedDate}`}
+    >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-foreground text-base truncate">{session.workout_name}</h3>
+            <h3 className="font-semibold text-foreground text-base truncate">
+              {session.workout_name}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              {new Date(session.session_date).toLocaleDateString()} • {session.duration_minutes} min
+              {formattedDate} • {session.duration_minutes} min
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-3">
             <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
-              {session.exercises_data?.length || 0} exercises
+              {exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''}
             </Badge>
           </div>
         </div>
@@ -41,7 +49,8 @@ const PreviousSessionCard = React.memo(({
           <Button
             onClick={() => onLoadSession(session)}
             size="sm"
-            className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 h-8 text-xs rounded-lg"
+            className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 h-9 min-h-[36px] text-xs rounded-lg"
+            aria-label={`Reuse workout: ${session.workout_name}`}
           >
             Reuse
           </Button>
@@ -49,7 +58,8 @@ const PreviousSessionCard = React.memo(({
             onClick={() => onSaveAsTemplate(session)}
             size="sm"
             variant="outline"
-            className="border-border/50 text-muted-foreground hover:bg-muted/30 h-8 text-xs rounded-lg"
+            className="border-border/50 text-muted-foreground hover:bg-muted/30 h-9 min-h-[36px] text-xs rounded-lg"
+            aria-label={`Save ${session.workout_name} as template`}
           >
             Save Template
           </Button>
@@ -57,27 +67,35 @@ const PreviousSessionCard = React.memo(({
             onClick={() => onDeleteSession(session.id)}
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-lg ml-auto"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-lg ml-auto"
+            aria-label={`Delete workout: ${session.workout_name}`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </Button>
         </div>
 
-        {session.exercises_data?.map((exercise: any, idx: number) => (
+        {session.exercises_data?.map((exercise: WorkoutExercise, idx: number) => (
           <div key={idx} className="mb-3 last:mb-0">
             <h4 className="text-sm font-medium text-foreground mb-2">{exercise.name}</h4>
-            <div className="space-y-1">
-              {exercise.sets?.map((set: any, setIdx: number) => (
-                <div key={setIdx} className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 p-2 rounded-lg border border-border/30">
-                  <span>Set {setIdx + 1}</span>
-                  <span>{set.weight}{weightUnit} × {set.reps} reps</span>
-                  {set.rpe && (
-                    <Badge className={`${getRIRColor(getRIRFromRPE(set.rpe))} text-xs px-2 py-0.5 rounded-md`}>
-                      {getRIRFromRPE(set.rpe)} RIR
-                    </Badge>
-                  )}
-                </div>
-              ))}
+            <div className="space-y-1" role="list" aria-label={`Sets for ${exercise.name}`}>
+              {exercise.sets?.map((set: WorkoutSet, setIdx: number) => {
+                const rirValue = getRIRFromRPE(set.rpe);
+                return (
+                  <div 
+                    key={setIdx} 
+                    className="flex items-center justify-between text-xs text-muted-foreground bg-muted/20 p-2 rounded-lg border border-border/30"
+                    role="listitem"
+                  >
+                    <span>Set {setIdx + 1}</span>
+                    <span>{set.weight}{weightUnit} × {set.reps} reps</span>
+                    {set.rpe != null && (
+                      <Badge className={`${getRIRColor(rirValue)} text-xs px-2 py-0.5 rounded-md`}>
+                        {rirValue} RIR
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -88,7 +106,7 @@ const PreviousSessionCard = React.memo(({
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 });
 

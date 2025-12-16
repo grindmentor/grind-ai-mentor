@@ -22,55 +22,91 @@ const SetRow = React.memo(({
   onUpdateSet, 
   onRemoveSet 
 }: SetRowProps) => {
+  const setNumber = setIndex + 1;
+  const rirValue = getRIRFromRPE(set.rpe);
+  
   return (
-    <div className="bg-muted/30 rounded-xl p-3 border border-border/30">
+    <div 
+      className="bg-muted/30 rounded-xl p-3 border border-border/30"
+      role="group"
+      aria-label={`Set ${setNumber}`}
+    >
       <div className="grid grid-cols-5 gap-2 items-center">
+        {/* Set Number */}
         <div className="text-center">
-          <span className="text-xs text-muted-foreground block mb-1">Set</span>
-          <span className="text-foreground font-medium text-sm">{setIndex + 1}</span>
+          <span className="text-xs text-muted-foreground block mb-1" aria-hidden="true">Set</span>
+          <span className="text-foreground font-medium text-sm">{setNumber}</span>
         </div>
         
+        {/* Weight Input */}
         <div>
-          <Label className="text-xs text-muted-foreground block mb-1">{weightUnit}</Label>
+          <Label 
+            htmlFor={`weight-${setIndex}`}
+            className="text-xs text-muted-foreground block mb-1"
+          >
+            {weightUnit}
+          </Label>
           <Input
+            id={`weight-${setIndex}`}
             type="number"
             inputMode="decimal"
             placeholder="0"
-            value={set.weight || ''}
+            value={set.weight}
             onChange={(e) => onUpdateSet('weight', e.target.value)}
-            className="bg-background/50 border-border/50 text-foreground h-9 text-sm rounded-lg"
-            onBlur={(e) => e.target.blur()}
+            className="bg-background/50 border-border/50 text-foreground h-10 text-sm rounded-lg"
+            aria-label={`Weight in ${weightUnit} for set ${setNumber}`}
+            min="0"
+            step="0.5"
           />
         </div>
         
+        {/* Reps Input */}
         <div>
-          <Label className="text-xs text-muted-foreground block mb-1">Reps</Label>
+          <Label 
+            htmlFor={`reps-${setIndex}`}
+            className="text-xs text-muted-foreground block mb-1"
+          >
+            Reps
+          </Label>
           <Input
+            id={`reps-${setIndex}`}
             type="number"
             inputMode="numeric"
             placeholder="0"
-            value={set.reps || ''}
+            value={set.reps}
             onChange={(e) => onUpdateSet('reps', e.target.value)}
-            className="bg-background/50 border-border/50 text-foreground h-9 text-sm rounded-lg"
-            onBlur={(e) => e.target.blur()}
+            className="bg-background/50 border-border/50 text-foreground h-10 text-sm rounded-lg"
+            aria-label={`Repetitions for set ${setNumber}`}
+            min="0"
+            step="1"
           />
         </div>
         
+        {/* RIR Select */}
         <div>
-          <Label className="text-xs text-muted-foreground block mb-1">RIR</Label>
+          <Label 
+            htmlFor={`rir-${setIndex}`}
+            className="text-xs text-muted-foreground block mb-1"
+          >
+            RIR
+          </Label>
           <Select
-            value={getRIRFromRPE(set.rpe ?? null).toString()}
+            value={rirValue.toString()}
             onValueChange={(value) => {
-              const rir = parseInt(value);
+              const rir = parseInt(value, 10);
               const rpe = convertRIRtoRPE(rir);
               onUpdateSet('rpe', rpe);
             }}
           >
-            <SelectTrigger className="bg-background/50 border-border/50 text-foreground h-9 text-xs rounded-lg">
+            <SelectTrigger 
+              id={`rir-${setIndex}`}
+              className="bg-background/50 border-border/50 text-foreground h-10 text-xs rounded-lg"
+              aria-label={`Reps in reserve for set ${setNumber}`}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border rounded-xl z-50">
-              <SelectItem value="0" className="text-destructive">0</SelectItem>
+              <SelectItem value="0" className="text-destructive">0 (Failure)</SelectItem>
               <SelectItem value="1" className="text-orange-400">1</SelectItem>
               <SelectItem value="2" className="text-yellow-400">2</SelectItem>
               <SelectItem value="3" className="text-primary">3</SelectItem>
@@ -80,14 +116,16 @@ const SetRow = React.memo(({
           </Select>
         </div>
         
+        {/* Delete Button - 44px touch target */}
         <div className="flex justify-center">
           <Button
             onClick={onRemoveSet}
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            aria-label={`Remove set ${setNumber}`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </Button>
         </div>
       </div>

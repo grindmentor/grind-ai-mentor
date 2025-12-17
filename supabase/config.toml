@@ -37,7 +37,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.optimize-image]
-verify_jwt = false
+verify_jwt = true
 
 [functions.support-notification]
 verify_jwt = false

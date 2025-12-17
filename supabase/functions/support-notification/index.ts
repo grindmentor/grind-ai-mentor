@@ -16,6 +16,17 @@ interface SupportNotificationRequest {
   userId?: string;
 }
 
+// Server-side HTML escaping to prevent HTML injection attacks
+function escapeHtml(unsafe: string): string {
+  if (typeof unsafe !== 'string') return '';
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -27,27 +38,34 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Received support notification request:", { name, email, subject, userId });
 
+    // Sanitize all user inputs server-side
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeSubject = escapeHtml(subject);
+    const safeMessage = escapeHtml(message);
+    const safeUserId = userId ? escapeHtml(userId) : null;
+
     // Send notification email to admin
     const adminEmail = Deno.env.get("ADMIN_EMAIL") || "support@myotopia.app";
     
     const emailResponse = await resend.emails.send({
       from: "Myotopia Support <onboarding@resend.dev>",
       to: [adminEmail],
-      subject: `[Support Request] ${subject}`,
+      subject: `[Support Request] ${safeSubject}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #1a1a2e; border-bottom: 2px solid #6366f1; padding-bottom: 10px;">New Support Request</h1>
           
           <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0;"><strong>From:</strong> ${name}</p>
-            <p style="margin: 0 0 10px 0;"><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-            <p style="margin: 0 0 10px 0;"><strong>Subject:</strong> ${subject}</p>
-            ${userId ? `<p style="margin: 0;"><strong>User ID:</strong> ${userId}</p>` : '<p style="margin: 0;"><strong>User:</strong> Not logged in</p>'}
+            <p style="margin: 0 0 10px 0;"><strong>From:</strong> ${safeName}</p>
+            <p style="margin: 0 0 10px 0;"><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
+            <p style="margin: 0 0 10px 0;"><strong>Subject:</strong> ${safeSubject}</p>
+            ${safeUserId ? `<p style="margin: 0;"><strong>User ID:</strong> ${safeUserId}</p>` : '<p style="margin: 0;"><strong>User:</strong> Not logged in</p>'}
           </div>
           
           <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <h3 style="color: #374151; margin-top: 0;">Message:</h3>
-            <p style="color: #4b5563; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+            <p style="color: #4b5563; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</p>
           </div>
           
           <p style="color: #9ca3af; font-size: 12px; margin-top: 30px;">

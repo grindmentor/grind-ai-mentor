@@ -165,34 +165,38 @@ const ModuleLibrary = () => {
       <MobileHeader 
         title="Modules"
         rightElement={
-          <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-0.5">
+          <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-0.5" role="group" aria-label="View mode">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleViewModeChange('grid')}
+              aria-label="Grid view"
+              aria-pressed={viewMode === 'grid'}
               className={cn(
-                "p-2 h-8 w-8 rounded-lg transition-all",
+                "p-2 h-9 w-9 min-h-[36px] min-w-[36px] rounded-lg transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                 viewMode === 'grid' 
                   ? 'bg-background shadow-sm text-foreground' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground [@media(hover:hover)]:hover:text-foreground'
               )}
-              aria-label="Grid view"
             >
-              <Grid className="w-4 h-4" />
+              <Grid className="w-4 h-4" aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleViewModeChange('list')}
+              aria-label="List view"
+              aria-pressed={viewMode === 'list'}
               className={cn(
-                "p-2 h-8 w-8 rounded-lg transition-all",
+                "p-2 h-9 w-9 min-h-[36px] min-w-[36px] rounded-lg transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                 viewMode === 'list' 
                   ? 'bg-background shadow-sm text-foreground' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground [@media(hover:hover)]:hover:text-foreground'
               )}
-              aria-label="List view"
             >
-              <List className="w-4 h-4" />
+              <List className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
         }
@@ -206,12 +210,12 @@ const ModuleLibrary = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none z-10" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none z-10" aria-hidden="true" />
             <Input
               placeholder="Search modules..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground"
+              className="pl-12 h-12 min-h-[44px] bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
               aria-label="Search modules"
             />
           </motion.div>
@@ -224,12 +228,13 @@ const ModuleLibrary = () => {
             className="flex gap-2"
           >
             <Button
-              onClick={() => navigate('/exercise-database')}
+              onClick={() => navigate('/exercise-database', { state: { returnTo: '/modules' } })}
               variant="outline"
               size="sm"
-              className="flex-1 h-10 rounded-xl"
+              className="flex-1 h-11 min-h-[44px] rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50"
+              aria-label="Open Exercise Library"
             >
-              <Book className="w-4 h-4 mr-2" />
+              <Book className="w-4 h-4 mr-2" aria-hidden="true" />
               Exercise Library
             </Button>
           </motion.div>
@@ -242,8 +247,8 @@ const ModuleLibrary = () => {
             transition={{ delay: 0.1 }}
           >
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Filter modules">
-                <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="h-11 min-h-[44px] bg-card border-border rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Filter modules">
+                <Filter className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-xl">
@@ -255,7 +260,7 @@ const ModuleLibrary = () => {
             </Select>
             
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Sort modules">
+              <SelectTrigger className="h-11 min-h-[44px] bg-card border-border rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Sort modules">
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-xl">
@@ -280,11 +285,11 @@ const ModuleLibrary = () => {
               {sortedModules.filter(m => !m.isPremium).length} free
             </Badge>
             <Badge variant="outline" className="border-primary/30 text-primary bg-primary/10 px-3 py-1 text-xs">
-              <Crown className="w-3 h-3 mr-1" />
+              <Crown className="w-3 h-3 mr-1" aria-hidden="true" />
               {sortedModules.filter(m => m.isPremium).length} premium
             </Badge>
             <Badge variant="outline" className="border-yellow-500/30 text-yellow-500 bg-yellow-500/10 px-3 py-1 text-xs">
-              <Star className="w-3 h-3 mr-1 fill-current" />
+              <Star className="w-3 h-3 mr-1 fill-current" aria-hidden="true" />
               {favorites.length}
             </Badge>
           </motion.div>
@@ -307,8 +312,8 @@ const ModuleLibrary = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
-                <Search className="w-8 h-8 text-muted-foreground" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center" aria-hidden="true">
+                <Search className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-1">No modules found</h3>
               <p className="text-muted-foreground text-sm">Try adjusting your search or filters</p>

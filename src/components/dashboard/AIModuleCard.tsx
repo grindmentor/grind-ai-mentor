@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Crown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getModuleAccent, getModuleAccentByTitle, type ModuleAccent } from '@/theme/moduleAccents';
 
 interface AIModuleCardProps {
   id: string;
@@ -16,42 +16,23 @@ interface AIModuleCardProps {
   onInteraction?: (moduleId: string) => void;
 }
 
+// Fixed dimensions for consistent layout - matches ModuleGrid
+const CARD_MIN_HEIGHT = 72; // px
+const ICON_SIZE = 48; // px - slightly larger for dashboard cards (w-12 h-12)
+
 const AIModuleCard: React.FC<AIModuleCardProps> = ({
   id,
   title,
   description,
   icon: Icon,
-  gradient,
   isPremium,
   onClick,
   isSubscribed = false,
   onHover,
   onInteraction
 }) => {
-  // Simplified color mapping for native feel
-  const getAccentColor = (title: string) => {
-    const colorMap: { [key: string]: { bg: string; border: string; icon: string } } = {
-      'CoachGPT': { bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', icon: 'text-cyan-400' },
-      'Habit Tracker': { bg: 'bg-yellow-500/15', border: 'border-yellow-500/30', icon: 'text-yellow-400' },
-      'CutCalc Pro': { bg: 'bg-red-500/15', border: 'border-red-500/30', icon: 'text-red-400' },
-      'TDEE Calculator': { bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: 'text-purple-400' },
-      'Smart Training': { bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: 'text-blue-400' },
-      'Blueprint AI': { bg: 'bg-indigo-500/15', border: 'border-indigo-500/30', icon: 'text-indigo-400' },
-      'Workout Timer': { bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: 'text-orange-400' },
-      'Meal Plan Generator': { bg: 'bg-green-500/15', border: 'border-green-500/30', icon: 'text-green-400' },
-      'Meal Plan AI': { bg: 'bg-green-500/15', border: 'border-green-500/30', icon: 'text-green-400' },
-      'Progress Hub': { bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: 'text-purple-400' },
-      'Workout Logger AI': { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: 'text-emerald-400' },
-      'Recovery Coach': { bg: 'bg-violet-500/15', border: 'border-violet-500/30', icon: 'text-violet-400' },
-      'Smart Food Log': { bg: 'bg-teal-500/15', border: 'border-teal-500/30', icon: 'text-teal-400' },
-      'Food Photo Logger': { bg: 'bg-pink-500/15', border: 'border-pink-500/30', icon: 'text-pink-400' },
-      'Physique AI': { bg: 'bg-rose-500/15', border: 'border-rose-500/30', icon: 'text-rose-400' },
-    };
-    
-    return colorMap[title] || { bg: 'bg-primary/15', border: 'border-primary/30', icon: 'text-primary' };
-  };
-
-  const colors = getAccentColor(title);
+  // Use ID-based accent lookup, fallback to title-based for legacy support
+  const colors: ModuleAccent = id ? getModuleAccent(id) : getModuleAccentByTitle(title);
 
   const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -66,31 +47,43 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
       onMouseEnter={() => onHover?.(id)}
       aria-label={`Open ${title}${isPremium ? ' (Premium)' : ''}`}
       className={cn(
-        "w-full p-4 rounded-2xl text-left transition-all duration-200",
+        // Base styles
+        "w-full p-4 rounded-2xl text-left transition-colors duration-200",
         "bg-card/50 border border-border/50 backdrop-blur-sm",
-        "active:scale-[0.98] active:bg-card/70",
+        // Interactive states - NO dimension changes
+        "active:bg-card/70",
         "[@media(hover:hover)]:hover:bg-card/70 [@media(hover:hover)]:hover:border-border",
-        "min-h-[72px]", // Consistent card height
-        isPremium && !isSubscribed && 'opacity-70'
+        // Focus visible ring - NO size change
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        colors.ring,
+        // Premium locked state - opacity only
+        isPremium && !isSubscribed && "opacity-70"
       )}
+      style={{
+        minHeight: `${CARD_MIN_HEIGHT}px`,
+      }}
     >
       <div className="flex items-center gap-4">
-        {/* Icon - Fixed dimensions */}
-        <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
-          colors.bg, colors.border, "border"
-        )}>
-          <Icon className={cn("w-6 h-6", colors.icon)} aria-hidden="true" />
+        {/* Icon - Fixed dimensions for layout consistency */}
+        <div 
+          className={cn(
+            "rounded-xl flex items-center justify-center flex-shrink-0 border",
+            colors.bg, colors.border
+          )}
+          style={{ width: ICON_SIZE, height: ICON_SIZE }}
+          aria-hidden="true"
+        >
+          <Icon className={cn("w-6 h-6", colors.text)} aria-hidden="true" />
         </div>
         
         {/* Content - Consistent alignment */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-foreground text-sm truncate">
               {title}
             </h3>
             {isPremium && (
-              <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" aria-label="Premium" />
+              <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" aria-hidden="true" />
             )}
           </div>
           <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">

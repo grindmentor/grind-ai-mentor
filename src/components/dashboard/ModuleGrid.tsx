@@ -72,11 +72,13 @@ const ModuleCard = memo<{
         onModuleClick(module);
       }}
       onMouseEnter={() => onModuleHover?.(module.id)}
+      aria-label={`Open ${module.title}${module.isPremium ? ' (Premium)' : ''}`}
       className={cn(
         "w-full p-3 rounded-xl text-left transition-all duration-150",
         "bg-card border border-border/50",
         "active:scale-[0.98] active:bg-muted/50",
         "[@media(hover:hover)]:hover:bg-muted/30 [@media(hover:hover)]:hover:border-border/80",
+        "min-h-[60px]", // Consistent card height
         isPremiumLocked && 'opacity-60'
       )}
       style={{ 
@@ -84,30 +86,30 @@ const ModuleCard = memo<{
       }}
     >
       <div className="flex items-center gap-3">
-        {/* Icon - Compact */}
+        {/* Icon - Fixed size for consistency */}
         <div className={cn(
           "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border",
           colors.bg, colors.border
         )}>
-          <IconComponent className={cn("w-5 h-5", colors.icon)} />
+          <IconComponent className={cn("w-5 h-5", colors.icon)} aria-hidden="true" />
         </div>
         
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
+        {/* Content - Flex grow with consistent alignment */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <div className="flex items-center gap-1.5">
             <h3 className="font-semibold text-foreground text-[13px] truncate leading-tight">
               {module.title}
             </h3>
             {module.isPremium && (
-              <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" />
+              <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" aria-label="Premium" />
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground line-clamp-1 leading-snug">
+          <p className="text-[11px] text-muted-foreground line-clamp-1 leading-snug mt-0.5">
             {module.description}
           </p>
         </div>
         
-        {/* Favorite button */}
+        {/* Favorite button - 44px touch target */}
         <Button
           onClick={(e) => {
             e.stopPropagation();
@@ -115,16 +117,18 @@ const ModuleCard = memo<{
           }}
           variant="ghost"
           size="sm"
+          aria-label={isFavorited ? `Remove ${module.title} from favorites` : `Add ${module.title} to favorites`}
+          aria-pressed={isFavorited}
           className={cn(
-            "h-8 w-8 p-0 rounded-full flex-shrink-0",
+            "h-11 w-11 p-0 rounded-full flex-shrink-0 min-h-[44px] min-w-[44px]",
             isFavorited ? "text-yellow-500" : "text-muted-foreground/40"
           )}
         >
-          <Star className={cn("w-4 h-4", isFavorited && "fill-current")} />
+          <Star className={cn("w-4 h-4", isFavorited && "fill-current")} aria-hidden="true" />
         </Button>
         
-        {/* Arrow */}
-        <ChevronRight className="w-4 h-4 text-muted-foreground/30 flex-shrink-0" />
+        {/* Arrow indicator */}
+        <ChevronRight className="w-4 h-4 text-muted-foreground/30 flex-shrink-0" aria-hidden="true" />
       </div>
     </button>
   );

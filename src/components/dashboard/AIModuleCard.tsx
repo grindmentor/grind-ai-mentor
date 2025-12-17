@@ -64,40 +64,42 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
     <button
       onClick={handleClick}
       onMouseEnter={() => onHover?.(id)}
+      aria-label={`Open ${title}${isPremium ? ' (Premium)' : ''}`}
       className={cn(
         "w-full p-4 rounded-2xl text-left transition-all duration-200",
         "bg-card/50 border border-border/50 backdrop-blur-sm",
         "active:scale-[0.98] active:bg-card/70",
         "[@media(hover:hover)]:hover:bg-card/70 [@media(hover:hover)]:hover:border-border",
+        "min-h-[72px]", // Consistent card height
         isPremium && !isSubscribed && 'opacity-70'
       )}
     >
       <div className="flex items-center gap-4">
-        {/* Icon */}
+        {/* Icon - Fixed dimensions */}
         <div className={cn(
           "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
           colors.bg, colors.border, "border"
         )}>
-          <Icon className={cn("w-6 h-6", colors.icon)} />
+          <Icon className={cn("w-6 h-6", colors.icon)} aria-hidden="true" />
         </div>
         
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
+        {/* Content - Consistent alignment */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <div className="flex items-center gap-2">
             <h3 className="font-semibold text-foreground text-sm truncate">
               {title}
             </h3>
             {isPremium && (
-              <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
+              <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" aria-label="Premium" />
             )}
           </div>
-          <p className="text-xs text-muted-foreground line-clamp-1">
+          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
             {description}
           </p>
         </div>
         
-        {/* Arrow */}
-        <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
+        {/* Arrow indicator */}
+        <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" aria-hidden="true" />
       </div>
     </button>
   );

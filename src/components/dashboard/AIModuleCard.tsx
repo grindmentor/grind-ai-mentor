@@ -17,8 +17,8 @@ interface AIModuleCardProps {
 }
 
 // Fixed dimensions for consistent layout - matches ModuleGrid
-const CARD_MIN_HEIGHT = 72; // px
-const ICON_SIZE = 48; // px - slightly larger for dashboard cards (w-12 h-12)
+const CARD_MIN_HEIGHT = 72; // px - same across all module cards
+const ICON_SIZE = 44; // px - accessibility minimum (44x44)
 
 const AIModuleCard: React.FC<AIModuleCardProps> = ({
   id,
@@ -73,7 +73,7 @@ const AIModuleCard: React.FC<AIModuleCardProps> = ({
           style={{ width: ICON_SIZE, height: ICON_SIZE }}
           aria-hidden="true"
         >
-          <Icon className={cn("w-6 h-6", colors.text)} aria-hidden="true" />
+          <Icon className={cn("w-5 h-5", colors.text)} aria-hidden="true" />
         </div>
         
         {/* Content - Consistent alignment */}

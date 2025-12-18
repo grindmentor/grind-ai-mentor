@@ -26,32 +26,51 @@ const ModuleLibrary = () => {
   const { currentTier } = useSubscription();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedModule, setSelectedModule] = useState(null);
+  const [selectedModule, setSelectedModule] = useState<{ component: React.ComponentType<{ onBack?: () => void; navigationSource?: string }> } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [isLoading, setIsLoading] = useState(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcuts: "/" focuses search, "g" grid view, "l" list view
+  // Save view mode preference - MUST be defined before useEffect that uses it
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('module-view-mode', mode);
+    } catch (error) {
+      console.error('Error saving view mode:', error);
+    }
+  }, []);
+
+  // Shortcuts: "/" focus search, "g" grid, "l" list
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+      const isTyping =
+        !!target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          (target as HTMLElement & { isContentEditable?: boolean }).isContentEditable);
       if (isTyping) return;
 
       if (e.key === '/') {
         e.preventDefault();
         searchInputRef.current?.focus();
-      } else if (e.key === 'g' || e.key === 'G') {
+        return;
+      }
+      if (e.key === 'g' || e.key === 'G') {
         handleViewModeChange('grid');
-      } else if (e.key === 'l' || e.key === 'L') {
+        return;
+      }
+      if (e.key === 'l' || e.key === 'L') {
         handleViewModeChange('list');
+        return;
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [handleViewModeChange]);
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -69,16 +88,6 @@ const ModuleLibrary = () => {
       setIsLoading(false);
     }
   }, [modules]);
-
-  // Save view mode preference
-  const handleViewModeChange = (mode: ViewMode) => {
-    setViewMode(mode);
-    try {
-      localStorage.setItem('module-view-mode', mode);
-    } catch (error) {
-      console.error('Error saving view mode:', error);
-    }
-  };
 
   // Filter modules to exclude Progress Hub from the library
   const libraryModules = useMemo(() => 

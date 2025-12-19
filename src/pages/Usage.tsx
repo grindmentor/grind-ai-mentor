@@ -139,7 +139,8 @@ const Usage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <MobileHeader title="Usage Stats" onBack={() => navigate(-1)} />
+      {/* Let MobileHeader handle returnTo state properly instead of forcing navigate(-1) */}
+      <MobileHeader title="Usage Stats" />
       
       <div className="px-4 pb-24 max-w-2xl mx-auto" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))' }}>
         {/* Summary Card */}

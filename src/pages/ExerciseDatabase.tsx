@@ -107,9 +107,9 @@ const ExerciseDatabase = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Let MobileHeader handle returnTo state properly */}
       <MobileHeader 
         title="Exercise Library" 
-        onBack={() => navigate(-1)}
       />
       
       <PullToRefresh onRefresh={handleRefresh} skeletonVariant="list">
@@ -121,7 +121,7 @@ const ExerciseDatabase = () => {
 
           {/* Search */}
           <div className="relative mb-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none" aria-hidden="true" />
             <Input
               placeholder="Search exercises or muscles..."
               value={searchQuery}
@@ -134,8 +134,8 @@ const ExerciseDatabase = () => {
           {/* Filters */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <Select value={selectedMuscle} onValueChange={setSelectedMuscle}>
-              <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Filter by muscle">
-                <Target className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="h-11 min-h-[44px] bg-card border-border rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Filter by muscle">
+                <Target className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                 <SelectValue placeholder="Muscle" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-xl">
@@ -146,8 +146,8 @@ const ExerciseDatabase = () => {
             </Select>
 
             <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
-              <SelectTrigger className="h-11 bg-card border-border rounded-xl" aria-label="Filter by equipment">
-                <Dumbbell className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectTrigger className="h-11 min-h-[44px] bg-card border-border rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Filter by equipment">
+                <Dumbbell className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                 <SelectValue placeholder="Equipment" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-xl">
@@ -166,8 +166,13 @@ const ExerciseDatabase = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedMuscle(muscle === 'Legs' ? 'Quadriceps' : muscle === 'Arms' ? 'Biceps' : muscle)}
+                aria-pressed={
+                  selectedMuscle === muscle || 
+                  (muscle === 'Legs' && selectedMuscle === 'Quadriceps') ||
+                  (muscle === 'Arms' && selectedMuscle === 'Biceps')
+                }
                 className={cn(
-                  "rounded-full px-4 whitespace-nowrap transition-all h-9",
+                  "rounded-full px-4 whitespace-nowrap transition-all h-9 min-h-[36px] focus-visible:ring-2 focus-visible:ring-primary/50",
                   (selectedMuscle === muscle || 
                    (muscle === 'Legs' && selectedMuscle === 'Quadriceps') ||
                    (muscle === 'Arms' && selectedMuscle === 'Biceps'))
@@ -190,8 +195,8 @@ const ExerciseDatabase = () => {
             </div>
           ) : filteredExercises.length === 0 ? (
             <div className="empty-state-premium py-12">
-              <div className="empty-state-icon">
-                <Dumbbell className="w-6 h-6 text-muted-foreground" />
+              <div className="empty-state-icon" aria-hidden="true">
+                <Dumbbell className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
               </div>
               <h3 className="text-foreground font-medium mb-1">No exercises found</h3>
               <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
@@ -205,7 +210,7 @@ const ExerciseDatabase = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(index * 0.02, 0.3) }}
                   onClick={() => handleExerciseClick(exercise)}
-                  className="w-full p-4 bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30 rounded-xl text-left transition-all native-press"
+                  className="w-full p-4 min-h-[72px] bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30 rounded-xl text-left transition-colors native-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   aria-label={`View ${exercise.name} details`}
                 >
                   <div className="flex items-center justify-between">
@@ -218,7 +223,7 @@ const ExerciseDatabase = () => {
                           {exercise.primary_muscles[0] || 'General'}
                         </Badge>
                         <span className="text-[10px] text-muted-foreground flex items-center">
-                          <Dumbbell className="w-3 h-3 mr-1" />
+                          <Dumbbell className="w-3 h-3 mr-1" aria-hidden="true" />
                           {exercise.equipment}
                         </span>
                         {exercise.difficulty_level && (
@@ -228,7 +233,7 @@ const ExerciseDatabase = () => {
                         )}
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" aria-hidden="true" />
                   </div>
                 </motion.button>
               ))}

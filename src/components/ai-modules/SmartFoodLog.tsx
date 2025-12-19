@@ -458,8 +458,12 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
   const totals = getTotalNutrition();
 
+  // MobileHeader handles returnTo state from location.state automatically
   const handleBackNavigation = useCallback(() => {
-    if (window.history.length > 2) {
+    const state = (window.history.state?.usr as { returnTo?: string } | null);
+    if (state?.returnTo) {
+      navigate(state.returnTo);
+    } else if (window.history.length > 2) {
       navigate(-1);
     } else {
       navigate('/modules');

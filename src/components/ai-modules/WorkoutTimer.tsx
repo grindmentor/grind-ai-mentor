@@ -26,8 +26,12 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ onBack }) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [currentExercise, setCurrentExercise] = useState('');
 
+  // Check for returnTo state first, then fall back to onBack or history
   const handleBackNavigation = useCallback(() => {
-    if (onBack) {
+    const state = (window.history.state?.usr as { returnTo?: string } | null);
+    if (state?.returnTo) {
+      navigate(state.returnTo);
+    } else if (onBack) {
       onBack();
     } else if (window.history.length > 2) {
       navigate(-1);

@@ -48,8 +48,13 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
   });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
+  // MobileHeader handles returnTo state automatically from location.state
+  // This is only a fallback for truly orphan navigation scenarios
   const handleBackNavigation = useCallback(() => {
-    if (window.history.length > 2) {
+    const state = (window.history.state?.usr as { returnTo?: string } | null);
+    if (state?.returnTo) {
+      navigate(state.returnTo);
+    } else if (window.history.length > 2) {
       navigate(-1);
     } else {
       navigate('/modules');
@@ -218,8 +223,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
         <div className="px-4 pb-28">
           {/* Hero */}
           <div className="text-center py-6">
-            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mb-3 border border-green-500/20">
-              <Zap className="w-7 h-7 text-green-400" />
+            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mb-3 border border-green-500/20" aria-hidden="true">
+              <Zap className="w-7 h-7 text-green-400" aria-hidden="true" />
             </div>
             <h2 className="text-lg font-bold text-foreground mb-1">Habit Tracker</h2>
             <p className="text-sm text-muted-foreground">Build lasting habits with science</p>

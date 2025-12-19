@@ -41,13 +41,9 @@ const PhysiqueAI = () => {
   const [analysis, setAnalysis] = useState<PhysiqueAnalysis | null>(null);
   const [viewMode, setViewMode] = useState<'front' | 'back'>('front');
 
-  const handleBackNavigation = useCallback(() => {
-    if (window.history.length > 2) {
-      navigate(-1);
-    } else {
-      navigate('/modules');
-    }
-  }, [navigate]);
+  // MobileHeader will use location.state.returnTo if present; no need to override
+  // Only used as fallback for inline rendering (which PhysiqueAI doesn't do)
+  
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -175,9 +171,9 @@ const PhysiqueAI = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Let MobileHeader handle returnTo navigation automatically */}
       <MobileHeader 
         title="Physique AI" 
-        onBack={handleBackNavigation}
       />
 
       <PullToRefresh onRefresh={handleRefresh} skeletonVariant="card">
@@ -188,8 +184,8 @@ const PhysiqueAI = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-rose-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-3 border border-rose-500/20">
-              <Brain className="w-7 h-7 text-rose-400" />
+            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-rose-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-3 border border-rose-500/20" aria-hidden="true">
+              <Brain className="w-7 h-7 text-rose-400" aria-hidden="true" />
             </div>
             <h2 className="text-lg font-bold text-foreground mb-1">AI Physique Analysis</h2>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">
@@ -224,8 +220,8 @@ const PhysiqueAI = () => {
                       />
                     ) : (
                       <>
-                        <div className="w-16 h-16 mx-auto bg-rose-500/10 rounded-full flex items-center justify-center">
-                          <Upload className="w-8 h-8 text-rose-400" />
+                        <div className="w-16 h-16 mx-auto bg-rose-500/10 rounded-full flex items-center justify-center" aria-hidden="true">
+                          <Upload className="w-8 h-8 text-rose-400" aria-hidden="true" />
                         </div>
                         <div>
                           <p className="font-medium text-foreground">Tap to upload photo</p>
@@ -242,7 +238,7 @@ const PhysiqueAI = () => {
                   <Button 
                     onClick={analyzePhysique}
                     disabled={isAnalyzing || isUploading}
-                    className="w-full mt-4 h-14 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-base font-semibold"
+                    className="w-full mt-4 h-14 min-h-[48px] rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-base font-semibold focus-visible:ring-2 focus-visible:ring-rose-500/50 focus-visible:ring-offset-2"
                     aria-label="Analyze physique"
                   >
                     {isUploading ? (
@@ -257,7 +253,7 @@ const PhysiqueAI = () => {
                       </>
                     ) : (
                       <>
-                        <Brain className="w-5 h-5 mr-2" />
+                        <Brain className="w-5 h-5 mr-2" aria-hidden="true" />
                         Analyze Physique
                       </>
                     )}
@@ -276,7 +272,7 @@ const PhysiqueAI = () => {
                     'Keep background simple'
                   ].map((tip, i) => (
                     <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" aria-hidden="true" />
                       <span>{tip}</span>
                     </div>
                   ))}
@@ -342,7 +338,8 @@ const PhysiqueAI = () => {
                           variant={viewMode === 'front' ? 'default' : 'ghost'}
                           size="sm"
                           onClick={() => setViewMode('front')}
-                          className="h-7 text-xs rounded-md"
+                          aria-pressed={viewMode === 'front'}
+                          className="h-8 min-h-[32px] text-xs rounded-md focus-visible:ring-2 focus-visible:ring-primary/50"
                         >
                           Front
                         </Button>
@@ -350,7 +347,8 @@ const PhysiqueAI = () => {
                           variant={viewMode === 'back' ? 'default' : 'ghost'}
                           size="sm"
                           onClick={() => setViewMode('back')}
-                          className="h-7 text-xs rounded-md"
+                          aria-pressed={viewMode === 'back'}
+                          className="h-8 min-h-[32px] text-xs rounded-md focus-visible:ring-2 focus-visible:ring-primary/50"
                         >
                           Back
                         </Button>
@@ -370,7 +368,7 @@ const PhysiqueAI = () => {
                 <TabsContent value="insights" className="space-y-3">
                   <div className="bg-card/50 rounded-2xl border border-border/50 p-4">
                     <div className="flex items-center gap-2 mb-4">
-                      <TrendingUp className="w-4 h-4 text-rose-400" />
+                      <TrendingUp className="w-4 h-4 text-rose-400" aria-hidden="true" />
                       <h3 className="text-sm font-semibold text-foreground">AI Recommendations</h3>
                     </div>
                     <div className="space-y-3">
@@ -403,7 +401,8 @@ const PhysiqueAI = () => {
                   setPreviewUrl(null);
                 }}
                 variant="outline"
-                className="w-full h-12 rounded-xl border-rose-500/30 hover:bg-rose-500/10"
+                className="w-full h-12 min-h-[48px] rounded-xl border-rose-500/30 hover:bg-rose-500/10 focus-visible:ring-2 focus-visible:ring-rose-500/50 focus-visible:ring-offset-2"
+                aria-label="Analyze a new photo"
               >
                 Analyze New Photo
               </Button>

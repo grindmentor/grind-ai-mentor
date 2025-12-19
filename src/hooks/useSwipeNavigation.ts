@@ -1,16 +1,22 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useMobileEnhancements } from './useMobileEnhancements';
 
 interface SwipeNavigationOptions {
   enabled?: boolean;
   threshold?: number;
   edgeWidth?: number;
+  fallbackPath?: string;
 }
 
+/**
+ * Swipe navigation hook that respects returnTo state.
+ * Swipe right from left edge triggers back navigation.
+ */
 export const useSwipeNavigation = (options: SwipeNavigationOptions = {}) => {
-  const { enabled = true, threshold = 80, edgeWidth = 30 } = options;
+  const { enabled = true, threshold = 80, edgeWidth = 30, fallbackPath = '/modules' } = options;
   const navigate = useNavigate();
+  const location = useLocation();
   const { hapticFeedback } = useMobileEnhancements();
   
   const startXRef = useRef(0);
@@ -41,9 +47,18 @@ export const useSwipeNavigation = (options: SwipeNavigationOptions = {}) => {
     // Back navigation (swipe right from edge)
     if (isEdgeSwipeRef.current && deltaX > threshold) {
       hapticFeedback('light');
-      navigate(-1);
+      
+      // Respect returnTo state
+      const state = location.state as { returnTo?: string } | null;
+      if (state?.returnTo) {
+        navigate(state.returnTo);
+      } else if (window.history.length > 2) {
+        navigate(-1);
+      } else {
+        navigate(fallbackPath);
+      }
     }
-  }, [enabled, threshold, navigate, hapticFeedback]);
+  }, [enabled, threshold, navigate, hapticFeedback, location.state, fallbackPath]);
 
   useEffect(() => {
     if (!enabled) return;

@@ -39,13 +39,28 @@ export const NativeNavigation: React.FC<NativeNavigationProps> = ({
 
   const handleBack = () => {
     hapticFeedback('light');
+    
+    // Priority 1: Check for returnTo in location state
+    const state = location.state as { returnTo?: string } | null;
+    if (state?.returnTo) {
+      navigate(state.returnTo);
+      return;
+    }
+    
+    // Priority 2: Use provided onBack callback
     if (onBack) {
       onBack();
-    } else if (canGoBack) {
-      navigate(-1);
-    } else {
-      navigate('/app');
+      return;
     }
+    
+    // Priority 3: Use browser history if available
+    if (canGoBack) {
+      navigate(-1);
+      return;
+    }
+    
+    // Priority 4: Fall back to /app
+    navigate('/app');
   };
 
   const handleClose = () => {
@@ -81,13 +96,15 @@ export const NativeNavigation: React.FC<NativeNavigationProps> = ({
               variant="ghost"
               size="sm"
               className={cn(
-                "p-2 mr-2 -ml-2 rounded-full",
+                "p-2 mr-2 -ml-2 rounded-full min-h-[44px] min-w-[44px]",
                 "touch-manipulation no-tap-highlight",
                 "hover:bg-accent/50 active:bg-accent/70",
-                "transition-colors duration-150"
+                "transition-colors duration-150",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               )}
+              aria-label="Go back"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </Button>
           )}
           
@@ -116,13 +133,15 @@ export const NativeNavigation: React.FC<NativeNavigationProps> = ({
               variant="ghost"
               size="sm"
               className={cn(
-                "p-2 ml-2 rounded-full",
+                "p-2 ml-2 rounded-full min-h-[44px] min-w-[44px]",
                 "touch-manipulation no-tap-highlight",
                 "hover:bg-accent/50 active:bg-accent/70",
-                "transition-colors duration-150"
+                "transition-colors duration-150",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               )}
+              aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </Button>
           )}
         </div>

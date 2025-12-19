@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ScrollToBackOptions {
   enabled?: boolean;
@@ -8,6 +8,9 @@ interface ScrollToBackOptions {
   fallbackPath?: string;
 }
 
+/**
+ * Pull-to-go-back hook that respects returnTo state.
+ */
 export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
   const { 
     enabled = true, 
@@ -16,6 +19,7 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     fallbackPath = '/modules' 
   } = options;
   const navigate = useNavigate();
+  const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const isOverscrollingRef = useRef(false);
@@ -74,19 +78,33 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     // Trigger back navigation if pulled far enough
     if (pulledRef.current) {
       setTimeout(() => {
+        // Priority 1: Check for returnTo in location state
+        const state = location.state as { returnTo?: string } | null;
+        if (state?.returnTo) {
+          navigate(state.returnTo);
+          return;
+        }
+        
+        // Priority 2: Use provided onBack callback
         if (onBack) {
           onBack();
-        } else if (window.history.length > 2) {
-          navigate(-1);
-        } else {
-          navigate(fallbackPath);
+          return;
         }
+        
+        // Priority 3: Use browser history if available
+        if (window.history.length > 2) {
+          navigate(-1);
+          return;
+        }
+        
+        // Priority 4: Fall back to default path
+        navigate(fallbackPath);
       }, 100);
     }
     
     isOverscrollingRef.current = false;
     pulledRef.current = false;
-  }, [enabled, onBack, navigate, fallbackPath]);
+  }, [enabled, onBack, navigate, fallbackPath, location.state]);
 
   useEffect(() => {
     const container = containerRef.current;

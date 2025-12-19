@@ -44,15 +44,22 @@ const ModuleLibrary = () => {
   }, []);
 
   // Shortcuts: "/" focus search, "g" grid, "l" list
+  // Disabled when typing in inputs, textareas, contenteditable, or when modal/dialog is open
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
+      
+      // Check if typing in an input field
       const isTyping =
         !!target &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
-          (target as HTMLElement & { isContentEditable?: boolean }).isContentEditable);
+          target.isContentEditable);
       if (isTyping) return;
+      
+      // Check if a modal/dialog is open (Radix UI sets data-state="open" on dialogs)
+      const hasOpenModal = document.querySelector('[data-state="open"][role="dialog"]');
+      if (hasOpenModal) return;
 
       if (e.key === '/') {
         e.preventDefault();

@@ -23,7 +23,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
-  // Swipe back navigation
+  // Swipe back navigation - respects returnTo state
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
@@ -37,7 +37,16 @@ export const AppShell: React.FC<AppShellProps> = ({
       // Only trigger if horizontal swipe from left edge
       if (touchStartX.current < 30 && deltaX > 80 && Math.abs(deltaY) < 100) {
         if ('vibrate' in navigator) try { navigator.vibrate(10); } catch {}
-        navigate(-1);
+        
+        // Respect returnTo state from location
+        const state = location.state as { returnTo?: string } | null;
+        if (state?.returnTo) {
+          navigate(state.returnTo);
+        } else if (window.history.length > 2) {
+          navigate(-1);
+        } else {
+          navigate('/modules');
+        }
       }
     };
 
@@ -48,7 +57,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [navigate]);
+  }, [navigate, location.state]);
 
   useEffect(() => {
     let ticking = false;

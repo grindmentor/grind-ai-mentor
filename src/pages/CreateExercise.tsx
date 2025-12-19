@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,9 +13,22 @@ import { toast } from 'sonner';
 
 const CreateExercise = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [newMuscle, setNewMuscle] = useState('');
+
+  // Centralized back navigation that respects returnTo state
+  const handleBack = () => {
+    const state = location.state as { returnTo?: string } | null;
+    if (state?.returnTo) {
+      navigate(state.returnTo);
+    } else if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/modules');
+    }
+  };
 
   // Scroll to top on page load
   useEffect(() => {
@@ -100,10 +113,12 @@ const CreateExercise = () => {
       // Store success flag for the ExerciseSearch component
       sessionStorage.setItem('exerciseCreated', 'true');
       
-      navigate(-1); // Go back to previous page
-    } catch (error: any) {
+      // Navigate back respecting returnTo
+      handleBack();
+    } catch (error: unknown) {
       console.error('Error creating exercise:', error);
-      toast.error(error.message || 'Failed to create exercise');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create exercise';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -114,10 +129,11 @@ const CreateExercise = () => {
       <div className="container max-w-3xl mx-auto px-4 py-6">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-4 text-gray-300 hover:text-white"
+          onClick={handleBack}
+          className="mb-4 text-gray-300 hover:text-white min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary/50"
+          aria-label="Go back"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
           Back
         </Button>
 
@@ -287,8 +303,8 @@ const CreateExercise = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(-1)}
-                className="flex-1"
+                onClick={handleBack}
+                className="flex-1 min-h-[44px]"
                 disabled={isLoading}
               >
                 Cancel

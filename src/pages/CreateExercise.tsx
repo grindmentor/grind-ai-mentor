@@ -10,6 +10,7 @@ import { ArrowLeft, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { NativeNavigation } from '@/components/ui/native-navigation';
 
 const CreateExercise = () => {
   const navigate = useNavigate();
@@ -126,6 +127,12 @@ const CreateExercise = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-blue-900/10 to-purple-900/20 pb-20">
+      <NativeNavigation
+        title="Create Custom Exercise"
+        showCloseButton={false}
+        fallbackPath="/modules"
+      />
+
       <div className="container max-w-3xl mx-auto px-4 py-6">
         <Button
           variant="ghost"

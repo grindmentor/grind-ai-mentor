@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
+import { useReturnNavigation } from '@/hooks/useReturnNavigation';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -17,8 +18,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
   const lastScrollY = useRef(0);
   const location = useLocation();
-  const navigate = useNavigate();
-  
+  const { goBack } = useReturnNavigation({ fallbackPath: '/modules' });
   // Swipe navigation refs
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -38,15 +38,8 @@ export const AppShell: React.FC<AppShellProps> = ({
       if (touchStartX.current < 30 && deltaX > 80 && Math.abs(deltaY) < 100) {
         if ('vibrate' in navigator) try { navigator.vibrate(10); } catch {}
         
-        // Respect returnTo state from location
-        const state = location.state as { returnTo?: string } | null;
-        if (state?.returnTo) {
-          navigate(state.returnTo);
-        } else if (window.history.length > 2) {
-          navigate(-1);
-        } else {
-          navigate('/modules');
-        }
+        // Back navigation (priority matches MobileHeader: onBack → returnTo → history → fallback)
+        goBack();
       }
     };
 
@@ -57,7 +50,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [navigate, location.state]);
+  }, [goBack, location.state]);
 
   useEffect(() => {
     let ticking = false;

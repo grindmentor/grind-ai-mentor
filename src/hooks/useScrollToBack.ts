@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useReturnNavigation } from './useReturnNavigation';
 
 interface ScrollToBackOptions {
   enabled?: boolean;
@@ -18,8 +18,7 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     onBack, 
     fallbackPath = '/modules' 
   } = options;
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { goBack } = useReturnNavigation({ fallbackPath, onBack });
   const containerRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const isOverscrollingRef = useRef(false);
@@ -79,33 +78,13 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     // Priority: onBack → returnTo → history → fallback (matches MobileHeader)
     if (pulledRef.current) {
       setTimeout(() => {
-        // Priority 1: Use provided onBack callback
-        if (onBack) {
-          onBack();
-          return;
-        }
-        
-        // Priority 2: Check for returnTo in location state
-        const state = location.state as { returnTo?: string } | null;
-        if (state?.returnTo) {
-          navigate(state.returnTo);
-          return;
-        }
-        
-        // Priority 3: Use browser history if available
-        if (window.history.length > 2) {
-          navigate(-1);
-          return;
-        }
-        
-        // Priority 4: Fall back to default path
-        navigate(fallbackPath);
+        goBack();
       }, 100);
     }
     
     isOverscrollingRef.current = false;
     pulledRef.current = false;
-  }, [enabled, onBack, navigate, fallbackPath, location.state]);
+  }, [enabled, goBack]);
 
   useEffect(() => {
     const container = containerRef.current;

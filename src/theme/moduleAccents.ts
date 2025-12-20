@@ -2,6 +2,10 @@
  * Centralized module accent color system
  * Used for icon backgrounds, indicator chips, and subtle borders
  * Keep the rest of the UI unchanged - this is ONLY for small visuals
+ *
+ * Typing contract:
+ * - MODULE_ACCENTS: Record<string, ModuleAccent>
+ * - titleToIdMap: Record<string, string>
  */
 
 export interface ModuleAccent {

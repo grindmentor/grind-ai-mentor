@@ -1,5 +1,6 @@
 import * as React from "react"
 
+// Uses React.forwardRef so pages can programmatically focus the input (e.g., ModuleLibrary "/" shortcut).
 import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(

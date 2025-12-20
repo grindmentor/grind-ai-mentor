@@ -15,6 +15,11 @@ interface NativeNavigationProps {
   actions?: React.ReactNode;
   className?: string;
   transparent?: boolean;
+  /**
+   * Fallback destination when there is no returnTo and no history.
+   * Defaults to /app (safe global default).
+   */
+  fallbackPath?: string;
 }
 
 export const NativeNavigation: React.FC<NativeNavigationProps> = ({
@@ -26,7 +31,8 @@ export const NativeNavigation: React.FC<NativeNavigationProps> = ({
   onClose,
   actions,
   className,
-  transparent = false
+  transparent = false,
+  fallbackPath = '/app',
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,8 +67,8 @@ export const NativeNavigation: React.FC<NativeNavigationProps> = ({
       return;
     }
     
-    // Priority 4: Fall back to /modules (standard module destination)
-    navigate('/modules');
+    // Priority 4: Fall back to provided fallbackPath
+    navigate(fallbackPath);
   };
 
   const handleClose = () => {

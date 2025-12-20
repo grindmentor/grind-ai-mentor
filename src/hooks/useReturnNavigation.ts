@@ -9,10 +9,10 @@ interface ReturnNavigationOptions {
 /**
  * Centralized return navigation hook that respects returnTo state.
  * 
- * Priority:
- * 1. location.state.returnTo (if set)
- * 2. onBack callback (if provided)
- * 3. Browser history (if available)
+ * Priority (matches MobileHeader contract):
+ * 1. onBack callback (if provided) - allows component override
+ * 2. location.state.returnTo (if set) - explicit return destination
+ * 3. Browser history (if available, length > 2)
  * 4. fallbackPath (default: '/modules')
  */
 export const useReturnNavigation = (options: ReturnNavigationOptions = {}) => {
@@ -21,16 +21,16 @@ export const useReturnNavigation = (options: ReturnNavigationOptions = {}) => {
   const location = useLocation();
 
   const goBack = useCallback(() => {
-    // Priority 1: Check for returnTo in location state
-    const state = location.state as { returnTo?: string } | null;
-    if (state?.returnTo) {
-      navigate(state.returnTo);
+    // Priority 1: Use provided onBack callback
+    if (onBack) {
+      onBack();
       return;
     }
 
-    // Priority 2: Use provided onBack callback
-    if (onBack) {
-      onBack();
+    // Priority 2: Check for returnTo in location state
+    const state = location.state as { returnTo?: string } | null;
+    if (state?.returnTo) {
+      navigate(state.returnTo);
       return;
     }
 

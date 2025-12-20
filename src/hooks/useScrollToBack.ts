@@ -76,18 +76,19 @@ export const useScrollToBack = (options: ScrollToBackOptions = {}) => {
     container.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
     
     // Trigger back navigation if pulled far enough
+    // Priority: onBack → returnTo → history → fallback (matches MobileHeader)
     if (pulledRef.current) {
       setTimeout(() => {
-        // Priority 1: Check for returnTo in location state
-        const state = location.state as { returnTo?: string } | null;
-        if (state?.returnTo) {
-          navigate(state.returnTo);
+        // Priority 1: Use provided onBack callback
+        if (onBack) {
+          onBack();
           return;
         }
         
-        // Priority 2: Use provided onBack callback
-        if (onBack) {
-          onBack();
+        // Priority 2: Check for returnTo in location state
+        const state = location.state as { returnTo?: string } | null;
+        if (state?.returnTo) {
+          navigate(state.returnTo);
           return;
         }
         

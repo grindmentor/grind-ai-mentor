@@ -37,30 +37,32 @@ export const NativeNavigation: React.FC<NativeNavigationProps> = ({
     setCanGoBack(window.history.length > 1);
   }, [location]);
 
+  // Back navigation priority: onBack → returnTo → history → fallback
+  // Matches MobileHeader contract for consistency
   const handleBack = () => {
     hapticFeedback('light');
     
-    // Priority 1: Check for returnTo in location state
+    // Priority 1: Use provided onBack callback
+    if (onBack) {
+      onBack();
+      return;
+    }
+    
+    // Priority 2: Check for returnTo in location state
     const state = location.state as { returnTo?: string } | null;
     if (state?.returnTo) {
       navigate(state.returnTo);
       return;
     }
     
-    // Priority 2: Use provided onBack callback
-    if (onBack) {
-      onBack();
-      return;
-    }
-    
-    // Priority 3: Use browser history if available
-    if (canGoBack) {
+    // Priority 3: Use browser history if available (length > 2 is safer)
+    if (window.history.length > 2) {
       navigate(-1);
       return;
     }
     
-    // Priority 4: Fall back to /app
-    navigate('/app');
+    // Priority 4: Fall back to /modules (standard module destination)
+    navigate('/modules');
   };
 
   const handleClose = () => {

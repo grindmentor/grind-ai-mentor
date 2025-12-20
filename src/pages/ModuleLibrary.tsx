@@ -57,8 +57,11 @@ const ModuleLibrary = () => {
           target.isContentEditable);
       if (isTyping) return;
       
-      // Check if a modal/dialog is open (Radix UI sets data-state="open" on dialogs)
-      const hasOpenModal = document.querySelector('[data-state="open"][role="dialog"]');
+      // Check if a modal/dialog is open - robust detection for Radix UI
+      // Radix uses data-state="open" on dialog overlays/content
+      const hasOpenModal = document.querySelector(
+        '[data-state="open"][role="dialog"], [data-state="open"][data-radix-dialog-content], [role="alertdialog"][data-state="open"]'
+      );
       if (hasOpenModal) return;
 
       if (e.key === '/') {

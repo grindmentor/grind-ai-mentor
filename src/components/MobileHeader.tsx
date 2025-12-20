@@ -79,7 +79,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               className="h-11 w-11 p-0 rounded-full text-foreground hover:bg-muted/50 active:scale-95 transition-all min-h-[44px] min-w-[44px]"
               aria-label="Go back"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </Button>
           </div>
           
@@ -99,7 +99,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                 className="h-11 w-11 p-0 rounded-full text-muted-foreground hover:bg-muted/50 active:scale-95 transition-all min-h-[44px] min-w-[44px]"
                 aria-label="View notifications"
               >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-5 h-5" aria-hidden="true" />
               </Button>
             )}
           </div>

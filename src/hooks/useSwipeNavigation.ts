@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
 import { useMobileEnhancements } from './useMobileEnhancements';
 import { useReturnNavigation } from './useReturnNavigation';
 
@@ -16,7 +15,6 @@ interface SwipeNavigationOptions {
  */
 export const useSwipeNavigation = (options: SwipeNavigationOptions = {}) => {
   const { enabled = true, threshold = 80, edgeWidth = 30, fallbackPath = '/modules' } = options;
-  const location = useLocation();
   const { hapticFeedback } = useMobileEnhancements();
   const { goBack } = useReturnNavigation({ fallbackPath });
 
@@ -52,12 +50,10 @@ export const useSwipeNavigation = (options: SwipeNavigationOptions = {}) => {
       // Back navigation (swipe right from edge)
       if (isEdgeSwipeRef.current && deltaX > threshold) {
         hapticFeedback('light');
-        // Ensure we have the latest location.state when goBack reads it
-        void location;
         goBack();
       }
     },
-    [enabled, threshold, hapticFeedback, goBack, location]
+    [enabled, threshold, hapticFeedback, goBack]
   );
 
   useEffect(() => {

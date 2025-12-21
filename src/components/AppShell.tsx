@@ -50,7 +50,7 @@ export const AppShell: React.FC<AppShellProps> = ({
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [goBack, location.state]);
+  }, [goBack]);
 
   useEffect(() => {
     let ticking = false;

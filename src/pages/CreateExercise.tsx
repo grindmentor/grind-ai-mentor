@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -134,18 +134,7 @@ const CreateExercise = () => {
       />
 
       <div className="container max-w-3xl mx-auto px-4 py-6">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          className="mb-4 text-gray-300 hover:text-white min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary/50"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-          Back
-        </Button>
-
         <div className="bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-blue-400 mb-6">Create Custom Exercise</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>

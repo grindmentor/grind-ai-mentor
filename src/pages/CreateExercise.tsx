@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,25 +11,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { NativeNavigation } from '@/components/ui/native-navigation';
+import { useReturnNavigation } from '@/hooks/useReturnNavigation';
 
 const CreateExercise = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [newMuscle, setNewMuscle] = useState('');
-
-  // Centralized back navigation that respects returnTo state
-  const handleBack = () => {
-    const state = location.state as { returnTo?: string } | null;
-    if (state?.returnTo) {
-      navigate(state.returnTo);
-    } else if (window.history.length > 2) {
-      navigate(-1);
-    } else {
-      navigate('/modules');
-    }
-  };
+  
+  // Single source of truth for back navigation - same priority as NativeNavigation
+  const { goBack } = useReturnNavigation({ fallbackPath: '/modules' });
 
   // Scroll to top on page load
   useEffect(() => {
@@ -115,7 +106,7 @@ const CreateExercise = () => {
       sessionStorage.setItem('exerciseCreated', 'true');
       
       // Navigate back respecting returnTo
-      handleBack();
+      goBack();
     } catch (error: unknown) {
       console.error('Error creating exercise:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create exercise';
@@ -299,7 +290,7 @@ const CreateExercise = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleBack}
+                onClick={goBack}
                 className="flex-1 min-h-[44px]"
                 disabled={isLoading}
               >

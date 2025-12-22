@@ -7,6 +7,7 @@ import UnitPreferences from '@/components/settings/UnitPreferences';
 import AppPreferences from '@/components/settings/AppPreferences';
 import AIMemoryReset from '@/components/settings/AIMemoryReset';
 import DisplayNameSection from '@/components/settings/DisplayNameSection';
+import ProfileMetrics from '@/components/settings/ProfileMetrics';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,6 +127,7 @@ const Settings = () => {
                       displayName={displayName} 
                       onDisplayNameChange={setDisplayName} 
                     />
+                    <ProfileMetrics />
                   </TabsContent>
 
                   <TabsContent value="units" className="mt-0">

@@ -38,27 +38,23 @@ const Notifications = () => {
   const loadNotifications = async () => {
     if (!user) return;
     try {
-      const mockNotifications = [
-        {
-          id: '1',
-          title: 'Hydration Reminder',
-          message: 'Time to drink some water! Stay hydrated for optimal performance.',
-          type: 'info',
-          read: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          title: 'Daily Workout Check',
-          message: 'Did you hit the gym today? Keep up your training consistency!',
-          type: 'info',
-          read: true,
-          created_at: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-      setNotifications(mockNotifications);
+      // Load real notifications from database - no fake/mock data
+      const { data, error } = await supabase
+        .from('user_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error loading notifications:', error);
+        setNotifications([]);
+      } else {
+        setNotifications(data || []);
+      }
     } catch (error) {
       console.error('Error loading notifications:', error);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -117,15 +113,47 @@ const Notifications = () => {
   };
 
   const deleteNotification = async (notificationId: string) => {
+    // Optimistic update
+    const previousNotifications = [...notifications];
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    toast.success('Notification deleted');
+    
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .delete()
+        .eq('id', notificationId)
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      toast.success('Notification deleted');
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      setNotifications(previousNotifications);
+      toast.error('Failed to delete notification');
+    }
   };
 
   const markAsRead = async (notificationId: string) => {
+    // Optimistic update
+    const previousNotifications = [...notifications];
     setNotifications(prev => 
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     );
-    toast.success('Marked as read');
+    
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true })
+        .eq('id', notificationId)
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      toast.success('Marked as read');
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      setNotifications(previousNotifications);
+      toast.error('Failed to mark as read');
+    }
   };
 
   const notificationOptions = [

@@ -227,10 +227,13 @@ const RealGoalsAchievements = () => {
     if (refreshGoals && user && !refreshHandledRef.current) {
       refreshHandledRef.current = true;
       // Clear ONLY the refreshGoals key, preserve other state keys (e.g., returnTo)
-      const currentState = (location.state as Record<string, unknown> | null) || {};
-      const { refreshGoals: _, ...preservedState } = currentState;
-      const newState = Object.keys(preservedState).length > 0 ? preservedState : undefined;
-      navigate(location.pathname, { replace: true, state: newState });
+      const currentState = (location.state ?? {}) as Record<string, unknown>;
+      const { refreshGoals: _ignored, ...preservedState } = currentState;
+      if (Object.keys(preservedState).length === 0) {
+        navigate(location.pathname, { replace: true });
+      } else {
+        navigate(location.pathname, { replace: true, state: preservedState });
+      }
       // Force a fresh fetch bypassing cache
       loadGoalsAndAchievements(true);
     }

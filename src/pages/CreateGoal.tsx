@@ -310,7 +310,8 @@ const CreateGoal = () => {
       emit('goals:updated');
 
       toast.success(editingGoal ? 'Goal updated successfully! 🎯' : 'Goal created successfully! 🎯');
-      navigate('/app');
+      // Navigate with refreshGoals flag to force immediate reload bypassing cache
+      navigate('/app', { state: { refreshGoals: true } });
     } catch (error) {
       console.error('Error saving goal:', error);
       toast.error('Failed to save goal. Please try again.');

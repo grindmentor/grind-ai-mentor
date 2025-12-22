@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,7 @@ interface Achievement {
 
 const RealGoalsAchievements = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { preferences } = usePreferences();
   const { state, actions } = useGlobalState();
@@ -59,6 +60,9 @@ const RealGoalsAchievements = () => {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [isTabTransitioning, setIsTabTransitioning] = useState(false);
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+  
+  // Track if we've already handled the refreshGoals flag to prevent loops
+  const refreshHandledRef = useRef(false);
 
   // Calculate REAL streak from workout data
   const realStreak = useMemo(() => {
@@ -119,15 +123,28 @@ const RealGoalsAchievements = () => {
 
   useEffect(() => {
     if (user && !initialLoadComplete) {
-      loadGoalsAndAchievements();
+      loadGoalsAndAchievements(false);
       loadWorkoutSessions();
     }
   }, [user, initialLoadComplete]);
 
+  // Handle refreshGoals flag from navigation state (e.g., after creating a goal)
+  // This guarantees a fresh fetch bypassing the cache
+  useEffect(() => {
+    const navState = location.state as { refreshGoals?: boolean } | null;
+    if (navState?.refreshGoals && user && !refreshHandledRef.current) {
+      refreshHandledRef.current = true;
+      // Clear the navigation state to prevent future triggers
+      navigate(location.pathname, { replace: true, state: {} });
+      // Force a fresh fetch bypassing cache
+      loadGoalsAndAchievements(true);
+    }
+  }, [location.state, user, navigate, location.pathname]);
+
   // Re-fetch when data becomes stale (e.g., after goal creation/update/delete)
   useEffect(() => {
     if (user && initialLoadComplete && (state.dataStale.goals || state.dataStale.achievements)) {
-      loadGoalsAndAchievements();
+      loadGoalsAndAchievements(true);
     }
   }, [user, initialLoadComplete, state.dataStale.goals, state.dataStale.achievements]);
 
@@ -135,7 +152,7 @@ const RealGoalsAchievements = () => {
   useEffect(() => {
     const handleDataRefresh = () => {
       if (user) {
-        loadGoalsAndAchievements();
+        loadGoalsAndAchievements(true);
         loadWorkoutSessions();
       }
     };
@@ -173,16 +190,20 @@ const RealGoalsAchievements = () => {
     }
   };
 
-  const loadGoalsAndAchievements = async () => {
+  const loadGoalsAndAchievements = async (bypassCache: boolean = false) => {
     if (!user) return;
 
     const cacheKey = `user-${user.id}-goals-achievements`;
-    const cached = getCache(cacheKey);
-    if (cached && !state.dataStale.goals && !state.dataStale.achievements) {
-      setGoals(cached.goals || []);
-      setAchievements(cached.achievements || []);
-      setInitialLoadComplete(true);
-      return;
+    
+    // Only use cache if NOT bypassing and data is not stale
+    if (!bypassCache) {
+      const cached = getCache(cacheKey);
+      if (cached && !state.dataStale.goals && !state.dataStale.achievements) {
+        setGoals(cached.goals || []);
+        setAchievements(cached.achievements || []);
+        setInitialLoadComplete(true);
+        return;
+      }
     }
 
     try {
@@ -238,7 +259,7 @@ const RealGoalsAchievements = () => {
     const handleGoalUpdate = () => {
       if (user) {
         invalidateCache(`user-${user?.id}-goals-achievements`);
-        loadGoalsAndAchievements();
+        loadGoalsAndAchievements(true);
       }
     };
     window.addEventListener('focus', handleGoalUpdate);
@@ -279,7 +300,7 @@ const RealGoalsAchievements = () => {
               }]);
             if (error) throw error;
             invalidateCache(`user-${user?.id}-goals-achievements`);
-            loadGoalsAndAchievements();
+            loadGoalsAndAchievements(true);
             toast.success('Goal restored');
           } catch (error) {
             console.error('Failed to restore goal:', error);
@@ -396,7 +417,7 @@ const RealGoalsAchievements = () => {
       <GoalProgressLogger
         goal={selectedGoal}
         onBack={() => setSelectedGoal(null)}
-        onGoalUpdated={loadGoalsAndAchievements}
+        onGoalUpdated={() => loadGoalsAndAchievements(true)}
       />
     );
   }

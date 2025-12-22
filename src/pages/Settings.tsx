@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Globe, Zap, Brain, FileText, HelpCircle, LogOut, User } from 'lucide-react';
+import { Globe, Zap, Brain, FileText, HelpCircle, LogOut, User, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnitPreferences from '@/components/settings/UnitPreferences';
@@ -8,6 +8,7 @@ import AppPreferences from '@/components/settings/AppPreferences';
 import AIMemoryReset from '@/components/settings/AIMemoryReset';
 import DisplayNameSection from '@/components/settings/DisplayNameSection';
 import ProfileMetrics from '@/components/settings/ProfileMetrics';
+import AccountManagement from '@/components/settings/AccountManagement';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,6 +59,7 @@ const Settings = () => {
     { id: 'units', label: 'Units', icon: Globe },
     { id: 'app', label: 'App', icon: Zap },
     { id: 'ai', label: 'AI', icon: Brain },
+    { id: 'privacy', label: 'Privacy', icon: Shield },
     { id: 'legal', label: 'Legal', icon: FileText },
     { id: 'support', label: 'Help', icon: HelpCircle }
   ];
@@ -96,20 +98,20 @@ const Settings = () => {
         <div className="max-w-2xl mx-auto">
           {/* Settings Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-6 bg-muted/40 rounded-xl p-1 h-auto gap-0.5">
+            <TabsList className="grid w-full grid-cols-8 bg-muted/40 rounded-xl p-1 h-auto gap-0.5">
               {tabs.map((tab) => (
                 <TabsTrigger 
                   key={tab.id}
                   value={tab.id} 
                   className={cn(
-                    "rounded-lg py-2.5 px-1 transition-all duration-150",
+                    "rounded-lg py-2 px-0.5 transition-all duration-150",
                     "data-[state=active]:bg-background data-[state=active]:shadow-sm",
-                    "flex flex-col items-center gap-1 min-h-[56px]"
+                    "flex flex-col items-center gap-0.5 min-h-[52px]"
                   )}
                   aria-label={tab.label}
                 >
                   <tab.icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-[9px] font-medium truncate">{tab.label}</span>
+                  <span className="text-[8px] font-medium truncate">{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -170,6 +172,10 @@ const Settings = () => {
                         <AIMemoryReset />
                       </CardContent>
                     </Card>
+                  </TabsContent>
+
+                  <TabsContent value="privacy" className="mt-0">
+                    <AccountManagement />
                   </TabsContent>
 
                   <TabsContent value="legal" className="mt-0">

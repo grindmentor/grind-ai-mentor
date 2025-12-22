@@ -130,16 +130,17 @@ const RealGoalsAchievements = () => {
 
   // Handle refreshGoals flag from navigation state (e.g., after creating a goal)
   // This guarantees a fresh fetch bypassing the cache
+  const refreshGoals = !!(location.state as { refreshGoals?: boolean } | null)?.refreshGoals;
+  
   useEffect(() => {
-    const navState = location.state as { refreshGoals?: boolean } | null;
-    if (navState?.refreshGoals && user && !refreshHandledRef.current) {
+    if (refreshGoals && user && !refreshHandledRef.current) {
       refreshHandledRef.current = true;
       // Clear the navigation state to prevent future triggers
       navigate(location.pathname, { replace: true, state: {} });
       // Force a fresh fetch bypassing cache
       loadGoalsAndAchievements(true);
     }
-  }, [location.state, user, navigate, location.pathname]);
+  }, [refreshGoals, user, navigate, location.pathname]);
 
   // Re-fetch when data becomes stale (e.g., after goal creation/update/delete)
   useEffect(() => {

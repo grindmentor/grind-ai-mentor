@@ -221,8 +221,8 @@ const RealGoalsAchievements = () => {
 
   // Handle refreshGoals flag from navigation state (e.g., after creating a goal)
   // This guarantees a fresh fetch bypassing the cache
-  const refreshGoals = !!(location.state as { refreshGoals?: boolean } | null)?.refreshGoals;
-  
+  const currentStateForRefresh = (location.state ?? {}) as Record<string, unknown>;
+  const refreshGoals = !!currentStateForRefresh.refreshGoals;
   useEffect(() => {
     if (refreshGoals && user && !refreshHandledRef.current) {
       refreshHandledRef.current = true;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -127,6 +127,7 @@ const stockGoals = [
 
 const CreateGoal = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const editingGoalId = searchParams.get('edit');
   const { user } = useAuth();
@@ -310,8 +311,9 @@ const CreateGoal = () => {
       emit('goals:updated');
 
       toast.success(editingGoal ? 'Goal updated successfully! 🎯' : 'Goal created successfully! 🎯');
-      // Navigate with refreshGoals flag to force immediate reload bypassing cache
-      navigate('/app', { state: { refreshGoals: true } });
+      // Navigate with refreshGoals flag merged into existing state to preserve other keys (e.g., returnTo)
+      const existingState = (location.state as Record<string, unknown> | null) || {};
+      navigate('/app', { state: { ...existingState, refreshGoals: true } });
     } catch (error) {
       console.error('Error saving goal:', error);
       toast.error('Failed to save goal. Please try again.');

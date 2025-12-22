@@ -14,6 +14,8 @@ import { CalendarIcon, Target, Weight, Activity, Flame, TrendingUp, Clock, Repea
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { useAppSync } from '@/utils/appSynchronization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -134,6 +136,8 @@ const stockGoals = [
 export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal }: GoalCreationModalProps) => {
   const { user } = useAuth();
   const { preferences } = usePreferences();
+  const { actions } = useGlobalState();
+  const { emit, invalidateCache } = useAppSync();
   const [activeTab, setActiveTab] = useState<'stock' | 'custom'>('stock');
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
   const [deadline, setDeadline] = useState<Date>();
@@ -298,6 +302,12 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
         console.error('Supabase error:', result.error);
         throw result.error;
       }
+
+      // Invalidate goals cache and emit refresh event so Dashboard updates immediately
+      invalidateCache(`user-${user.id}-goals-achievements`);
+      actions.setDataStale('goals', true);
+      emit('goals:refresh');
+      emit('goals:updated');
 
       toast.success(editingGoal ? 'Goal updated successfully! 🎯' : 'Goal created successfully! 🎯');
       onGoalCreated();

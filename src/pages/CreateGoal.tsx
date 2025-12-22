@@ -312,7 +312,7 @@ const CreateGoal = () => {
 
       toast.success(editingGoal ? 'Goal updated successfully! 🎯' : 'Goal created successfully! 🎯');
       // Navigate with refreshGoals flag merged into existing state to preserve other keys (e.g., returnTo)
-      const existingState = (location.state as Record<string, unknown> | null) || {};
+      const existingState = (location.state ?? {}) as Record<string, unknown>;
       navigate('/app', { state: { ...existingState, refreshGoals: true } });
     } catch (error) {
       console.error('Error saving goal:', error);

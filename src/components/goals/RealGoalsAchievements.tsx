@@ -124,6 +124,13 @@ const RealGoalsAchievements = () => {
     }
   }, [user, initialLoadComplete]);
 
+  // Re-fetch when data becomes stale (e.g., after goal creation/update/delete)
+  useEffect(() => {
+    if (user && initialLoadComplete && (state.dataStale.goals || state.dataStale.achievements)) {
+      loadGoalsAndAchievements();
+    }
+  }, [user, initialLoadComplete, state.dataStale.goals, state.dataStale.achievements]);
+
   // Listen for real-time updates
   useEffect(() => {
     const handleDataRefresh = () => {

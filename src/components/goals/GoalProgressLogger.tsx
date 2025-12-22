@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Plus, Save, X, TrendingUp, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { useAppSync } from '@/utils/appSynchronization';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
 interface Goal {
   id: string;
   title: string;
@@ -31,11 +32,12 @@ interface GoalProgressLoggerProps {
 
 const GoalProgressLogger: React.FC<GoalProgressLoggerProps> = ({ goal, onBack, onGoalUpdated }) => {
   const { user } = useAuth();
+  const { actions } = useGlobalState();
+  const { emit, invalidateCache } = useAppSync();
   const [progressValue, setProgressValue] = useState('');
   const [notes, setNotes] = useState('');
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLogging, setIsLogging] = useState(false);
-
   const handleLogProgress = async () => {
     if (!user || !progressValue) return;
 
@@ -66,6 +68,12 @@ const GoalProgressLogger: React.FC<GoalProgressLoggerProps> = ({ goal, onBack, o
         .eq('id', goal.id);
 
       if (updateError) throw updateError;
+
+      // Invalidate cache and emit events so Dashboard updates immediately
+      invalidateCache(`user-${user.id}-goals-achievements`);
+      actions.setDataStale('goals', true);
+      emit('goals:refresh');
+      emit('goals:updated');
 
       toast.success('Progress logged successfully!');
       setProgressValue('');

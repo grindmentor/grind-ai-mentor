@@ -121,58 +121,6 @@ const RealGoalsAchievements = () => {
 
   const loading = state.loading.goals || state.loading.achievements;
 
-  useEffect(() => {
-    if (user && !initialLoadComplete) {
-      loadGoalsAndAchievements(false);
-      loadWorkoutSessions();
-    }
-  }, [user, initialLoadComplete]);
-
-  // Handle refreshGoals flag from navigation state (e.g., after creating a goal)
-  // This guarantees a fresh fetch bypassing the cache
-  const refreshGoals = !!(location.state as { refreshGoals?: boolean } | null)?.refreshGoals;
-  
-  useEffect(() => {
-    if (refreshGoals && user && !refreshHandledRef.current) {
-      refreshHandledRef.current = true;
-      // Clear the navigation state to prevent future triggers
-      navigate(location.pathname, { replace: true, state: {} });
-      // Force a fresh fetch bypassing cache
-      loadGoalsAndAchievements(true);
-    }
-  }, [refreshGoals, user, navigate, location.pathname]);
-
-  // Re-fetch when data becomes stale (e.g., after goal creation/update/delete)
-  useEffect(() => {
-    if (user && initialLoadComplete && (state.dataStale.goals || state.dataStale.achievements)) {
-      loadGoalsAndAchievements(true);
-    }
-  }, [user, initialLoadComplete, state.dataStale.goals, state.dataStale.achievements]);
-
-  // Listen for real-time updates
-  useEffect(() => {
-    const handleDataRefresh = () => {
-      if (user) {
-        loadGoalsAndAchievements(true);
-        loadWorkoutSessions();
-      }
-    };
-
-    on('goals:refresh', handleDataRefresh);
-    on('achievements:refresh', handleDataRefresh);
-    on('realtime:user-goals', handleDataRefresh);
-    on('realtime:user-achievements', handleDataRefresh);
-    on('workout:completed', handleDataRefresh);
-
-    return () => {
-      off('goals:refresh', handleDataRefresh);
-      off('achievements:refresh', handleDataRefresh);
-      off('realtime:user-goals', handleDataRefresh);
-      off('realtime:user-achievements', handleDataRefresh);
-      off('workout:completed', handleDataRefresh);
-    };
-  }, [user, on, off]);
-
   const loadWorkoutSessions = async () => {
     if (!user) return;
     try {
@@ -191,7 +139,7 @@ const RealGoalsAchievements = () => {
     }
   };
 
-  const loadGoalsAndAchievements = async (bypassCache: boolean = false) => {
+  const loadGoalsAndAchievements = useCallback(async (bypassCache: boolean = false) => {
     if (!user) return;
 
     const cacheKey = `user-${user.id}-goals-achievements`;
@@ -207,6 +155,7 @@ const RealGoalsAchievements = () => {
       }
     }
 
+    let fetchSuccess = false;
     try {
       actions.setLoading('goals', true);
       actions.setLoading('achievements', true);
@@ -237,13 +186,14 @@ const RealGoalsAchievements = () => {
         setAchievements(achievementsData || []);
       }
 
-      setCache(cacheKey, {
-        goals: goalsData || [],
-        achievements: achievementsData || []
-      });
-
-      actions.setDataStale('goals', false);
-      actions.setDataStale('achievements', false);
+      // Only update cache and clear stale flags on successful fetch
+      if (!goalsError && !achievementsError) {
+        fetchSuccess = true;
+        setCache(cacheKey, {
+          goals: goalsData || [],
+          achievements: achievementsData || []
+        });
+      }
       
     } catch (error) {
       console.error('Error:', error);
@@ -253,8 +203,69 @@ const RealGoalsAchievements = () => {
       actions.setLoading('goals', false);
       actions.setLoading('achievements', false);
       setInitialLoadComplete(true);
+      // Clear stale flags only after successful fresh fetch
+      if (fetchSuccess) {
+        actions.setDataStale('goals', false);
+        actions.setDataStale('achievements', false);
+      }
     }
-  };
+  }, [user, getCache, setCache, state.dataStale.goals, state.dataStale.achievements, actions]);
+
+  // Initial load effect
+  useEffect(() => {
+    if (user && !initialLoadComplete) {
+      loadGoalsAndAchievements(false);
+      loadWorkoutSessions();
+    }
+  }, [user, initialLoadComplete, loadGoalsAndAchievements]);
+
+  // Handle refreshGoals flag from navigation state (e.g., after creating a goal)
+  // This guarantees a fresh fetch bypassing the cache
+  const refreshGoals = !!(location.state as { refreshGoals?: boolean } | null)?.refreshGoals;
+  
+  useEffect(() => {
+    if (refreshGoals && user && !refreshHandledRef.current) {
+      refreshHandledRef.current = true;
+      // Clear ONLY the refreshGoals key, preserve other state keys (e.g., returnTo)
+      const currentState = (location.state as Record<string, unknown> | null) || {};
+      const { refreshGoals: _, ...preservedState } = currentState;
+      const newState = Object.keys(preservedState).length > 0 ? preservedState : undefined;
+      navigate(location.pathname, { replace: true, state: newState });
+      // Force a fresh fetch bypassing cache
+      loadGoalsAndAchievements(true);
+    }
+  }, [refreshGoals, user, navigate, location.pathname, location.state, loadGoalsAndAchievements]);
+
+  // Re-fetch when data becomes stale (e.g., after goal creation/update/delete)
+  useEffect(() => {
+    if (user && initialLoadComplete && (state.dataStale.goals || state.dataStale.achievements)) {
+      loadGoalsAndAchievements(true);
+    }
+  }, [user, initialLoadComplete, state.dataStale.goals, state.dataStale.achievements, loadGoalsAndAchievements]);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleDataRefresh = () => {
+      if (user) {
+        loadGoalsAndAchievements(true);
+        loadWorkoutSessions();
+      }
+    };
+
+    on('goals:refresh', handleDataRefresh);
+    on('achievements:refresh', handleDataRefresh);
+    on('realtime:user-goals', handleDataRefresh);
+    on('realtime:user-achievements', handleDataRefresh);
+    on('workout:completed', handleDataRefresh);
+
+    return () => {
+      off('goals:refresh', handleDataRefresh);
+      off('achievements:refresh', handleDataRefresh);
+      off('realtime:user-goals', handleDataRefresh);
+      off('realtime:user-achievements', handleDataRefresh);
+      off('workout:completed', handleDataRefresh);
+    };
+  }, [user, on, off, loadGoalsAndAchievements]);
 
   useEffect(() => {
     const handleGoalUpdate = () => {
@@ -265,7 +276,7 @@ const RealGoalsAchievements = () => {
     };
     window.addEventListener('focus', handleGoalUpdate);
     return () => window.removeEventListener('focus', handleGoalUpdate);
-  }, [user]);
+  }, [user, invalidateCache, loadGoalsAndAchievements]);
 
   const handleDeleteGoal = async (goalId: string) => {
     const goalToDelete = goals.find(g => g.id === goalId);

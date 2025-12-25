@@ -1,22 +1,25 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// IP-based rate limiting
+// User-based rate limiting (more secure than IP-based)
 const rateLimiter = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 15; // requests per minute
 const RATE_WINDOW_MS = 60 * 1000; // 1 minute
 
-function checkRateLimit(ip: string): boolean {
+function checkRateLimit(userId: string): boolean {
   const now = Date.now();
-  const record = rateLimiter.get(ip);
+  const record = rateLimiter.get(userId);
 
   // Clean up old entries periodically
   if (rateLimiter.size > 5000) {
@@ -28,7 +31,7 @@ function checkRateLimit(ip: string): boolean {
   }
 
   if (!record || record.resetTime < now) {
-    rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    rateLimiter.set(userId, { count: 1, resetTime: now + RATE_WINDOW_MS });
     return true;
   }
 
@@ -38,12 +41,6 @@ function checkRateLimit(ip: string): boolean {
 
   record.count++;
   return true;
-}
-
-function getClientIP(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-         req.headers.get('x-real-ip') ||
-         'unknown';
 }
 
 // Simple response cache
@@ -75,10 +72,40 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Check rate limit
-  const clientIP = getClientIP(req);
-  if (!checkRateLimit(clientIP)) {
-    console.log(`Rate limit exceeded for IP: ${clientIP}`);
+  // Authentication check - require valid user
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    console.log('❌ FITNESS-AI: No authorization header provided');
+    return new Response(JSON.stringify({ 
+      error: 'Authentication required',
+      details: 'Please sign in to use this feature'
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Verify user token
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  
+  if (userError || !user) {
+    console.log('❌ FITNESS-AI: Invalid or expired token');
+    return new Response(JSON.stringify({ 
+      error: 'Unauthorized',
+      details: 'Invalid or expired authentication token'
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  console.log('✅ FITNESS-AI: User authenticated:', user.id);
+
+  // Check rate limit using user ID (more secure than IP)
+  if (!checkRateLimit(user.id)) {
+    console.log(`Rate limit exceeded for user: ${user.id}`);
     return new Response(JSON.stringify({
       error: 'Rate limit exceeded. Please try again later.',
       details: 'Too many requests. Please wait a moment before trying again.'

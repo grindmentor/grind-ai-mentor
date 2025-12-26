@@ -1,6 +1,6 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -9,14 +9,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// IP-based rate limiting
+// User-based rate limiting (more secure than IP-based)
 const rateLimiter = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 15; // requests per minute
+const RATE_LIMIT = 15; // requests per minute per user
 const RATE_WINDOW_MS = 60 * 1000; // 1 minute
 
-function checkRateLimit(ip: string): boolean {
+function checkRateLimit(userId: string): boolean {
   const now = Date.now();
-  const record = rateLimiter.get(ip);
+  const record = rateLimiter.get(userId);
 
   // Clean up old entries periodically
   if (rateLimiter.size > 5000) {
@@ -28,7 +28,7 @@ function checkRateLimit(ip: string): boolean {
   }
 
   if (!record || record.resetTime < now) {
-    rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    rateLimiter.set(userId, { count: 1, resetTime: now + RATE_WINDOW_MS });
     return true;
   }
 
@@ -40,12 +40,6 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-function getClientIP(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-         req.headers.get('x-real-ip') ||
-         'unknown';
-}
-
 // Enhanced in-memory cache for exercise searches
 const exerciseCache = new Map<string, any>();
 const CACHE_DURATION = 45 * 60 * 1000; // 45 minutes - longer cache for better cost efficiency
@@ -55,20 +49,52 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Check rate limit
-  const clientIP = getClientIP(req);
-  if (!checkRateLimit(clientIP)) {
-    console.log(`Rate limit exceeded for IP: ${clientIP}`);
-    return new Response(JSON.stringify({
-      error: 'Rate limit exceeded. Please try again later.',
-      exercises: []
-    }), {
-      status: 429,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
   try {
+    // Authentication check - require valid JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('No authorization header provided');
+      return new Response(JSON.stringify({
+        error: 'Authentication required',
+        exercises: []
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify the JWT token
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      console.log('Invalid token or user not found:', userError?.message);
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        exercises: []
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // User-based rate limiting
+    if (!checkRateLimit(user.id)) {
+      console.log(`Rate limit exceeded for user: ${user.id}`);
+      return new Response(JSON.stringify({
+        error: 'Rate limit exceeded. Please try again later.',
+        exercises: []
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const { query } = await req.json();
     
     // Enhanced cache check with normalization
@@ -221,7 +247,7 @@ Popular strength exercises: bench press, squat, deadlift, overhead press, rows, 
     // Improved cache cleanup - remove expired entries
     if (exerciseCache.size > 150) {
       const now = Date.now();
-      const keysToDelete = [];
+      const keysToDelete: string[] = [];
       for (const [key, value] of exerciseCache.entries()) {
         if (now - value.timestamp > CACHE_DURATION) {
           keysToDelete.push(key);

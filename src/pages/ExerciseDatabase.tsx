@@ -40,27 +40,35 @@ const ExerciseDatabase = () => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadExercises();
-  }, []);
-
   const loadExercises = async () => {
+    console.log('[ExerciseDatabase] Starting to load exercises...');
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('exercises')
-        .select('*')
+        .select('id, name, description, primary_muscles, secondary_muscles, equipment, difficulty_level, category, form_cues, technique_notes')
         .eq('is_active', true)
-        .order('name');
+        .order('name')
+        .limit(100); // Limit to prevent slow queries
 
-      if (error) throw error;
+      if (error) {
+        console.error('[ExerciseDatabase] Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('[ExerciseDatabase] Loaded', data?.length || 0, 'exercises');
       setExercises(data || []);
     } catch (error) {
-      console.error('Error loading exercises:', error);
+      console.error('[ExerciseDatabase] Error loading exercises:', error);
     } finally {
+      console.log('[ExerciseDatabase] Setting loading to false');
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadExercises();
+  }, []);
 
   const handleRefresh = async () => {
     await loadExercises();

@@ -423,20 +423,13 @@ DEFAULT RECOMMENDATIONS:
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error response:', errorData);
+      // Log detailed error server-side only for debugging
+      console.error('OpenAI API error:', response.status, errorData);
       
-      // Parse error for better user feedback
-      let parsedError;
-      try {
-        parsedError = JSON.parse(errorData);
-      } catch {
-        parsedError = { error: { message: errorData } };
-      }
-      
+      // Return generic user-facing error messages
       if (response.status === 429) {
         return new Response(JSON.stringify({ 
-          error: 'API quota exceeded. Please check your OpenAI billing and usage limits.',
-          details: parsedError.error?.message || 'Rate limit or quota exceeded'
+          error: 'AI service is temporarily busy. Please try again in a moment.'
         }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -444,10 +437,9 @@ DEFAULT RECOMMENDATIONS:
       }
       
       return new Response(JSON.stringify({ 
-        error: `OpenAI API error: ${response.status}`,
-        details: parsedError.error?.message || errorData
+        error: 'AI service is temporarily unavailable. Please try again.'
       }), {
-        status: response.status,
+        status: 503,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -462,12 +454,11 @@ DEFAULT RECOMMENDATIONS:
     });
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid OpenAI response structure:', data);
+      console.error('Invalid OpenAI response structure:', JSON.stringify(data));
       return new Response(JSON.stringify({ 
-        error: 'Invalid response from OpenAI API',
-        details: 'Response did not contain expected message structure'
+        error: 'AI service returned an unexpected response. Please try again.'
       }), {
-        status: 500,
+        status: 503,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -491,10 +482,10 @@ DEFAULT RECOMMENDATIONS:
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in fitness-ai function:', error);
+    // Log detailed error server-side only
+    console.error('Error in fitness-ai function:', error instanceof Error ? error.message : error);
     return new Response(JSON.stringify({ 
-      error: 'An unexpected error occurred',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'An unexpected error occurred. Please try again.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -219,8 +219,17 @@ RULES:
 
     if (!response.ok) {
       const errorText = await response.text();
+      // Log detailed error server-side only
       console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      
+      // Return generic user-facing error
+      return new Response(
+        JSON.stringify({ error: 'Physique analysis service is temporarily unavailable. Please try again.' }), 
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const data = await response.json();
@@ -294,9 +303,10 @@ RULES:
     );
 
   } catch (error) {
-    console.error('Error in analyze-physique:', error);
+    // Log detailed error server-side only
+    console.error('Error in analyze-physique:', error instanceof Error ? error.message : error);
     return new Response(
-      JSON.stringify({ error: String(error) }), 
+      JSON.stringify({ error: 'Physique analysis failed. Please try again.' }), 
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -4,7 +4,7 @@ import { useModules } from '@/contexts/ModulesContext';
 import { useNavigate } from 'react-router-dom';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { Star, Bell, Settings, ChevronRight, LayoutGrid, Book } from 'lucide-react';
+import { Star, Bell, Settings, ChevronRight, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -300,24 +300,15 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.25 }}
-                className="mb-5 grid grid-cols-2 gap-3"
+                className="mb-5"
               >
                 <Button
                   onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
-                  className="h-14 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 touch-manipulation"
+                  className="w-full h-14 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 touch-manipulation"
                   aria-label="Open Progress Hub"
                 >
                   <Star className="w-4 h-4" />
                   <span className="text-sm">Progress Hub</span>
-                </Button>
-                <Button
-                  onClick={() => navigate('/exercise-database', { state: { returnTo: '/app' } })}
-                  variant="outline"
-                  className="h-14 border-border rounded-2xl font-semibold flex items-center justify-center gap-2 touch-manipulation"
-                  aria-label="Open Exercise Database"
-                >
-                  <Book className="w-4 h-4" />
-                  <span className="text-sm">Exercises</span>
                 </Button>
               </motion.div>
 

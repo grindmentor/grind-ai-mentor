@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { AppShell } from '@/components/ui/app-shell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Exercise {
   id: string;
@@ -47,8 +49,20 @@ interface WorkoutSession {
   notes?: string;
 }
 
+interface ScheduledWorkoutState {
+  id: string;
+  workout_name: string;
+  workout_data: any;
+}
+
 const WorkoutLogger = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  
+  // Get scheduled workout from navigation state (passed from TodaysSession)
+  const scheduledWorkout = location.state?.scheduledWorkout as ScheduledWorkoutState | undefined;
+  
   const [currentWorkout, setCurrentWorkout] = useState<WorkoutSession | null>(null);
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [workoutTimer, setWorkoutTimer] = useState(0);
@@ -115,9 +129,9 @@ const WorkoutLogger = () => {
     }
   };
 
-  const startWorkout = () => {
+  const startWorkout = (workoutName?: string) => {
     const newWorkout: WorkoutSession = {
-      workout_name: `Workout ${new Date().toLocaleDateString()}`,
+      workout_name: workoutName || `Workout ${new Date().toLocaleDateString()}`,
       duration_minutes: 0,
       exercises_data: [],
       session_date: new Date().toISOString().split('T')[0],
@@ -133,6 +147,13 @@ const WorkoutLogger = () => {
     }, 1000);
     setTimerInterval(interval);
   };
+  
+  // Auto-start workout if coming from scheduled session
+  useEffect(() => {
+    if (scheduledWorkout && !currentWorkout) {
+      startWorkout(scheduledWorkout.workout_name);
+    }
+  }, [scheduledWorkout]);
 
   const pauseWorkout = () => {
     setIsWorkoutActive(false);
@@ -225,9 +246,11 @@ const WorkoutLogger = () => {
         user_id: user.id
       };
 
-      const { error } = await supabase
+      const { data: savedSession, error } = await supabase
         .from('workout_sessions')
-        .insert(workoutData);
+        .insert(workoutData)
+        .select('id')
+        .single();
 
       if (error) throw error;
 
@@ -248,6 +271,22 @@ const WorkoutLogger = () => {
               });
           }
         }
+      }
+      
+      // Mark scheduled workout as completed if this came from a plan
+      if (scheduledWorkout?.id && savedSession?.id) {
+        await supabase
+          .from('scheduled_workouts')
+          .update({ 
+            status: 'completed',
+            completed_session_id: savedSession.id
+          })
+          .eq('id', scheduledWorkout.id);
+        
+        // Invalidate queries to update dashboard immediately
+        queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
+        queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
+        queryClient.invalidateQueries({ queryKey: ['active-plan'] });
       }
 
       setCurrentWorkout(null);
@@ -294,7 +333,7 @@ const WorkoutLogger = () => {
           </div>
         </motion.div>
 
-        <Tabs defaultValue={currentWorkout ? "active" : "start"} className="space-y-6">
+        <Tabs defaultValue={currentWorkout ? "active" : (scheduledWorkout ? "active" : "start")} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="start">Start Workout</TabsTrigger>
             <TabsTrigger value="active" disabled={!currentWorkout}>Active Workout</TabsTrigger>
@@ -310,22 +349,28 @@ const WorkoutLogger = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Play className="h-5 w-5" />
-                    Start New Workout
+                    {scheduledWorkout ? 'Scheduled Workout' : 'Start New Workout'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {scheduledWorkout && (
+                    <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 mb-4">
+                      <p className="text-sm font-medium text-foreground">{scheduledWorkout.workout_name}</p>
+                      <p className="text-xs text-muted-foreground">From your active training plan</p>
+                    </div>
+                  )}
                   <Button
-                    onClick={startWorkout}
+                    onClick={() => startWorkout(scheduledWorkout?.workout_name)}
                     disabled={currentWorkout !== null}
                     className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
                     size="lg"
                   >
                     <Play className="h-5 w-5 mr-2" />
-                    Begin Workout
+                    {scheduledWorkout ? `Start ${scheduledWorkout.workout_name}` : 'Begin Workout'}
                   </Button>
                   
                   <div className="text-center text-sm text-muted-foreground">
-                    Ready to crush your goals? Let's get started!
+                    {scheduledWorkout ? 'Complete this session to mark your scheduled workout as done.' : 'Ready to crush your goals? Let\'s get started!'}
                   </div>
                 </CardContent>
               </Card>

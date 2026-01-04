@@ -72,26 +72,29 @@ export const useActivePlan = () => {
     staleTime: 5 * 60 * 1000
   });
 
-  // Fetch today's scheduled workout
+  // Fetch today's scheduled workout - include pending AND rescheduled (moved TO today)
   const { data: todaysWorkout, isLoading: todayLoading } = useQuery({
     queryKey: ['todays-workout', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const today = new Date().toISOString().split('T')[0];
       
+      // Get workout scheduled for today that's either pending or was rescheduled to today
       const { data, error } = await supabase
         .from('scheduled_workouts')
         .select('*')
         .eq('user_id', user.id)
         .eq('scheduled_date', today)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'rescheduled'])
+        .order('created_at', { ascending: true })
+        .limit(1)
         .maybeSingle();
       
       if (error) throw error;
       return data as ScheduledWorkout | null;
     },
     enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000
+    staleTime: 1 * 60 * 1000 // Shorter stale time for more responsiveness
   });
 
   // Fetch upcoming workouts
@@ -117,7 +120,7 @@ export const useActivePlan = () => {
       return (data || []) as ScheduledWorkout[];
     },
     enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000
+    staleTime: 1 * 60 * 1000 // Match today's workout stale time
   });
 
   // Create workout plan mutation
@@ -158,32 +161,50 @@ export const useActivePlan = () => {
       if (planError) throw planError;
 
       // Generate scheduled workouts for the next 4 weeks
+      // Important: Include today if it matches a schedule day
       const scheduledWorkouts = [];
       const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize to midnight
+      const currentDayOfWeek = today.getDay();
       
       for (let week = 0; week < 4; week++) {
         for (const scheduleDay of schedule) {
           const targetDate = new Date(today);
-          const currentDayOfWeek = today.getDay();
           let daysToAdd = scheduleDay.dayOfWeek - currentDayOfWeek;
-          if (daysToAdd < 0 || (daysToAdd === 0 && week === 0)) {
-            daysToAdd += 7;
+          
+          // For week 0: include today if it matches, otherwise go to next occurrence
+          if (week === 0) {
+            if (daysToAdd < 0) {
+              // Day already passed this week, schedule for next week
+              daysToAdd += 7;
+            }
+            // daysToAdd === 0 means today - include it!
+          } else {
+            // For future weeks, add full weeks
+            if (daysToAdd <= 0) {
+              daysToAdd += 7;
+            }
           }
+          
           daysToAdd += week * 7;
           targetDate.setDate(today.getDate() + daysToAdd);
           
           const dateStr = targetDate.toISOString().split('T')[0];
           
-          scheduledWorkouts.push({
-            user_id: user.id,
-            plan_id: plan.id,
-            workout_name: scheduleDay.workoutName,
-            workout_data: template as unknown as Json,
-            scheduled_date: dateStr,
-            original_date: dateStr,
-            day_of_week: scheduleDay.dayOfWeek,
-            status: 'pending'
-          });
+          // Avoid duplicate dates (safety check)
+          const alreadyScheduled = scheduledWorkouts.some(w => w.scheduled_date === dateStr);
+          if (!alreadyScheduled) {
+            scheduledWorkouts.push({
+              user_id: user.id,
+              plan_id: plan.id,
+              workout_name: scheduleDay.workoutName,
+              workout_data: template as unknown as Json,
+              scheduled_date: dateStr,
+              original_date: dateStr,
+              day_of_week: scheduleDay.dayOfWeek,
+              status: 'pending'
+            });
+          }
         }
       }
 
@@ -219,19 +240,23 @@ export const useActivePlan = () => {
   // Reschedule workout mutation
   const rescheduleMutation = useMutation({
     mutationFn: async ({ workoutId, newDate }: { workoutId: string; newDate: string }) => {
+      // When rescheduling to a new date, keep status as 'pending' if moving forward
+      // This ensures the workout shows up on the new date correctly
       const { error } = await supabase
         .from('scheduled_workouts')
         .update({ 
           scheduled_date: newDate,
-          status: 'rescheduled'
+          status: 'pending' // Reset to pending so it shows up on the new date
         })
         .eq('id', workoutId);
 
       if (error) throw error;
     },
     onSuccess: () => {
+      // Invalidate immediately for responsive UI
       queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['active-plan'] });
       toast({
         title: 'Workout Rescheduled',
         description: 'Your workout has been moved to the new date.',

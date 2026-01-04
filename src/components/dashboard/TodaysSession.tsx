@@ -14,8 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useActivePlan, ScheduledWorkout } from '@/hooks/useActivePlan';
-import { useModuleNavigation } from '@/hooks/useModuleNavigation';
+import { useNavigate } from 'react-router-dom';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
+import { useModuleNavigation } from '@/hooks/useModuleNavigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -30,6 +31,7 @@ const TodaysSessionComponent: React.FC = () => {
     skipWorkout,
     getDayName
   } = useActivePlan();
+  const navigate = useNavigate();
   const { navigateToModule } = useModuleNavigation();
   const { trigger } = useNativeHaptics();
   const [showReschedule, setShowReschedule] = useState(false);
@@ -37,8 +39,14 @@ const TodaysSessionComponent: React.FC = () => {
 
   const handleStartWorkout = () => {
     trigger('medium');
-    // Navigate to workout logger - the scheduled workout context is handled separately
-    navigateToModule('/workout-logger');
+    // Navigate to workout logger with scheduled workout context
+    // This allows WorkoutLogger to pre-fill data and mark as completed on save
+    navigate('/workout-logger', { 
+      state: { 
+        scheduledWorkout: todaysWorkout,
+        returnTo: '/app'
+      } 
+    });
   };
 
   const handleReschedule = (workoutId: string) => {

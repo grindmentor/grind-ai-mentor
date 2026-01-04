@@ -165,7 +165,7 @@ const CreateGoal = () => {
           .select('*')
           .eq('id', editingGoalId)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           toast.error('Failed to load goal');

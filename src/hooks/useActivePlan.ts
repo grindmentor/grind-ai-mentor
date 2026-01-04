@@ -262,7 +262,7 @@ export const useActivePlan = () => {
         .eq('plan_id', activePlan.id)
         .order('scheduled_date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       const startDate = latestWorkout 
         ? new Date(latestWorkout.scheduled_date)

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Grid3X3, TrendingUp, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
+import { preloadRoute } from '@/utils/routePreloader';
 
 interface TabItem {
   id: string;
@@ -68,6 +69,7 @@ const BottomTabBarComponent: React.FC = () => {
 
   const handleTabPress = useCallback((tab: TabItem) => {
     trigger('selection');
+    void preloadRoute(tab.path);
     navigate(tab.path);
   }, [trigger, navigate]);
 

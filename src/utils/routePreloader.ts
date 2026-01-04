@@ -10,8 +10,15 @@ interface RouteConfig {
 // Map of routes to their dynamic imports
 const routeLoaders: Record<string, RouteLoader> = {
   '/app': () => import('@/pages/App'),
+  '/modules': () => import('@/pages/ModuleLibrary'),
+  '/progress-hub-dashboard': () => import('@/pages/ProgressHubDashboard'),
+  '/progress-hub': () => import('@/components/ai-modules/ProgressHub'),
   '/settings': () => import('@/pages/Settings'),
   '/profile': () => import('@/pages/Profile'),
+  '/notifications': () => import('@/pages/Notifications'),
+  '/usage': () => import('@/pages/Usage'),
+
+  // Secondary routes
   '/pricing': () => import('@/pages/Pricing'),
   '/support': () => import('@/pages/Support'),
   '/terms': () => import('@/pages/Terms'),
@@ -23,7 +30,6 @@ const routeLoaders: Record<string, RouteLoader> = {
   '/workout-logger': () => import('@/pages/WorkoutLogger'),
   '/physique-ai': () => import('@/pages/PhysiqueAI'),
   '/smart-food-log': () => import('@/pages/SmartFoodLog'),
-  '/modules': () => import('@/pages/ModuleLibrary'),
   '/research': () => import('@/pages/Research'),
 };
 
@@ -71,8 +77,8 @@ export const preloadRoutes = (paths: string[]): void => {
 
 // Preload critical routes on app start
 export const preloadCriticalRoutes = (): void => {
-  // Preload the most common navigation targets
-  preloadRoutes(['/app', '/signin', '/signup']);
+  // Preload main tabs / most common destinations to avoid Suspense flashes
+  preloadRoutes(['/app', '/modules', '/progress-hub-dashboard', '/profile', '/settings']);
 };
 
 // Setup hover/focus preloading for links

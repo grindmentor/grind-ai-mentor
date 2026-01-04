@@ -250,7 +250,7 @@ const ModuleLibrary = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5 pointer-events-none z-10" aria-hidden="true" />
             <Input
               ref={searchInputRef}
-              placeholder="Search modules... (press /)"
+              placeholder="Search modules..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 h-12 min-h-[44px] bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/50"

@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .from('profiles')
         .select('weight, height, experience, activity, goal')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (!error && profile) {
         // Consider onboarding complete if user has filled any 3 of the 5 fields

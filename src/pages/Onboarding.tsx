@@ -40,7 +40,7 @@ const Onboarding = () => {
           .from('profiles')
           .select('birthday, weight, height, experience, activity, goal')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (profile) {
           // Pre-fill birthday if already saved from signup

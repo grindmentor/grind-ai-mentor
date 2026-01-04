@@ -148,12 +148,28 @@ const WorkoutLogger = () => {
     setTimerInterval(interval);
   };
   
-  // Auto-start workout if coming from scheduled session
+  // Auto-start workout if coming from scheduled session (run once on mount)
   useEffect(() => {
     if (scheduledWorkout && !currentWorkout) {
-      startWorkout(scheduledWorkout.workout_name);
+      const newWorkout: WorkoutSession = {
+        workout_name: scheduledWorkout.workout_name || `Workout ${new Date().toLocaleDateString()}`,
+        duration_minutes: 0,
+        exercises_data: [],
+        session_date: new Date().toISOString().split('T')[0],
+        notes: ''
+      };
+      
+      setCurrentWorkout(newWorkout);
+      setIsWorkoutActive(true);
+      setWorkoutTimer(0);
+      
+      const interval = setInterval(() => {
+        setWorkoutTimer(prev => prev + 1);
+      }, 1000);
+      setTimerInterval(interval);
     }
-  }, [scheduledWorkout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   const pauseWorkout = () => {
     setIsWorkoutActive(false);

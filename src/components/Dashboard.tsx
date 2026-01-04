@@ -115,7 +115,7 @@ const Dashboard = () => {
           .from('profiles')
           .select('display_name')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (data?.display_name) {
           setDisplayName(data.display_name);

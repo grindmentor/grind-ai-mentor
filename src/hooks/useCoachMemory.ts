@@ -31,7 +31,7 @@ export const useCoachMemory = () => {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       // Fetch recent workouts (last 7 days)
       const weekAgo = new Date();
@@ -70,14 +70,14 @@ export const useCoachMemory = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       // Fetch user preferences
       const { data: preferences } = await supabase
         .from('user_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const context: UserContext = {
         profile,

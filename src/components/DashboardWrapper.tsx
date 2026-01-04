@@ -78,7 +78,7 @@ User Agent: ${navigator.userAgent}
 
   return (
     <ErrorBoundary
-      fallback={({ error, reset }) => (
+      fallback={({ error: boundaryError, reset }) => (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-black via-orange-900/10 to-orange-800/20">
           <div className="w-full max-w-md">
             <Alert className="bg-red-900/20 border-red-800">
@@ -86,17 +86,26 @@ User Agent: ${navigator.userAgent}
               <AlertTitle className="text-red-400">Dashboard Crashed</AlertTitle>
               <AlertDescription className="text-red-300 space-y-4">
                 <p>Something went wrong while rendering the dashboard.</p>
-                {error && (
-                  <div className="bg-black/40 p-3 rounded font-mono text-xs text-red-200 break-all">
-                    {error.message}
+                {boundaryError && (
+                  <div className="bg-black/40 p-3 rounded font-mono text-xs text-red-200 break-all max-h-32 overflow-y-auto">
+                    {boundaryError.message}
                   </div>
                 )}
-                <Button
-                  onClick={() => window.location.reload()}
-                  className="w-full bg-orange-500 hover:bg-orange-600"
-                >
-                  Refresh Page
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={reset}
+                    variant="outline"
+                    className="flex-1 border-red-800 text-red-300 hover:bg-red-900/20"
+                  >
+                    Try Again
+                  </Button>
+                  <Button
+                    onClick={() => window.location.reload()}
+                    className="flex-1 bg-orange-500 hover:bg-orange-600"
+                  >
+                    Refresh Page
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
           </div>

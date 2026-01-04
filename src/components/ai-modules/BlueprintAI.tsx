@@ -70,7 +70,7 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       setUserProfile(profile);
     } catch (error) {
       console.error('Error loading user profile:', error);

@@ -51,43 +51,55 @@ const generateScheduledWorkouts = (
   weeksToGenerate: number = 4,
   startFromDate?: Date
 ) => {
-  const scheduledWorkouts = [];
+  const scheduledWorkouts: Array<{
+    user_id: string;
+    plan_id: string;
+    workout_name: string;
+    workout_data: Json;
+    scheduled_date: string;
+    original_date: string;
+    day_of_week: number;
+    status: 'pending';
+  }> = [];
+  
   const startDate = startFromDate || new Date();
   startDate.setHours(0, 0, 0, 0);
-  const currentDayOfWeek = startDate.getDay();
-
+  const startDayOfWeek = startDate.getDay();
+  
   // Sort schedule by day of week for consistent ordering
   const sortedSchedule = [...schedule].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+  
+  // Track generated dates to prevent duplicates
+  const generatedDates = new Set<string>();
 
   for (let week = 0; week < weeksToGenerate; week++) {
     for (const scheduleDay of sortedSchedule) {
+      // Calculate days until this scheduled day
+      let daysUntil = scheduleDay.dayOfWeek - startDayOfWeek;
+      
+      // For week 0, skip days that have already passed (negative daysUntil)
+      if (week === 0 && daysUntil < 0) {
+        continue;
+      }
+      
+      // For future weeks, ensure we go forward
+      if (week > 0 || daysUntil < 0) {
+        // Calculate from start of next week
+        daysUntil = (scheduleDay.dayOfWeek - startDayOfWeek + 7) % 7;
+        if (daysUntil === 0 && week > 0) daysUntil = 7; // Same day next week
+      }
+      
+      // Add weeks offset
+      const totalDays = daysUntil + (week * 7);
+      
       const targetDate = new Date(startDate);
-      let daysToAdd = scheduleDay.dayOfWeek - currentDayOfWeek;
-
-      if (week === 0) {
-        // For current week: include today if it matches, skip if day already passed
-        if (daysToAdd < 0) {
-          continue; // Skip days that already passed this week
-        }
-      } else {
-        // For future weeks
-        if (daysToAdd <= 0) {
-          daysToAdd += 7;
-        }
-        daysToAdd += (week - 1) * 7;
-      }
-
-      if (week > 0) {
-        daysToAdd = scheduleDay.dayOfWeek - currentDayOfWeek;
-        if (daysToAdd <= 0) daysToAdd += 7;
-        daysToAdd += (week - 1) * 7;
-      } else {
-        if (daysToAdd < 0) continue;
-      }
-
-      targetDate.setDate(startDate.getDate() + (week === 0 ? daysToAdd : daysToAdd + 7));
-
+      targetDate.setDate(startDate.getDate() + totalDays);
       const dateStr = targetDate.toISOString().split('T')[0];
+      
+      // Prevent duplicate dates
+      const uniqueKey = `${dateStr}-${scheduleDay.workoutName}`;
+      if (generatedDates.has(uniqueKey)) continue;
+      generatedDates.add(uniqueKey);
 
       scheduledWorkouts.push({
         user_id: userId,

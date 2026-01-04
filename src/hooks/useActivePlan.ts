@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,12 +42,75 @@ export interface ScheduledWorkout {
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// Helper to generate scheduled workouts for a plan
+const generateScheduledWorkouts = (
+  userId: string,
+  planId: string,
+  template: WorkoutTemplate,
+  schedule: ScheduleDay[],
+  weeksToGenerate: number = 4,
+  startFromDate?: Date
+) => {
+  const scheduledWorkouts = [];
+  const startDate = startFromDate || new Date();
+  startDate.setHours(0, 0, 0, 0);
+  const currentDayOfWeek = startDate.getDay();
+
+  // Sort schedule by day of week for consistent ordering
+  const sortedSchedule = [...schedule].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+
+  for (let week = 0; week < weeksToGenerate; week++) {
+    for (const scheduleDay of sortedSchedule) {
+      const targetDate = new Date(startDate);
+      let daysToAdd = scheduleDay.dayOfWeek - currentDayOfWeek;
+
+      if (week === 0) {
+        // For current week: include today if it matches, skip if day already passed
+        if (daysToAdd < 0) {
+          continue; // Skip days that already passed this week
+        }
+      } else {
+        // For future weeks
+        if (daysToAdd <= 0) {
+          daysToAdd += 7;
+        }
+        daysToAdd += (week - 1) * 7;
+      }
+
+      if (week > 0) {
+        daysToAdd = scheduleDay.dayOfWeek - currentDayOfWeek;
+        if (daysToAdd <= 0) daysToAdd += 7;
+        daysToAdd += (week - 1) * 7;
+      } else {
+        if (daysToAdd < 0) continue;
+      }
+
+      targetDate.setDate(startDate.getDate() + (week === 0 ? daysToAdd : daysToAdd + 7));
+
+      const dateStr = targetDate.toISOString().split('T')[0];
+
+      scheduledWorkouts.push({
+        user_id: userId,
+        plan_id: planId,
+        workout_name: scheduleDay.workoutName,
+        workout_data: template as unknown as Json,
+        scheduled_date: dateStr,
+        original_date: dateStr,
+        day_of_week: scheduleDay.dayOfWeek,
+        status: 'pending' as const
+      });
+    }
+  }
+
+  return scheduledWorkouts;
+};
+
 export const useActivePlan = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch active plan
+  // Fetch the currently active plan
   const { data: activePlan, isLoading: planLoading } = useQuery({
     queryKey: ['active-plan', user?.id],
     queryFn: async () => {
@@ -72,14 +135,36 @@ export const useActivePlan = () => {
     staleTime: 5 * 60 * 1000
   });
 
-  // Fetch today's scheduled workout - include pending AND rescheduled (moved TO today)
+  // Fetch ALL user plans (active and inactive) for plan management
+  const { data: allPlans, isLoading: allPlansLoading } = useQuery({
+    queryKey: ['all-plans', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('active_workout_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map(plan => ({
+        ...plan,
+        template_data: plan.template_data as unknown as WorkoutTemplate,
+        schedule: (plan.schedule as unknown as ScheduleDay[]) || []
+      })) as ActivePlan[];
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Fetch today's scheduled workout
   const { data: todaysWorkout, isLoading: todayLoading } = useQuery({
     queryKey: ['todays-workout', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const today = new Date().toISOString().split('T')[0];
       
-      // Get workout scheduled for today that's either pending or was rescheduled to today
       const { data, error } = await supabase
         .from('scheduled_workouts')
         .select('*')
@@ -94,10 +179,10 @@ export const useActivePlan = () => {
       return data as ScheduledWorkout | null;
     },
     enabled: !!user?.id,
-    staleTime: 1 * 60 * 1000 // Shorter stale time for more responsiveness
+    staleTime: 1 * 60 * 1000
   });
 
-  // Fetch upcoming workouts
+  // Fetch upcoming workouts (next 7 days)
   const { data: upcomingWorkouts, isLoading: upcomingLoading } = useQuery({
     queryKey: ['upcoming-workouts', user?.id],
     queryFn: async () => {
@@ -114,35 +199,106 @@ export const useActivePlan = () => {
         .lte('scheduled_date', nextWeek.toISOString().split('T')[0])
         .in('status', ['pending', 'rescheduled'])
         .order('scheduled_date', { ascending: true })
-        .limit(7);
+        .limit(14); // Allow for potentially 2 workouts per day
       
       if (error) throw error;
       return (data || []) as ScheduledWorkout[];
     },
     enabled: !!user?.id,
-    staleTime: 1 * 60 * 1000 // Match today's workout stale time
+    staleTime: 1 * 60 * 1000
   });
 
-  // Create workout plan mutation
+  // Get schedule health - check if we need to extend
+  const { data: scheduleHealth } = useQuery({
+    queryKey: ['schedule-health', user?.id, activePlan?.id],
+    queryFn: async () => {
+      if (!user?.id || !activePlan?.id) return null;
+      
+      const twoWeeksOut = new Date();
+      twoWeeksOut.setDate(twoWeeksOut.getDate() + 14);
+      
+      const { count, error } = await supabase
+        .from('scheduled_workouts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('plan_id', activePlan.id)
+        .eq('status', 'pending')
+        .gte('scheduled_date', new Date().toISOString().split('T')[0])
+        .lte('scheduled_date', twoWeeksOut.toISOString().split('T')[0]);
+      
+      if (error) return null;
+      
+      return {
+        pendingCount: count || 0,
+        needsExtension: (count || 0) < activePlan.schedule.length * 2
+      };
+    },
+    enabled: !!user?.id && !!activePlan?.id,
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Auto-extend schedule mutation
+  const extendScheduleMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id || !activePlan) throw new Error('No active plan');
+      
+      // Find the latest scheduled date
+      const { data: latestWorkout } = await supabase
+        .from('scheduled_workouts')
+        .select('scheduled_date')
+        .eq('user_id', user.id)
+        .eq('plan_id', activePlan.id)
+        .order('scheduled_date', { ascending: false })
+        .limit(1)
+        .single();
+      
+      const startDate = latestWorkout 
+        ? new Date(latestWorkout.scheduled_date)
+        : new Date();
+      startDate.setDate(startDate.getDate() + 1);
+      
+      const newWorkouts = generateScheduledWorkouts(
+        user.id,
+        activePlan.id,
+        activePlan.template_data,
+        activePlan.schedule,
+        2, // Generate 2 more weeks
+        startDate
+      );
+      
+      if (newWorkouts.length > 0) {
+        const { error } = await supabase
+          .from('scheduled_workouts')
+          .insert(newWorkouts);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-health'] });
+    }
+  });
+
+  // Create/follow workout plan mutation
   const followPlanMutation = useMutation({
     mutationFn: async ({ template, schedule }: { template: WorkoutTemplate; schedule: ScheduleDay[] }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Deactivate any existing plans
+      // Deactivate any existing active plans
       await supabase
         .from('active_workout_plans')
         .update({ is_active: false })
         .eq('user_id', user.id)
         .eq('is_active', true);
 
-      // Delete old scheduled workouts
+      // Delete pending scheduled workouts from old active plan
       await supabase
         .from('scheduled_workouts')
         .delete()
         .eq('user_id', user.id)
         .eq('status', 'pending');
 
-      // Create the active plan
+      // Create the new active plan
       const { data: plan, error: planError } = await supabase
         .from('active_workout_plans')
         .insert({
@@ -160,59 +316,19 @@ export const useActivePlan = () => {
 
       if (planError) throw planError;
 
-      // Generate scheduled workouts for the next 4 weeks
-      // Important: Include today if it matches a schedule day
-      const scheduledWorkouts = [];
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Normalize to midnight
-      const currentDayOfWeek = today.getDay();
-      
-      for (let week = 0; week < 4; week++) {
-        for (const scheduleDay of schedule) {
-          const targetDate = new Date(today);
-          let daysToAdd = scheduleDay.dayOfWeek - currentDayOfWeek;
-          
-          // For week 0: include today if it matches, otherwise go to next occurrence
-          if (week === 0) {
-            if (daysToAdd < 0) {
-              // Day already passed this week, schedule for next week
-              daysToAdd += 7;
-            }
-            // daysToAdd === 0 means today - include it!
-          } else {
-            // For future weeks, add full weeks
-            if (daysToAdd <= 0) {
-              daysToAdd += 7;
-            }
-          }
-          
-          daysToAdd += week * 7;
-          targetDate.setDate(today.getDate() + daysToAdd);
-          
-          const dateStr = targetDate.toISOString().split('T')[0];
-          
-          // Avoid duplicate dates (safety check)
-          const alreadyScheduled = scheduledWorkouts.some(w => w.scheduled_date === dateStr);
-          if (!alreadyScheduled) {
-            scheduledWorkouts.push({
-              user_id: user.id,
-              plan_id: plan.id,
-              workout_name: scheduleDay.workoutName,
-              workout_data: template as unknown as Json,
-              scheduled_date: dateStr,
-              original_date: dateStr,
-              day_of_week: scheduleDay.dayOfWeek,
-              status: 'pending'
-            });
-          }
-        }
-      }
+      // Generate scheduled workouts for 4 weeks
+      const scheduledWorkouts = generateScheduledWorkouts(
+        user.id,
+        plan.id,
+        template,
+        schedule,
+        4
+      );
 
       if (scheduledWorkouts.length > 0) {
         const { error: scheduleError } = await supabase
           .from('scheduled_workouts')
           .insert(scheduledWorkouts);
-
         if (scheduleError) throw scheduleError;
       }
 
@@ -220,11 +336,13 @@ export const useActivePlan = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['all-plans'] });
       queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-health'] });
       toast({
         title: 'Plan Activated! 🎯',
-        description: 'Your workout schedule has been set up. Check your dashboard for today\'s session.',
+        description: 'Your workout schedule is ready. Check today\'s session.',
       });
     },
     onError: (error) => {
@@ -237,29 +355,139 @@ export const useActivePlan = () => {
     }
   });
 
+  // Switch to existing plan mutation
+  const switchPlanMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      // Deactivate all plans
+      await supabase
+        .from('active_workout_plans')
+        .update({ is_active: false })
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      // Delete pending scheduled workouts
+      await supabase
+        .from('scheduled_workouts')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('status', 'pending');
+
+      // Get the plan to activate
+      const { data: plan, error: fetchError } = await supabase
+        .from('active_workout_plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Activate the selected plan
+      const { error: activateError } = await supabase
+        .from('active_workout_plans')
+        .update({ 
+          is_active: true, 
+          updated_at: new Date().toISOString(),
+          start_date: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', planId);
+
+      if (activateError) throw activateError;
+
+      // Generate new scheduled workouts
+      const template = plan.template_data as unknown as WorkoutTemplate;
+      const schedule = (plan.schedule as unknown as ScheduleDay[]) || [];
+      
+      const scheduledWorkouts = generateScheduledWorkouts(
+        user.id,
+        planId,
+        template,
+        schedule,
+        4
+      );
+
+      if (scheduledWorkouts.length > 0) {
+        const { error: scheduleError } = await supabase
+          .from('scheduled_workouts')
+          .insert(scheduledWorkouts);
+        if (scheduleError) throw scheduleError;
+      }
+
+      return plan;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['all-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-health'] });
+      toast({
+        title: 'Plan Switched',
+        description: 'Your schedule has been updated.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error switching plan:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to switch plans.',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Delete a saved plan
+  const deletePlanMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      // Delete associated scheduled workouts
+      await supabase
+        .from('scheduled_workouts')
+        .delete()
+        .eq('plan_id', planId);
+
+      // Delete the plan
+      const { error } = await supabase
+        .from('active_workout_plans')
+        .delete()
+        .eq('id', planId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['all-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
+      toast({
+        title: 'Plan Deleted',
+        description: 'The workout plan has been removed.',
+      });
+    }
+  });
+
   // Reschedule workout mutation
   const rescheduleMutation = useMutation({
     mutationFn: async ({ workoutId, newDate }: { workoutId: string; newDate: string }) => {
-      // When rescheduling to a new date, keep status as 'pending' if moving forward
-      // This ensures the workout shows up on the new date correctly
       const { error } = await supabase
         .from('scheduled_workouts')
         .update({ 
           scheduled_date: newDate,
-          status: 'pending' // Reset to pending so it shows up on the new date
+          status: 'pending'
         })
         .eq('id', workoutId);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      // Invalidate immediately for responsive UI
       queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
-      queryClient.invalidateQueries({ queryKey: ['active-plan'] });
       toast({
         title: 'Workout Rescheduled',
-        description: 'Your workout has been moved to the new date.',
+        description: 'Your workout has been moved.',
       });
     },
     onError: (error) => {
@@ -272,7 +500,7 @@ export const useActivePlan = () => {
     }
   });
 
-  // Skip workout mutation
+  // Skip workout mutation - marks as skipped
   const skipWorkoutMutation = useMutation({
     mutationFn: async (workoutId: string) => {
       const { error } = await supabase
@@ -287,7 +515,7 @@ export const useActivePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
       toast({
         title: 'Workout Skipped',
-        description: 'No worries, rest is important too!',
+        description: 'Rest is important too!',
       });
     }
   });
@@ -308,10 +536,11 @@ export const useActivePlan = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-health'] });
     }
   });
 
-  // Stop following plan
+  // Stop following plan (deactivate without deleting)
   const stopPlanMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error('Not authenticated');
@@ -326,29 +555,68 @@ export const useActivePlan = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['all-plans'] });
       queryClient.invalidateQueries({ queryKey: ['todays-workout'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-workouts'] });
       toast({
-        title: 'Plan Stopped',
-        description: 'You can start a new plan anytime.',
+        title: 'Plan Paused',
+        description: 'You can resume or start a new plan anytime.',
       });
     }
   });
 
   const getDayName = (dayOfWeek: number) => DAY_NAMES[dayOfWeek];
 
+  // Get current position in split cycle
+  const getCurrentSplitPosition = useCallback(() => {
+    if (!activePlan || !upcomingWorkouts || upcomingWorkouts.length === 0) return null;
+    
+    const schedule = activePlan.schedule;
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Count completed workouts this week
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const weekStartStr = weekStart.toISOString().split('T')[0];
+    
+    return {
+      totalDays: schedule.length,
+      scheduleDays: schedule.map(s => getDayName(s.dayOfWeek)),
+      nextWorkout: upcomingWorkouts[0]?.workout_name || null
+    };
+  }, [activePlan, upcomingWorkouts]);
+
   return {
+    // Active plan data
     activePlan,
     todaysWorkout,
     upcomingWorkouts: upcomingWorkouts || [],
+    allPlans: allPlans || [],
+    scheduleHealth,
+    
+    // Loading states
     isLoading: planLoading || todayLoading || upcomingLoading,
+    isLoadingAllPlans: allPlansLoading,
+    
+    // Plan management
     followPlan: followPlanMutation.mutate,
     isFollowing: followPlanMutation.isPending,
+    switchPlan: switchPlanMutation.mutate,
+    isSwitching: switchPlanMutation.isPending,
+    deletePlan: deletePlanMutation.mutate,
+    stopPlan: stopPlanMutation.mutate,
+    
+    // Workout management
     rescheduleWorkout: rescheduleMutation.mutate,
     isRescheduling: rescheduleMutation.isPending,
     skipWorkout: skipWorkoutMutation.mutate,
     completeWorkout: completeWorkoutMutation.mutate,
-    stopPlan: stopPlanMutation.mutate,
-    getDayName
+    
+    // Schedule extension
+    extendSchedule: extendScheduleMutation.mutate,
+    
+    // Utilities
+    getDayName,
+    getCurrentSplitPosition
   };
 };

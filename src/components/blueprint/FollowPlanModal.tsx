@@ -1,6 +1,6 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Check, ChevronRight } from 'lucide-react';
+import { X, Calendar, Check, ChevronRight, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { WorkoutTemplate } from '@/data/expandedWorkoutTemplates';
@@ -23,79 +23,120 @@ const DAYS = [
   { id: 6, name: 'Saturday', short: 'Sat' },
 ];
 
-// Generate workout day names based on template
+// Generate workout day names based on template - predictable cycling
 const generateWorkoutDayNames = (template: WorkoutTemplate): string[] => {
   const title = template.title.toLowerCase();
+  const daysPerWeek = template.daysPerWeek || 1;
   
   if (title.includes('push pull legs') || title.includes('ppl')) {
-    if (template.daysPerWeek === 6) {
+    if (daysPerWeek === 6) {
       return ['Push A', 'Pull A', 'Legs A', 'Push B', 'Pull B', 'Legs B'];
     }
     return ['Push', 'Pull', 'Legs'];
   }
   
   if (title.includes('upper') && title.includes('lower')) {
-    if (template.daysPerWeek === 4) {
+    if (daysPerWeek === 4) {
       return ['Upper A', 'Lower A', 'Upper B', 'Lower B'];
     }
     return ['Upper', 'Lower'];
   }
   
   if (title.includes('full body')) {
-    const count = template.daysPerWeek || 3;
-    return Array.from({ length: count }, (_, i) => `Full Body ${String.fromCharCode(65 + i)}`);
+    return Array.from({ length: daysPerWeek }, (_, i) => 
+      `Full Body ${String.fromCharCode(65 + i)}`
+    );
   }
   
-  // Default: use workout title
-  return [template.title];
+  // Single workout - just use the title
+  if (daysPerWeek === 1) {
+    return [template.title];
+  }
+  
+  // Default: generate numbered sessions
+  return Array.from({ length: daysPerWeek }, (_, i) => 
+    `${template.title} - Day ${i + 1}`
+  );
 };
 
 const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isOpen, onClose }) => {
   const { followPlan, isFollowing } = useActivePlan();
   const { trigger } = useNativeHaptics();
   
-  const workoutDayNames = generateWorkoutDayNames(workout);
+  const workoutDayNames = useMemo(() => generateWorkoutDayNames(workout), [workout]);
   const requiredDays = workout.daysPerWeek || workoutDayNames.length;
   
-  // Initialize schedule based on workout type
+  // Get smart default schedule
   const getDefaultSchedule = (): ScheduleDay[] => {
-    // Default schedule patterns
+    const scheduleItems: ScheduleDay[] = [];
+    
     if (requiredDays === 6) {
-      // PPL 6-day: Mon, Tue, Wed, Thu, Fri, Sat
-      return [
-        { dayOfWeek: 1, workoutName: workoutDayNames[0], workoutType: 'push' },
-        { dayOfWeek: 2, workoutName: workoutDayNames[1], workoutType: 'pull' },
-        { dayOfWeek: 3, workoutName: workoutDayNames[2], workoutType: 'legs' },
-        { dayOfWeek: 4, workoutName: workoutDayNames[3] || workoutDayNames[0], workoutType: 'push' },
-        { dayOfWeek: 5, workoutName: workoutDayNames[4] || workoutDayNames[1], workoutType: 'pull' },
-        { dayOfWeek: 6, workoutName: workoutDayNames[5] || workoutDayNames[2], workoutType: 'legs' },
-      ];
-    }
-    if (requiredDays === 4) {
-      // Upper/Lower 4-day: Mon, Tue, Thu, Fri
-      return [
-        { dayOfWeek: 1, workoutName: workoutDayNames[0], workoutType: 'upper' },
-        { dayOfWeek: 2, workoutName: workoutDayNames[1], workoutType: 'lower' },
-        { dayOfWeek: 4, workoutName: workoutDayNames[2] || workoutDayNames[0], workoutType: 'upper' },
-        { dayOfWeek: 5, workoutName: workoutDayNames[3] || workoutDayNames[1], workoutType: 'lower' },
-      ];
-    }
-    if (requiredDays === 3) {
+      // 6-day PPL: Mon-Sat
+      const dayAssignments = [1, 2, 3, 4, 5, 6]; // Mon-Sat
+      dayAssignments.forEach((day, i) => {
+        scheduleItems.push({
+          dayOfWeek: day,
+          workoutName: workoutDayNames[i] || workoutDayNames[i % workoutDayNames.length],
+          workoutType: workoutDayNames[i]?.toLowerCase().split(' ')[0] || 'workout'
+        });
+      });
+    } else if (requiredDays === 5) {
+      // 5-day: Mon-Fri
+      const dayAssignments = [1, 2, 3, 4, 5];
+      dayAssignments.forEach((day, i) => {
+        scheduleItems.push({
+          dayOfWeek: day,
+          workoutName: workoutDayNames[i % workoutDayNames.length],
+          workoutType: 'workout'
+        });
+      });
+    } else if (requiredDays === 4) {
+      // 4-day Upper/Lower: Mon, Tue, Thu, Fri
+      const dayAssignments = [1, 2, 4, 5];
+      dayAssignments.forEach((day, i) => {
+        scheduleItems.push({
+          dayOfWeek: day,
+          workoutName: workoutDayNames[i % workoutDayNames.length],
+          workoutType: workoutDayNames[i]?.toLowerCase().split(' ')[0] || 'workout'
+        });
+      });
+    } else if (requiredDays === 3) {
       // 3-day: Mon, Wed, Fri
-      return [
-        { dayOfWeek: 1, workoutName: workoutDayNames[0], workoutType: 'full' },
-        { dayOfWeek: 3, workoutName: workoutDayNames[1] || workoutDayNames[0], workoutType: 'full' },
-        { dayOfWeek: 5, workoutName: workoutDayNames[2] || workoutDayNames[0], workoutType: 'full' },
-      ];
+      const dayAssignments = [1, 3, 5];
+      dayAssignments.forEach((day, i) => {
+        scheduleItems.push({
+          dayOfWeek: day,
+          workoutName: workoutDayNames[i % workoutDayNames.length],
+          workoutType: 'workout'
+        });
+      });
+    } else if (requiredDays === 2) {
+      // 2-day: Mon, Thu
+      const dayAssignments = [1, 4];
+      dayAssignments.forEach((day, i) => {
+        scheduleItems.push({
+          dayOfWeek: day,
+          workoutName: workoutDayNames[i % workoutDayNames.length],
+          workoutType: 'workout'
+        });
+      });
+    } else {
+      // Single day: Monday
+      scheduleItems.push({
+        dayOfWeek: 1,
+        workoutName: workoutDayNames[0],
+        workoutType: 'workout'
+      });
     }
-    // Single workout or default
-    return [{ dayOfWeek: 1, workoutName: workoutDayNames[0], workoutType: 'workout' }];
+    
+    return scheduleItems;
   };
 
   const [schedule, setSchedule] = useState<ScheduleDay[]>(getDefaultSchedule());
   const [step, setStep] = useState<'info' | 'schedule'>('info');
 
-  const toggleDay = (dayId: number, workoutName: string) => {
+  // Toggle a day - cycles through workout names
+  const toggleDay = (dayId: number) => {
     trigger('light');
     const existingIndex = schedule.findIndex(s => s.dayOfWeek === dayId);
     
@@ -103,10 +144,32 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
       // Remove this day
       setSchedule(prev => prev.filter(s => s.dayOfWeek !== dayId));
     } else if (schedule.length < requiredDays) {
-      // Add this day with next available workout
-      const usedNames = schedule.map(s => s.workoutName);
-      const nextName = workoutDayNames.find(n => !usedNames.includes(n)) || workoutDayNames[0];
-      setSchedule(prev => [...prev, { dayOfWeek: dayId, workoutName: nextName, workoutType: 'workout' }]);
+      // Add this day with next workout in cycle
+      // Find which workout names are already used
+      const usedCount = new Map<string, number>();
+      schedule.forEach(s => {
+        usedCount.set(s.workoutName, (usedCount.get(s.workoutName) || 0) + 1);
+      });
+      
+      // Find the next workout that should be assigned (maintains cycle order)
+      let nextName = workoutDayNames[0];
+      for (const name of workoutDayNames) {
+        const used = usedCount.get(name) || 0;
+        const expected = Math.floor(schedule.length / workoutDayNames.length);
+        if (used <= expected) {
+          nextName = name;
+          break;
+        }
+      }
+      
+      setSchedule(prev => [
+        ...prev, 
+        { 
+          dayOfWeek: dayId, 
+          workoutName: nextName, 
+          workoutType: nextName.toLowerCase().split(' ')[0] 
+        }
+      ].sort((a, b) => a.dayOfWeek - b.dayOfWeek));
     }
   };
 
@@ -119,6 +182,9 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
   const getScheduleForDay = (dayId: number) => {
     return schedule.find(s => s.dayOfWeek === dayId);
   };
+
+  // Check if schedule is valid (correct number of days, evenly distributed if possible)
+  const isScheduleValid = schedule.length === requiredDays;
 
   return (
     <AnimatePresence>
@@ -170,9 +236,9 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
                     </div>
                   </div>
 
-                  {/* What you'll do each session */}
+                  {/* Session Preview */}
                   <div>
-                    <h4 className="text-sm font-semibold text-foreground mb-2">Your Weekly Sessions</h4>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">Weekly Sessions</h4>
                     <div className="space-y-2">
                       {workoutDayNames.map((name, i) => (
                         <div 
@@ -199,7 +265,7 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
               ) : (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Select {requiredDays} days for your workouts:
+                    Select {requiredDays} days for your workouts. Sessions will cycle in order.
                   </p>
 
                   {/* Day Selection */}
@@ -207,18 +273,22 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
                     {DAYS.map((day) => {
                       const scheduleItem = getScheduleForDay(day.id);
                       const isSelected = !!scheduleItem;
+                      const canSelect = isSelected || schedule.length < requiredDays;
                       
                       return (
                         <button
                           key={day.id}
-                          onClick={() => toggleDay(day.id, '')}
+                          onClick={() => canSelect && toggleDay(day.id)}
+                          disabled={!canSelect}
                           className={cn(
                             "w-full p-4 rounded-xl border transition-all",
                             "flex items-center justify-between",
                             "active:scale-[0.98]",
                             isSelected 
                               ? "border-primary bg-primary/10" 
-                              : "border-border bg-muted/30 hover:border-muted-foreground/50"
+                              : canSelect
+                                ? "border-border bg-muted/30 hover:border-muted-foreground/50"
+                                : "border-border/50 bg-muted/20 opacity-50"
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -246,10 +316,25 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
                   </div>
 
                   {/* Summary */}
-                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                    <p className="text-xs text-muted-foreground text-center">
-                      {schedule.length} of {requiredDays} days selected
-                    </p>
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isScheduleValid 
+                      ? "bg-emerald-500/10 border-emerald-500/30" 
+                      : "bg-muted/50 border-border"
+                  )}>
+                    <div className="flex items-center gap-2">
+                      {isScheduleValid ? (
+                        <Check className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <p className={cn(
+                        "text-xs",
+                        isScheduleValid ? "text-emerald-500" : "text-muted-foreground"
+                      )}>
+                        {schedule.length} of {requiredDays} days selected
+                      </p>
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -263,7 +348,7 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
                     </Button>
                     <Button
                       onClick={handleConfirm}
-                      disabled={schedule.length !== requiredDays || isFollowing}
+                      disabled={!isScheduleValid || isFollowing}
                       className="flex-1 h-12 bg-primary hover:bg-primary/90"
                     >
                       {isFollowing ? 'Setting up...' : 'Start Plan'}

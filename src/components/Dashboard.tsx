@@ -47,16 +47,16 @@ const DashboardHeader = memo<{
       </div>
       
       <div className="flex items-center gap-1">
-        {/* Module Library - Primary action, styled distinctly */}
+        {/* Module Library - Clear, always-visible button */}
         <Button
           onClick={onModuleLibrary}
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="h-9 px-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium text-xs gap-1.5"
+          className="h-9 px-3 rounded-lg border-border/60 hover:bg-muted/50 font-medium text-xs gap-1.5"
           aria-label="Open Module Library"
         >
           <LayoutGrid className="w-4 h-4" />
-          <span className="hidden sm:inline">Modules</span>
+          <span>Modules</span>
         </Button>
         <Button
           onClick={onNotifications}
@@ -315,7 +315,7 @@ const Dashboard = () => {
               >
                 <Button
                   onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
-                  className="w-full h-14 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 touch-manipulation"
+                  className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl flex items-center justify-center gap-2 touch-manipulation"
                   aria-label="Open Progress Hub"
                 >
                   <Star className="w-4 h-4" />

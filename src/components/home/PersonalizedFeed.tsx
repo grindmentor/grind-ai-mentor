@@ -23,28 +23,19 @@ const quickActions = [
     id: 'action-1',
     title: 'Log Workout',
     icon: Dumbbell,
-    path: '/workout-logger',
-    gradient: 'from-blue-500/15 to-cyan-500/10',
-    border: 'border-blue-500/20',
-    iconColor: 'text-blue-500'
+    path: '/workout-logger'
   },
   {
     id: 'action-2', 
     title: 'Log Food',
     icon: Utensils,
-    path: '/smart-food-log',
-    gradient: 'from-green-500/15 to-emerald-500/10',
-    border: 'border-green-500/20',
-    iconColor: 'text-green-500'
+    path: '/smart-food-log'
   },
   {
     id: 'action-3',
     title: 'AI Coach',
     icon: Sparkles,
-    path: '/coach-gpt',
-    gradient: 'from-purple-500/15 to-violet-500/10',
-    border: 'border-purple-500/20',
-    iconColor: 'text-purple-500'
+    path: '/coach-gpt'
   }
 ];
 
@@ -143,22 +134,17 @@ const PersonalizedFeedComponent: React.FC = () => {
                 onClick={() => handleActionPress(action.path)}
                 className={cn(
                   "flex flex-col items-center justify-center p-4 rounded-2xl",
-                  "bg-gradient-to-br border",
-                  "active:scale-95 transition-transform touch-manipulation",
-                  "min-h-[88px]",
-                  action.gradient,
-                  action.border
+                  "bg-muted/50 border border-border/40",
+                  "hover:bg-muted active:scale-95 transition-all touch-manipulation",
+                  "min-h-[88px]"
                 )}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 + index * 0.03, duration: 0.2 }}
                 aria-label={action.title}
               >
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center mb-2",
-                  "bg-background/50"
-                )}>
-                  <Icon className={cn("w-5 h-5", action.iconColor)} aria-hidden="true" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2 bg-background">
+                  <Icon className="w-5 h-5 text-foreground" aria-hidden="true" />
                 </div>
                 <span className="text-xs font-semibold text-foreground">{action.title}</span>
               </motion.button>
@@ -190,33 +176,21 @@ const PersonalizedFeedComponent: React.FC = () => {
               icon={Flame}
               label="Calories"
               value={todayStats.todaysCalories.toLocaleString()}
-              iconColor="text-orange-500"
-              bgColor="from-orange-500/10 to-red-500/5"
-              borderColor="border-orange-500/20"
             />
             <StatCard
               icon={Zap}
               label="Protein"
               value={`${todayStats.todaysProtein}g`}
-              iconColor="text-yellow-500"
-              bgColor="from-yellow-500/10 to-amber-500/5"
-              borderColor="border-yellow-500/20"
             />
             <StatCard
               icon={Dumbbell}
               label="Workouts"
               value={todayStats.todaysWorkouts === 0 ? 'None yet' : `${todayStats.todaysWorkouts} done`}
-              iconColor="text-blue-500"
-              bgColor="from-blue-500/10 to-cyan-500/5"
-              borderColor="border-blue-500/20"
             />
             <StatCard
               icon={TrendingUp}
               label="This Week"
               value={`${todayStats.weeklyWorkouts} workout${todayStats.weeklyWorkouts !== 1 ? 's' : ''}`}
-              iconColor="text-emerald-500"
-              bgColor="from-emerald-500/10 to-green-500/5"
-              borderColor="border-emerald-500/20"
             />
           </div>
         )}
@@ -230,17 +204,10 @@ const StatCard = memo<{
   icon: React.ElementType;
   label: string;
   value: string;
-  iconColor: string;
-  bgColor: string;
-  borderColor: string;
-}>(({ icon: Icon, label, value, iconColor, bgColor, borderColor }) => (
-  <div className={cn(
-    "p-3.5 rounded-xl bg-gradient-to-br border min-h-[72px]",
-    bgColor,
-    borderColor
-  )}>
+}>(({ icon: Icon, label, value }) => (
+  <div className="p-3.5 rounded-xl bg-muted/50 border border-border/40 min-h-[72px]">
     <div className="flex items-center gap-2 mb-1.5">
-      <Icon className={cn("w-4 h-4", iconColor)} aria-hidden="true" />
+      <Icon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
       <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
     </div>
     <p className="text-lg font-bold text-foreground leading-tight">{value}</p>

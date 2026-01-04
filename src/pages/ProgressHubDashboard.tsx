@@ -302,16 +302,16 @@ const ProgressHubDashboard = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList className="grid w-full grid-cols-4 bg-muted/50 rounded-xl p-1 h-11">
                 <TabsTrigger value="overview" className="rounded-lg text-xs data-[state=active]:bg-background">
-                  Overview
+                  Summary
                 </TabsTrigger>
                 <TabsTrigger value="physique" className="rounded-lg text-xs data-[state=active]:bg-background">
-                  Physique
+                  Body
                 </TabsTrigger>
                 <TabsTrigger value="mental" className="rounded-lg text-xs data-[state=active]:bg-background">
-                  Mental
+                  Recovery
                 </TabsTrigger>
                 <TabsTrigger value="science" className="rounded-lg text-xs data-[state=active]:bg-background">
-                  Science
+                  Research
                 </TabsTrigger>
               </TabsList>
 

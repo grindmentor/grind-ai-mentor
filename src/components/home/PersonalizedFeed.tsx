@@ -204,8 +204,8 @@ const PersonalizedFeedComponent: React.FC = () => {
             />
             <StatCard
               icon={Dumbbell}
-              label="Today"
-              value={todayStats.todaysWorkouts === 0 ? 'Rest day' : `${todayStats.todaysWorkouts} workout${todayStats.todaysWorkouts > 1 ? 's' : ''}`}
+              label="Workouts"
+              value={todayStats.todaysWorkouts === 0 ? 'None yet' : `${todayStats.todaysWorkouts} done`}
               iconColor="text-blue-500"
               bgColor="from-blue-500/10 to-cyan-500/5"
               borderColor="border-blue-500/20"

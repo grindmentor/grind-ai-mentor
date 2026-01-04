@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, memo, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Star, Grid, List, Crown, Filter, Book } from 'lucide-react';
+import { Search, Star, Grid, List, Filter, Book } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -310,27 +310,18 @@ const ModuleLibrary = () => {
             </Select>
           </motion.div>
 
-          {/* Stats */}
+          {/* Contextual hint */}
           <motion.div 
-            className="flex flex-wrap items-center gap-2"
+            className="flex items-center gap-2"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <Badge variant="outline" className="border-border text-muted-foreground bg-muted/30 px-3 py-1 text-xs">
-              {sortedModules.length} modules
-            </Badge>
-            <Badge variant="outline" className="border-green-500/30 text-green-500 bg-green-500/10 px-3 py-1 text-xs">
-              {sortedModules.filter(m => !m.isPremium).length} free
-            </Badge>
-            <Badge variant="outline" className="border-primary/30 text-primary bg-primary/10 px-3 py-1 text-xs">
-              <Crown className="w-3 h-3 mr-1" aria-hidden="true" />
-              {sortedModules.filter(m => m.isPremium).length} premium
-            </Badge>
-            <Badge variant="outline" className="border-yellow-500/30 text-yellow-500 bg-yellow-500/10 px-3 py-1 text-xs">
-              <Star className="w-3 h-3 mr-1 fill-current" aria-hidden="true" />
-              {favorites.length}
-            </Badge>
+            <p className="text-xs text-muted-foreground">
+              {favorites.length === 0 
+                ? "Tap ★ on any module to add it to your Quick Access on the home screen."
+                : `${sortedModules.length} modules available • ${favorites.length} in Quick Access`}
+            </p>
           </motion.div>
 
           {/* Premium Promotion for Free Users */}

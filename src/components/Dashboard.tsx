@@ -297,7 +297,7 @@ const Dashboard = () => {
                   Hey, {firstName} 👋
                 </h2>
                 <p className="text-muted-foreground text-sm mt-0.5">
-                  Ready to crush your goals today?
+                  Your training hub — log, track, improve.
                 </p>
               </motion.div>
 

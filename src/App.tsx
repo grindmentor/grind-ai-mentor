@@ -9,14 +9,18 @@ import { logger } from "@/utils/logger";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 
-// Eager load critical routes for instant access
+// Eager load critical routes for instant navigation (no loading flash)
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import AuthCallback from "./pages/AuthCallback";
+import AppPage from "./pages/App";
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+import ModuleLibrary from "./pages/ModuleLibrary";
+import Notifications from "./pages/Notifications";
 
-// Lazy load all other routes for better performance
-const AppPage = lazy(() => import("./pages/App"));
+// Lazy load less frequently accessed routes
 const ProgressHubDashboard = lazy(() => import("./pages/ProgressHubDashboard"));
 const PhysiqueAI = lazy(() => import("./pages/PhysiqueAI"));
 const WorkoutLogger = lazy(() => import("./pages/WorkoutLogger"));
@@ -26,20 +30,16 @@ const ProgressHub = lazy(() => import("./components/ai-modules/ProgressHub"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
 const ExerciseDatabase = lazy(() => import("./pages/ExerciseDatabase"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Profile = lazy(() => import("./pages/Profile"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Support = lazy(() => import("./pages/Support"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
-const ModuleLibrary = lazy(() => import("./pages/ModuleLibrary"));
 const Research = lazy(() => import("./pages/Research"));
 const CreateGoal = lazy(() => import("./pages/CreateGoal"));
 const AddFood = lazy(() => import("./pages/AddFood"));
 const CreateExercise = lazy(() => import("./pages/CreateExercise"));
-const Notifications = lazy(() => import("./pages/Notifications"));
 const Usage = lazy(() => import("./pages/Usage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));

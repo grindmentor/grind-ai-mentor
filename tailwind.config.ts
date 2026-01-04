@@ -126,6 +126,10 @@ export default {
 					'0%': { backgroundPosition: '200% 0' },
 					'100%': { backgroundPosition: '-200% 0' }
 				},
+				'skeleton-pulse': {
+					'0%, 100%': { opacity: '0.4' },
+					'50%': { opacity: '0.7' }
+				},
 				'accordion-down': {
 					from: {
 						height: '0'
@@ -229,7 +233,8 @@ export default {
 				}
 			},
 			animation: {
-				"shimmer": "shimmer 1.5s ease-in-out infinite",
+				"shimmer": "shimmer 2.5s linear infinite",
+				"skeleton-pulse": "skeleton-pulse 2s ease-in-out infinite",
 				"accordion-down": "accordion-down 0.2s ease-out",
 				"accordion-up": "accordion-up 0.2s ease-out",
 				"slide-up": "slideUp 0.3s ease-out",

@@ -229,12 +229,16 @@ const ProgressHubDashboard = () => {
         <MobileHeader title="Progress Hub" />
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-24 rounded-xl" />
+            {[0, 1, 2, 3].map(i => (
+              <Skeleton 
+                key={i} 
+                className="h-24 rounded-xl" 
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
             ))}
           </div>
-          <Skeleton className="h-48 rounded-xl" />
-          <Skeleton className="h-32 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" style={{ animationDelay: '400ms' }} />
+          <Skeleton className="h-32 rounded-xl" style={{ animationDelay: '550ms' }} />
         </div>
       </div>
     );

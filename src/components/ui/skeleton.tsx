@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
 import Logo from "./logo"
 
-// Base shimmer class for consistent animation
-const shimmerClass = "bg-gradient-to-r from-muted/40 via-muted/10 to-muted/40 bg-[length:200%_100%] animate-shimmer";
+// Smooth shimmer gradient for premium feel
+const shimmerClass = "bg-gradient-to-r from-muted/30 via-muted/60 to-muted/30 bg-[length:200%_100%] animate-shimmer";
 
 function Skeleton({
   className,

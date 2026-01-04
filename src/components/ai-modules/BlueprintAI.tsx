@@ -28,6 +28,7 @@ import { expandedWorkoutTemplates, WorkoutTemplate } from '@/data/expandedWorkou
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { FollowPlanModal } from '@/components/blueprint/FollowPlanModal';
+import { SavedPlansSection } from '@/components/blueprint/SavedPlansSection';
 import { useActivePlan } from '@/hooks/useActivePlan';
 
 interface BlueprintAIProps {
@@ -50,10 +51,12 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<{ goal?: string; experience?: string } | null>(null);
-  const [activeTab, setActiveTab] = useState('programs');
   const [followModalWorkout, setFollowModalWorkout] = useState<WorkoutTemplate | null>(null);
   
-  const { activePlan } = useActivePlan();
+  const { activePlan, allPlans } = useActivePlan();
+  
+  // Default to "my-plans" tab if user has saved plans, otherwise show programs
+  const [activeTab, setActiveTab] = useState(() => 'my-plans');
 
   useEffect(() => {
     loadUserProfile();
@@ -352,16 +355,16 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full bg-muted/50 p-1 rounded-xl mb-4 h-11">
               <TabsTrigger 
+                value="my-plans" 
+                className="flex-1 rounded-lg data-[state=active]:bg-background text-xs h-9 min-h-[36px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
+                My Plans
+              </TabsTrigger>
+              <TabsTrigger 
                 value="programs" 
                 className="flex-1 rounded-lg data-[state=active]:bg-background text-xs h-9 min-h-[36px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               >
-                Programs
-              </TabsTrigger>
-              <TabsTrigger 
-                value="workouts" 
-                className="flex-1 rounded-lg data-[state=active]:bg-background text-xs h-9 min-h-[36px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              >
-                Workouts
+                Browse
               </TabsTrigger>
               <TabsTrigger 
                 value="search" 
@@ -370,6 +373,13 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
                 Search
               </TabsTrigger>
             </TabsList>
+
+            {/* My Plans Tab */}
+            <TabsContent value="my-plans" className="space-y-4">
+              <SavedPlansSection 
+                onSelectTemplate={(template) => setFollowModalWorkout(template)}
+              />
+            </TabsContent>
 
             {/* Programs Tab */}
             <TabsContent value="programs" className="space-y-2">

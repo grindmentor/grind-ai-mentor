@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Dumbbell, 
@@ -8,7 +8,9 @@ import {
   SkipForward,
   CalendarPlus,
   X,
-  Check
+  Check,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,9 +28,11 @@ const TodaysSessionComponent: React.FC = () => {
     activePlan, 
     todaysWorkout, 
     upcomingWorkouts,
+    scheduleHealth,
     isLoading, 
     rescheduleWorkout,
     skipWorkout,
+    extendSchedule,
     getDayName
   } = useActivePlan();
   const navigate = useNavigate();
@@ -37,10 +41,15 @@ const TodaysSessionComponent: React.FC = () => {
   const [showReschedule, setShowReschedule] = useState(false);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
 
+  // Auto-extend schedule if running low
+  useEffect(() => {
+    if (scheduleHealth?.needsExtension && activePlan) {
+      extendSchedule();
+    }
+  }, [scheduleHealth?.needsExtension, activePlan?.id]);
+
   const handleStartWorkout = () => {
     trigger('medium');
-    // Navigate to workout logger with scheduled workout context
-    // This allows WorkoutLogger to pre-fill data and mark as completed on save
     navigate('/workout-logger', { 
       state: { 
         scheduledWorkout: todaysWorkout,
@@ -71,7 +80,7 @@ const TodaysSessionComponent: React.FC = () => {
     skipWorkout(workoutId);
   };
 
-  // Generate next 7 days for rescheduling
+  // Generate next 7 days for rescheduling (excluding today)
   const getNextDays = () => {
     const days = [];
     const today = new Date();
@@ -82,6 +91,28 @@ const TodaysSessionComponent: React.FC = () => {
     }
     return days;
   };
+
+  // Get the current split position for display
+  const getSplitProgress = () => {
+    if (!activePlan || !activePlan.schedule) return null;
+    
+    const schedule = activePlan.schedule;
+    const today = new Date().getDay();
+    const todaySchedule = schedule.find(s => s.dayOfWeek === today);
+    
+    if (!todaySchedule && !todaysWorkout) return null;
+    
+    const workoutName = todaysWorkout?.workout_name || todaySchedule?.workoutName;
+    const currentIndex = schedule.findIndex(s => s.workoutName === workoutName);
+    
+    return {
+      current: currentIndex + 1,
+      total: schedule.length,
+      name: workoutName
+    };
+  };
+
+  const splitProgress = getSplitProgress();
 
   if (isLoading) {
     return (
@@ -141,19 +172,24 @@ const TodaysSessionComponent: React.FC = () => {
       transition={{ delay: 0.05, duration: 0.25 }}
       className="space-y-3"
     >
-      {/* Active Plan Badge */}
+      {/* Active Plan Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-[10px] border-primary/30 text-primary bg-primary/10">
             <Calendar className="w-3 h-3 mr-1" />
             {activePlan.template_title}
           </Badge>
+          {splitProgress && (
+            <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">
+              Day {splitProgress.current}/{splitProgress.total}
+            </Badge>
+          )}
         </div>
         <button
           onClick={() => navigateToModule('/blueprint-ai')}
           className="text-xs text-muted-foreground underline-offset-2 hover:underline"
         >
-          Change
+          Manage
         </button>
       </div>
 
@@ -171,6 +207,12 @@ const TodaysSessionComponent: React.FC = () => {
                 Today's Session
               </p>
               <h3 className="font-bold text-foreground">{todaysWorkout.workout_name}</h3>
+              {todaysWorkout.scheduled_date !== todaysWorkout.original_date && (
+                <p className="text-[10px] text-amber-400 mt-1 flex items-center gap-1">
+                  <RefreshCw className="w-3 h-3" />
+                  Rescheduled
+                </p>
+              )}
             </div>
             <div className="flex gap-1">
               <Button
@@ -228,29 +270,30 @@ const TodaysSessionComponent: React.FC = () => {
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Coming Up</p>
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-            {upcomingWorkouts.slice(0, 4).map((workout) => {
-              const date = new Date(workout.scheduled_date);
-              const isToday = date.toDateString() === new Date().toDateString();
-              if (isToday) return null;
-              
-              return (
-                <div
-                  key={workout.id}
-                  className={cn(
-                    "flex-shrink-0 px-3 py-2 rounded-xl",
-                    "bg-muted/50 border border-border/50",
-                    "min-w-[100px]"
-                  )}
-                >
-                  <p className="text-[10px] text-muted-foreground font-medium">
-                    {DAY_NAMES[date.getDay()]} {date.getDate()}
-                  </p>
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    {workout.workout_name}
-                  </p>
-                </div>
-              );
-            })}
+            {upcomingWorkouts
+              .filter(workout => workout.scheduled_date !== new Date().toISOString().split('T')[0])
+              .slice(0, 4)
+              .map((workout) => {
+                const date = new Date(workout.scheduled_date);
+                
+                return (
+                  <div
+                    key={workout.id}
+                    className={cn(
+                      "flex-shrink-0 px-3 py-2 rounded-xl",
+                      "bg-muted/50 border border-border/50",
+                      "min-w-[100px]"
+                    )}
+                  >
+                    <p className="text-[10px] text-muted-foreground font-medium">
+                      {DAY_NAMES[date.getDay()]} {date.getDate()}
+                    </p>
+                    <p className="text-xs font-semibold text-foreground truncate">
+                      {workout.workout_name}
+                    </p>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}

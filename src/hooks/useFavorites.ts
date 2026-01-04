@@ -56,16 +56,17 @@ export const useFavorites = () => {
         .from('user_preferences')
         .select('favorite_modules')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        // Error but not "no rows" - keep using cache
+      if (error) {
+        // Log error but keep using cache
         console.warn('Favorites sync error:', error.message);
       } else if (data) {
         const serverFavorites = data.favorite_modules || [];
         setFavorites(serverFavorites);
         setCachedFavorites(user.id, serverFavorites);
       }
+      // No error and no data = user has no preferences yet, use cache/default
       syncedRef.current = true;
     } catch (error) {
       console.warn('Favorites sync failed:', error);

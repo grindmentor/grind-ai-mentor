@@ -263,20 +263,21 @@ const TodaysSessionComponent: React.FC = () => {
                 <p className="text-xs text-muted-foreground">
                   {upcomingWorkouts.length > 0 
                     ? `Next: ${upcomingWorkouts[0]?.workout_name} on ${DAY_NAMES[new Date(upcomingWorkouts[0]?.scheduled_date).getDay()]}`
-                    : 'No workouts scheduled'}
+                    : 'No workouts scheduled this week'}
                 </p>
               </div>
             </div>
-            {upcomingWorkouts.length === 0 && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => navigateToModule('/workout-logger')}
-                className="text-xs text-primary"
-              >
-                Log anyway
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                trigger('light');
+                navigateToModule('/workout-logger');
+              }}
+              className="text-xs text-primary"
+            >
+              Log anyway
+            </Button>
           </div>
         </div>
       )}

@@ -33,7 +33,7 @@ const DashboardHeader = memo<{
     className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl"
     style={{ paddingTop: 'env(safe-area-inset-top)' }}
   >
-    <div className="px-4 h-14 flex items-center justify-between border-b border-border/40">
+    <div className="px-4 h-14 flex items-center justify-between border-b border-border/40 max-w-4xl mx-auto">
       <div className="flex items-center gap-2.5">
         <h1 className="text-lg font-bold text-foreground tracking-tight">Myotopia</h1>
         <span className={cn(
@@ -46,20 +46,24 @@ const DashboardHeader = memo<{
         </span>
       </div>
       
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1">
+        {/* Module Library - Primary action, styled distinctly */}
         <Button
           onClick={onModuleLibrary}
           variant="ghost"
           size="sm"
-          className="h-10 w-10 rounded-full text-primary hover:bg-primary/10"
+          className="h-9 px-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium text-xs gap-1.5"
+          aria-label="Open Module Library"
         >
-          <LayoutGrid className="w-[18px] h-[18px]" />
+          <LayoutGrid className="w-4 h-4" />
+          <span className="hidden sm:inline">Modules</span>
         </Button>
         <Button
           onClick={onNotifications}
           variant="ghost"
           size="sm"
           className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
+          aria-label="View notifications"
         >
           <Bell className="w-[18px] h-[18px]" />
         </Button>
@@ -68,6 +72,7 @@ const DashboardHeader = memo<{
           variant="ghost"
           size="sm"
           className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
+          aria-label="Open settings"
         >
           <Settings className="w-[18px] h-[18px]" />
         </Button>
@@ -282,10 +287,10 @@ const Dashboard = () => {
 
         <PullToRefresh onRefresh={handleRefresh}>
           <div 
-            className="px-4 pb-28"
+            className="px-4 pb-28 w-full"
             style={{ paddingTop: 'calc(56px + env(safe-area-inset-top))' }}
           >
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto w-full">
               {/* Welcome Section - Compact */}
               <motion.div 
                 className="py-4"

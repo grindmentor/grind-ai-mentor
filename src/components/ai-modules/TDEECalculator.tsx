@@ -83,7 +83,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     if (units.weightUnit === 'lbs') {
       parsedWeight = parsedWeight / 2.20462;
     }
-    if (units.heightUnit === 'in') {
+    // Handle both 'in' and 'ft-in' height units (user enters inches in both cases)
+    if (units.heightUnit === 'in' || units.heightUnit === 'ft-in') {
       parsedHeight = parsedHeight * 2.54;
     }
 
@@ -179,15 +180,17 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Height ({units.heightUnit})</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Height ({units.heightUnit === 'ft-in' ? 'inches' : units.heightUnit})
+                    </Label>
                     <Input
                       type="number"
                       inputMode="decimal"
                       value={height}
                       onChange={(e) => setHeight(e.target.value)}
-                      placeholder={units.heightUnit === 'in' ? '70' : '178'}
+                      placeholder={units.heightUnit === 'cm' ? '178' : '70'}
                       className="bg-muted/30 border-border h-11 rounded-xl"
-                      aria-label={`Enter height in ${units.heightUnit}`}
+                      aria-label={`Enter height in ${units.heightUnit === 'ft-in' ? 'inches' : units.heightUnit}`}
                     />
                   </div>
                 </div>

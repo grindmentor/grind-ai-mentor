@@ -1,6 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+/**
+ * DEPRECATED: Use useUserData() from '@/contexts/UserDataContext' instead.
+ * This hook now delegates to UserDataContext for single source of truth.
+ */
+
+import { useUserData } from '@/contexts/UserDataContext';
+import { useCallback } from 'react';
 
 interface UserData {
   height: number | null;
@@ -9,120 +13,37 @@ interface UserData {
   experience: string | null;
   activity: string | null;
   goal: string | null;
-  // Add other common user data fields
 }
 
 export const useDataPersistence = () => {
-  const { user } = useAuth();
-  const [userData, setUserData] = useState<UserData>({
-    height: null,
-    weight: null,
-    age: null,
-    experience: null,
-    activity: null,
-    goal: null,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const { userData, isLoading, refreshUserData, updateUserData, getCleanUserContext } = useUserData();
 
-  // Load user data from profile
-  const loadUserData = useCallback(async () => {
-    if (!user?.id) {
-      setIsLoading(false);
-      return;
-    }
+  // Map UserDataContext shape to legacy shape
+  const legacyUserData: UserData = {
+    height: userData.height,
+    weight: userData.weight,
+    age: userData.age,
+    experience: userData.experience,
+    activity: userData.activity,
+    goal: userData.goal,
+  };
 
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('height, weight, birthday, experience, activity, goal')
-        .eq('id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading user data:', error);
-        return;
-      }
-
-      if (profile) {
-        const age = profile.birthday 
-          ? new Date().getFullYear() - new Date(profile.birthday).getFullYear()
-          : null;
-
-        setUserData({
-          height: profile.height,
-          weight: profile.weight,
-          age,
-          experience: profile.experience,
-          activity: profile.activity,
-          goal: profile.goal,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
-
-  // Save user data to profile
+  // Delegate save to context
   const saveUserData = useCallback(async (updates: Partial<UserData>) => {
-    if (!user?.id) return;
+    await updateUserData(updates);
+    return true;
+  }, [updateUserData]);
 
-    try {
-      // Convert age back to birthday if provided
-      const profileUpdates: any = { ...updates };
-      if (updates.age !== undefined) {
-        profileUpdates.birthday = new Date(new Date().getFullYear() - updates.age, 0, 1);
-        delete profileUpdates.age;
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          ...profileUpdates,
-        });
-
-      if (error) throw error;
-
-      // Update local state
-      setUserData(prev => ({
-        ...prev,
-        ...updates,
-      }));
-
-      return true;
-    } catch (error) {
-      console.error('Error saving user data:', error);
-      return false;
-    }
-  }, [user?.id]);
-
-  // Format user data for AI prompts
+  // Use context's format function
   const formatForAI = useCallback(() => {
-    const parts = [];
-    
-    if (userData.height) parts.push(`Height: ${userData.height}cm`);
-    if (userData.weight) parts.push(`Weight: ${userData.weight}kg`);
-    if (userData.age) parts.push(`Age: ${userData.age} years`);
-    if (userData.experience) parts.push(`Experience: ${userData.experience}`);
-    if (userData.activity) parts.push(`Activity Level: ${userData.activity}`);
-    if (userData.goal) parts.push(`Primary Goal: ${userData.goal}`);
-
-    return parts.length > 0 
-      ? `User Profile: ${parts.join(', ')}`
-      : 'No user profile data available';
-  }, [userData]);
-
-  useEffect(() => {
-    loadUserData();
-  }, [loadUserData]);
+    return getCleanUserContext();
+  }, [getCleanUserContext]);
 
   return {
-    userData,
+    userData: legacyUserData,
     isLoading,
     saveUserData,
-    reloadUserData: loadUserData,
+    reloadUserData: refreshUserData,
     formatForAI,
     hasCompleteProfile: !!(userData.height && userData.weight && userData.goal),
   };

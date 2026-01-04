@@ -1,9 +1,12 @@
+/**
+ * Smart User Data Hook
+ * Provides aggregated user data from UserDataContext (single source of truth)
+ * with utility functions for prefilling forms and formatting values.
+ */
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMemo, useCallback } from 'react';
 import { useUserData } from '@/contexts/UserDataContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
-import { supabase } from '@/integrations/supabase/client';
 
 interface SmartUserData {
   // Personal Info
@@ -42,81 +45,44 @@ interface SmartPrefillOptions {
 }
 
 export const useSmartUserData = () => {
-  const { user } = useAuth();
-  const { userData } = useUserData();
-  const { preferences } = usePreferences();
-  const [smartData, setSmartData] = useState<SmartUserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { userData, isLoading: userLoading } = useUserData();
+  const { preferences, isLoading: prefsLoading } = usePreferences();
 
-  useEffect(() => {
-    if (user && userData && preferences) {
-      compileSmartData();
-    }
-  }, [user, userData, preferences]);
+  // Derive smart data from canonical sources
+  const smartData = useMemo<SmartUserData | null>(() => {
+    if (!userData) return null;
 
-  const compileSmartData = async () => {
-    if (!user) return;
+    return {
+      // Personal Info - directly from UserDataContext
+      age: userData.age ?? undefined,
+      height: userData.height ?? undefined,
+      weight: userData.weight ?? undefined,
+      birthday: userData.birthday ?? undefined,
+      gender: undefined, // Only available from TDEE calculations
+      
+      // Fitness Profile
+      activityLevel: userData.activity ?? undefined,
+      experienceLevel: userData.experience ?? undefined,
+      fitnessGoals: userData.goal ?? undefined,
+      bodyFatPercentage: userData.bodyFatPercentage ?? undefined,
+      
+      // Preferences - from PreferencesContext
+      weightUnit: preferences.weight_unit,
+      heightUnit: preferences.height_unit,
+      
+      // Calculated Values - from UserDataContext
+      tdee: userData.tdee ?? undefined,
+      bmr: undefined, // Would need separate fetch
+      recommendedCalories: undefined,
+      
+      // Training Data
+      targetWeight: undefined,
+      currentBF: userData.bodyFatPercentage ?? undefined,
+      targetBF: undefined,
+    };
+  }, [userData, preferences]);
 
-    try {
-      setIsLoading(true);
-
-      // Get latest TDEE data
-      const { data: tdeeData } = await supabase
-        .from('tdee_calculations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // Get latest cut calculation data
-      const { data: cutData } = await supabase
-        .from('cut_calculations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // Compile all user data into smart format
-      const compiled: SmartUserData = {
-        // Personal Info
-        age: userData.age || undefined,
-        height: userData.height || undefined,
-        weight: userData.weight || undefined,
-        birthday: userData.birthday || undefined,
-        gender: tdeeData?.gender || undefined,
-        
-        // Fitness Profile
-        activityLevel: userData.activity || undefined,
-        experienceLevel: userData.experience || undefined,
-        fitnessGoals: userData.goal || undefined,
-        bodyFatPercentage: userData.bodyFatPercentage || cutData?.current_bf_percentage || undefined,
-        
-        // Preferences
-        weightUnit: preferences.weight_unit,
-        heightUnit: preferences.height_unit,
-        
-        // Calculated Values
-        tdee: userData.tdee || tdeeData?.tdee || undefined,
-        bmr: tdeeData?.bmr || undefined,
-        recommendedCalories: tdeeData?.recommended_calories || undefined,
-        
-        // Training Data
-        targetWeight: cutData?.target_weight || undefined,
-        currentBF: cutData?.current_bf_percentage || undefined,
-        targetBF: cutData?.target_bf_percentage || undefined,
-      };
-
-      setSmartData(compiled);
-    } catch (error) {
-      console.error('Error compiling smart user data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getPrefillData = (options: SmartPrefillOptions = {}) => {
+  const getPrefillData = useCallback((options: SmartPrefillOptions = {}) => {
     const {
       includeCalculated = true,
       includePersonal = true,
@@ -158,9 +124,9 @@ export const useSmartUserData = () => {
     }
 
     return prefillData;
-  };
+  }, [smartData]);
 
-  const getFormattedValue = (field: keyof SmartUserData) => {
+  const getFormattedValue = useCallback((field: keyof SmartUserData): string => {
     if (!smartData || !smartData[field]) return '';
 
     const value = smartData[field];
@@ -188,18 +154,16 @@ export const useSmartUserData = () => {
       default:
         return String(value);
     }
-  };
+  }, [smartData]);
 
-  const refreshData = () => {
-    compileSmartData();
-  };
+  const { refreshUserData } = useUserData();
 
   return {
     smartData,
-    isLoading,
+    isLoading: userLoading || prefsLoading,
     getPrefillData,
     getFormattedValue,
-    refreshData,
+    refreshData: refreshUserData,
     hasBasicInfo: !!(smartData?.age && smartData?.height && smartData?.weight),
     hasFitnessProfile: !!(smartData?.activityLevel && smartData?.experienceLevel && smartData?.fitnessGoals),
     hasCalculatedData: !!(smartData?.tdee || smartData?.bmr),

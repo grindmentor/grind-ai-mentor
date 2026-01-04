@@ -48,7 +48,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       current = current / 2.20462;
       target = target / 2.20462;
     }
-    if (units.heightUnit === 'in') {
+    // Handle both 'in' and 'ft-in' height units (user enters inches in both cases)
+    if (units.heightUnit === 'in' || units.heightUnit === 'ft-in') {
       parsedHeight = parsedHeight * 2.54;
     }
     
@@ -167,7 +168,9 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Height ({units.heightUnit}) *</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    Height ({units.heightUnit === 'ft-in' ? 'inches' : units.heightUnit}) *
+                  </Label>
                   <Input
                     type="number"
                     placeholder={units.heightUnit === 'cm' ? "175" : "69"}

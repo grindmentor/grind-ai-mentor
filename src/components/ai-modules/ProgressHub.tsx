@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { useAppSync } from '@/utils/appSynchronization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -123,6 +124,7 @@ const TabContentSkeleton = () => (
 export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }) {
   const { user, loading: authLoading } = useAuth();
   const { state, actions } = useGlobalState();
+  const { preferences } = usePreferences();
   const { on, off, emit, invalidateCache } = useAppSync();
   const navigate = useNavigate();
   const { data: progressData, isLoading, error } = useOptimizedProgressData(user?.id || null);
@@ -206,6 +208,12 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
       (goals?.filter((goal: any) => goal?.status === 'active').length * 10 * 0.1)
     ));
 
+    // Convert weight from DB (kg) to user's preferred unit
+    let displayWeight = profile?.weight || 0;
+    if (displayWeight > 0 && preferences.weight_unit === 'lbs') {
+      displayWeight = Math.round(displayWeight * 2.20462);
+    }
+
     return {
       overallProgress: Math.round(overallProgress),
       totalWorkouts: workouts?.length || 0,
@@ -215,13 +223,13 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
       weeklyVolume: Math.floor(weeklyVolume / 1000) || 0,
       consistency: Math.round(consistency),
       strengthGain: Math.min(25, Math.max(0, (workouts?.length || 0) * 1.5)),
-      currentWeight: profile?.weight || 0,
+      currentWeight: displayWeight,
       bodyFatPercentage: profile?.body_fat_percentage || 0,
       totalVolume: Math.round(totalVolume),
       averageRPE: Math.round(averageRPE * 10) / 10,
       weeklyFrequency
     };
-  }, [progressData, muscleGroupData]);
+  }, [progressData, muscleGroupData, preferences.weight_unit]);
 
   // Handler functions for interactive elements - removed navigate calls to prevent page reloads
   const handleAddGoal = () => {
@@ -534,7 +542,7 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
                     </div>
                     <div className="text-center p-4 bg-green-500/5 rounded-xl">
                       <div className="text-2xl font-bold text-green-500">
-                        {progressMetrics.currentWeight > 0 ? `${progressMetrics.currentWeight} lbs` : '--'}
+                        {progressMetrics.currentWeight > 0 ? `${progressMetrics.currentWeight} ${preferences.weight_unit}` : '--'}
                       </div>
                       <div className="text-sm text-muted-foreground">Current Weight</div>
                       <div className="text-xs text-green-500 mt-1">

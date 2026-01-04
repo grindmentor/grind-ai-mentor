@@ -1,32 +1,18 @@
 
-import React, { Suspense, useEffect } from 'react';
-import { LoadingScreen } from '@/components/ui/loading-screen';
+import React, { useEffect } from 'react';
 import { usePerformanceContext } from '@/components/ui/performance-provider';
 import { AppBackground } from '@/components/ui/app-background';
-import { AppShell } from '@/components/ui/app-shell';
 import { pushNotificationService } from '@/services/pushNotificationService';
-import { backgroundSync } from '@/services/backgroundSyncService';
 import { initializePreloading } from '@/utils/componentPreloader';
-import { BrandedLoading } from '@/components/ui/branded-loading';
 import { usePreloadComponents } from '@/hooks/usePreloadComponents';
 import PWAHandler from '@/components/PWAHandler';
-import { OptimizedSuspense } from '@/components/ui/optimized-suspense';
-import { ComprehensiveErrorBoundary } from '@/components/ui/comprehensive-error-boundary';
 import { NativeAppWrapper } from '@/components/ui/native-app-wrapper';
 import { DashboardWrapper } from '@/components/DashboardWrapper';
-
-// Optimized lazy loading with preloading hints and error boundaries
-const Dashboard = React.lazy(() => 
-  import('@/components/Dashboard').then(module => {
-    // Preload related components while Dashboard is loading
-    import('@/components/goals/RealGoalsAchievements').catch(() => {});
-    import('@/components/homepage/LatestResearch').catch(() => {});
-    return module;
-  })
-);
+import Dashboard from '@/components/Dashboard';
 
 export default function App() {
-  const { lowDataMode, measurePerformance } = usePerformanceContext();
+  // Ensure performance context is initialized (low-data mode, perf hooks, etc.)
+  usePerformanceContext();
   
   // Initialize component preloading
   usePreloadComponents();
@@ -88,9 +74,7 @@ export default function App() {
         <div className="h-full">
           <PWAHandler />
           <DashboardWrapper>
-            <OptimizedSuspense fallback={<BrandedLoading message="Loading Dashboard..." />}>
-              <Dashboard />
-            </OptimizedSuspense>
+            <Dashboard />
           </DashboardWrapper>
         </div>
       </AppBackground>

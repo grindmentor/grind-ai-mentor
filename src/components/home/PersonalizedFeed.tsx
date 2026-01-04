@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useModuleNavigation } from '@/hooks/useModuleNavigation';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TodaysSession } from '@/components/dashboard/TodaysSession';
 
 const quickActions = [
   {
@@ -124,6 +125,9 @@ const PersonalizedFeedComponent: React.FC = () => {
 
   return (
     <div className="space-y-5">
+      {/* Today's Workout Session */}
+      <TodaysSession />
+      
       {/* Quick Actions - Primary CTAs */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}

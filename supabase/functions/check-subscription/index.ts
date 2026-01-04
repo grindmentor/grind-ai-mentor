@@ -64,7 +64,7 @@ serve(async (req) => {
       .from('subscribers')
       .select('subscription_end, billing_cycle')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     return new Response(JSON.stringify({ 
       subscription_tier: subscriptionTier,

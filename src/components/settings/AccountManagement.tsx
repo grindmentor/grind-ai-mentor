@@ -52,8 +52,8 @@ const AccountManagement = () => {
         recoveryResult,
         progressPhotosResult
       ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('user_preferences').select('*').eq('user_id', user.id).single(),
+        supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+        supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('user_goals').select('*').eq('user_id', user.id),
         supabase.from('user_achievements').select('*').eq('user_id', user.id),
         supabase.from('workout_sessions').select('*').eq('user_id', user.id),

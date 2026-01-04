@@ -46,6 +46,7 @@ const TodaysSessionComponent: React.FC = () => {
     if (scheduleHealth?.needsExtension && activePlan) {
       extendSchedule();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleHealth?.needsExtension, activePlan?.id]);
 
   const handleStartWorkout = () => {

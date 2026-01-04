@@ -105,7 +105,7 @@ const ProgressAI = ({ onBack }: ProgressAIProps) => {
         .from('profiles')
         .select('weight, height, goal')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       // Call Supabase edge function for photo analysis with explicit headers
       const { data, error } = await supabase.functions.invoke('analyze-photo', {

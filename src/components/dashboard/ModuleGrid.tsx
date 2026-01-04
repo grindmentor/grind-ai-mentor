@@ -68,7 +68,7 @@ const ModuleCard = memo<{
         )}
         style={{ 
           WebkitTapHighlightColor: 'transparent',
-          minHeight: '120px',
+          height: '120px',
         }}
       >
         <div className="flex flex-col h-full">

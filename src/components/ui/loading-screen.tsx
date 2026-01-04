@@ -1,17 +1,33 @@
-
-import React from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import Logo from '@/components/ui/logo';
+import { Button } from '@/components/ui/button';
 
 interface LoadingScreenProps {
   message?: string;
   fullScreen?: boolean;
+  timeoutMs?: number; // Optional timeout before showing retry option
 }
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
   message = "Loading...", 
-  fullScreen = true 
+  fullScreen = true,
+  timeoutMs = 15000 // 15 second default timeout
 }) => {
+  const [showTimeout, setShowTimeout] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTimeout(true);
+    }, timeoutMs);
+    
+    return () => clearTimeout(timer);
+  }, [timeoutMs]);
+  
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
   const containerClasses = fullScreen 
     ? "fixed inset-0 bg-background flex items-center justify-center z-50"
     : "flex items-center justify-center p-8";
@@ -28,16 +44,40 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <Logo size="xl" />
         </div>
         
-        {/* Centered loading indicator */}
-        <div className="flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="w-6 h-6 animate-spin text-orange-500/80" />
-          <span className="text-foreground/90 text-lg font-medium">{message}</span>
-        </div>
-        
-        {/* Subtle description */}
-        <div className="text-sm text-muted-foreground max-w-xs">
-          {message === "Loading..." ? "Initializing Myotopia..." : message}
-        </div>
+        {showTimeout ? (
+          // Timeout state - show retry option
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-yellow-500" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-foreground font-medium">Taking longer than expected</p>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Something might have gone wrong. Try refreshing the page.
+              </p>
+            </div>
+            <Button
+              onClick={handleRetry}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Page
+            </Button>
+          </div>
+        ) : (
+          // Normal loading state
+          <>
+            <div className="flex flex-col items-center justify-center space-y-3">
+              <Loader2 className="w-6 h-6 animate-spin text-orange-500/80" />
+              <span className="text-foreground/90 text-lg font-medium">{message}</span>
+            </div>
+            
+            {/* Subtle description */}
+            <div className="text-sm text-muted-foreground max-w-xs">
+              {message === "Loading..." ? "Initializing Myotopia..." : message}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

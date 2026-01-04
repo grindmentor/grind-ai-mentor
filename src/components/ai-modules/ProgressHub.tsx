@@ -121,7 +121,7 @@ const TabContentSkeleton = () => (
 );
 
 export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { state, actions } = useGlobalState();
   const { on, off, emit, invalidateCache } = useAppSync();
   const navigate = useNavigate();
@@ -134,7 +134,10 @@ export default function OptimizedProgressHub({ onBack }: { onBack?: () => void }
     }
   };
 
-  console.log('ProgressHub - Loading:', isLoading, 'Data:', progressData, 'Error:', error);
+  // Show skeleton while auth is loading - prevents infinite loading state
+  if (authLoading) {
+    return <ProgressSkeleton />;
+  }
 
   // Calculate muscle groups from actual workout data
   const muscleGroupData = useMuscleGroupProgress(progressData?.workouts || []);

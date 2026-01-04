@@ -57,7 +57,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { preloadCriticalRoutes, setupLinkPreloading } from "@/utils/routePreloader";
 import "@/utils/prefetch"; // Initialize prefetching
 
-// Optimized QueryClient with aggressive caching defaults
+// Optimized QueryClient with aggressive caching and error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -66,6 +66,12 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false, // Don't refetch on tab focus
       refetchOnReconnect: 'always',
       retry: 1,
+      // Prevent queries from blocking the entire app
+      throwOnError: false,
+    },
+    mutations: {
+      // Don't throw on mutation errors - handle gracefully
+      throwOnError: false,
     },
   },
 });
@@ -127,7 +133,14 @@ function App() {
                       {/* PWA Titlebar area */}
                       <div className="titlebar-area" />
                       <AppLayout>
-                        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                        <Suspense fallback={
+                          <div className="min-h-screen bg-background flex items-center justify-center">
+                            <div className="text-center space-y-4">
+                              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                              <p className="text-muted-foreground text-sm">Loading...</p>
+                            </div>
+                          </div>
+                        }>
                           <Routes>
                           <Route path="/" element={<Index />} />
                           <Route path="/signin" element={<SignIn />} />

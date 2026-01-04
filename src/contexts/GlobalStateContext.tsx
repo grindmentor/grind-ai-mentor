@@ -346,7 +346,30 @@ export const GlobalStateProvider: React.FC<{ children: React.ReactNode }> = ({ c
 export const useGlobalState = () => {
   const context = useContext(GlobalStateContext);
   if (context === undefined) {
-    throw new Error('useGlobalState must be used within a GlobalStateProvider');
+    // Return safe defaults instead of throwing - allows components to work outside provider
+    console.warn('useGlobalState used outside GlobalStateProvider - using defaults');
+    return {
+      state: {
+        lastDataRefresh: Date.now(),
+        dataStale: { goals: false, achievements: false, progress: false, notifications: false, preferences: false },
+        activeModals: [],
+        loading: { global: false, goals: false, achievements: false, progress: false, notifications: false, coach: false, mealPlans: false, workouts: false, nutrition: false },
+        errors: {},
+        isOnline: navigator.onLine,
+        retryQueue: []
+      },
+      actions: {
+        setDataStale: () => {},
+        setLoading: () => {},
+        setError: () => {},
+        openModal: () => {},
+        closeModal: () => {},
+        closeAllModals: () => {},
+        refreshAllData: async () => {},
+        addToRetryQueue: () => {},
+        processRetryQueue: () => {}
+      }
+    };
   }
   return context;
 };

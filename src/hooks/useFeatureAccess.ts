@@ -35,24 +35,12 @@ export const useFeatureAccess = (featureKey: string) => {
     const remaining = getRemainingUsage(featureKey as any);
     const isUnlimited = limit === -1;
     
-    // Debug logging for feature access
-    console.log('🔍 FEATURE ACCESS DEBUG:', {
-      featureKey,
-      currentTier,
-      limit,
-      remaining,
-      isUnlimited,
-      currentTierData: currentTierData.limits
-    });
-    
     // All users can preview premium features
     const canPreview = true;
     
     // Feature access logic - premium users have access to everything
     const canAccess = currentTier === 'premium' || limit > 0 || isSubscribed;
     const canUse = canAccess && (currentTier === 'premium' || isUnlimited || remaining > 0);
-
-    console.log('🔍 ACCESS RESULT:', { canAccess, canUse, canPreview });
 
     // Determine required tier for upgrade messaging
     let tierRequired = 'premium';

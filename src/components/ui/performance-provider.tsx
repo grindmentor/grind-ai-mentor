@@ -198,7 +198,27 @@ export const PerformanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 export const usePerformanceContext = () => {
   const context = useContext(PerformanceContext);
   if (!context) {
-    throw new Error('usePerformanceContext must be used within a PerformanceProvider');
+    // Return safe defaults instead of throwing - allows components to work outside provider
+    console.warn('usePerformanceContext used outside PerformanceProvider - using defaults');
+    return {
+      lowDataMode: false,
+      toggleLowDataMode: () => {},
+      connectionType: 'unknown' as const,
+      bandwidth: 10,
+      optimizeImage: (src: string) => src,
+      createDebouncedFunction: (fn: Function) => fn,
+      createThrottledFunction: (fn: Function) => fn,
+      preloadResource: () => {},
+      measurePerformance: (_name: string, fn: Function) => fn(),
+      prefetchResource: () => {},
+      optimizedSettings: {
+        lowDataMode: false,
+        reduceAnimations: false,
+        maxTokens: 600,
+        connectionQuality: 'fast',
+        preloadNext: true
+      }
+    };
   }
   return context;
 };

@@ -92,7 +92,7 @@ interface ComputedModules {
 }
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { modules } = useModules();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -233,6 +233,12 @@ const Dashboard = () => {
   }, [trigger, navigate]);
 
   // Conditional returns AFTER all hooks
+  // Wait for auth to complete before determining if we should show loading
+  if (authLoading) {
+    return <LoadingScreen />;
+  }
+  
+  // Only show loading if modules aren't ready yet (brief moment after auth)
   if (!modules || modules.length === 0) {
     return <LoadingScreen />;
   }

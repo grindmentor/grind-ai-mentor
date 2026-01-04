@@ -37,7 +37,7 @@ interface DashboardStats {
 }
 
 const ProgressHubDashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { navigateToModule, navigateWithReturn } = useModuleNavigation();
   const { isSubscribed } = useSubscription();
   const [stats, setStats] = useState<DashboardStats>({
@@ -53,12 +53,15 @@ const ProgressHubDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
+    // Wait for auth to finish loading before deciding what to do
+    if (authLoading) return;
+    
     if (user) {
       loadDashboardStats();
     } else {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const loadDashboardStats = async () => {
     if (!user) {

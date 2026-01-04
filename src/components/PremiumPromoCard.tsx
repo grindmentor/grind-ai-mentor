@@ -18,22 +18,22 @@ const PremiumPromoCard: React.FC<PremiumPromoCardProps> = ({
 
   if (variant === 'compact') {
     return (
-      <Card className={`bg-gradient-to-r from-orange-900/50 to-red-900/50 border-orange-500/30 ${className}`}>
+      <Card className={`bg-muted/50 border-border/60 ${className}`}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                <Crown className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Crown className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-sm">Unlock Premium</h3>
-                <p className="text-orange-200/80 text-xs">Enhanced AI + 30 uploads/mo</p>
+                <h3 className="text-foreground font-semibold text-sm">Unlock Premium</h3>
+                <p className="text-muted-foreground text-xs">Enhanced AI + 30 uploads/mo</p>
               </div>
             </div>
             <Button
               onClick={() => navigate('/pricing')}
               size="sm"
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Upgrade
             </Button>

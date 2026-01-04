@@ -253,8 +253,9 @@ const ModuleLibrary = () => {
               placeholder="Search modules..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 min-h-[44px] bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="pl-12 pr-4 h-12 min-h-[44px] bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/50 [&]:text-left"
               aria-label="Search modules"
+              style={{ textIndent: 0 }}
             />
           </motion.div>
           

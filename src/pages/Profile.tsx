@@ -199,21 +199,32 @@ const Profile = () => {
         <div className="px-4 py-6 pb-24">
           <div className="max-w-2xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate('/app')}
+                  className="p-2 h-10 w-10 rounded-full hover:bg-muted"
+                  size="icon"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    Profile
+                  </h1>
+                  <p className="text-muted-foreground text-sm">View your stats and subscription</p>
+                </div>
+              </div>
               <Button 
                 variant="ghost" 
-                onClick={() => navigate('/app')}
+                onClick={() => navigate('/settings')}
                 className="p-2 h-10 w-10 rounded-full hover:bg-muted"
                 size="icon"
+                aria-label="Open settings"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <Settings className="w-5 h-5" />
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Profile
-                </h1>
-                <p className="text-muted-foreground text-sm">Manage your account</p>
-              </div>
             </div>
 
             {/* Profile Tabs */}

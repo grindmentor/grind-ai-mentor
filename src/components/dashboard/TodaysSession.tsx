@@ -253,14 +253,30 @@ const TodaysSessionComponent: React.FC = () => {
           "bg-gradient-to-br from-emerald-500/10 to-green-500/5",
           "border border-emerald-500/20"
         )}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-              <Check className="w-5 h-5 text-emerald-500" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <Check className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">Rest Day</h3>
+                <p className="text-xs text-muted-foreground">
+                  {upcomingWorkouts.length > 0 
+                    ? `Next: ${upcomingWorkouts[0]?.workout_name} on ${DAY_NAMES[new Date(upcomingWorkouts[0]?.scheduled_date).getDay()]}`
+                    : 'No workouts scheduled'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Rest Day</h3>
-              <p className="text-xs text-muted-foreground">No workout scheduled for today</p>
-            </div>
+            {upcomingWorkouts.length === 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => navigateToModule('/workout-logger')}
+                className="text-xs text-primary"
+              >
+                Log anyway
+              </Button>
+            )}
           </div>
         </div>
       )}

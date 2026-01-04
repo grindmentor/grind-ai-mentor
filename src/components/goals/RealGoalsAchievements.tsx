@@ -515,12 +515,15 @@ const RealGoalsAchievements = () => {
                       <Target className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <h3 className="text-foreground font-medium mb-1">No goals yet</h3>
-                    <p className="text-muted-foreground text-sm mb-4">Set your first fitness goal</p>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      Goals help you track progress toward specific targets like weight, strength, or habits.
+                    </p>
                     <Button
                       onClick={() => navigate('/create-goal')}
                       className="bg-primary hover:bg-primary/90"
                     >
-                      Create Goal
+                      <Plus className="w-4 h-4 mr-1" />
+                      Create Your First Goal
                     </Button>
                   </div>
                 ) : (
@@ -604,7 +607,9 @@ const RealGoalsAchievements = () => {
                       <Trophy className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <h3 className="text-foreground font-medium mb-1">No trophies yet</h3>
-                    <p className="text-muted-foreground text-sm">Complete goals and workouts to earn achievements!</p>
+                    <p className="text-muted-foreground text-sm">
+                      Complete workouts and reach goals to earn achievements and track your milestones.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">

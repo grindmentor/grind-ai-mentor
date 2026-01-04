@@ -7,50 +7,43 @@ import {
   Dumbbell, 
   Utensils, 
   Sparkles, 
-  Calendar,
-  Clock,
   TrendingUp,
-  ChevronRight,
-  Flame
+  Flame,
+  Zap,
+  Target
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useModuleNavigation } from '@/hooks/useModuleNavigation';
 import { useNativeHaptics } from '@/hooks/useNativeHaptics';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface FeedItem {
-  id: string;
-  type: 'workout' | 'meal' | 'recommendation';
-  title: string;
-  subtitle: string;
-  timestamp?: Date;
-  icon: React.ElementType;
-  color: string;
-  action?: () => void;
-}
-
-const recommendations = [
+const quickActions = [
   {
-    id: 'rec-1',
-    title: 'Log your workout',
-    subtitle: "Track today's progress",
+    id: 'action-1',
+    title: 'Log Workout',
     icon: Dumbbell,
-    path: '/workout-logger'
+    path: '/workout-logger',
+    gradient: 'from-blue-500/15 to-cyan-500/10',
+    border: 'border-blue-500/20',
+    iconColor: 'text-blue-500'
   },
   {
-    id: 'rec-2', 
-    title: 'Analyze your physique',
-    subtitle: 'Get AI-powered insights',
-    icon: Sparkles,
-    path: '/physique-ai'
-  },
-  {
-    id: 'rec-3',
-    title: 'Plan your meals',
-    subtitle: 'Smart nutrition tracking',
+    id: 'action-2', 
+    title: 'Log Food',
     icon: Utensils,
-    path: '/smart-food-log'
+    path: '/smart-food-log',
+    gradient: 'from-green-500/15 to-emerald-500/10',
+    border: 'border-green-500/20',
+    iconColor: 'text-green-500'
+  },
+  {
+    id: 'action-3',
+    title: 'AI Coach',
+    icon: Sparkles,
+    path: '/coach-gpt',
+    gradient: 'from-purple-500/15 to-violet-500/10',
+    border: 'border-purple-500/20',
+    iconColor: 'text-purple-500'
   }
 ];
 
@@ -59,7 +52,7 @@ const PersonalizedFeedComponent: React.FC = () => {
   const { navigateToModule } = useModuleNavigation();
   const { trigger } = useNativeHaptics();
 
-  // Fetch recent workouts with longer stale time
+  // Fetch recent workouts
   const { data: recentWorkouts, isLoading: workoutsLoading } = useQuery({
     queryKey: ['recent-workouts', user?.id],
     queryFn: async () => {
@@ -69,16 +62,16 @@ const PersonalizedFeedComponent: React.FC = () => {
         .select('id, workout_name, duration_minutes, calories_burned, session_date')
         .eq('user_id', user.id)
         .order('session_date', { ascending: false })
-        .limit(3);
+        .limit(10);
       if (error) throw error;
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 10 * 60 * 1000, // 10 min stale time
-    gcTime: 30 * 60 * 1000 // 30 min cache
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
   });
 
-  // Fetch recent food logs with longer stale time
+  // Fetch recent food logs
   const { data: recentMeals, isLoading: mealsLoading } = useQuery({
     queryKey: ['recent-meals', user?.id],
     queryFn: async () => {
@@ -88,7 +81,7 @@ const PersonalizedFeedComponent: React.FC = () => {
         .select('id, food_name, calories, protein, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(20);
       if (error) throw error;
       return data || [];
     },
@@ -97,195 +90,160 @@ const PersonalizedFeedComponent: React.FC = () => {
     gcTime: 30 * 60 * 1000
   });
 
-  // Memoized navigation callbacks - stable references
-  const navigateToWorkout = useCallback(() => navigateToModule('/workout-logger'), [navigateToModule]);
-  const navigateToFood = useCallback(() => navigateToModule('/smart-food-log'), [navigateToModule]);
+  // Calculate today's stats
+  const todayStats = useMemo(() => {
+    const today = new Date().toDateString();
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
 
-  const feedItems = useMemo<FeedItem[]>(() => {
-    const items: FeedItem[] = [];
+    const todaysCalories = recentMeals?.filter(m => 
+      new Date(m.created_at).toDateString() === today
+    ).reduce((sum, m) => sum + (m.calories || 0), 0) || 0;
 
-    // Add workouts
-    recentWorkouts?.forEach((workout) => {
-      items.push({
-        id: `workout-${workout.id}`,
-        type: 'workout',
-        title: workout.workout_name || 'Workout',
-        subtitle: `${workout.duration_minutes} min${workout.calories_burned ? ` • ${workout.calories_burned} cal` : ''}`,
-        timestamp: new Date(workout.session_date),
-        icon: Dumbbell,
-        color: 'text-blue-500 bg-blue-500/10',
-        action: navigateToWorkout
-      });
-    });
+    const todaysProtein = recentMeals?.filter(m => 
+      new Date(m.created_at).toDateString() === today
+    ).reduce((sum, m) => sum + (m.protein || 0), 0) || 0;
 
-    // Add meals
-    recentMeals?.forEach((meal) => {
-      items.push({
-        id: `meal-${meal.id}`,
-        type: 'meal',
-        title: meal.food_name,
-        subtitle: `${meal.calories || 0} cal • ${meal.protein || 0}g protein`,
-        timestamp: new Date(meal.created_at),
-        icon: Utensils,
-        color: 'text-green-500 bg-green-500/10',
-        action: navigateToFood
-      });
-    });
+    const weeklyWorkouts = recentWorkouts?.filter(w => 
+      new Date(w.session_date) > weekAgo
+    ).length || 0;
 
-    // Sort by timestamp
-    items.sort((a, b) => {
-      if (!a.timestamp || !b.timestamp) return 0;
-      return b.timestamp.getTime() - a.timestamp.getTime();
-    });
+    const todaysWorkouts = recentWorkouts?.filter(w => 
+      new Date(w.session_date).toDateString() === today
+    ).length || 0;
 
-    return items.slice(0, 5);
-  }, [recentWorkouts, recentMeals, navigateToWorkout, navigateToFood]);
+    return { todaysCalories, todaysProtein, weeklyWorkouts, todaysWorkouts };
+  }, [recentMeals, recentWorkouts]);
 
-  const handleItemPress = useCallback((item: FeedItem) => {
+  const handleActionPress = useCallback((path: string) => {
     trigger('light');
-    item.action?.();
-  }, [trigger]);
-
-  const handleRecommendationPress = useCallback((rec: typeof recommendations[0]) => {
-    trigger('light');
-    navigateToModule(rec.path);
+    navigateToModule(path);
   }, [trigger, navigateToModule]);
 
   const isLoading = workoutsLoading || mealsLoading;
 
   return (
-    <div className="space-y-6">
-      {/* AI Recommendations */}
+    <div className="space-y-5">
+      {/* Quick Actions - Primary CTAs */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.05, duration: 0.25 }}
       >
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          Suggested for you
-        </h3>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {recommendations.map((rec, index) => {
-            const Icon = rec.icon;
+        <div className="grid grid-cols-3 gap-3">
+          {quickActions.map((action, index) => {
+            const Icon = action.icon;
             return (
               <motion.button
-                key={rec.id}
-                onClick={() => handleRecommendationPress(rec)}
-                className="flex-shrink-0 p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 min-w-[140px] text-left active:scale-95 transition-transform"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 + index * 0.05 }}
+                key={action.id}
+                onClick={() => handleActionPress(action.path)}
+                className={cn(
+                  "flex flex-col items-center justify-center p-4 rounded-2xl",
+                  "bg-gradient-to-br border",
+                  "active:scale-95 transition-transform touch-manipulation",
+                  "min-h-[88px]",
+                  action.gradient,
+                  action.border
+                )}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 + index * 0.03, duration: 0.2 }}
+                aria-label={action.title}
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center mb-3">
-                  <Icon className="w-5 h-5 text-primary" />
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center mb-2",
+                  "bg-background/50"
+                )}>
+                  <Icon className={cn("w-5 h-5", action.iconColor)} aria-hidden="true" />
                 </div>
-                <p className="font-semibold text-foreground text-sm">{rec.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{rec.subtitle}</p>
+                <span className="text-xs font-semibold text-foreground">{action.title}</span>
               </motion.button>
             );
           })}
         </div>
       </motion.div>
 
-      {/* Recent Activity */}
+      {/* Today's Stats - Clean Grid */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.1, duration: 0.25 }}
       >
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Clock className="w-4 h-4" />
-          Recent Activity
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Target className="w-3.5 h-3.5" aria-hidden="true" />
+          Today's Snapshot
         </h3>
-
+        
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 rounded-xl" />
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-[72px] rounded-xl" />
             ))}
           </div>
-        ) : feedItems.length > 0 ? (
-          <div className="space-y-2">
-            {feedItems.map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <motion.button
-                  key={item.id}
-                  onClick={() => handleItemPress(item)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border/50 text-left active:scale-[0.98] transition-transform"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + index * 0.05 }}
-                >
-                  <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                    item.color
-                  )}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm truncate">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">{item.subtitle}</p>
-                  </div>
-                  {item.timestamp && (
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
-                      {formatDistanceToNow(item.timestamp, { addSuffix: true })}
-                    </span>
-                  )}
-                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                </motion.button>
-              );
-            })}
-          </div>
         ) : (
-          <div className="p-6 rounded-xl bg-card border border-border/50 text-center">
-            <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-              <Calendar className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <p className="font-medium text-foreground mb-1">No activity yet</p>
-            <p className="text-sm text-muted-foreground">
-              Start logging workouts and meals to see your feed
-            </p>
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              icon={Flame}
+              label="Calories"
+              value={todayStats.todaysCalories.toLocaleString()}
+              iconColor="text-orange-500"
+              bgColor="from-orange-500/10 to-red-500/5"
+              borderColor="border-orange-500/20"
+            />
+            <StatCard
+              icon={Zap}
+              label="Protein"
+              value={`${todayStats.todaysProtein}g`}
+              iconColor="text-yellow-500"
+              bgColor="from-yellow-500/10 to-amber-500/5"
+              borderColor="border-yellow-500/20"
+            />
+            <StatCard
+              icon={Dumbbell}
+              label="Today"
+              value={todayStats.todaysWorkouts === 0 ? 'Rest day' : `${todayStats.todaysWorkouts} workout${todayStats.todaysWorkouts > 1 ? 's' : ''}`}
+              iconColor="text-blue-500"
+              bgColor="from-blue-500/10 to-cyan-500/5"
+              borderColor="border-blue-500/20"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="This Week"
+              value={`${todayStats.weeklyWorkouts} workout${todayStats.weeklyWorkouts !== 1 ? 's' : ''}`}
+              iconColor="text-emerald-500"
+              bgColor="from-emerald-500/10 to-green-500/5"
+              borderColor="border-emerald-500/20"
+            />
           </div>
         )}
-      </motion.div>
-
-      {/* Today's Stats Quick View */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="grid grid-cols-2 gap-3"
-      >
-        <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Flame className="w-4 h-4 text-orange-500" />
-            <span className="text-xs font-medium text-muted-foreground">Today's Calories</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">
-            {recentMeals?.filter(m => 
-              new Date(m.created_at).toDateString() === new Date().toDateString()
-            ).reduce((sum, m) => sum + (m.calories || 0), 0) || 0}
-          </p>
-        </div>
-        <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-medium text-muted-foreground">Workouts This Week</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">
-            {recentWorkouts?.filter(w => {
-              const weekAgo = new Date();
-              weekAgo.setDate(weekAgo.getDate() - 7);
-              return new Date(w.session_date) > weekAgo;
-            }).length || 0}
-          </p>
-        </div>
       </motion.div>
     </div>
   );
 };
+
+// Memoized stat card component
+const StatCard = memo<{
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  iconColor: string;
+  bgColor: string;
+  borderColor: string;
+}>(({ icon: Icon, label, value, iconColor, bgColor, borderColor }) => (
+  <div className={cn(
+    "p-3.5 rounded-xl bg-gradient-to-br border min-h-[72px]",
+    bgColor,
+    borderColor
+  )}>
+    <div className="flex items-center gap-2 mb-1.5">
+      <Icon className={cn("w-4 h-4", iconColor)} aria-hidden="true" />
+      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
+    </div>
+    <p className="text-lg font-bold text-foreground leading-tight">{value}</p>
+  </div>
+));
+
+StatCard.displayName = 'StatCard';
 
 export const PersonalizedFeed = memo(PersonalizedFeedComponent);
 export default PersonalizedFeed;

@@ -44,6 +44,85 @@ interface Achievement {
   icon_name: string;
 }
 
+// Cache keys
+const GOALS_CACHE_KEY = 'myotopia-goals-cache';
+const ACHIEVEMENTS_CACHE_KEY = 'myotopia-achievements-cache';
+const STREAK_CACHE_KEY = 'myotopia-streak-cache';
+
+// Get cached data immediately (sync)
+const getCachedGoals = (userId: string): Goal[] | null => {
+  try {
+    const cached = sessionStorage.getItem(`${GOALS_CACHE_KEY}-${userId}`);
+    if (cached) return JSON.parse(cached);
+  } catch { /* ignore */ }
+  return null;
+};
+
+const getCachedAchievements = (userId: string): Achievement[] | null => {
+  try {
+    const cached = sessionStorage.getItem(`${ACHIEVEMENTS_CACHE_KEY}-${userId}`);
+    if (cached) return JSON.parse(cached);
+  } catch { /* ignore */ }
+  return null;
+};
+
+const getCachedStreak = (userId: string): number => {
+  try {
+    const cached = sessionStorage.getItem(`${STREAK_CACHE_KEY}-${userId}`);
+    if (cached) return parseInt(cached, 10) || 0;
+  } catch { /* ignore */ }
+  return 0;
+};
+
+const setCachedData = (userId: string, goals: Goal[], achievements: Achievement[], streak: number) => {
+  try {
+    sessionStorage.setItem(`${GOALS_CACHE_KEY}-${userId}`, JSON.stringify(goals));
+    sessionStorage.setItem(`${ACHIEVEMENTS_CACHE_KEY}-${userId}`, JSON.stringify(achievements));
+    sessionStorage.setItem(`${STREAK_CACHE_KEY}-${userId}`, streak.toString());
+  } catch { /* ignore storage errors */ }
+};
+
+// Calculate streak from workout sessions (memoized helper)
+const calculateStreak = (sessions: { session_date: string }[]): number => {
+  if (!sessions.length) return 0;
+  
+  const sortedSessions = [...sessions].sort((a, b) => 
+    new Date(b.session_date).getTime() - new Date(a.session_date).getTime()
+  );
+  
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const msPerDay = 24 * 60 * 60 * 1000;
+  let currentDate = today;
+  
+  for (let i = 0; i < 365; i++) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const hasWorkout = sortedSessions.some(s => s.session_date === dateStr);
+    
+    if (hasWorkout) {
+      streak++;
+    } else if (i === 0) {
+      const yesterday = new Date(currentDate.getTime() - msPerDay);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      if (!sortedSessions.some(s => s.session_date === yesterdayStr)) {
+        break;
+      }
+    } else {
+      const nextDate = new Date(currentDate.getTime() - msPerDay);
+      const nextDateStr = nextDate.toISOString().split('T')[0];
+      if (!sortedSessions.some(s => s.session_date === nextDateStr)) {
+        break;
+      }
+    }
+    
+    currentDate = new Date(currentDate.getTime() - msPerDay);
+  }
+  
+  return streak;
+};
+
 const RealGoalsAchievements = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,62 +131,22 @@ const RealGoalsAchievements = () => {
   const { state, actions } = useGlobalState();
   const { on, off, emit, getCache, setCache, invalidateCache } = useAppSync();
   
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [workoutSessions, setWorkoutSessions] = useState<any[]>([]);
+  // Initialize from cache immediately (instant render)
+  const cachedGoals = user ? getCachedGoals(user.id) : null;
+  const cachedAchievements = user ? getCachedAchievements(user.id) : null;
+  const cachedStreak = user ? getCachedStreak(user.id) : 0;
+  
+  const [goals, setGoals] = useState<Goal[]>(cachedGoals || []);
+  const [achievements, setAchievements] = useState<Achievement[]>(cachedAchievements || []);
+  const [realStreak, setRealStreak] = useState(cachedStreak);
   const [activeTab, setActiveTab] = useState<'goals' | 'achievements'>('goals');
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(!!cachedGoals);
   const [isTabTransitioning, setIsTabTransitioning] = useState(false);
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
   
-  // Track if we've already handled the refreshGoals flag to prevent loops
   const refreshHandledRef = useRef(false);
-
-  // Calculate REAL streak from workout data
-  const realStreak = useMemo(() => {
-    if (!workoutSessions.length) return 0;
-    
-    // Sort sessions by date descending
-    const sortedSessions = [...workoutSessions].sort((a, b) => 
-      new Date(b.session_date).getTime() - new Date(a.session_date).getTime()
-    );
-    
-    let streak = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const msPerDay = 24 * 60 * 60 * 1000;
-    let currentDate = today;
-    
-    // Check consecutive days with workouts (allowing 1 day gap for rest days)
-    for (let i = 0; i < 365; i++) {
-      const dateStr = currentDate.toISOString().split('T')[0];
-      const hasWorkout = sortedSessions.some(s => s.session_date === dateStr);
-      
-      if (hasWorkout) {
-        streak++;
-      } else if (i === 0) {
-        // Check if there's a workout yesterday (allow 1 day rest)
-        const yesterday = new Date(currentDate.getTime() - msPerDay);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        if (!sortedSessions.some(s => s.session_date === yesterdayStr)) {
-          break; // No recent workout, streak is 0
-        }
-      } else {
-        // Allow 1 rest day
-        const nextDate = new Date(currentDate.getTime() - msPerDay);
-        const nextDateStr = nextDate.toISOString().split('T')[0];
-        if (!sortedSessions.some(s => s.session_date === nextDateStr)) {
-          break;
-        }
-      }
-      
-      currentDate = new Date(currentDate.getTime() - msPerDay);
-    }
-    
-    return streak;
-  }, [workoutSessions]);
+  const syncedRef = useRef(false);
 
   // Handle tab change with transition
   const handleTabChange = (newTab: 'goals' | 'achievements') => {
@@ -121,112 +160,81 @@ const RealGoalsAchievements = () => {
 
   const loading = state.loading.goals || state.loading.achievements;
 
-  const loadWorkoutSessions = async () => {
+  // Batch load all data in one Promise.all (much faster)
+  const loadAllData = useCallback(async (bypassCache: boolean = false) => {
     if (!user) return;
-    try {
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .select('id, session_date')
-        .eq('user_id', user.id)
-        .order('session_date', { ascending: false })
-        .limit(365);
-      
-      if (!error && data) {
-        setWorkoutSessions(data);
-      }
-    } catch (error) {
-      console.error('Error loading workout sessions:', error);
-    }
-  };
-
-  const loadGoalsAndAchievements = useCallback(async (bypassCache: boolean = false) => {
-    if (!user) return;
-
-    const cacheKey = `user-${user.id}-goals-achievements`;
     
-    // Only use cache if NOT bypassing and data is not stale
-    if (!bypassCache) {
-      const cached = getCache(cacheKey);
-      if (cached && !state.dataStale.goals && !state.dataStale.achievements) {
-        setGoals(cached.goals || []);
-        setAchievements(cached.achievements || []);
-        setInitialLoadComplete(true);
-        return;
-      }
+    // If we have cache and not bypassing, use it
+    if (!bypassCache && cachedGoals && cachedAchievements && !state.dataStale.goals && !state.dataStale.achievements) {
+      setInitialLoadComplete(true);
+      return;
     }
 
-    let fetchSuccess = false;
+    actions.setLoading('goals', true);
+    actions.setLoading('achievements', true);
+
     try {
-      actions.setLoading('goals', true);
-      actions.setLoading('achievements', true);
+      // Batch all queries in parallel
+      const [goalsResult, achievementsResult, sessionsResult] = await Promise.all([
+        supabase
+          .from('user_goals')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('user_achievements')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('unlocked_at', { ascending: false }),
+        supabase
+          .from('workout_sessions')
+          .select('session_date')
+          .eq('user_id', user.id)
+          .order('session_date', { ascending: false })
+          .limit(100) // Only need recent for streak
+      ]);
+
+      const newGoals = goalsResult.data || [];
+      const newAchievements = achievementsResult.data || [];
+      const sessions = sessionsResult.data || [];
+      const streak = calculateStreak(sessions);
+
+      setGoals(newGoals);
+      setAchievements(newAchievements);
+      setRealStreak(streak);
       
-      const { data: goalsData, error: goalsError } = await supabase
-        .from('user_goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (goalsError) {
-        console.error('Error loading goals:', goalsError);
-        setGoals([]);
-      } else {
-        setGoals(goalsData || []);
-      }
-
-      const { data: achievementsData, error: achievementsError } = await supabase
-        .from('user_achievements')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('unlocked_at', { ascending: false });
-
-      if (achievementsError) {
-        console.error('Error loading achievements:', achievementsError);
-        setAchievements([]);
-      } else {
-        setAchievements(achievementsData || []);
-      }
-
-      // Only update cache and clear stale flags on successful fetch
-      if (!goalsError && !achievementsError) {
-        fetchSuccess = true;
-        setCache(cacheKey, {
-          goals: goalsData || [],
-          achievements: achievementsData || []
-        });
-      }
+      // Cache for instant load next time
+      setCachedData(user.id, newGoals, newAchievements, streak);
+      setCache(`user-${user.id}-goals-achievements`, { goals: newGoals, achievements: newAchievements });
       
+      syncedRef.current = true;
+      actions.setDataStale('goals', false);
+      actions.setDataStale('achievements', false);
     } catch (error) {
-      console.error('Error:', error);
-      setGoals([]);
-      setAchievements([]);
+      console.error('Error loading goals data:', error);
     } finally {
       actions.setLoading('goals', false);
       actions.setLoading('achievements', false);
       setInitialLoadComplete(true);
-      // Clear stale flags only after successful fresh fetch
-      if (fetchSuccess) {
-        actions.setDataStale('goals', false);
-        actions.setDataStale('achievements', false);
-      }
     }
-  }, [user, getCache, setCache, state.dataStale.goals, state.dataStale.achievements, actions]);
+  }, [user, cachedGoals, cachedAchievements, state.dataStale.goals, state.dataStale.achievements, actions, setCache]);
+
+  // Alias for backward compatibility with event handlers
+  const loadGoalsAndAchievements = loadAllData;
 
   // Initial load effect
   useEffect(() => {
-    if (user && !initialLoadComplete) {
-      loadGoalsAndAchievements(false);
-      loadWorkoutSessions();
+    if (user && !syncedRef.current) {
+      loadAllData(false);
     }
-  }, [user, initialLoadComplete, loadGoalsAndAchievements]);
+  }, [user, loadAllData]);
 
   // Handle refreshGoals flag from navigation state (e.g., after creating a goal)
-  // This guarantees a fresh fetch bypassing the cache
   const currentState = (location.state ?? {}) as Record<string, unknown>;
   const refreshGoals = !!currentState.refreshGoals;
   useEffect(() => {
     if (refreshGoals && user && !refreshHandledRef.current) {
       refreshHandledRef.current = true;
-      // Clear ONLY the refreshGoals key, preserve other state keys (e.g., returnTo)
       const currentState = (location.state ?? {}) as Record<string, unknown>;
       const { refreshGoals: _ignored, ...preservedState } = currentState;
       if (Object.keys(preservedState).length === 0) {
@@ -234,25 +242,21 @@ const RealGoalsAchievements = () => {
       } else {
         navigate(location.pathname, { replace: true, state: preservedState });
       }
-      // Force a fresh fetch bypassing cache
-      loadGoalsAndAchievements(true);
+      loadAllData(true);
     }
-  }, [refreshGoals, user, navigate, location.pathname, loadGoalsAndAchievements]);
+  }, [refreshGoals, user, navigate, location.pathname, loadAllData]);
 
-  // Re-fetch when data becomes stale (e.g., after goal creation/update/delete)
+  // Re-fetch when data becomes stale
   useEffect(() => {
     if (user && initialLoadComplete && (state.dataStale.goals || state.dataStale.achievements)) {
-      loadGoalsAndAchievements(true);
+      loadAllData(true);
     }
-  }, [user, initialLoadComplete, state.dataStale.goals, state.dataStale.achievements, loadGoalsAndAchievements]);
+  }, [user, initialLoadComplete, state.dataStale.goals, state.dataStale.achievements, loadAllData]);
 
   // Listen for real-time updates
   useEffect(() => {
     const handleDataRefresh = () => {
-      if (user) {
-        loadGoalsAndAchievements(true);
-        loadWorkoutSessions();
-      }
+      if (user) loadAllData(true);
     };
 
     on('goals:refresh', handleDataRefresh);
@@ -268,18 +272,18 @@ const RealGoalsAchievements = () => {
       off('realtime:user-achievements', handleDataRefresh);
       off('workout:completed', handleDataRefresh);
     };
-  }, [user, on, off, loadGoalsAndAchievements]);
+  }, [user, on, off, loadAllData]);
 
   useEffect(() => {
     const handleGoalUpdate = () => {
       if (user) {
         invalidateCache(`user-${user?.id}-goals-achievements`);
-        loadGoalsAndAchievements(true);
+        loadAllData(true);
       }
     };
     window.addEventListener('focus', handleGoalUpdate);
     return () => window.removeEventListener('focus', handleGoalUpdate);
-  }, [user, invalidateCache, loadGoalsAndAchievements]);
+  }, [user, invalidateCache, loadAllData]);
 
   const handleDeleteGoal = async (goalId: string) => {
     const goalToDelete = goals.find(g => g.id === goalId);

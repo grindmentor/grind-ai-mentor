@@ -1,30 +1,55 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
 
+const FAVORITES_CACHE_KEY = 'myotopia-favorites-cache';
+
+// Get cached favorites immediately (sync)
+const getCachedFavorites = (userId: string): string[] | null => {
+  try {
+    const cached = sessionStorage.getItem(`${FAVORITES_CACHE_KEY}-${userId}`);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    // Fallback to localStorage
+    const localCached = localStorage.getItem('module-favorites');
+    if (localCached) {
+      return JSON.parse(localCached);
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
+};
+
+// Set cached favorites
+const setCachedFavorites = (userId: string, favorites: string[]) => {
+  try {
+    sessionStorage.setItem(`${FAVORITES_CACHE_KEY}-${userId}`, JSON.stringify(favorites));
+    localStorage.setItem('module-favorites', JSON.stringify(favorites));
+  } catch {
+    // Ignore storage errors
+  }
+};
+
 export const useFavorites = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Initialize from cache immediately (no loading state needed if cached)
+  const cachedFavorites = user ? getCachedFavorites(user.id) : null;
+  const [favorites, setFavorites] = useState<string[]>(cachedFavorites || []);
+  const [loading, setLoading] = useState(!cachedFavorites);
   const loadingRef = useRef(false);
+  const syncedRef = useRef(false);
 
-  // Load favorites from Supabase with debugging and deduplication
-  const loadFavorites = useCallback(async () => {
-    if (loadingRef.current) return; // Prevent concurrent loads
+  // Background sync with Supabase (non-blocking)
+  const syncFavorites = useCallback(async () => {
+    if (!user || loadingRef.current || syncedRef.current) return;
     
     loadingRef.current = true;
-    console.log('Loading favorites for user:', user?.id);
-    
-    if (!user) {
-      setFavorites([]);
-      setLoading(false);
-      loadingRef.current = false;
-      return;
-    }
 
     try {
       const { data, error } = await supabase
@@ -33,33 +58,17 @@ export const useFavorites = () => {
         .eq('user_id', user.id)
         .single();
 
-      console.log('Favorites query result:', { data, error });
-
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading favorites:', error);
-        // Fallback to localStorage
-        const savedFavorites = localStorage.getItem('module-favorites');
-        if (savedFavorites) {
-          const parsedFavorites = JSON.parse(savedFavorites);
-          console.log('Using localStorage favorites:', parsedFavorites);
-          setFavorites(parsedFavorites);
-        }
+        // Error but not "no rows" - keep using cache
+        console.warn('Favorites sync error:', error.message);
       } else if (data) {
-        const favoritesList = data.favorite_modules || [];
-        console.log('Loaded favorites from DB:', favoritesList);
-        setFavorites(favoritesList);
-        // Sync to localStorage as backup
-        localStorage.setItem('module-favorites', JSON.stringify(favoritesList));
+        const serverFavorites = data.favorite_modules || [];
+        setFavorites(serverFavorites);
+        setCachedFavorites(user.id, serverFavorites);
       }
+      syncedRef.current = true;
     } catch (error) {
-      console.error('Error loading favorites:', error);
-      // Fallback to localStorage
-      const savedFavorites = localStorage.getItem('module-favorites');
-      if (savedFavorites) {
-        const parsedFavorites = JSON.parse(savedFavorites);
-        console.log('Using localStorage favorites after error:', parsedFavorites);
-        setFavorites(parsedFavorites);
-      }
+      console.warn('Favorites sync failed:', error);
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -71,53 +80,38 @@ export const useFavorites = () => {
     if (!user) return;
 
     try {
-      console.log('Saving favorites to Supabase:', newFavorites);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('user_preferences')
         .upsert({
           user_id: user.id,
           favorite_modules: newFavorites
         }, {
           onConflict: 'user_id'
-        })
-        .select();
+        });
 
-      if (error) {
-        console.error('Error saving favorites to Supabase:', error);
-        throw error;
-      }
-
-      console.log('Successfully saved favorites to Supabase:', data);
+      if (error) throw error;
       
-      // Always save to localStorage as backup
-      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+      setCachedFavorites(user.id, newFavorites);
     } catch (error) {
       console.error('Error saving favorites:', error);
-      // Still save to localStorage as fallback
-      localStorage.setItem('module-favorites', JSON.stringify(newFavorites));
+      setCachedFavorites(user.id, newFavorites);
       throw error;
     }
   };
 
-  // Toggle favorite with optimistic updates and console logging
+  // Toggle favorite with optimistic updates
   const toggleFavorite = useCallback(async (moduleId: string) => {
-    console.log('Toggle favorite called for module:', moduleId);
-    console.log('Current favorites:', favorites);
-    
     const newFavorites = favorites.includes(moduleId) 
       ? favorites.filter(id => id !== moduleId)
       : [...favorites, moduleId];
     
-    console.log('New favorites will be:', newFavorites);
-    
     // Immediate UI update (optimistic)
     setFavorites(newFavorites);
+    if (user) setCachedFavorites(user.id, newFavorites);
     triggerHapticFeedback('light');
     
     try {
       await saveFavorites(newFavorites);
-      console.log('Favorites saved successfully:', newFavorites);
       
       toast({
         title: favorites.includes(moduleId) ? "Removed from Favorites" : "Added to Favorites",
@@ -126,40 +120,50 @@ export const useFavorites = () => {
     } catch (error) {
       // Revert on error
       setFavorites(favorites);
-      console.error('Failed to save favorites:', error);
+      if (user) setCachedFavorites(user.id, favorites);
       toast({
         title: "Error",
         description: "Failed to update favorites. Please try again.",
         variant: "destructive"
       });
     }
-  }, [favorites, saveFavorites, toast]);
+  }, [favorites, user, toast]);
 
   // Reorder favorites with haptic feedback
   const reorderFavorites = useCallback(async (newOrder: string[]) => {
-    console.log('Reordering favorites:', newOrder);
-    
-    // Immediate UI update
     setFavorites(newOrder);
+    if (user) setCachedFavorites(user.id, newOrder);
     
     try {
       await saveFavorites(newOrder);
-      console.log('Favorites order saved successfully');
     } catch (error) {
       console.error('Failed to save favorites order:', error);
-      // Don't revert as the visual order is still correct
     }
-  }, [saveFavorites]);
-
-  useEffect(() => {
-    loadFavorites();
   }, [user]);
+
+  // Sync on mount (background, non-blocking)
+  useEffect(() => {
+    if (user) {
+      // If we have cached data, mark as not loading immediately
+      const cached = getCachedFavorites(user.id);
+      if (cached) {
+        setFavorites(cached);
+        setLoading(false);
+      }
+      // Background sync
+      syncFavorites();
+    } else {
+      setFavorites([]);
+      setLoading(false);
+      syncedRef.current = false;
+    }
+  }, [user, syncFavorites]);
 
   return {
     favorites,
     loading,
     toggleFavorite,
     reorderFavorites,
-    reload: loadFavorites
+    reload: syncFavorites
   };
 };

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { BrandedLoading } from '@/components/ui/branded-loading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Copy, AlertCircle } from 'lucide-react';
@@ -12,23 +11,18 @@ interface DashboardWrapperProps {
 
 export const DashboardWrapper = ({ children }: DashboardWrapperProps) => {
   const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(true);
 
+  // IMPORTANT: Avoid artificial mount delays.
+  // Any "loading gate" here creates a visible flash when returning to /app.
   useEffect(() => {
-    console.log('[DASHBOARD WRAPPER] Initializing...');
-    
     try {
-      // Small delay to ensure all contexts are ready
-      setTimeout(() => {
-        console.log('[DASHBOARD WRAPPER] Ready to render');
-        setLoading(false);
-      }, 100);
+      // No-op: keep the try/catch so unexpected runtime errors can still be captured.
     } catch (err) {
       console.error('[DASHBOARD WRAPPER] Initialization error:', err);
       setError(err as Error);
-      setLoading(false);
     }
   }, []);
+
 
   const copyError = () => {
     if (error) {
@@ -47,10 +41,6 @@ User Agent: ${navigator.userAgent}
       toast.success('Error details copied');
     }
   };
-
-  if (loading) {
-    return <BrandedLoading message="Loading Dashboard..." />;
-  }
 
   if (error) {
     return (

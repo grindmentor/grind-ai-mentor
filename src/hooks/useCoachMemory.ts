@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface UserContext {
   profile?: any;
@@ -16,6 +17,7 @@ interface UserContext {
 
 export const useCoachMemory = () => {
   const { user } = useAuth();
+  const { preferences } = usePreferences();
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -104,11 +106,31 @@ export const useCoachMemory = () => {
 
     // User Profile
     if (profile) {
+      // Convert metrics to user's preferred units
+      let displayHeight = 'Not set';
+      if (profile.height) {
+        if (preferences.height_unit === 'ft-in' || preferences.height_unit === 'in') {
+          const inches = Math.round(profile.height / 2.54);
+          displayHeight = `${inches} inches`;
+        } else {
+          displayHeight = `${profile.height}cm`;
+        }
+      }
+      
+      let displayWeight = 'Not set';
+      if (profile.weight) {
+        if (preferences.weight_unit === 'lbs') {
+          displayWeight = `${Math.round(profile.weight * 2.20462)} lbs`;
+        } else {
+          displayWeight = `${profile.weight}kg`;
+        }
+      }
+
       contextPrompt += `## User Profile\n`;
       contextPrompt += `- Name: ${profile.display_name || 'Not set'}\n`;
       contextPrompt += `- Age: ${profile.birthday ? Math.floor((Date.now() - new Date(profile.birthday).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : 'Not set'}\n`;
-      contextPrompt += `- Height: ${profile.height ? `${profile.height}cm` : 'Not set'}\n`;
-      contextPrompt += `- Weight: ${profile.weight ? `${profile.weight}kg` : 'Not set'}\n`;
+      contextPrompt += `- Height: ${displayHeight}\n`;
+      contextPrompt += `- Weight: ${displayWeight}\n`;
       contextPrompt += `- Goal: ${profile.goal || 'Not set'}\n`;
       contextPrompt += `- Experience: ${profile.experience || 'Not set'}\n`;
       contextPrompt += `- Activity Level: ${profile.activity || 'Not set'}\n\n`;

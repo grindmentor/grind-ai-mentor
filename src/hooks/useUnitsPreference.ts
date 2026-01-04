@@ -1,7 +1,9 @@
+/**
+ * DEPRECATED: Use usePreferences() from '@/contexts/PreferencesContext' instead.
+ * This hook now delegates to PreferencesContext for single source of truth.
+ */
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface UnitsPreference {
   weightUnit: 'kg' | 'lbs';
@@ -9,44 +11,12 @@ interface UnitsPreference {
 }
 
 export const useUnitsPreference = () => {
-  const { user } = useAuth();
-  const [units, setUnits] = useState<UnitsPreference>({
-    weightUnit: 'kg',
-    heightUnit: 'cm'
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadUnits = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('weight_unit, height_unit')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error loading user units:', error);
-        } else if (data) {
-          setUnits({
-            weightUnit: data.weight_unit as 'kg' | 'lbs',
-            heightUnit: data.height_unit as 'cm' | 'in' | 'ft-in'
-          });
-        }
-      } catch (error) {
-        console.error('Error loading units:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUnits();
-  }, [user]);
+  const { preferences, isLoading } = usePreferences();
+  
+  const units: UnitsPreference = {
+    weightUnit: preferences.weight_unit,
+    heightUnit: preferences.height_unit
+  };
 
   const convertWeight = (value: number, targetUnit?: 'kg' | 'lbs') => {
     const target = targetUnit || units.weightUnit;
@@ -62,8 +32,8 @@ export const useUnitsPreference = () => {
 
   const formatHeight = (value: number) => {
     if (units.heightUnit === 'ft-in') {
-      const feet = Math.floor(value);
-      const inches = Math.round((value - feet) * 12);
+      const feet = Math.floor(value / 12);
+      const inches = Math.round(value % 12);
       return `${feet}'${inches}"`;
     }
     return `${Math.round(value)} ${units.heightUnit}`;
@@ -71,7 +41,7 @@ export const useUnitsPreference = () => {
 
   return {
     units,
-    loading,
+    loading: isLoading,
     convertWeight,
     formatWeight,
     formatHeight

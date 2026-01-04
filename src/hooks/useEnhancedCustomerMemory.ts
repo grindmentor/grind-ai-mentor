@@ -1,6 +1,13 @@
+/**
+ * Enhanced Customer Memory Hook
+ * Aggregates user data from canonical sources (UserDataContext, PreferencesContext)
+ * and provides utility functions for prefilling forms and personalization.
+ */
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserData } from '@/contexts/UserDataContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useCustomerMemory } from './useCustomerMemory';
 
@@ -52,16 +59,18 @@ interface DetailedUserData {
 
 export const useEnhancedCustomerMemory = () => {
   const { user } = useAuth();
-  const { customerProfile, updateCustomerProfile, logInteraction } = useCustomerMemory();
+  const { userData } = useUserData();
+  const { preferences } = usePreferences();
+  const { customerProfile, logInteraction } = useCustomerMemory();
   const [detailedData, setDetailedData] = useState<DetailedUserData>({});
   const [isLoading, setIsLoading] = useState(true);
 
   // Load detailed user data from various tables
   useEffect(() => {
-    if (user && customerProfile) {
+    if (user && userData) {
       loadDetailedUserData();
     }
-  }, [user, customerProfile]);
+  }, [user, userData]);
 
   const loadDetailedUserData = async () => {
     if (!user) return;
@@ -69,71 +78,57 @@ export const useEnhancedCustomerMemory = () => {
     try {
       setIsLoading(true);
 
-      // Load from profiles table
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      // Load additional data not in UserDataContext
+      const [cutData, habits, mealPlans] = await Promise.all([
+        // Load cut calculations for goals
+        supabase
+          .from('cut_calculations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
 
-      // Load TDEE calculations for body stats
-      const { data: tdeeData } = await supabase
-        .from('tdee_calculations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        // Load habits for preferences
+        supabase
+          .from('habits')
+          .select('*')
+          .eq('user_id', user.id),
 
-      // Load cut calculations for goals
-      const { data: cutData } = await supabase
-        .from('cut_calculations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        // Load meal plans for dietary preferences
+        supabase
+          .from('meal_plans')
+          .select('user_requirements')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
+      ]);
 
-      // Load habits for preferences
-      const { data: habits } = await supabase
-        .from('habits')
-        .select('*')
-        .eq('user_id', user.id);
-
-      // Load meal plans for dietary preferences
-      const { data: mealPlans } = await supabase
-        .from('meal_plans')
-        .select('user_requirements')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      // Compile detailed data
+      // Compile detailed data from canonical sources + additional queries
       const compiled: DetailedUserData = {
-        // From profiles
-        height: profile?.height,
-        weight: profile?.weight,
-        activityLevel: profile?.activity,
-        experienceLevel: profile?.experience,
-        fitnessGoals: profile?.goal ? [profile.goal] : [],
-        
-        // From TDEE data
-        age: tdeeData?.[0]?.age,
-        gender: tdeeData?.[0]?.gender,
+        // From UserDataContext (canonical source)
+        height: userData.height ?? undefined,
+        weight: userData.weight ?? undefined,
+        age: userData.age ?? undefined,
+        activityLevel: userData.activity ?? undefined,
+        experienceLevel: userData.experience ?? undefined,
+        fitnessGoals: userData.goal ? [userData.goal] : [],
+        bodyFatPercentage: userData.bodyFatPercentage ?? undefined,
         
         // From cut calculations
-        targetWeight: cutData?.[0]?.target_weight,
-        startingWeight: cutData?.[0]?.current_weight,
-        bodyFatPercentage: cutData?.[0]?.current_bf_percentage,
+        targetWeight: cutData.data?.target_weight ?? undefined,
+        startingWeight: cutData.data?.current_weight ?? undefined,
         
         // From habits
-        workoutPreferences: habits?.map(h => h.name) || [],
+        workoutPreferences: habits.data?.map(h => h.name) || [],
         
         // From meal plans (extract dietary info from requirements)
-        dietaryRestrictions: extractDietaryInfo(mealPlans),
+        dietaryRestrictions: extractDietaryInfo(mealPlans.data || []),
         
-        // From customer profile
-        preferredUnits: 'imperial', // Default, can be updated
+        // From PreferencesContext
+        preferredUnits: preferences.weight_unit === 'kg' ? 'metric' : 'imperial',
         soundEnabled: true,
-        notifications: true,
+        notifications: preferences.notifications,
       };
 
       setDetailedData(compiled);

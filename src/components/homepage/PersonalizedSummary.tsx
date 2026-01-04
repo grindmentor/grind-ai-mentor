@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { User, TrendingUp, Target, Activity, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { supabase } from '@/integrations/supabase/client';
 
 const PersonalizedSummary = () => {
   const { user } = useAuth();
+  const { preferences } = usePreferences();
   const [userData, setUserData] = useState({
     workoutsThisWeek: 0,
     caloriesLogged: 0,
@@ -79,13 +81,22 @@ const PersonalizedSummary = () => {
       const streak = calculateStreak(recentWorkouts || []);
       const totalCalories = foodLogs?.reduce((sum, log) => sum + (log.calories || 0), 0) || 0;
 
+      // Convert weight from DB (kg) to user's preferred unit
+      let displayWeight = "Not set";
+      if (profile?.weight) {
+        const weightValue = preferences.weight_unit === 'lbs' 
+          ? Math.round(profile.weight * 2.20462)
+          : profile.weight;
+        displayWeight = `${weightValue} ${preferences.weight_unit}`;
+      }
+
       setUserData({
         workoutsThisWeek: workouts?.length || 0,
         caloriesLogged: totalCalories,
         waterIntake: 0, // Would need a separate water tracking table
         streakDays: streak,
         nextGoal: goals?.[0]?.title || "Create your first goal",
-        bodyWeight: profile?.weight ? `${profile.weight} lbs` : "Not set",
+        bodyWeight: displayWeight,
         weeklyGoal: profile?.goal || "Not set"
       });
 

@@ -4,9 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
-import { crashReporter } from "@/utils/crashReporter";
-import { logger } from "@/utils/logger";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 // Eager load critical routes for instant navigation (no loading flash)
@@ -43,6 +40,7 @@ const CreateExercise = lazy(() => import("./pages/CreateExercise"));
 const Usage = lazy(() => import("./pages/Usage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { UserDataProvider } from "@/contexts/UserDataContext";
@@ -51,13 +49,11 @@ import { ExerciseShareProvider } from "@/contexts/ExerciseShareContext";
 import { GlobalStateProvider } from "@/contexts/GlobalStateContext";
 import AppPreloader from "@/components/AppPreloader";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { AppOptimizations } from "@/components/AppOptimizations";
-import ProtocolHandler from "@/components/ui/protocol-handler";
 import { AppShell } from "@/components/AppShell";
-import { RouteTransition } from "@/components/ui/route-transition";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AppLayout } from "@/components/layout/AppLayout";
-import '@/utils/prefetch'; // Initialize prefetching
+import { preloadCriticalRoutes, setupLinkPreloading } from "@/utils/routePreloader";
+import "@/utils/prefetch"; // Initialize prefetching
 
 // Optimized QueryClient with aggressive caching defaults
 const queryClient = new QueryClient({
@@ -97,6 +93,14 @@ function App() {
   useEffect(() => {
     // Instant initialization
     setIsLoading(false);
+
+    // Route preloading to prevent Suspense fallback flashes on navigation
+    try {
+      setupLinkPreloading();
+      preloadCriticalRoutes();
+    } catch {
+      // Silent: navigation still works without preloading
+    }
   }, []);
 
   if (isLoading) {
@@ -121,7 +125,7 @@ function App() {
                       {/* PWA Titlebar area */}
                       <div className="titlebar-area" />
                       <AppLayout>
-                        <Suspense fallback={<LoadingScreen />}>
+                        <Suspense fallback={<div className="min-h-screen bg-background" />}>
                           <Routes>
                           <Route path="/" element={<Index />} />
                           <Route path="/signin" element={<SignIn />} />

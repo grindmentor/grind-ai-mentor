@@ -248,12 +248,18 @@ const ProgressHubDashboard = () => {
     <div className="min-h-screen bg-background">
       <MobileHeader title="Progress Hub" />
       
-      <div className="px-4 pb-24 space-y-5">
+      <motion.div 
+        className="px-4 pb-24 space-y-5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+      >
         <div className="max-w-2xl mx-auto">
           {/* Quick Stats Grid */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
             className="grid grid-cols-2 gap-3"
           >
             <StatCard
@@ -480,7 +486,7 @@ const ProgressHubDashboard = () => {
             </Tabs>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

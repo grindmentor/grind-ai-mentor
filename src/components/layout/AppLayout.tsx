@@ -96,10 +96,13 @@ const AppLayoutComponent: React.FC<AppLayoutProps> = ({
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <main className={cn(
-        "flex-1 overflow-x-hidden",
+        "flex-1 overflow-x-hidden w-full",
         shouldShowBottomNav && "pb-[calc(80px+env(safe-area-inset-bottom))]"
       )}>
-        {children}
+        {/* Content wrapper for consistent max-width on larger screens */}
+        <div className="w-full max-w-5xl mx-auto">
+          {children}
+        </div>
       </main>
       {shouldShowBottomNav && <BottomTabBar />}
     </div>

@@ -51,6 +51,7 @@ const ProgressHubDashboard = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     // Wait for auth to finish loading before deciding what to do
@@ -61,6 +62,17 @@ const ProgressHubDashboard = () => {
     } else {
       setIsLoading(false);
     }
+    
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Progress Hub loading timeout - forcing completion');
+        setIsLoading(false);
+        setLoadError('Loading took too long. Some data may be incomplete.');
+      }
+    }, 10000);
+    
+    return () => clearTimeout(safetyTimeout);
   }, [user, authLoading]);
 
   const loadDashboardStats = async () => {
@@ -151,6 +163,7 @@ const ProgressHubDashboard = () => {
 
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      setLoadError('Failed to load some stats. Pull to refresh.');
     } finally {
       setIsLoading(false);
     }
@@ -230,7 +243,17 @@ const ProgressHubDashboard = () => {
     return (
       <div className="min-h-screen bg-background">
         <MobileHeader title="Progress Hub" />
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 max-w-2xl mx-auto">
+          {/* Loading indicator with message */}
+          <div className="flex items-center justify-center gap-2 py-2 text-muted-foreground">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            >
+              <TrendingUp className="w-4 h-4" />
+            </motion.div>
+            <span className="text-sm">Loading your progress...</span>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             {[0, 1, 2, 3].map(i => (
               <Skeleton 
@@ -258,6 +281,24 @@ const ProgressHubDashboard = () => {
         transition={{ duration: 0.25, ease: "easeOut" }}
       >
         <div className="max-w-2xl mx-auto">
+          {/* Error banner - shows but doesn't block content */}
+          {loadError && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive flex items-center justify-between"
+            >
+              <span>{loadError}</span>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => { setLoadError(null); loadDashboardStats(); }}
+                className="text-destructive hover:text-destructive"
+              >
+                Retry
+              </Button>
+            </motion.div>
+          )}
           {/* Quick Stats Grid */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}

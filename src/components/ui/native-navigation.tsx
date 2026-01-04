@@ -4,6 +4,7 @@ import { ArrowLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMobileEnhancements } from '@/hooks/useMobileEnhancements';
+import { preloadRoute } from '@/utils/routePreloader';
 
 interface NativeNavigationProps {
   title: string;
@@ -57,17 +58,19 @@ export const NativeNavigation: React.FC<NativeNavigationProps> = ({
     // Priority 2: Check for returnTo in location state
     const state = location.state as { returnTo?: string } | null;
     if (state?.returnTo) {
+      void preloadRoute(state.returnTo);
       navigate(state.returnTo);
       return;
     }
-    
+
     // Priority 3: Use browser history if available (length > 2 is safer)
     if (window.history.length > 2) {
       navigate(-1);
       return;
     }
-    
+
     // Priority 4: Fall back to provided fallbackPath
+    void preloadRoute(fallbackPath);
     navigate(fallbackPath);
   };
 

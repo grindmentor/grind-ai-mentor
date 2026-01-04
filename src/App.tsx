@@ -17,23 +17,25 @@ import Profile from "./pages/Profile";
 import ModuleLibrary from "./pages/ModuleLibrary";
 import Notifications from "./pages/Notifications";
 
+// Frequently used routes (eager) to avoid Suspense flashes
+import ProgressHubDashboard from "./pages/ProgressHubDashboard";
+import WorkoutLogger from "./pages/WorkoutLogger";
+import PhysiqueAI from "./pages/PhysiqueAI";
+import SmartFoodLog from "./pages/SmartFoodLog";
+import ExerciseDatabase from "./pages/ExerciseDatabase";
+import Research from "./pages/Research";
+
 // Lazy load less frequently accessed routes
-const ProgressHubDashboard = lazy(() => import("./pages/ProgressHubDashboard"));
-const PhysiqueAI = lazy(() => import("./pages/PhysiqueAI"));
-const WorkoutLogger = lazy(() => import("./pages/WorkoutLogger"));
-const SmartFoodLog = lazy(() => import("./pages/SmartFoodLog"));
 const BlueprintAI = lazy(() => import("./components/ai-modules/BlueprintAI"));
 const ProgressHub = lazy(() => import("./components/ai-modules/ProgressHub"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
-const ExerciseDatabase = lazy(() => import("./pages/ExerciseDatabase"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Support = lazy(() => import("./pages/Support"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
-const Research = lazy(() => import("./pages/Research"));
 const CreateGoal = lazy(() => import("./pages/CreateGoal"));
 const AddFood = lazy(() => import("./pages/AddFood"));
 const CreateExercise = lazy(() => import("./pages/CreateExercise"));

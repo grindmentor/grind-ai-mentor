@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_workout_plans: {
+        Row: {
+          created_at: string
+          current_week: number
+          id: string
+          is_active: boolean
+          schedule: Json
+          start_date: string
+          template_data: Json
+          template_id: string
+          template_title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_week?: number
+          id?: string
+          is_active?: boolean
+          schedule?: Json
+          start_date?: string
+          template_data: Json
+          template_id: string
+          template_title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_week?: number
+          id?: string
+          is_active?: boolean
+          schedule?: Json
+          start_date?: string
+          template_data?: Json
+          template_id?: string
+          template_title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       available_achievements: {
         Row: {
           category: string
@@ -695,6 +737,69 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      scheduled_workouts: {
+        Row: {
+          completed_session_id: string | null
+          created_at: string
+          day_of_week: number
+          id: string
+          notes: string | null
+          original_date: string
+          plan_id: string | null
+          scheduled_date: string
+          status: string
+          updated_at: string
+          user_id: string
+          workout_data: Json
+          workout_name: string
+        }
+        Insert: {
+          completed_session_id?: string | null
+          created_at?: string
+          day_of_week: number
+          id?: string
+          notes?: string | null
+          original_date: string
+          plan_id?: string | null
+          scheduled_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          workout_data: Json
+          workout_name: string
+        }
+        Update: {
+          completed_session_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          notes?: string | null
+          original_date?: string
+          plan_id?: string | null
+          scheduled_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workout_data?: Json
+          workout_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_workouts_completed_session_id_fkey"
+            columns: ["completed_session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_workouts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "active_workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscribers: {
         Row: {

@@ -18,13 +18,17 @@ import {
   Calendar,
   ChevronRight,
   BookOpen,
-  Zap
+  Zap,
+  Play,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { expandedWorkoutTemplates, WorkoutTemplate } from '@/data/expandedWorkoutTemplates';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { FollowPlanModal } from '@/components/blueprint/FollowPlanModal';
+import { useActivePlan } from '@/hooks/useActivePlan';
 
 interface BlueprintAIProps {
   /**
@@ -47,6 +51,9 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<{ goal?: string; experience?: string } | null>(null);
   const [activeTab, setActiveTab] = useState('programs');
+  const [followModalWorkout, setFollowModalWorkout] = useState<WorkoutTemplate | null>(null);
+  
+  const { activePlan } = useActivePlan();
 
   useEffect(() => {
     loadUserProfile();
@@ -162,80 +169,113 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
     }
   };
 
-  const WorkoutCard = ({ workout, index }: { workout: WorkoutTemplate; index: number }) => (
-    <motion.article
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
-      className={cn(
-        "bg-card/50 border border-border/50 rounded-2xl p-4 transition-colors",
-        "[@media(hover:hover)]:hover:bg-card [@media(hover:hover)]:hover:border-primary/30"
-      )}
-      aria-label={`${workout.title} - ${workout.difficulty} level workout`}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div 
-            className={cn(
-              "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0",
-              "bg-gradient-to-br",
-              workout.color
-            )}
-            aria-hidden="true"
-          >
-            {getCategoryIcon(workout.category)}
+  const WorkoutCard = ({ workout, index }: { workout: WorkoutTemplate; index: number }) => {
+    const isCurrentPlan = activePlan?.template_id === workout.id;
+    
+    return (
+      <motion.article
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.03 }}
+        className={cn(
+          "bg-card/50 border rounded-2xl p-4 transition-colors",
+          isCurrentPlan 
+            ? "border-primary/50 bg-primary/5" 
+            : "border-border/50 [@media(hover:hover)]:hover:bg-card [@media(hover:hover)]:hover:border-primary/30"
+        )}
+        aria-label={`${workout.title} - ${workout.difficulty} level workout`}
+      >
+        {isCurrentPlan && (
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-primary/20">
+            <CheckCircle className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold text-primary">Currently Active</span>
           </div>
-          <div className="min-w-0">
-            <h3 className="font-semibold text-foreground text-sm truncate">{workout.title}</h3>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-              <Timer className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-              <span>{workout.duration}</span>
-              {workout.daysPerWeek && (
-                <>
-                  <span className="text-border" aria-hidden="true">•</span>
-                  <span>{workout.daysPerWeek}x/week</span>
-                </>
+        )}
+        
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div 
+              className={cn(
+                "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0",
+                "bg-gradient-to-br",
+                workout.color
               )}
+              aria-hidden="true"
+            >
+              {getCategoryIcon(workout.category)}
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-foreground text-sm truncate">{workout.title}</h3>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                <Timer className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                <span>{workout.duration}</span>
+                {workout.daysPerWeek && (
+                  <>
+                    <span className="text-border" aria-hidden="true">•</span>
+                    <span>{workout.daysPerWeek}x/week</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        <Badge className={cn("text-[10px] px-2 py-0.5 flex-shrink-0", getDifficultyColor(workout.difficulty))}>
-          {workout.difficulty}
-        </Badge>
-      </div>
-
-      <p className="text-xs text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
-        {workout.description}
-      </p>
-
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {workout.focus.slice(0, 3).map((focus, i) => (
-          <Badge key={i} variant="outline" className="text-[10px] border-border/50 bg-muted/30 px-2 py-0.5">
-            {focus}
+          <Badge className={cn("text-[10px] px-2 py-0.5 flex-shrink-0", getDifficultyColor(workout.difficulty))}>
+            {workout.difficulty}
           </Badge>
-        ))}
-      </div>
+        </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-border/30">
-        <span className="text-xs text-muted-foreground">
-          {workout.exercises.length} exercises
-        </span>
-        <Button
-          size="sm"
-          onClick={() => navigate('/workout-detail', { state: { workout } })}
-          className={cn(
-            "h-9 min-h-[44px] px-4 bg-primary/10 text-primary border-0 text-xs",
-            "[@media(hover:hover)]:hover:bg-primary/20",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
-          )}
-          aria-label={`View ${workout.title} details`}
-        >
-          View Plan
-          <ChevronRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
-        </Button>
-      </div>
-    </motion.article>
-  );
+        <p className="text-xs text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
+          {workout.description}
+        </p>
+
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {workout.focus.slice(0, 3).map((focus, i) => (
+            <Badge key={i} variant="outline" className="text-[10px] border-border/50 bg-muted/30 px-2 py-0.5">
+              {focus}
+            </Badge>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-border/30 gap-2">
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            {workout.exercises.length} exercises
+          </span>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => navigate('/workout-detail', { state: { workout } })}
+              className={cn(
+                "h-9 min-h-[44px] px-3 bg-muted/50 text-muted-foreground border-0 text-xs",
+                "[@media(hover:hover)]:hover:bg-muted",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+              )}
+              aria-label={`View ${workout.title} details`}
+            >
+              View
+              <ChevronRight className="w-3.5 h-3.5 ml-1" aria-hidden="true" />
+            </Button>
+            {workout.daysPerWeek && !isCurrentPlan && (
+              <Button
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFollowModalWorkout(workout);
+                }}
+                className={cn(
+                  "h-9 min-h-[44px] px-3 bg-primary text-primary-foreground text-xs",
+                  "[@media(hover:hover)]:hover:bg-primary/90",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+                )}
+                aria-label={`Follow ${workout.title} plan`}
+              >
+                <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                Follow
+              </Button>
+            )}
+          </div>
+        </div>
+      </motion.article>
+    );
+  };
 
   const SectionHeader = ({ icon, title, count, color = 'text-primary' }: { icon: React.ReactNode; title: string; count: number; color?: string }) => (
     <div className="flex items-center gap-2 mb-4 mt-6 first:mt-0">
@@ -485,6 +525,15 @@ const BlueprintAI: React.FC<BlueprintAIProps> = ({ onBack }) => {
           </Tabs>
         </div>
       </PullToRefresh>
+      
+      {/* Follow Plan Modal */}
+      {followModalWorkout && (
+        <FollowPlanModal
+          workout={followModalWorkout}
+          isOpen={!!followModalWorkout}
+          onClose={() => setFollowModalWorkout(null)}
+        />
+      )}
     </div>
   );
 };

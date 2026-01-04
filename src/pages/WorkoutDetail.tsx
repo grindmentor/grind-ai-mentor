@@ -3,41 +3,27 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AppShell } from '@/components/ui/app-shell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Target, Timer, Dumbbell } from 'lucide-react';
+import { Plus, Target, Timer, Dumbbell, Play, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { FollowPlanModal } from '@/components/blueprint/FollowPlanModal';
+import { useActivePlan } from '@/hooks/useActivePlan';
+import { WorkoutTemplate, WorkoutExercise } from '@/data/expandedWorkoutTemplates';
+import { cn } from '@/lib/utils';
 
-interface Exercise {
-  id: string;
-  name: string;
-  sets: number;
-  reps: string;
-  rest: string;
-  notes?: string;
-  primary_muscles: string[];
-  equipment: string;
-  difficulty_level: string;
-}
-
-interface WorkoutTemplate {
-  id: string;
-  title: string;
-  category: 'Split Programs' | 'Single Workouts' | 'Cardio';
-  duration: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  description: string;
-  focus: string[];
-  exercises: Exercise[];
-  color: string;
-}
+// Use the imported WorkoutTemplate and WorkoutExercise from expandedWorkoutTemplates
 
 const WorkoutDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { activePlan } = useActivePlan();
   const [workout, setWorkout] = useState<WorkoutTemplate | null>(null);
+  const [showFollowModal, setShowFollowModal] = useState(false);
+
+  const isCurrentPlan = activePlan?.template_id === workout?.id;
 
   useEffect(() => {
     // Scroll to top when page loads
@@ -51,7 +37,7 @@ const WorkoutDetail = () => {
     setWorkout(workoutData);
   }, [location, navigate]);
 
-  const addExerciseToSavedList = async (exercise: Exercise) => {
+  const addExerciseToSavedList = async (exercise: WorkoutExercise) => {
     if (!user) return;
 
     try {
@@ -109,7 +95,15 @@ const WorkoutDetail = () => {
   return (
     <AppShell title={workout.title} showBackButton={true}>
       <div className="min-h-screen bg-background">
-        <div className="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto">
+        <div className="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto pb-28">
+          {/* Active Plan Badge */}
+          {isCurrentPlan && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/30">
+              <CheckCircle className="w-5 h-5 text-primary" />
+              <span className="text-sm font-semibold text-primary">Currently Following This Plan</span>
+            </div>
+          )}
+
           {/* Workout Info */}
           <div className="flex flex-wrap gap-3">
             <Badge className={getDifficultyColor(workout.difficulty)}>
@@ -122,6 +116,11 @@ const WorkoutDetail = () => {
             <Badge variant="outline" className="border-accent/30 text-accent-foreground bg-accent/10">
               {workout.exercises.length} exercises
             </Badge>
+            {workout.daysPerWeek && (
+              <Badge variant="outline" className="border-blue-500/30 text-blue-400 bg-blue-500/10">
+                {workout.daysPerWeek}x per week
+              </Badge>
+            )}
           </div>
 
           {/* Description */}
@@ -208,8 +207,35 @@ const WorkoutDetail = () => {
               ))}
             </div>
           </div>
+
+          {/* Follow Plan Button - Fixed at bottom */}
+          {workout.daysPerWeek && !isCurrentPlan && (
+            <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent">
+              <div className="max-w-4xl mx-auto">
+                <Button
+                  onClick={() => setShowFollowModal(true)}
+                  className={cn(
+                    "w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground",
+                    "font-bold text-base rounded-xl shadow-lg"
+                  )}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Follow This Plan
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Follow Plan Modal */}
+      {workout && (
+        <FollowPlanModal
+          workout={workout}
+          isOpen={showFollowModal}
+          onClose={() => setShowFollowModal(false)}
+        />
+      )}
     </AppShell>
   );
 };

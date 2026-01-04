@@ -3,6 +3,7 @@ import { ArrowLeft, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { preloadRoute } from '@/utils/routePreloader';
 
 interface MobileHeaderProps {
   title: string;
@@ -38,19 +39,21 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
       onBack();
       return;
     }
-    
+
     // Check for returnTo state passed during navigation
     const state = location.state as { returnTo?: string } | null;
     if (state?.returnTo) {
+      void preloadRoute(state.returnTo);
       navigate(state.returnTo);
       return;
     }
-    
+
     // Use browser history if available (more than just the current page)
     if (window.history.length > 2) {
       navigate(-1);
     } else {
       // Fallback to modules page, not dashboard
+      void preloadRoute('/modules');
       navigate('/modules');
     }
   };

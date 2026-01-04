@@ -137,9 +137,9 @@ const SafeComponent = ({ moduleName, onBack }: {
       case 'coach-gpt':
         const CoachGPT = React.lazy(() => 
           import('@/components/ai-modules/CoachGPT')
-            .then(module => {
+            .then((module) => {
               console.log(`Successfully loaded CoachGPT module`);
-              return module;
+              return { default: module.default as React.ComponentType<any> };
             })
             .catch(error => {
               console.error(`Failed to load CoachGPT module:`, error);

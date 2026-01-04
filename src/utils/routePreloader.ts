@@ -18,6 +18,13 @@ const routeLoaders: Record<string, RouteLoader> = {
   '/notifications': () => import('@/pages/Notifications'),
   '/usage': () => import('@/pages/Usage'),
 
+  // Frequently used modules
+  '/workout-logger': () => import('@/pages/WorkoutLogger'),
+  '/smart-food-log': () => import('@/pages/SmartFoodLog'),
+  '/physique-ai': () => import('@/pages/PhysiqueAI'),
+  '/exercise-database': () => import('@/pages/ExerciseDatabase'),
+  '/research': () => import('@/pages/Research'),
+
   // Secondary routes
   '/pricing': () => import('@/pages/Pricing'),
   '/support': () => import('@/pages/Support'),
@@ -27,10 +34,6 @@ const routeLoaders: Record<string, RouteLoader> = {
   '/faq': () => import('@/pages/FAQ'),
   '/signin': () => import('@/pages/SignIn'),
   '/signup': () => import('@/pages/SignUp'),
-  '/workout-logger': () => import('@/pages/WorkoutLogger'),
-  '/physique-ai': () => import('@/pages/PhysiqueAI'),
-  '/smart-food-log': () => import('@/pages/SmartFoodLog'),
-  '/research': () => import('@/pages/Research'),
 };
 
 // Cache for preloaded routes

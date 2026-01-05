@@ -34,6 +34,8 @@ const RecoveryCoach = lazy(() => import("./components/ai-modules/RecoveryCoach")
 const SmartTraining = lazy(() => import("./components/ai-modules/SmartTraining"));
 const TDEECalculator = lazy(() => import("./components/ai-modules/TDEECalculator"));
 const WorkoutTimer = lazy(() => import("./components/ai-modules/WorkoutTimer"));
+const CoachGPT = lazy(() => import("./components/ai-modules/CoachGPT"));
+const MealPlanAI = lazy(() => import("./components/ai-modules/MealPlanAI"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -108,6 +110,8 @@ const CutCalcProWrapper = createModuleWrapper(CutCalcPro as React.ComponentType<
 const HabitTrackerWrapper = createModuleWrapper(HabitTracker as React.ComponentType<{ onBack: () => void }>);
 const RecoveryCoachWrapper = createModuleWrapper(RecoveryCoach as React.ComponentType<{ onBack: () => void }>);
 const SmartTrainingWrapper = createModuleWrapper(SmartTraining as React.ComponentType<{ onBack: () => void }>);
+const CoachGPTWrapper = createModuleWrapper(CoachGPT as React.ComponentType<{ onBack: () => void }>);
+const MealPlanAIWrapper = createModuleWrapper(MealPlanAI as React.ComponentType<{ onBack: () => void }>);
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -373,6 +377,22 @@ function App() {
                                 <WorkoutTimer />
                               </ProtectedRoute>
                             }
+                          />
+                          <Route 
+                            path="/coach-gpt" 
+                            element={
+                              <ProtectedRoute>
+                                <CoachGPTWrapper />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/meal-plan-ai" 
+                            element={
+                              <ProtectedRoute>
+                                <MealPlanAIWrapper />
+                              </ProtectedRoute>
+                            } 
                           />
                           <Route path="*" element={<NotFound />} />
                         </Routes>

@@ -27,8 +27,7 @@ const DashboardHeader = memo<{
   currentTier: string;
   onNotifications: () => void;
   onSettings: () => void;
-  onModuleLibrary: () => void;
-}>(({ currentTier, onNotifications, onSettings, onModuleLibrary }) => (
+}>(({ currentTier, onNotifications, onSettings }) => (
   <header 
     className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl"
     style={{ paddingTop: 'env(safe-area-inset-top)' }}
@@ -47,17 +46,6 @@ const DashboardHeader = memo<{
       </div>
       
       <div className="flex items-center gap-1">
-        {/* Module Library - Clear, always-visible button */}
-        <Button
-          onClick={onModuleLibrary}
-          variant="outline"
-          size="sm"
-          className="h-9 px-3 rounded-lg border-border/60 hover:bg-muted/50 font-medium text-xs gap-1.5"
-          aria-label="Open Module Library"
-        >
-          <LayoutGrid className="w-4 h-4" />
-          <span>Modules</span>
-        </Button>
         <Button
           onClick={onNotifications}
           variant="ghost"
@@ -282,7 +270,6 @@ const Dashboard = () => {
           currentTier={currentTier}
           onNotifications={handleNotificationsPress}
           onSettings={handleSettingsPress}
-          onModuleLibrary={handleModuleLibraryPress}
         />
 
         <PullToRefresh onRefresh={handleRefresh}>
@@ -311,7 +298,7 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.25 }}
-                className="mb-5"
+                className="mb-5 space-y-3"
               >
                 <Button
                   onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
@@ -320,6 +307,16 @@ const Dashboard = () => {
                 >
                   <Star className="w-4 h-4" />
                   <span className="text-sm">Progress Hub</span>
+                </Button>
+                
+                {/* Module Library Button - Colorful */}
+                <Button
+                  onClick={handleModuleLibraryPress}
+                  className="w-full h-14 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-2xl flex items-center justify-center gap-2 touch-manipulation shadow-lg shadow-violet-500/20"
+                  aria-label="Open Module Library"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                  <span className="text-sm">Module Library</span>
                 </Button>
               </motion.div>
 

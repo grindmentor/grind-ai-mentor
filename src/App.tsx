@@ -28,6 +28,12 @@ import Research from "./pages/Research";
 // Lazy load less frequently accessed routes
 const BlueprintAI = lazy(() => import("./components/ai-modules/BlueprintAI"));
 const ProgressHub = lazy(() => import("./components/ai-modules/ProgressHub"));
+const CutCalcPro = lazy(() => import("./components/ai-modules/CutCalcPro"));
+const HabitTracker = lazy(() => import("./components/ai-modules/HabitTracker"));
+const RecoveryCoach = lazy(() => import("./components/ai-modules/RecoveryCoach"));
+const SmartTraining = lazy(() => import("./components/ai-modules/SmartTraining"));
+const TDEECalculator = lazy(() => import("./components/ai-modules/TDEECalculator"));
+const WorkoutTimer = lazy(() => import("./components/ai-modules/WorkoutTimer"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -76,24 +82,32 @@ const queryClient = new QueryClient({
   },
 });
 
-const BlueprintAIWrapper = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Respect returnTo state for proper back navigation
-  const handleBack = () => {
-    const state = location.state as { returnTo?: string } | null;
-    if (state?.returnTo) {
-      navigate(state.returnTo);
-    } else if (window.history.length > 2) {
-      navigate(-1);
-    } else {
-      navigate('/modules');
-    }
+// Wrapper components for modules requiring onBack prop
+const createModuleWrapper = (Component: React.ComponentType<{ onBack: () => void }>) => {
+  return function ModuleWrapper() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    
+    const handleBack = () => {
+      const state = location.state as { returnTo?: string } | null;
+      if (state?.returnTo) {
+        navigate(state.returnTo);
+      } else if (window.history.length > 2) {
+        navigate(-1);
+      } else {
+        navigate('/modules');
+      }
+    };
+    
+    return <Component onBack={handleBack} />;
   };
-  
-  return <BlueprintAI onBack={handleBack} />;
 };
+
+const BlueprintAIWrapper = createModuleWrapper(BlueprintAI as React.ComponentType<{ onBack: () => void }>);
+const CutCalcProWrapper = createModuleWrapper(CutCalcPro as React.ComponentType<{ onBack: () => void }>);
+const HabitTrackerWrapper = createModuleWrapper(HabitTracker as React.ComponentType<{ onBack: () => void }>);
+const RecoveryCoachWrapper = createModuleWrapper(RecoveryCoach as React.ComponentType<{ onBack: () => void }>);
+const SmartTrainingWrapper = createModuleWrapper(SmartTraining as React.ComponentType<{ onBack: () => void }>);
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -311,6 +325,54 @@ function App() {
                                 <ProgressHub />
                               </ProtectedRoute>
                             } 
+                          />
+                          <Route 
+                            path="/cut-calc-pro" 
+                            element={
+                              <ProtectedRoute>
+                                <CutCalcProWrapper />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/habit-tracker" 
+                            element={
+                              <ProtectedRoute>
+                                <HabitTrackerWrapper />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/recovery-coach" 
+                            element={
+                              <ProtectedRoute>
+                                <RecoveryCoachWrapper />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/smart-training" 
+                            element={
+                              <ProtectedRoute>
+                                <SmartTrainingWrapper />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/tdee-calculator" 
+                            element={
+                              <ProtectedRoute>
+                                <TDEECalculator />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/workout-timer" 
+                            element={
+                              <ProtectedRoute>
+                                <WorkoutTimer />
+                              </ProtectedRoute>
+                            }
                           />
                           <Route path="*" element={<NotFound />} />
                         </Routes>

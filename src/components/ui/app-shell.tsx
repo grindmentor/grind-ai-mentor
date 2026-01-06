@@ -30,9 +30,18 @@ export const AppShell: React.FC<AppShellProps> = ({
   }, [location]);
 
   const handleBack = useCallback(() => {
-    // Navigate to dashboard instead of browser history
-    navigate('/app');
-  }, [navigate]);
+    // Use returnTo from navigation state if available, otherwise fallback to /app
+    const state = location.state as { returnTo?: string } | null;
+    const returnTo = state?.returnTo;
+    
+    if (returnTo) {
+      navigate(returnTo);
+    } else if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/app');
+    }
+  }, [navigate, location.state]);
 
   // Handle mobile swipe-to-go-back
   useEffect(() => {

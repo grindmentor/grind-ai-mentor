@@ -298,25 +298,25 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.25 }}
-                className="mb-5 space-y-3"
+                className="mb-6 flex flex-col gap-3"
               >
                 <Button
                   onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
-                  className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl flex items-center justify-center gap-2 touch-manipulation"
+                  className="w-full h-14 min-h-[56px] bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation"
                   aria-label="Open Progress Hub"
                 >
-                  <Star className="w-4 h-4" />
-                  <span className="text-sm">Progress Hub</span>
+                  <Star className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-base font-semibold">Progress Hub</span>
                 </Button>
                 
                 {/* Module Library Button - Colorful */}
                 <Button
                   onClick={handleModuleLibraryPress}
-                  className="w-full h-14 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-2xl flex items-center justify-center gap-2 touch-manipulation shadow-lg shadow-violet-500/20"
+                  className="w-full h-14 min-h-[56px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation shadow-lg shadow-violet-500/20"
                   aria-label="Open Module Library"
                 >
-                  <LayoutGrid className="w-4 h-4" />
-                  <span className="text-sm">Module Library</span>
+                  <LayoutGrid className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-base font-semibold">Module Library</span>
                 </Button>
               </motion.div>
 

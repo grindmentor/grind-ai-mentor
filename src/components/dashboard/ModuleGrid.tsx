@@ -47,7 +47,7 @@ const ModuleCard = memo<{
   const colors: ModuleAccent = getModuleAccent(module.id);
   const isPremiumLocked = module.isPremium && !isSubscribed;
 
-  // Grid view: vertical card layout
+  // Grid view: vertical card layout - optimized for mobile
   if (isGridView) {
     return (
       <button
@@ -58,7 +58,7 @@ const ModuleCard = memo<{
         onMouseEnter={() => onModuleHover?.(module.id)}
         aria-label={`Open ${module.title}${module.isPremium ? ' (Premium)' : ''}`}
         className={cn(
-          "w-full p-3 rounded-xl text-left transition-colors duration-150",
+          "w-full p-4 rounded-xl text-left transition-colors duration-150",
           "bg-card border border-border/50",
           "active:bg-muted/50",
           "[@media(hover:hover)]:hover:bg-muted/30 [@media(hover:hover)]:hover:border-border/80",
@@ -68,12 +68,12 @@ const ModuleCard = memo<{
         )}
         style={{ 
           WebkitTapHighlightColor: 'transparent',
-          height: '120px',
+          minHeight: '140px',
         }}
       >
         <div className="flex flex-col h-full">
           {/* Top row: icon and favorite */}
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start justify-between mb-3">
             <div 
               className={cn(
                 "rounded-xl flex items-center justify-center flex-shrink-0 border",
@@ -94,15 +94,15 @@ const ModuleCard = memo<{
               aria-label={isFavorited ? `Remove ${module.title} from favorites` : `Add ${module.title} to favorites`}
               aria-pressed={isFavorited}
               className={cn(
-                "p-0 rounded-full flex-shrink-0 -mt-1 -mr-1",
+                "p-0 rounded-full flex-shrink-0",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500/50",
                 isFavorited ? "text-yellow-500" : "text-muted-foreground/40"
               )}
               style={{ 
-                width: 36, 
-                height: 36,
-                minWidth: 36,
-                minHeight: 36,
+                width: 40, 
+                height: 40,
+                minWidth: 40,
+                minHeight: 40,
               }}
             >
               <Star className={cn("w-4 h-4", isFavorited && "fill-current")} aria-hidden="true" />
@@ -110,16 +110,16 @@ const ModuleCard = memo<{
           </div>
           
           {/* Title and description */}
-          <div className="flex-1 flex flex-col justify-end">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <h3 className="font-semibold text-foreground text-[13px] truncate leading-tight">
+          <div className="flex-1 flex flex-col justify-end min-w-0">
+            <div className="flex items-center gap-1.5 mb-1">
+              <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
                 {module.title}
               </h3>
               {module.isPremium && (
-                <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" aria-hidden="true" />
+                <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" aria-hidden="true" />
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground line-clamp-2 leading-snug">
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
               {module.description}
             </p>
           </div>
@@ -128,7 +128,7 @@ const ModuleCard = memo<{
     );
   }
 
-  // List view: horizontal card layout (original)
+  // List view: horizontal card layout - optimized for mobile
   return (
     <button
       onClick={() => {
@@ -138,7 +138,7 @@ const ModuleCard = memo<{
       onMouseEnter={() => onModuleHover?.(module.id)}
       aria-label={`Open ${module.title}${module.isPremium ? ' (Premium)' : ''}`}
       className={cn(
-        "w-full p-3 rounded-xl text-left transition-colors duration-150",
+        "w-full p-4 rounded-xl text-left transition-colors duration-150",
         "bg-card border border-border/50",
         "active:bg-muted/50",
         "[@media(hover:hover)]:hover:bg-muted/30 [@media(hover:hover)]:hover:border-border/80",
@@ -148,10 +148,10 @@ const ModuleCard = memo<{
       )}
       style={{ 
         WebkitTapHighlightColor: 'transparent',
-        minHeight: `${CARD_MIN_HEIGHT}px`,
+        minHeight: '80px',
       }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Icon - Fixed size for consistency across all cards */}
         <div 
           className={cn(
@@ -165,16 +165,16 @@ const ModuleCard = memo<{
         </div>
         
         {/* Content - Flex grow with consistent alignment */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-          <div className="flex items-center gap-1.5">
-            <h3 className="font-semibold text-foreground text-[13px] truncate leading-tight">
+        <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground text-sm leading-tight truncate">
               {module.title}
             </h3>
             {module.isPremium && (
-              <Crown className="w-3 h-3 text-yellow-500 flex-shrink-0" aria-hidden="true" />
+              <Crown className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" aria-hidden="true" />
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground line-clamp-1 leading-snug mt-0.5">
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mt-1">
             {module.description}
           </p>
         </div>
@@ -205,7 +205,7 @@ const ModuleCard = memo<{
         </Button>
         
         {/* Arrow indicator */}
-        <ChevronRight className="w-4 h-4 text-muted-foreground/30 flex-shrink-0" aria-hidden="true" />
+        <ChevronRight className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" aria-hidden="true" />
       </div>
     </button>
   );
@@ -230,8 +230,8 @@ export const ModuleGrid: React.FC<ModuleGridProps> = ({
     <div 
       className={cn(
         isGrid 
-          ? "grid grid-cols-2 gap-3" 
-          : "space-y-2"
+          ? "grid grid-cols-2 gap-4" 
+          : "flex flex-col gap-3"
       )} 
       role="list" 
       aria-label="Module list"

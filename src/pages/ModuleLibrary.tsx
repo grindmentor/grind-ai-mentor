@@ -239,8 +239,8 @@ const ModuleLibrary = () => {
         }
       />
 
-      <div className="px-4 pb-24">
-        <div className="max-w-2xl mx-auto space-y-4">
+      <div className="px-5 pb-28">
+        <div className="max-w-2xl mx-auto space-y-5">
           {/* Search */}
           <motion.div 
             className="relative"
@@ -253,7 +253,7 @@ const ModuleLibrary = () => {
               placeholder="Search modules..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-4 h-12 min-h-[44px] bg-card border-border rounded-xl text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/50 [&]:text-left"
+              className="pl-12 pr-4 h-14 min-h-[56px] bg-card border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/50 [&]:text-left"
               aria-label="Search modules"
               style={{ textIndent: 0 }}
             />
@@ -264,48 +264,48 @@ const ModuleLibrary = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="flex gap-2"
+            className="flex gap-3"
           >
             <Button
               onClick={() => navigate('/exercise-database', { state: { returnTo: '/modules' } })}
               variant="outline"
-              size="sm"
-              className="flex-1 h-11 min-h-[44px] rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50"
+              size="lg"
+              className="flex-1 h-14 min-h-[56px] rounded-xl text-base focus-visible:ring-2 focus-visible:ring-primary/50"
               aria-label="Open Exercise Library"
             >
-              <Book className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Book className="w-5 h-5 mr-2" aria-hidden="true" />
               Exercise Library
             </Button>
           </motion.div>
 
           {/* Filters */}
           <motion.div 
-            className="grid grid-cols-2 gap-3"
+            className="grid grid-cols-2 gap-4"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-11 min-h-[44px] bg-card border-border rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Filter modules">
-                <Filter className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
+              <SelectTrigger className="h-14 min-h-[56px] bg-card border-border rounded-xl text-base focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Filter modules">
+                <Filter className="w-5 h-5 mr-2 text-muted-foreground flex-shrink-0" aria-hidden="true" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-xl">
-                <SelectItem value="all">All Modules</SelectItem>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
-                <SelectItem value="favorites">Favorites</SelectItem>
+                <SelectItem value="all" className="text-base py-3">All Modules</SelectItem>
+                <SelectItem value="free" className="text-base py-3">Free</SelectItem>
+                <SelectItem value="premium" className="text-base py-3">Premium</SelectItem>
+                <SelectItem value="favorites" className="text-base py-3">Favorites</SelectItem>
               </SelectContent>
             </Select>
             
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-11 min-h-[44px] bg-card border-border rounded-xl focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Sort modules">
+              <SelectTrigger className="h-14 min-h-[56px] bg-card border-border rounded-xl text-base focus-visible:ring-2 focus-visible:ring-primary/50" aria-label="Sort modules">
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border rounded-xl">
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="premium">Premium First</SelectItem>
+                <SelectItem value="name" className="text-base py-3">Name</SelectItem>
+                <SelectItem value="newest" className="text-base py-3">Newest</SelectItem>
+                <SelectItem value="premium" className="text-base py-3">Premium First</SelectItem>
               </SelectContent>
             </Select>
           </motion.div>
@@ -317,7 +317,7 @@ const ModuleLibrary = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {favorites.length === 0 
                 ? "Tap ★ on any module to add it to your Quick Access on the home screen."
                 : `${sortedModules.length} modules available • ${favorites.length} in Quick Access`}

@@ -12,6 +12,7 @@ const moduleImports: Record<string, () => Promise<any>> = {
   'progress-hub': () => import('@/components/ai-modules/ProgressHub'),
   'meal-plan-ai': () => import('@/components/ai-modules/MealPlanAI'),
   'recovery-coach': () => import('@/components/ai-modules/RecoveryCoach'),
+  'fridge-scan': () => import('@/components/ai-modules/FridgeScan'),
 };
 
 export const useModulePreloader = () => {

@@ -13,7 +13,6 @@ import SignUp from "./pages/SignUp";
 import AuthCallback from "./pages/AuthCallback";
 import AppPage from "./pages/App";
 import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
 import ModuleLibrary from "./pages/ModuleLibrary";
 import Notifications from "./pages/Notifications";
 
@@ -193,14 +192,6 @@ function App() {
                             element={
                               <ProtectedRoute>
                                 <Settings />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/profile"
-                            element={
-                              <ProtectedRoute>
-                                <Profile />
                               </ProtectedRoute>
                             }
                           />

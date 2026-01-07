@@ -83,7 +83,7 @@ export class AppShellCache {
   async backgroundPreload() {
     if ('requestIdleCallback' in window) {
       requestIdleCallback(async () => {
-        const commonRoutes = ['/settings', '/profile', '/pricing', '/modules'];
+        const commonRoutes = ['/settings', '/pricing', '/modules'];
         const cache = await caches.open(CACHE_NAME);
         
         // Parallel route preloading

@@ -10,8 +10,7 @@ const CRITICAL_COMPONENTS = [
   () => import('@/components/ai-modules/SmartFoodLog'),
   () => import('@/components/ai-modules/ProgressAI'),
   () => import('@/components/ai-modules/TDEECalculator'),
-  () => import('@/pages/Settings'),
-  () => import('@/pages/Profile')
+  () => import('@/pages/Settings')
 ];
 
 const SECONDARY_COMPONENTS = [

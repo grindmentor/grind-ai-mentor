@@ -9,7 +9,7 @@ interface AppLayoutProps {
 }
 
 // SINGLE SOURCE OF TRUTH: BottomTabBar visibility rules
-// Show on: main destinations (home/modules/progress/profile) + top-level modules
+// Show on: main destinations (home/modules/progress/settings) + top-level modules
 // Hide on: subflows, auth, landing, detail pages
 
 // Main destinations - ALWAYS show
@@ -18,7 +18,6 @@ const MAIN_DESTINATIONS = new Set([
   '/modules',
   '/progress-hub-dashboard',
   '/progress-hub',
-  '/profile',
   '/settings',
   '/notifications',
   '/usage'

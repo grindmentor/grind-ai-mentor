@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Globe, Zap, Brain, FileText, HelpCircle, LogOut, User, Shield } from 'lucide-react';
+import { Globe, Zap, Brain, FileText, HelpCircle, LogOut, User, Shield, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnitPreferences from '@/components/settings/UnitPreferences';
@@ -9,6 +9,7 @@ import AIMemoryReset from '@/components/settings/AIMemoryReset';
 import DisplayNameSection from '@/components/settings/DisplayNameSection';
 import ProfileMetrics from '@/components/settings/ProfileMetrics';
 import AccountManagement from '@/components/settings/AccountManagement';
+import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +46,7 @@ const Settings = () => {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'plan', label: 'Plan', icon: Crown },
     { id: 'units', label: 'Units', icon: Globe },
     { id: 'app', label: 'App', icon: Zap },
     { id: 'ai', label: 'AI', icon: Brain },
@@ -111,7 +113,11 @@ const Settings = () => {
                   displayName={displayName} 
                   onDisplayNameChange={setDisplayName} 
                 />
-                <ProfileMetrics />
+              <ProfileMetrics />
+              </TabsContent>
+
+              <TabsContent value="plan" className="mt-0">
+                <SubscriptionSettings />
               </TabsContent>
 
               <TabsContent value="units" className="mt-0">

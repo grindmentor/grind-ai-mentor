@@ -1,6 +1,6 @@
 
 import React, { memo, useState } from 'react';
-import { Bell, Settings, User, Menu, X, Library } from 'lucide-react';
+import { Bell, Settings, Menu, X, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -80,17 +80,6 @@ const DashboardHeader = memo(() => {
             >
               <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-orange-500 rounded-full"></span>
-            </Button>
-
-            {/* Profile */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mobile-nav-button p-2 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              onClick={() => navigate('/profile')}
-              aria-label="Profile"
-            >
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
 
             {/* Settings */}

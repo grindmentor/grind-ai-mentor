@@ -73,7 +73,7 @@ const ProtocolHandler: React.FC = () => {
         navigate('/settings');
         break;
       case 'profile':
-        navigate('/profile');
+        navigate('/settings');
         break;
       case 'pricing':
         navigate('/pricing');

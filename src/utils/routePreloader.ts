@@ -14,7 +14,6 @@ const routeLoaders: Record<string, RouteLoader> = {
   '/progress-hub-dashboard': () => import('@/pages/ProgressHubDashboard'),
   '/progress-hub': () => import('@/components/ai-modules/ProgressHub'),
   '/settings': () => import('@/pages/Settings'),
-  '/profile': () => import('@/pages/Profile'),
   '/notifications': () => import('@/pages/Notifications'),
   '/usage': () => import('@/pages/Usage'),
 
@@ -81,7 +80,7 @@ export const preloadRoutes = (paths: string[]): void => {
 // Preload critical routes on app start
 export const preloadCriticalRoutes = (): void => {
   // Preload main tabs / most common destinations to avoid Suspense flashes
-  preloadRoutes(['/app', '/modules', '/progress-hub-dashboard', '/profile', '/settings']);
+  preloadRoutes(['/app', '/modules', '/progress-hub-dashboard', '/settings']);
 };
 
 // Setup hover/focus preloading for links

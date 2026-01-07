@@ -11,7 +11,8 @@ import {
   CheckCircle,
   Camera,
   Zap,
-  Target
+  Target,
+  Refrigerator
 } from 'lucide-react';
 
 // Import components
@@ -27,6 +28,7 @@ import HabitTracker from '@/components/ai-modules/HabitTracker';
 import ProgressAI from '@/components/ai-modules/ProgressAI';
 import CutCalcPro from '@/components/ai-modules/CutCalcPro';
 import BlueprintAI from '@/components/ai-modules/BlueprintAI';
+import FridgeScan from '@/components/ai-modules/FridgeScan';
 
 export interface AIModule {
   id: string;
@@ -141,5 +143,15 @@ export const aiModules: AIModule[] = [
     component: ProgressAI,
     isPremium: true,
     isNew: false
+  },
+  {
+    id: 'fridge-scan',
+    title: 'FridgeScan',
+    description: 'Snap your fridge → get macro-optimized meals',
+    icon: Refrigerator,
+    gradient: 'from-cyan-600/80 to-teal-800/90 border-cyan-500/60',
+    component: FridgeScan,
+    isPremium: true,
+    isNew: true
   }
 ];

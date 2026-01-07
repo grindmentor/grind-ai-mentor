@@ -35,6 +35,7 @@ const TDEECalculator = lazy(() => import("./components/ai-modules/TDEECalculator
 const WorkoutTimer = lazy(() => import("./components/ai-modules/WorkoutTimer"));
 const CoachGPT = lazy(() => import("./components/ai-modules/CoachGPT"));
 const MealPlanAI = lazy(() => import("./components/ai-modules/MealPlanAI"));
+const FridgeScan = lazy(() => import("./components/ai-modules/FridgeScan"));
 const WorkoutDetail = lazy(() => import("./pages/WorkoutDetail"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -111,6 +112,7 @@ const RecoveryCoachWrapper = createModuleWrapper(RecoveryCoach as React.Componen
 const SmartTrainingWrapper = createModuleWrapper(SmartTraining as React.ComponentType<{ onBack: () => void }>);
 const CoachGPTWrapper = createModuleWrapper(CoachGPT as React.ComponentType<{ onBack: () => void }>);
 const MealPlanAIWrapper = createModuleWrapper(MealPlanAI as React.ComponentType<{ onBack: () => void }>);
+const FridgeScanWrapper = createModuleWrapper(FridgeScan as React.ComponentType<{ onBack: () => void }>);
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -382,6 +384,14 @@ function App() {
                             element={
                               <ProtectedRoute>
                                 <MealPlanAIWrapper />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/fridge-scan" 
+                            element={
+                              <ProtectedRoute>
+                                <FridgeScanWrapper />
                               </ProtectedRoute>
                             } 
                           />

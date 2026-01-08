@@ -117,7 +117,7 @@ Return ONLY valid JSON in this format:
 
     } else if (action === 'generate') {
       // Meal generation
-      const { ingredients, mealIntent, quickMeals, remainingMacros, proteinMinimum, userGoal } = body;
+      const { ingredients, mealIntent, quickMeals, remainingMacros, proteinMinimum, userGoal, allergies, dislikes } = body;
 
       if (!ingredients || ingredients.length === 0) {
         return new Response(JSON.stringify({ error: 'No ingredients provided' }), {
@@ -125,6 +125,14 @@ Return ONLY valid JSON in this format:
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+
+      // Build allergy/dislike instructions
+      const allergyInstructions = allergies?.length > 0 
+        ? `\nCRITICAL - NEVER include these allergens: ${allergies.join(', ')}` 
+        : '';
+      const dislikeInstructions = dislikes?.length > 0 
+        ? `\nAvoid these disliked foods: ${dislikes.join(', ')}` 
+        : '';
 
       // Build intent-specific instructions
       const intentInstructions: Record<string, string> = {
@@ -156,6 +164,7 @@ USER CONTEXT:
 - Remaining daily macros: ${remainingMacros.calories} cal, ${remainingMacros.protein}g protein, ${remainingMacros.carbs}g carbs, ${remainingMacros.fat}g fat
 - Protein minimum per meal: ${proteinMinimum}g
 - Time constraint: ${quickMeals ? 'Under 10 minutes only' : 'No time limit'}
+${allergyInstructions}${dislikeInstructions}
 
 MEAL INTENT: ${mealIntent}
 ${intentInstructions[mealIntent] || ''}
@@ -168,6 +177,7 @@ CRITICAL RULES:
 5. Use ONLY the provided ingredients. You may suggest ONE protein add-on if protein target can't be met.
 6. Keep instructions simple and practical.
 ${quickMeals ? '7. ALL meals must be under 10 minutes prep+cook time.' : ''}
+8. NEVER use any ingredients from the allergy list.`
 
 Return ONLY valid JSON:
 {

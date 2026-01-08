@@ -2,218 +2,219 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Utensils, Zap, Target, Calendar, Apple, Clock, ChefHat, Leaf, ShoppingCart, ArrowRight } from 'lucide-react';
+import { Utensils, Clock, ChefHat, Bookmark, Heart, Trash2, ChevronRight, Sparkles, Settings2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
 import { UsageLimitGuard } from '@/components/subscription/UsageLimitGuard';
 import { RateLimitBadge, RateLimitWarning } from '@/components/ui/rate-limit-badge';
 import { MobileHeader } from '@/components/MobileHeader';
 import FeatureGate from '@/components/FeatureGate';
-import { DietCuesDisplay } from './DietCuesDisplay';
 import { aiService } from '@/services/aiService';
 import { handleError, handleSuccess } from '@/utils/standardErrorHandler';
-import { useGlobalState } from '@/contexts/GlobalStateContext';
-import { handleAsync } from '@/utils/errorHandler';
-import { useAppSync } from '@/utils/appSynchronization';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useDietaryPreferences, dietTypeConfig, useDailyTargets } from '@/hooks/useDietaryPreferences';
+import { useSavedRecipes, SavedRecipe } from '@/hooks/useSavedRecipes';
+import DietaryPreferencesSetup from './DietaryPreferencesSetup';
+import { useUserData } from '@/contexts/UserDataContext';
 
 interface MealPlanAIProps {
   onBack: () => void;
+}
+
+type DietType = keyof typeof dietTypeConfig;
+
+interface GeneratedMeal {
+  id: string;
+  name: string;
+  description: string;
+  cookTime: string;
+  protein: number;
+  calories: number;
+  carbs: number;
+  fat: number;
+  ingredients: string[];
+  instructions: string[];
+  saved?: boolean;
 }
 
 export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { incrementUsage } = useUsageTracking();
-  const { actions } = useGlobalState();
-  const { getCache, setCache, invalidateCache } = useAppSync();
+  const { userData } = useUserData();
+  
+  // Hooks
+  const { preferences, isLoading: prefsLoading, needsSetup, savePreferences, getProteinMinimum } = useDietaryPreferences();
+  const { recipes, saveRecipe, deleteRecipe, isLoading: recipesLoading } = useSavedRecipes();
+  const dailyTargets = useDailyTargets();
+  
+  // State
+  const [showSetup, setShowSetup] = useState(false);
+  const [view, setView] = useState<'main' | 'generate' | 'recipes'>('main');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [planData, setPlanData] = useState({
-    goal: '',
-    dietType: '',
-    calories: '',
-    meals: '3',
-    allergies: '',
-    preferences: '',
-    duration: '7'
-  });
-  const [generatedPlan, setGeneratedPlan] = useState<any>(null);
-  const [savedPlans, setSavedPlans] = useState<any[]>([]);
+  const [generatedMeal, setGeneratedMeal] = useState<GeneratedMeal | null>(null);
+  const [savingRecipe, setSavingRecipe] = useState(false);
+  
+  // Generation params
+  const [selectedDietType, setSelectedDietType] = useState<DietType>('balanced');
+  const [quickMeal, setQuickMeal] = useState(false);
+  const [customRequest, setCustomRequest] = useState('');
 
+  // Check if setup needed on mount
   useEffect(() => {
-    if (user) {
-      loadSavedPlans();
+    if (!prefsLoading && needsSetup) {
+      setShowSetup(true);
     }
-  }, [user]);
+  }, [prefsLoading, needsSetup]);
 
-  const loadSavedPlans = async () => {
-    if (!user) return;
-
-    const cacheKey = `meal-plans-${user.id}`;
-    const cached = getCache(cacheKey);
-    if (cached) {
-      setSavedPlans(cached);
-      return;
+  // Set default diet type from preferences
+  useEffect(() => {
+    if (preferences.diet_type) {
+      setSelectedDietType(preferences.diet_type as DietType);
     }
-
-    try {
-      const { data, error } = await supabase
-        .from('meal_plans')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-
-      setSavedPlans(data || []);
-      setCache(cacheKey, data || [], 300000);
-    } catch (error) {
-      console.error('Error loading meal plans:', error);
-    }
-  };
+  }, [preferences.diet_type]);
 
   const handleRefresh = async () => {
-    await loadSavedPlans();
+    // Refresh data
   };
 
-  const generateMealPlan = async () => {
-    if (!user || !planData.goal || !planData.dietType) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill in your goal and diet type.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
+  const generateSingleMeal = async () => {
     const success = await incrementUsage('meal_plan_generations');
     if (!success) return;
 
     setIsGenerating(true);
+    setView('generate');
+    
     try {
-      const prompt = `Create a detailed ${planData.duration || 7} day meal plan for a ${planData.dietType} diet with the goal of ${planData.goal}.
+      const proteinMin = getProteinMinimum();
+      const calories = dailyTargets.calories || preferences.target_calories || 2000;
+      const dietConfig = dietTypeConfig[selectedDietType];
+      
+      const prompt = `Generate ONE practical meal that fits these requirements:
 
-MEAL PLAN REQUIREMENTS:
-- Daily calories: ${planData.calories || 2000}
-- Diet type: ${planData.dietType}
-- Goal: ${planData.goal}
-- Allergies/restrictions: ${planData.allergies || 'None specified'}
-- Duration: ${planData.duration || 7} days
+DIET TYPE: ${dietConfig.label} - ${dietConfig.description}
+${selectedDietType === 'personalized' ? `USER GOAL: ${userData.goal || 'general fitness'}` : ''}
 
-FORMAT AS JSON:
+REQUIREMENTS:
+- Calories: ~${Math.round(calories / 3)} per meal (targeting ${calories}/day)
+- Protein: minimum ${proteinMin}g
+- Time: ${quickMeal ? 'Under 10 minutes' : 'Any prep time'}
+- Allergies to AVOID: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'None'}
+- Dislikes to AVOID: ${preferences.dislikes.length > 0 ? preferences.dislikes.join(', ') : 'None'}
+${customRequest ? `- Special request: ${customRequest}` : ''}
+
+Return ONLY valid JSON:
 {
-  "title": "Plan Name",
-  "duration": ${planData.duration || 7},
-  "calories": ${planData.calories || 2000},
-  "meals": [
-    {
-      "day": "Monday",
-      "breakfast": {
-        "name": "meal name",
-        "calories": number,
-        "macros": {"protein": number, "carbs": number, "fat": number},
-        "ingredients": ["ingredient 1", "ingredient 2"]
-      },
-      "lunch": {...},
-      "dinner": {...}
-    }
-  ]
-}
-
-Include complete nutritional information and practical, easy-to-prepare meals. Base recommendations on the latest nutrition science.`;
+  "id": "meal-1",
+  "name": "Meal name",
+  "description": "Brief 1-line description",
+  "cookTime": "15 min",
+  "protein": 42,
+  "calories": 450,
+  "carbs": 35,
+  "fat": 18,
+  "ingredients": ["ingredient 1 with amount", "ingredient 2 with amount"],
+  "instructions": ["Step 1", "Step 2", "Step 3"]
+}`;
 
       const response = await aiService.getNutritionAdvice(prompt, {
-        maxTokens: 2500,
+        maxTokens: 1500,
         priority: 'high',
-        useCache: true
+        useCache: false
       });
 
-      let parsedPlan;
+      let parsedMeal;
       try {
-        parsedPlan = JSON.parse(response);
+        const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || response.match(/\{[\s\S]*\}/);
+        const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : response;
+        parsedMeal = JSON.parse(jsonStr);
       } catch (parseError) {
-        parsedPlan = {
-          title: `${planData.dietType} ${planData.goal} Plan`,
-          duration: parseInt(planData.duration) || 7,
-          calories: parseInt(planData.calories) || 2000,
-          content: response
-        };
+        throw new Error('Failed to parse meal response');
       }
 
-      setGeneratedPlan(parsedPlan);
-      handleSuccess('Meal Plan Generated!', { 
-        description: 'Your personalized meal plan is ready!' 
+      setGeneratedMeal({ ...parsedMeal, saved: false });
+      handleSuccess('Meal Generated!', { 
+        description: parsedMeal.name 
       });
     } catch (error) {
       handleError(error, { 
-        customMessage: 'Failed to generate meal plan. Please try again.',
-        action: generateMealPlan,
+        customMessage: 'Failed to generate meal. Please try again.',
+        action: generateSingleMeal,
         actionLabel: 'Retry'
       });
+      setView('main');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const saveMealPlan = async () => {
-    if (!user || !generatedPlan) return;
+  const handleSaveGeneratedMeal = async () => {
+    if (!generatedMeal) return;
+    
+    setSavingRecipe(true);
+    const success = await saveRecipe({
+      name: generatedMeal.name,
+      description: generatedMeal.description,
+      cook_time: generatedMeal.cookTime,
+      protein: generatedMeal.protein,
+      calories: generatedMeal.calories,
+      carbs: generatedMeal.carbs,
+      fat: generatedMeal.fat,
+      ingredients: generatedMeal.ingredients,
+      instructions: generatedMeal.instructions,
+      source: 'mealplan',
+      meal_type: selectedDietType,
+    });
 
-    try {
-      const { error } = await supabase
-        .from('meal_plans')
-        .insert({
-          user_id: user.id,
-          title: generatedPlan.title,
-          content: JSON.stringify(generatedPlan),
-          user_requirements: `${planData.goal} - ${planData.dietType} - ${planData.calories} calories`
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Meal Plan Saved!',
-        description: 'Your meal plan has been saved to your library.'
-      });
-
-      loadSavedPlans();
-    } catch (error) {
-      console.error('Error saving meal plan:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save meal plan. Please try again.',
-        variant: 'destructive'
-      });
+    if (success) {
+      setGeneratedMeal({ ...generatedMeal, saved: true });
     }
+    setSavingRecipe(false);
   };
 
   const MacroCard = ({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) => (
-    <div className={cn("flex-1 p-3 rounded-xl bg-card/50 border border-border/50 text-center")}>
-      <div className={cn("text-lg font-bold", color)}>{value}{unit}</div>
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+    <div className="p-2 rounded-lg bg-card/50 border border-border/50 text-center">
+      <p className={cn("text-lg font-bold", color)}>{value}{unit}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
+
+  // Show setup if needed
+  if (showSetup) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MobileHeader title="Quick Setup" onBack={() => setShowSetup(false)} />
+        <div className="px-4 pb-28">
+          <DietaryPreferencesSetup onComplete={() => setShowSetup(false)} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <FeatureGate featureKey="meal_plan_generations" allowPreview={false}>
       <UsageLimitGuard featureKey="meal_plan_generations" featureName="Meal Plan AI">
         <div className="min-h-screen bg-background">
           <MobileHeader 
-            title="Meal Plan AI" 
+            title="Meal AI" 
             onBack={onBack}
             rightElement={
-              <RateLimitBadge 
-                featureKey="meal_plan_generations" 
-                featureName="Plans"
-                showProgress={false}
-              />
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setShowSetup(true)}>
+                  <Settings2 className="w-4 h-4" />
+                </Button>
+                <RateLimitBadge 
+                  featureKey="meal_plan_generations" 
+                  featureName="Meals"
+                  showProgress={false}
+                />
+              </div>
             }
           />
           
@@ -228,283 +229,238 @@ Include complete nutritional information and practical, easy-to-prepare meals. B
                 <div className="w-14 h-14 mx-auto bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mb-3 border border-green-500/20">
                   <Utensils className="w-7 h-7 text-green-400" />
                 </div>
-                <h2 className="text-lg font-bold text-foreground mb-1">AI Meal Planning</h2>
+                <h2 className="text-lg font-bold text-foreground mb-1">AI Meal Generator</h2>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                  Personalized nutrition plans based on science
+                  One meal at a time, tailored to your goals
                 </p>
               </motion.div>
 
               <RateLimitWarning 
                 featureKey="meal_plan_generations" 
-                featureName="Meal Plan" 
+                featureName="Meal" 
               />
               
-              {!generatedPlan ? (
+              {view === 'main' && (
                 <motion.div 
                   className="space-y-4"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  {/* Goal & Diet Type */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Goal</Label>
-                      <Select value={planData.goal} onValueChange={(value) => setPlanData({...planData, goal: value})}>
-                        <SelectTrigger className="h-12 bg-card border-border rounded-xl" aria-label="Select your goal">
-                          <SelectValue placeholder="Select goal" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border rounded-xl">
-                          <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                          <SelectItem value="weight-gain-bulk">Weight Gain</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                          <SelectItem value="performance">Performance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Diet Type</Label>
-                      <Select value={planData.dietType} onValueChange={(value) => setPlanData({...planData, dietType: value})}>
-                        <SelectTrigger className="h-12 bg-card border-border rounded-xl" aria-label="Select diet type">
-                          <SelectValue placeholder="Select diet" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border rounded-xl">
-                          <SelectItem value="balanced">Balanced</SelectItem>
-                          <SelectItem value="keto">Keto</SelectItem>
-                          <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                          <SelectItem value="vegan">Vegan</SelectItem>
-                          <SelectItem value="paleo">Paleo</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  {/* Diet Type Selection */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Meal Style</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(Object.entries(dietTypeConfig) as [DietType, typeof dietTypeConfig[DietType]][]).map(([key, config]) => (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedDietType(key)}
+                          className={cn(
+                            "flex items-center gap-2 p-3 rounded-xl border transition-all text-left",
+                            selectedDietType === key
+                              ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                              : "border-border/50 bg-card/50 hover:border-primary/50"
+                          )}
+                        >
+                          <span className="text-xl">{config.icon}</span>
+                          <span className="text-sm font-medium">{config.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Diet Cues */}
-                  {(planData.goal || planData.dietType) && (
-                    <DietCuesDisplay 
-                      goal={planData.goal} 
-                      dietType={planData.dietType}
-                      className="mt-2"
+                  {/* Quick meal toggle */}
+                  <button
+                    onClick={() => setQuickMeal(!quickMeal)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-4 rounded-xl border transition-all",
+                      quickMeal
+                        ? "border-primary bg-primary/10"
+                        : "border-border/50 bg-card/50"
+                    )}
+                  >
+                    <Clock className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex-1 text-left">
+                      <p className="font-medium text-sm">Under 10 minutes</p>
+                      <p className="text-xs text-muted-foreground">Quick & easy meals only</p>
+                    </div>
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border-2 transition-colors",
+                      quickMeal ? "bg-primary border-primary" : "border-muted-foreground"
+                    )} />
+                  </button>
+
+                  {/* Custom request */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Special request (optional)</Label>
+                    <Input
+                      value={customRequest}
+                      onChange={(e) => setCustomRequest(e.target.value)}
+                      placeholder="e.g., high fiber, no bread, use chicken..."
+                      className="bg-card border-border"
                     />
+                  </div>
+
+                  {/* Show preferences */}
+                  {(preferences.allergies.length > 0 || preferences.dislikes.length > 0) && (
+                    <div className="p-3 rounded-xl border border-border/50 bg-card/30 space-y-2">
+                      {preferences.allergies.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-xs text-muted-foreground mr-1">Avoiding:</span>
+                          {preferences.allergies.map(a => (
+                            <Badge key={a} variant="outline" className="text-xs border-destructive/30 text-destructive">
+                              {a}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {preferences.dislikes.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-xs text-muted-foreground mr-1">Dislikes:</span>
+                          {preferences.dislikes.map(d => (
+                            <Badge key={d} variant="secondary" className="text-xs">
+                              {d}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
 
-                  {/* Calories, Meals, Duration */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Calories</Label>
-                      <Input
-                        type="number"
-                        value={planData.calories}
-                        onChange={(e) => setPlanData({...planData, calories: e.target.value})}
-                        placeholder="2000"
-                        className="h-12 bg-card border-border rounded-xl text-center"
-                        aria-label="Target calories"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Meals/Day</Label>
-                      <Select value={planData.meals} onValueChange={(value) => setPlanData({...planData, meals: value})}>
-                        <SelectTrigger className="h-12 bg-card border-border rounded-xl" aria-label="Meals per day">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border rounded-xl">
-                          <SelectItem value="3">3</SelectItem>
-                          <SelectItem value="4">4</SelectItem>
-                          <SelectItem value="5">5</SelectItem>
-                          <SelectItem value="6">6</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Days</Label>
-                      <Input
-                        type="number"
-                        value={planData.duration}
-                        onChange={(e) => setPlanData({...planData, duration: e.target.value})}
-                        placeholder="7"
-                        className="h-12 bg-card border-border rounded-xl text-center"
-                        aria-label="Duration in days"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Allergies & Preferences */}
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Allergies / Restrictions</Label>
-                      <Input
-                        value={planData.allergies}
-                        onChange={(e) => setPlanData({...planData, allergies: e.target.value})}
-                        placeholder="e.g., nuts, dairy, gluten"
-                        className="h-12 bg-card border-border rounded-xl"
-                        aria-label="Food allergies or restrictions"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Preferences</Label>
-                      <Input
-                        value={planData.preferences}
-                        onChange={(e) => setPlanData({...planData, preferences: e.target.value})}
-                        placeholder="e.g., loves chicken, dislikes fish"
-                        className="h-12 bg-card border-border rounded-xl"
-                        aria-label="Food preferences"
-                      />
-                    </div>
-                  </div>
-
                   <Button
-                    onClick={generateMealPlan}
-                    disabled={isGenerating || !planData.goal || !planData.dietType}
+                    onClick={generateSingleMeal}
                     className="w-full h-14 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-base font-semibold"
-                    aria-label="Generate meal plan"
                   >
-                    {isGenerating ? (
-                      <>
-                        <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Generating Plan...
-                      </>
-                    ) : (
-                      <>
-                        <ChefHat className="w-5 h-5 mr-2" />
-                        Generate Meal Plan
-                      </>
-                    )}
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Generate Meal
                   </Button>
+
+                  {/* Saved recipes section */}
+                  {recipes.length > 0 && (
+                    <div className="mt-8 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-foreground">Saved Recipes</h3>
+                        <Badge variant="secondary">{recipes.length}</Badge>
+                      </div>
+                      <ScrollArea className="h-64">
+                        <div className="space-y-2">
+                          {recipes.map((recipe) => (
+                            <div
+                              key={recipe.id}
+                              className="p-3 bg-card/50 rounded-xl border border-border/50 flex items-center gap-3"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{recipe.name}</p>
+                                <div className="flex gap-2 text-xs text-muted-foreground mt-1">
+                                  <span className="text-green-400">{recipe.protein}g P</span>
+                                  <span>•</span>
+                                  <span>{recipe.calories} cal</span>
+                                  {recipe.cook_time && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{recipe.cook_time}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => deleteRecipe(recipe.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
                 </motion.div>
-              ) : (
+              )}
+
+              {view === 'generate' && (
                 <motion.div 
                   className="space-y-4"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  {/* Plan Header */}
-                  <div className="bg-card/50 rounded-2xl border border-border/50 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-foreground">{generatedPlan.title}</h2>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          <span>{generatedPlan.duration} days</span>
-                          <span className="text-border">•</span>
-                          <span>{generatedPlan.calories} kcal/day</span>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-500/15 text-green-400 border-green-500/30">
-                        <Leaf className="w-3 h-3 mr-1" />
-                        Active
-                      </Badge>
+                  {isGenerating ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                      <p className="text-muted-foreground">Creating your perfect meal...</p>
                     </div>
-                    
-                    <div className="flex gap-2">
-                      <Button onClick={saveMealPlan} size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
-                        Save Plan
-                      </Button>
-                      <Button onClick={() => setGeneratedPlan(null)} variant="outline" size="sm" className="flex-1">
-                        New Plan
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Meals */}
-                  {generatedPlan.meals?.map((day: any, index: number) => (
-                    <motion.div 
-                      key={index} 
-                      className="bg-card/50 rounded-2xl border border-border/50 overflow-hidden"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <div className="px-4 py-3 bg-muted/30 border-b border-border/50">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-green-400" />
-                          <span className="font-semibold text-foreground">{day.day}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="divide-y divide-border/30">
-                        {Object.entries(day).filter(([key]) => key !== 'day').map(([mealType, meal]: [string, any]) => (
-                          <div key={mealType} className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Apple className="w-4 h-4 text-green-400" />
-                                <span className="font-medium text-foreground capitalize">{mealType}</span>
-                              </div>
-                              <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-400 bg-green-500/10">
-                                {meal.calories} kcal
+                  ) : generatedMeal ? (
+                    <Card className="bg-card/60 border-border/50">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-xl">{generatedMeal.name}</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">{generatedMeal.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {generatedMeal.cookTime && (
+                              <Badge variant="secondary" className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> {generatedMeal.cookTime}
                               </Badge>
-                            </div>
-                            
-                            <p className="text-sm text-foreground mb-3">{meal.name}</p>
-                            
-                            {meal.macros && (
-                              <div className="flex gap-2 mb-3">
-                                <MacroCard label="Protein" value={meal.macros.protein} unit="g" color="text-blue-400" />
-                                <MacroCard label="Carbs" value={meal.macros.carbs} unit="g" color="text-amber-400" />
-                                <MacroCard label="Fat" value={meal.macros.fat} unit="g" color="text-rose-400" />
-                              </div>
-                            )}
-                            
-                            {meal.ingredients && (
-                              <div className="flex flex-wrap gap-1">
-                                {meal.ingredients.slice(0, 4).map((ing: string, i: number) => (
-                                  <Badge key={i} variant="outline" className="text-[10px] border-border/50 bg-muted/30">
-                                    {ing}
-                                  </Badge>
-                                ))}
-                                {meal.ingredients.length > 4 && (
-                                  <Badge variant="outline" className="text-[10px] border-border/50 bg-muted/30">
-                                    +{meal.ingredients.length - 4} more
-                                  </Badge>
-                                )}
-                              </div>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* Saved Plans */}
-              {savedPlans.length > 0 && !generatedPlan && (
-                <motion.div 
-                  className="mt-6 space-y-3"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <h3 className="text-sm font-semibold text-foreground">Saved Plans</h3>
-                  {savedPlans.map((plan, index) => (
-                    <button
-                      key={plan.id}
-                      onClick={() => {
-                        try {
-                          setGeneratedPlan(JSON.parse(plan.content));
-                        } catch {
-                          toast({
-                            title: 'Error',
-                            description: 'Could not load this plan',
-                            variant: 'destructive'
-                          });
-                        }
-                      }}
-                      className="w-full p-4 bg-card/50 rounded-xl border border-border/50 text-left hover:bg-card transition-colors"
-                      aria-label={`Load ${plan.title}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-foreground text-sm">{plan.title}</h4>
-                          <p className="text-xs text-muted-foreground">{plan.user_requirements}</p>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    </button>
-                  ))}
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Macros */}
+                        <div className="grid grid-cols-4 gap-2">
+                          <MacroCard label="Protein" value={generatedMeal.protein} unit="g" color="text-green-400" />
+                          <MacroCard label="Calories" value={generatedMeal.calories} unit="" color="text-orange-400" />
+                          <MacroCard label="Carbs" value={generatedMeal.carbs} unit="g" color="text-blue-400" />
+                          <MacroCard label="Fat" value={generatedMeal.fat} unit="g" color="text-yellow-400" />
+                        </div>
+
+                        {/* Ingredients */}
+                        <div>
+                          <p className="text-sm font-medium mb-2">Ingredients</p>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            {generatedMeal.ingredients.map((ing, idx) => (
+                              <li key={idx}>• {ing}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Instructions */}
+                        <div>
+                          <p className="text-sm font-medium mb-2">Instructions</p>
+                          <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                            {generatedMeal.instructions.map((step, idx) => (
+                              <li key={idx}>{step}</li>
+                            ))}
+                          </ol>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            onClick={handleSaveGeneratedMeal}
+                            disabled={generatedMeal.saved || savingRecipe}
+                            className="flex-1"
+                            variant={generatedMeal.saved ? "secondary" : "default"}
+                          >
+                            {savingRecipe ? (
+                              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                            ) : generatedMeal.saved ? (
+                              <Heart className="w-4 h-4 mr-2 fill-current" />
+                            ) : (
+                              <Bookmark className="w-4 h-4 mr-2" />
+                            )}
+                            {generatedMeal.saved ? 'Saved!' : 'Save Recipe'}
+                          </Button>
+                          <Button variant="outline" onClick={() => setView('main')} className="flex-1">
+                            New Meal
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null}
                 </motion.div>
               )}
             </div>

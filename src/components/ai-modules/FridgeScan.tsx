@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,6 +12,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/contexts/UserDataContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { useDietaryPreferences, dietTypeConfig, DietaryPreferences } from '@/hooks/useDietaryPreferences';
+import { useSavedRecipes } from '@/hooks/useSavedRecipes';
+import { useDailyTargets } from '@/hooks/useDietaryPreferences';
+import DietaryPreferencesSetup from './DietaryPreferencesSetup';
 
 // Types
 interface DetectedIngredient {
@@ -37,38 +41,28 @@ interface MealCard {
   instructions: string[];
   proteinMet: boolean;
   macroWarning?: string;
+  saved?: boolean;
 }
 
-type MealIntent = 'protein-focused' | 'post-workout' | 'balanced' | 'low-cal';
+type MealIntent = keyof typeof dietTypeConfig;
 
 interface FridgeScanProps {
   onBack: () => void;
 }
-
-// Meal intent configurations
-const mealIntentConfig: Record<MealIntent, { label: string; description: string; icon: string }> = {
-  'protein-focused': { label: 'Protein-Focused', description: 'High protein, moderate carbs/fat', icon: '💪' },
-  'post-workout': { label: 'Post-Workout', description: 'High carbs + protein, low fat', icon: '🏋️' },
-  'balanced': { label: 'Balanced', description: 'Even macro distribution', icon: '⚖️' },
-  'low-cal': { label: 'Low-Cal / Cutting', description: 'High protein, lowest calories', icon: '🎯' },
-};
-
-// Protein minimums by goal
-const getProteinMinimum = (goal: string | null): number => {
-  if (!goal) return 35;
-  const lowerGoal = goal.toLowerCase();
-  if (lowerGoal.includes('cut') || lowerGoal.includes('lose')) return 40;
-  if (lowerGoal.includes('bulk') || lowerGoal.includes('gain')) return 30;
-  return 35; // maintain/balanced
-};
 
 const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { userData } = useUserData();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Hooks for dietary preferences and recipes
+  const { preferences, isLoading: prefsLoading, needsSetup, getProteinMinimum } = useDietaryPreferences();
+  const { saveRecipe } = useSavedRecipes();
+  const dailyTargets = useDailyTargets();
 
   // State
+  const [showSetup, setShowSetup] = useState(false);
   const [step, setStep] = useState<'intent' | 'photo' | 'ingredients' | 'meals'>('intent');
   const [selectedIntent, setSelectedIntent] = useState<MealIntent | null>(null);
   const [quickMeals, setQuickMeals] = useState(false);
@@ -79,21 +73,36 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [newIngredient, setNewIngredient] = useState('');
   const [meals, setMeals] = useState<MealCard[]>([]);
   const [expandedMicronutrients, setExpandedMicronutrients] = useState<Record<string, boolean>>({});
+  const [savingRecipeId, setSavingRecipeId] = useState<string | null>(null);
 
-  // Get user's remaining macros (placeholder - would integrate with food log)
+  // Check if setup needed on mount
+  useEffect(() => {
+    if (!prefsLoading && needsSetup) {
+      setShowSetup(true);
+    }
+  }, [prefsLoading, needsSetup]);
+
+  // Set default intent from preferences
+  useEffect(() => {
+    if (preferences.diet_type && !selectedIntent) {
+      setSelectedIntent(preferences.diet_type as MealIntent);
+    }
+  }, [preferences.diet_type, selectedIntent]);
+
+  // Get user's remaining macros
   const getRemainingMacros = () => {
-    // TODO: Integrate with actual food log data
-    const tdee = userData.tdee || 2000;
+    // Use daily targets or estimate from TDEE
+    const calories = dailyTargets.calories || userData.tdee || 2000;
     return {
-      calories: Math.round(tdee * 0.4), // Assume 40% remaining
-      protein: 80,
-      carbs: 100,
-      fat: 40,
+      calories: Math.round(calories * 0.4), // Assume 40% remaining
+      protein: dailyTargets.protein || 80,
+      carbs: dailyTargets.carbs || 100,
+      fat: dailyTargets.fat || 40,
     };
   };
 
   const remainingMacros = getRemainingMacros();
-  const proteinMinimum = getProteinMinimum(userData.goal);
+  const proteinMinimum = getProteinMinimum();
 
   // Handle photo capture/upload
   const handlePhotoSelect = useCallback(async (file: File) => {
@@ -134,7 +143,15 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         confidence: ing.confidence || 'medium',
       }));
 
-      setIngredients(detected);
+      // Filter out allergies automatically
+      const filteredIngredients = detected.filter(ing => {
+        const ingLower = ing.name.toLowerCase();
+        return !preferences.allergies.some(allergy => 
+          ingLower.includes(allergy.toLowerCase())
+        );
+      });
+
+      setIngredients(filteredIngredients);
     } catch (error) {
       console.error('Photo analysis error:', error);
       toast({
@@ -187,12 +204,14 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           remainingMacros,
           proteinMinimum,
           userGoal: userData.goal,
+          allergies: preferences.allergies,
+          dislikes: preferences.dislikes,
         },
       });
 
       if (error) throw error;
 
-      setMeals(data.meals || []);
+      setMeals((data.meals || []).map((m: MealCard) => ({ ...m, saved: false })));
     } catch (error) {
       console.error('Meal generation error:', error);
       toast({
@@ -205,6 +224,31 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     }
   };
 
+  const handleSaveRecipe = async (meal: MealCard) => {
+    setSavingRecipeId(meal.id);
+    const success = await saveRecipe({
+      name: meal.name,
+      description: meal.description,
+      cook_time: meal.cookTime,
+      protein: meal.protein,
+      calories: meal.calories,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      sodium: meal.sodium,
+      fiber: meal.fiber,
+      sugar: meal.sugar,
+      ingredients: meal.ingredients,
+      instructions: meal.instructions,
+      source: 'fridgescan',
+      meal_type: selectedIntent || undefined,
+    });
+
+    if (success) {
+      setMeals(prev => prev.map(m => m.id === meal.id ? { ...m, saved: true } : m));
+    }
+    setSavingRecipeId(null);
+  };
+
   const rescan = () => {
     setPhotoPreview(null);
     setIngredients([]);
@@ -213,13 +257,34 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   };
 
   const startOver = () => {
-    setSelectedIntent(null);
     setQuickMeals(false);
     setPhotoPreview(null);
     setIngredients([]);
     setMeals([]);
     setStep('intent');
   };
+
+  // Show setup if needed
+  if (showSetup) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
+          <div className="flex items-center gap-3 p-4">
+            <Button variant="ghost" size="icon" onClick={onBack}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-semibold">Quick Setup</h1>
+              <p className="text-xs text-muted-foreground">One-time preferences</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-4">
+          <DietaryPreferencesSetup onComplete={() => setShowSetup(false)} />
+        </div>
+      </div>
+    );
+  }
 
   // Render intent selection
   const renderIntentStep = () => (
@@ -230,7 +295,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        {(Object.entries(mealIntentConfig) as [MealIntent, typeof mealIntentConfig[MealIntent]][]).map(([key, config]) => (
+        {(Object.entries(dietTypeConfig) as [MealIntent, typeof dietTypeConfig[MealIntent]][]).map(([key, config]) => (
           <button
             key={key}
             onClick={() => setSelectedIntent(key)}
@@ -263,6 +328,20 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         />
       </div>
 
+      {/* Show saved allergies */}
+      {preferences.allergies.length > 0 && (
+        <div className="p-3 rounded-xl border border-border/50 bg-card/30">
+          <p className="text-xs text-muted-foreground mb-2">Avoiding:</p>
+          <div className="flex flex-wrap gap-1">
+            {preferences.allergies.map(allergy => (
+              <Badge key={allergy} variant="outline" className="text-xs border-destructive/30 text-destructive">
+                {allergy}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Button
         onClick={() => setStep('photo')}
         disabled={!selectedIntent}
@@ -270,6 +349,14 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         size="lg"
       >
         Continue
+      </Button>
+
+      <Button
+        variant="ghost"
+        onClick={() => setShowSetup(true)}
+        className="w-full text-muted-foreground text-sm"
+      >
+        Edit preferences
       </Button>
     </div>
   );
@@ -425,7 +512,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           {isGenerating 
-            ? `Optimizing for ${mealIntentConfig[selectedIntent!]?.label}`
+            ? `Optimizing for ${dietTypeConfig[selectedIntent!]?.label}`
             : `${meals.length} meal${meals.length !== 1 ? 's' : ''} generated`
           }
         </p>
@@ -444,15 +531,32 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
                 <Card key={meal.id} className="bg-card/60 border-border/50 overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
-                      <div>
+                      <div className="flex-1">
                         <CardTitle className="text-lg">{meal.name}</CardTitle>
                         <p className="text-sm text-muted-foreground mt-1">{meal.description}</p>
                       </div>
-                      {meal.cookTime && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {meal.cookTime}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {meal.cookTime && (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {meal.cookTime}
+                          </Badge>
+                        )}
+                        <Button
+                          variant={meal.saved ? "default" : "outline"}
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleSaveRecipe(meal)}
+                          disabled={meal.saved || savingRecipeId === meal.id}
+                        >
+                          {savingRecipeId === meal.id ? (
+                            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : meal.saved ? (
+                            <Heart className="w-4 h-4 fill-current" />
+                          ) : (
+                            <Bookmark className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -562,7 +666,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
             </div>
           </div>
           {selectedIntent && step !== 'intent' && (
-            <Badge variant="outline">{mealIntentConfig[selectedIntent].label}</Badge>
+            <Badge variant="outline">{dietTypeConfig[selectedIntent].label}</Badge>
           )}
         </div>
 

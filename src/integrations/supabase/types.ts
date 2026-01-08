@@ -215,6 +215,54 @@ export type Database = {
         }
         Relationships: []
       }
+      dietary_preferences: {
+        Row: {
+          allergies: string[] | null
+          created_at: string
+          diet_type: string | null
+          dislikes: string[] | null
+          id: string
+          preferences: string[] | null
+          setup_completed: boolean | null
+          target_calories: number | null
+          target_carbs: number | null
+          target_fat: number | null
+          target_protein: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string[] | null
+          created_at?: string
+          diet_type?: string | null
+          dislikes?: string[] | null
+          id?: string
+          preferences?: string[] | null
+          setup_completed?: boolean | null
+          target_calories?: number | null
+          target_carbs?: number | null
+          target_fat?: number | null
+          target_protein?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allergies?: string[] | null
+          created_at?: string
+          diet_type?: string | null
+          dislikes?: string[] | null
+          id?: string
+          preferences?: string[] | null
+          setup_completed?: boolean | null
+          target_calories?: number | null
+          target_carbs?: number | null
+          target_fat?: number | null
+          target_protein?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           category: string
@@ -734,6 +782,66 @@ export type Database = {
           sleep_quality?: number | null
           soreness_level?: number | null
           stress_level?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_recipes: {
+        Row: {
+          calories: number
+          carbs: number | null
+          cook_time: string | null
+          created_at: string
+          description: string | null
+          fat: number | null
+          fiber: number | null
+          id: string
+          ingredients: string[]
+          instructions: string[]
+          meal_type: string | null
+          name: string
+          protein: number
+          sodium: number | null
+          source: string | null
+          sugar: number | null
+          user_id: string
+        }
+        Insert: {
+          calories: number
+          carbs?: number | null
+          cook_time?: string | null
+          created_at?: string
+          description?: string | null
+          fat?: number | null
+          fiber?: number | null
+          id?: string
+          ingredients: string[]
+          instructions: string[]
+          meal_type?: string | null
+          name: string
+          protein: number
+          sodium?: number | null
+          source?: string | null
+          sugar?: number | null
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          carbs?: number | null
+          cook_time?: string | null
+          created_at?: string
+          description?: string | null
+          fat?: number | null
+          fiber?: number | null
+          id?: string
+          ingredients?: string[]
+          instructions?: string[]
+          meal_type?: string | null
+          name?: string
+          protein?: number
+          sodium?: number | null
+          source?: string | null
+          sugar?: number | null
           user_id?: string
         }
         Relationships: []

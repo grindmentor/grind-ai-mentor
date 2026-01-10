@@ -177,7 +177,7 @@ CRITICAL RULES:
 5. Use ONLY the provided ingredients. You may suggest ONE protein add-on if protein target can't be met.
 6. Keep instructions simple and practical.
 ${quickMeals ? '7. ALL meals must be under 10 minutes prep+cook time.' : ''}
-8. NEVER use any ingredients from the allergy list.`
+8. NEVER use any ingredients from the allergy list.
 
 Return ONLY valid JSON:
 {

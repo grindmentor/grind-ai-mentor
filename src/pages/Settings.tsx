@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Globe, Zap, Brain, FileText, HelpCircle, LogOut, User, Shield, Crown } from 'lucide-react';
+import { Globe, Zap, Brain, FileText, HelpCircle, LogOut, User, Shield, Crown, UtensilsCrossed } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UnitPreferences from '@/components/settings/UnitPreferences';
@@ -10,6 +10,7 @@ import DisplayNameSection from '@/components/settings/DisplayNameSection';
 import ProfileMetrics from '@/components/settings/ProfileMetrics';
 import AccountManagement from '@/components/settings/AccountManagement';
 import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
+import DietaryPreferencesSettings from '@/components/settings/DietaryPreferencesSettings';
 import { MobileHeader } from '@/components/MobileHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,12 +47,12 @@ const Settings = () => {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'diet', label: 'Diet', icon: UtensilsCrossed },
     { id: 'plan', label: 'Plan', icon: Crown },
     { id: 'units', label: 'Units', icon: Globe },
     { id: 'app', label: 'App', icon: Zap },
     { id: 'ai', label: 'AI', icon: Brain },
     { id: 'privacy', label: 'Privacy', icon: Shield },
-    { id: 'legal', label: 'Legal', icon: FileText },
     { id: 'support', label: 'Help', icon: HelpCircle }
   ];
 
@@ -116,6 +117,20 @@ const Settings = () => {
               <ProfileMetrics />
               </TabsContent>
 
+              <TabsContent value="diet" className="mt-0">
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-foreground text-sm font-semibold flex items-center gap-2">
+                      <UtensilsCrossed className="w-4 h-4 text-primary" />
+                      Dietary Preferences
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <DietaryPreferencesSettings />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="plan" className="mt-0">
                 <SubscriptionSettings />
               </TabsContent>
@@ -164,43 +179,6 @@ const Settings = () => {
 
               <TabsContent value="privacy" className="mt-0">
                 <AccountManagement />
-              </TabsContent>
-
-              <TabsContent value="legal" className="mt-0">
-                <Card className="bg-card border-border">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-foreground text-sm font-semibold flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-primary" />
-                      Legal
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-2 space-y-1">
-                    <Button
-                      onClick={() => navigate('/terms')}
-                      variant="ghost"
-                      className="w-full justify-start h-12 text-sm"
-                    >
-                      <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
-                      Terms of Service
-                    </Button>
-                    <Button
-                      onClick={() => navigate('/privacy')}
-                      variant="ghost"
-                      className="w-full justify-start h-12 text-sm"
-                    >
-                      <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
-                      Privacy Policy
-                    </Button>
-                    <Button
-                      onClick={() => navigate('/about')}
-                      variant="ghost"
-                      className="w-full justify-start h-12 text-sm"
-                    >
-                      <FileText className="w-4 h-4 mr-3 text-muted-foreground" />
-                      About Myotopia
-                    </Button>
-                  </CardContent>
-                </Card>
               </TabsContent>
 
               <TabsContent value="support" className="mt-0">

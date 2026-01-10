@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, Plus, Utensils, BarChart3, Camera, Search, Database, Loader2, AlertCircle, Refrigerator, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -565,6 +565,26 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* FridgeScan Promo */}
+        <button
+          onClick={() => navigate('/fridge-scan')}
+          className="w-full mb-4 p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-xl flex items-center gap-3 hover:from-cyan-500/15 hover:to-blue-500/15 transition-colors text-left"
+        >
+          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Refrigerator className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-foreground text-sm flex items-center gap-2">
+              FridgeScan
+              <span className="text-[10px] px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 rounded-full font-medium">New</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Snap your fridge → Get macro-fit meals
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        </button>
 
         {/* USDA Search */}
         <Card className="bg-card/50 border-border/50 mb-4">

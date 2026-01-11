@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed } from 'lucide-react';
+import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -68,6 +68,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [selectedIntent, setSelectedIntent] = useState<MealIntent | null>(null);
   const [quickMeals, setQuickMeals] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [pantryPreview, setPantryPreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [ingredients, setIngredients] = useState<DetectedIngredient[]>([]);
@@ -77,6 +78,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [savingRecipeId, setSavingRecipeId] = useState<string | null>(null);
   const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
   const [todayConsumed, setTodayConsumed] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const pantryInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch today's consumed macros from food log
   useEffect(() => {
@@ -134,7 +136,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
   const proteinMinimum = getProteinMinimum();
 
-  // Handle photo capture/upload
+  // Handle photo capture/upload for fridge
   const handlePhotoSelect = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
@@ -145,10 +147,99 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
       setPhotoPreview(base64);
-      await analyzePhoto(base64);
     };
     reader.readAsDataURL(file);
   }, []);
+
+  // Handle pantry photo capture/upload
+  const handlePantrySelect = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      setPantryPreview(base64);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Analyze both photos (fridge required, pantry optional)
+  const analyzePhotos = async () => {
+    if (!photoPreview) return;
+    
+    setIsAnalyzing(true);
+    setStep('ingredients');
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Analyze fridge photo
+      const { data: fridgeData, error: fridgeError } = await supabase.functions.invoke('fridge-scan-ai', {
+        body: { image: photoPreview, action: 'detect' },
+      });
+
+      if (fridgeError) throw fridgeError;
+
+      let allIngredients: DetectedIngredient[] = (fridgeData.ingredients || []).map((ing: any, idx: number) => ({
+        id: `fridge-${idx}`,
+        name: ing.name || ing,
+        selected: true,
+        confidence: ing.confidence || 'medium',
+      }));
+
+      // If pantry photo exists, analyze it too
+      if (pantryPreview) {
+        const { data: pantryData, error: pantryError } = await supabase.functions.invoke('fridge-scan-ai', {
+          body: { image: pantryPreview, action: 'detect' },
+        });
+
+        if (!pantryError && pantryData.ingredients) {
+          const pantryIngredients: DetectedIngredient[] = pantryData.ingredients.map((ing: any, idx: number) => ({
+            id: `pantry-${idx}`,
+            name: ing.name || ing,
+            selected: true,
+            confidence: ing.confidence || 'medium',
+          }));
+          allIngredients = [...allIngredients, ...pantryIngredients];
+        }
+      }
+
+      // Remove duplicates (case-insensitive)
+      const seen = new Set<string>();
+      allIngredients = allIngredients.filter(ing => {
+        const lower = ing.name.toLowerCase();
+        if (seen.has(lower)) return false;
+        seen.add(lower);
+        return true;
+      });
+
+      // Filter out allergies automatically
+      const filteredIngredients = allIngredients.filter(ing => {
+        const ingLower = ing.name.toLowerCase();
+        return !preferences.allergies.some(allergy => 
+          ingLower.includes(allergy.toLowerCase())
+        );
+      });
+
+      setIngredients(filteredIngredients);
+    } catch (error) {
+      console.error('Photo analysis error:', error);
+      toast({
+        title: 'Analysis failed',
+        description: 'Could not analyze the photo. Please try again.',
+        variant: 'destructive',
+      });
+      setStep('photo');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const analyzePhoto = async (imageData: string) => {
     setIsAnalyzing(true);
@@ -317,6 +408,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
   const rescan = () => {
     setPhotoPreview(null);
+    setPantryPreview(null);
     setIngredients([]);
     setMeals([]);
     setStep('photo');
@@ -325,6 +417,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const startOver = () => {
     setQuickMeals(false);
     setPhotoPreview(null);
+    setPantryPreview(null);
     setIngredients([]);
     setMeals([]);
     setStep('intent');
@@ -430,9 +523,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   // Render photo capture step
   const renderPhotoStep = () => (
     <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Scan Your Fridge</h2>
-        <p className="text-sm text-muted-foreground mt-1">Take a photo or upload an image</p>
+      <div className="text-center mb-4">
+        <h2 className="text-xl font-semibold text-foreground">Scan Your Kitchen</h2>
+        <p className="text-sm text-muted-foreground mt-1">Add photos of your fridge and pantry</p>
       </div>
 
       <input
@@ -443,54 +536,136 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         onChange={(e) => e.target.files?.[0] && handlePhotoSelect(e.target.files[0])}
         className="hidden"
       />
+      <input
+        ref={pantryInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={(e) => e.target.files?.[0] && handlePantrySelect(e.target.files[0])}
+        className="hidden"
+      />
 
-      {photoPreview ? (
-        <div className="relative">
-          <img
-            src={photoPreview}
-            alt="Fridge contents"
-            className="w-full h-64 object-cover rounded-xl"
-          />
-          <Button
-            onClick={rescan}
-            variant="secondary"
-            size="sm"
-            className="absolute bottom-3 right-3"
-          >
-            <RefreshCw className="w-4 h-4 mr-1" /> Rescan
-          </Button>
+      {/* Fridge Photo - Required */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">🧊 Fridge Photo</span>
+          <Badge variant="outline" className="text-xs">Required</Badge>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center justify-center gap-2 p-8 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-colors"
-          >
-            <Camera className="w-10 h-10 text-primary" />
-            <span className="text-sm font-medium text-primary">Take Photo</span>
-          </button>
-          <button
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) handlePhotoSelect(file);
-              };
-              input.click();
-            }}
-            className="flex flex-col items-center justify-center gap-2 p-8 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
-          >
-            <Upload className="w-10 h-10 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Upload Image</span>
-          </button>
-        </div>
-      )}
+        
+        {photoPreview ? (
+          <div className="relative">
+            <img
+              src={photoPreview}
+              alt="Fridge contents"
+              className="w-full h-40 object-cover rounded-xl border border-border"
+            />
+            <Button
+              onClick={() => setPhotoPreview(null)}
+              variant="secondary"
+              size="sm"
+              className="absolute bottom-2 right-2"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" /> Change
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-colors"
+            >
+              <Camera className="w-5 h-5 text-primary" />
+              <span className="text-sm font-medium text-primary">Take Photo</span>
+            </button>
+            <button
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handlePhotoSelect(file);
+                };
+                input.click();
+              }}
+              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Upload</span>
+            </button>
+          </div>
+        )}
+      </div>
 
-      <Button variant="ghost" onClick={() => setStep('intent')} className="w-full">
-        <ChevronLeft className="w-4 h-4 mr-1" /> Back
-      </Button>
+      {/* Pantry Photo - Optional */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">📦 Pantry / Shelves</span>
+          <Badge variant="secondary" className="text-xs">Optional</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground -mt-1">Pasta, rice, sauces, spices, condiments...</p>
+        
+        {pantryPreview ? (
+          <div className="relative">
+            <img
+              src={pantryPreview}
+              alt="Pantry contents"
+              className="w-full h-40 object-cover rounded-xl border border-border"
+            />
+            <Button
+              onClick={() => setPantryPreview(null)}
+              variant="secondary"
+              size="sm"
+              className="absolute bottom-2 right-2"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" /> Change
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => pantryInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
+            >
+              <Camera className="w-5 h-5 text-amber-500" />
+              <span className="text-sm font-medium text-amber-500">Take Photo</span>
+            </button>
+            <button
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handlePantrySelect(file);
+                };
+                input.click();
+              }}
+              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Upload</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="pt-4 space-y-2">
+        <Button 
+          onClick={analyzePhotos} 
+          disabled={!photoPreview}
+          className="w-full"
+          size="lg"
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          Analyze {pantryPreview ? 'Photos' : 'Photo'}
+        </Button>
+        
+        <Button variant="ghost" onClick={() => setStep('intent')} className="w-full">
+          <ChevronLeft className="w-4 h-4 mr-1" /> Back
+        </Button>
+      </div>
     </div>
   );
 

@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Utensils, Clock, ChefHat, Bookmark, Heart, Trash2, ChevronRight, Sparkles, Settings2 } from 'lucide-react';
+import { Utensils, Clock, ChefHat, Bookmark, Heart, Trash2, ChevronRight, Sparkles, Settings2, Refrigerator, Camera, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
@@ -48,6 +49,7 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const { toast } = useToast();
   const { incrementUsage } = useUsageTracking();
   const { userData } = useUserData();
+  const navigate = useNavigate();
   
   // Hooks
   const { preferences, isLoading: prefsLoading, needsSetup, savePreferences, getProteinMinimum } = useDietaryPreferences();
@@ -96,13 +98,21 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
       const calories = dailyTargets.calories || preferences.target_calories || 2000;
       const dietConfig = dietTypeConfig[selectedDietType];
       
+      // Stricter low-cal targeting: under 350 cal, max 10g fat, high volume
+      const isLowCal = selectedDietType === 'low-cal';
+      const targetCals = isLowCal ? 350 : Math.round(calories / 3);
+      const fatLimit = isLowCal ? 10 : Math.round((calories * 0.3) / 9 / 3);
+
       const prompt = `Generate ONE practical meal that fits these requirements:
 
 DIET TYPE: ${dietConfig.label} - ${dietConfig.description}
 ${selectedDietType === 'personalized' ? `USER GOAL: ${userData.goal || 'general fitness'}` : ''}
 
 REQUIREMENTS:
-- Calories: ~${Math.round(calories / 3)} per meal (targeting ${calories}/day)
+- Calories: ${isLowCal ? `STRICT MAXIMUM ${targetCals} calories (low-cal cutting meal)` : `~${targetCals} per meal (targeting ${calories}/day)`}
+${isLowCal ? `- Fat: MAXIMUM ${fatLimit}g (minimize added fats, use cooking spray not oil)` : ''}
+${isLowCal ? `- Volume: Prioritize HIGH-VOLUME, LOW-CALORIE foods (vegetables, lean proteins, egg whites)` : ''}
+${isLowCal ? `- Prep: Simple preparations - grilled, steamed, air-fried, no heavy sauces` : ''}
 - Protein: minimum ${proteinMin}g
 - Time: ${quickMeal ? 'Under 10 minutes' : 'Any prep time'}
 - Allergies to AVOID: ${preferences.allergies.length > 0 ? preferences.allergies.join(', ') : 'None'}
@@ -247,6 +257,42 @@ Return ONLY valid JSON:
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
+                  {/* FridgeScan Promo */}
+                  <motion.button
+                    onClick={() => navigate('/fridge-scan')}
+                    className="w-full p-4 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-teal-500/20 to-emerald-500/20 border-2 border-cyan-500/40 hover:border-cyan-400/60 transition-all relative overflow-hidden group"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {/* Animated shimmer */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    
+                    <div className="flex items-center gap-4 relative">
+                      <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                        <Refrigerator className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-foreground">FridgeScan</span>
+                          <Badge className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white text-[10px] px-2 py-0 border-0">
+                            NEW
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Camera className="w-3 h-3" />
+                          Snap fridge → Get macro-fit meals
+                        </p>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </motion.button>
+
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 h-px bg-border/50" />
+                    <span className="text-xs text-muted-foreground">or generate from scratch</span>
+                    <div className="flex-1 h-px bg-border/50" />
+                  </div>
+
                   {/* Diet Type Selection */}
                   <div className="space-y-3">
                     <Label className="text-sm font-medium">Meal Style</Label>

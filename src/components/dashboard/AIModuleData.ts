@@ -147,9 +147,9 @@ export const aiModules: AIModule[] = [
   {
     id: 'fridge-scan',
     title: 'FridgeScan',
-    description: 'Snap your fridge → get macro-optimized meals',
+    description: '📸 Snap your fridge → Get macro-fit meals instantly!',
     icon: Refrigerator,
-    gradient: 'from-cyan-600/80 to-teal-800/90 border-cyan-500/60',
+    gradient: 'from-cyan-500/90 to-teal-600/95 border-cyan-400/70',
     component: FridgeScan,
     isPremium: true,
     isNew: true

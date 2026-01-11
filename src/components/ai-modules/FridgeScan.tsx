@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart } from 'lucide-react';
+import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,6 +16,7 @@ import { useDietaryPreferences, dietTypeConfig, DietaryPreferences } from '@/hoo
 import { useSavedRecipes } from '@/hooks/useSavedRecipes';
 import { useDailyTargets } from '@/hooks/useDietaryPreferences';
 import DietaryPreferencesSetup from './DietaryPreferencesSetup';
+import { format } from 'date-fns';
 
 // Types
 interface DetectedIngredient {
@@ -74,6 +75,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [meals, setMeals] = useState<MealCard[]>([]);
   const [expandedMicronutrients, setExpandedMicronutrients] = useState<Record<string, boolean>>({});
   const [savingRecipeId, setSavingRecipeId] = useState<string | null>(null);
+  const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
 
   // Check if setup needed on mount
   useEffect(() => {
@@ -247,6 +249,42 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       setMeals(prev => prev.map(m => m.id === meal.id ? { ...m, saved: true } : m));
     }
     setSavingRecipeId(null);
+  };
+
+  const handleLogToFoodLog = async (meal: MealCard) => {
+    if (!user) return;
+    
+    setLoggingMealId(meal.id);
+    try {
+      const { error } = await supabase.from('food_log_entries').insert({
+        user_id: user.id,
+        food_name: meal.name,
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fat: meal.fat,
+        fiber: meal.fiber,
+        meal_type: selectedIntent === 'post-workout' ? 'snack' : 'lunch',
+        portion_size: '1 serving',
+        logged_date: format(new Date(), 'yyyy-MM-dd'),
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Logged to Food Log!',
+        description: `${meal.name} added to today's meals`,
+      });
+    } catch (error) {
+      console.error('Food log error:', error);
+      toast({
+        title: 'Failed to log',
+        description: 'Could not add to food log',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoggingMealId(null);
+    }
   };
 
   const rescan = () => {
@@ -632,6 +670,22 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
                         ))}
                       </ol>
                     </div>
+
+                    {/* Log to Food Log button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2"
+                      onClick={() => handleLogToFoodLog(meal)}
+                      disabled={loggingMealId === meal.id}
+                    >
+                      {loggingMealId === meal.id ? (
+                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      ) : (
+                        <UtensilsCrossed className="w-4 h-4 mr-2" />
+                      )}
+                      Log to Food Diary
+                    </Button>
                   </CardContent>
                 </Card>
               ))}

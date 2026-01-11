@@ -151,10 +151,19 @@ Return ONLY valid JSON in this format:
 - Aim for 35-40g protein, 40-50g carbs, 15-25g fat
 - Include variety of food groups`,
         'low-cal': `
-- HIGHEST protein priority (40-50g minimum)
-- LOWEST feasible calories (under 400 if possible)
-- Volume-friendly foods (vegetables, lean proteins)
-- Minimal added fats, simple preparations`
+STRICT LOW-CALORIE CUTTING MEAL REQUIREMENTS:
+- MAXIMUM 350 calories per meal - this is a HARD LIMIT
+- Protein: 35-50g minimum (prioritize lean sources: chicken breast, white fish, egg whites, turkey)
+- Fat: MAXIMUM 8g - use cooking spray, NO oil, no butter, no high-fat ingredients
+- Carbs: 15-30g max, prefer fibrous vegetables
+- Volume: Use HIGH-VOLUME, LOW-CALORIE foods to maximize satiety:
+  * Leafy greens, zucchini, cucumber, bell peppers, mushrooms, tomatoes
+  * Cauliflower rice instead of regular rice
+  * Shirataki noodles if noodles needed
+- Cooking: Grill, steam, air-fry, or poach. NO frying or sautéing in oil.
+- NO sauces with hidden calories (use mustard, hot sauce, lemon, herbs, spices)
+- Example portions: 200g chicken breast (220cal, 46g protein, 0 carbs, 4g fat) + 300g vegetables (50cal)
+- If the user's ingredients include high-fat items, MINIMIZE or EXCLUDE them`
       };
 
       const generatePrompt = `You are a science-based meal planning AI. Generate 1-3 practical meals using ONLY these available ingredients: ${ingredients.join(', ')}

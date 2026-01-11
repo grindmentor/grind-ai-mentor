@@ -76,6 +76,34 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [expandedMicronutrients, setExpandedMicronutrients] = useState<Record<string, boolean>>({});
   const [savingRecipeId, setSavingRecipeId] = useState<string | null>(null);
   const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
+  const [todayConsumed, setTodayConsumed] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+  // Fetch today's consumed macros from food log
+  useEffect(() => {
+    const fetchTodayConsumed = async () => {
+      if (!user) return;
+      
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('food_log_entries')
+        .select('calories, protein, carbs, fat')
+        .eq('user_id', user.id)
+        .eq('logged_date', today);
+
+      if (!error && data) {
+        const totals = data.reduce((acc, entry) => ({
+          calories: acc.calories + (entry.calories || 0),
+          protein: acc.protein + (entry.protein || 0),
+          carbs: acc.carbs + (entry.carbs || 0),
+          fat: acc.fat + (entry.fat || 0),
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+        
+        setTodayConsumed(totals);
+      }
+    };
+
+    fetchTodayConsumed();
+  }, [user]);
 
   // Check if setup needed on mount
   useEffect(() => {
@@ -91,19 +119,19 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     }
   }, [preferences.diet_type, selectedIntent]);
 
-  // Get user's remaining macros
-  const getRemainingMacros = () => {
-    // Use daily targets or estimate from TDEE
-    const calories = dailyTargets.calories || userData.tdee || 2000;
-    return {
-      calories: Math.round(calories * 0.4), // Assume 40% remaining
-      protein: dailyTargets.protein || 80,
-      carbs: dailyTargets.carbs || 100,
-      fat: dailyTargets.fat || 40,
-    };
+  // Calculate actual remaining macros based on today's consumption
+  const dailyCaloriesTarget = dailyTargets.calories || userData.tdee || 2000;
+  const dailyProteinTarget = dailyTargets.protein || Math.round(dailyCaloriesTarget * 0.3 / 4);
+  const dailyCarbsTarget = dailyTargets.carbs || Math.round(dailyCaloriesTarget * 0.4 / 4);
+  const dailyFatTarget = dailyTargets.fat || Math.round(dailyCaloriesTarget * 0.3 / 9);
+
+  const remainingMacros = {
+    calories: Math.max(0, dailyCaloriesTarget - todayConsumed.calories),
+    protein: Math.max(0, dailyProteinTarget - todayConsumed.protein),
+    carbs: Math.max(0, dailyCarbsTarget - todayConsumed.carbs),
+    fat: Math.max(0, dailyFatTarget - todayConsumed.fat),
   };
 
-  const remainingMacros = getRemainingMacros();
   const proteinMinimum = getProteinMinimum();
 
   // Handle photo capture/upload

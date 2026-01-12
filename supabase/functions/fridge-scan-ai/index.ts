@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -36,7 +36,7 @@ serve(async (req) => {
     });
   }
 
-  if (!openAIApiKey) {
+  if (!LOVABLE_API_KEY) {
     return new Response(JSON.stringify({ error: 'AI service not configured' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -60,36 +60,40 @@ serve(async (req) => {
       const detectPrompt = `You are a precise ingredient detection AI. Analyze this photo of a fridge, pantry, or freezer and identify all visible food ingredients.
 
 RULES:
-1. Only identify actual food ingredients (not containers, bottles with unclear labels, etc.)
-2. Be specific (e.g., "chicken breast" not just "chicken")
-3. Include quantity estimates when visible
-4. Rate confidence: high (clearly visible), medium (partially visible), low (guessing)
+1. Only identify actual food ingredients (not containers, bottles with unclear labels, non-food items)
+2. Be specific (e.g., "chicken breast" not just "chicken", "red bell pepper" not just "pepper")
+3. Include quantity estimates when visible (e.g., "3 eggs", "1 pack of bacon")
+4. Rate confidence: high (clearly visible), medium (partially visible), low (guessing based on shape/color)
 5. Focus on ingredients useful for cooking meals
+6. Look carefully at EVERY shelf, drawer, and door compartment
+7. Do NOT make up or assume ingredients that are not visible in the photo
 
 Return ONLY valid JSON in this format:
 {
   "ingredients": [
     {"name": "chicken breast", "confidence": "high"},
-    {"name": "eggs", "confidence": "high"},
+    {"name": "eggs (6 count)", "confidence": "high"},
     {"name": "spinach", "confidence": "medium"},
     {"name": "greek yogurt", "confidence": "high"}
   ]
 }`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      console.log('Analyzing image for ingredients...');
+      
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'google/gemini-2.5-flash',
           messages: [
             {
               role: 'user',
               content: [
                 { type: 'text', text: detectPrompt },
-                { type: 'image_url', image_url: { url: image, detail: 'high' } }
+                { type: 'image_url', image_url: { url: image } }
               ]
             }
           ],
@@ -99,21 +103,47 @@ Return ONLY valid JSON in this format:
       });
 
       if (!response.ok) {
-        console.error('OpenAI error:', await response.text());
+        const errorText = await response.text();
+        console.error('AI gateway error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later' }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: 'AI credits exhausted' }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
         throw new Error('AI analysis failed');
       }
 
       const data = await response.json();
-      const content = data.choices[0].message.content;
+      const content = data.choices[0]?.message?.content || '';
+      
+      console.log('AI response:', content);
 
       // Parse JSON from response
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
-      const result = JSON.parse(jsonStr);
-
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      
+      try {
+        const result = JSON.parse(jsonStr);
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError, 'Content:', jsonStr);
+        return new Response(JSON.stringify({ 
+          ingredients: [],
+          error: 'Failed to parse AI response'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
     } else if (action === 'generate') {
       // Meal generation
@@ -138,22 +168,23 @@ Return ONLY valid JSON in this format:
       const intentInstructions: Record<string, string> = {
         'protein-focused': `
 - PRIORITIZE protein content above all else
-- Target 40-50g protein per meal minimum
+- Target 35-55g protein per meal (varies based on ingredients available)
 - Moderate carbs (20-40g) and fats (10-20g)
 - Use lean proteins as the base of each meal`,
         'post-workout': `
-- HIGH carbs (50-80g) + sufficient protein (30-40g)
+- HIGH carbs (50-80g) + sufficient protein (25-40g)
 - LOW fat priority (under 15g)
 - Prefer fast-digesting carbs when available (rice, potatoes, fruit)
 - Quick glycogen replenishment focus`,
         'balanced': `
 - Even macro distribution: ~30% protein, ~40% carbs, ~30% fat
-- Aim for 35-40g protein, 40-50g carbs, 15-25g fat
-- Include variety of food groups`,
+- Aim for 25-45g protein, 40-60g carbs, 15-25g fat
+- Include variety of food groups
+- Natural portion sizes based on meal type`,
         'low-cal': `
 STRICT LOW-CALORIE CUTTING MEAL REQUIREMENTS:
 - MAXIMUM 350 calories per meal - this is a HARD LIMIT
-- Protein: 35-50g minimum (prioritize lean sources: chicken breast, white fish, egg whites, turkey)
+- Protein: 30-50g (prioritize lean sources: chicken breast, white fish, egg whites, turkey)
 - Fat: MAXIMUM 8g - use cooking spray, NO oil, no butter, no high-fat ingredients
 - Carbs: 15-30g max, prefer fibrous vegetables
 - Volume: Use HIGH-VOLUME, LOW-CALORIE foods to maximize satiety:
@@ -162,7 +193,6 @@ STRICT LOW-CALORIE CUTTING MEAL REQUIREMENTS:
   * Shirataki noodles if noodles needed
 - Cooking: Grill, steam, air-fry, or poach. NO frying or sautéing in oil.
 - NO sauces with hidden calories (use mustard, hot sauce, lemon, herbs, spices)
-- Example portions: 200g chicken breast (220cal, 46g protein, 0 carbs, 4g fat) + 300g vegetables (50cal)
 - If the user's ingredients include high-fat items, MINIMIZE or EXCLUDE them`
       };
 
@@ -171,7 +201,7 @@ STRICT LOW-CALORIE CUTTING MEAL REQUIREMENTS:
 USER CONTEXT:
 - Goal: ${userGoal || 'general fitness'}
 - Remaining daily macros: ${remainingMacros.calories} cal, ${remainingMacros.protein}g protein, ${remainingMacros.carbs}g carbs, ${remainingMacros.fat}g fat
-- Protein minimum per meal: ${proteinMinimum}g
+- Protein target per meal: around ${proteinMinimum}g (can vary +/- 15g based on ingredients)
 - Time constraint: ${quickMeals ? 'Under 10 minutes only' : 'No time limit'}
 ${allergyInstructions}${dislikeInstructions}
 
@@ -179,14 +209,16 @@ MEAL INTENT: ${mealIntent}
 ${intentInstructions[mealIntent] || ''}
 
 CRITICAL RULES:
-1. Generate 1-3 meals MAXIMUM. Never more than 3.
-2. Each meal MUST aim for the protein minimum (${proteinMinimum}g). If ingredients can't reach this, set proteinMet to false.
-3. Auto-adjust portions to best fit remaining macros - NO fixed portion sizes.
-4. If a meal slightly exceeds a macro, include an honest macroWarning (e.g., "Exceeds carbs by 12g, protein target still met").
-5. Use ONLY the provided ingredients. You may suggest ONE protein add-on if protein target can't be met.
-6. Keep instructions simple and practical.
-${quickMeals ? '7. ALL meals must be under 10 minutes prep+cook time.' : ''}
-8. NEVER use any ingredients from the allergy list.
+1. Generate 1-3 DIFFERENT meals with VARIED protein amounts (not all the same).
+2. Be REALISTIC about portions and macros - calculate based on actual ingredient weights.
+3. Use NATURAL portion sizes - not every meal needs exactly the same macros.
+4. Auto-adjust portions to best fit remaining macros.
+5. If a meal can't hit protein target with available ingredients, that's okay - note it in macroWarning.
+6. Use ONLY the provided ingredients. You may suggest ONE protein add-on if needed.
+7. Keep instructions simple and practical.
+${quickMeals ? '8. ALL meals must be under 10 minutes prep+cook time.' : ''}
+9. NEVER use any ingredients from the allergy list.
+10. Each meal should have DIFFERENT macro profiles based on what makes sense for that dish.
 
 Return ONLY valid JSON:
 {
@@ -196,10 +228,10 @@ Return ONLY valid JSON:
       "name": "Meal name",
       "description": "Brief 1-line description",
       "cookTime": "8 min",
-      "protein": 42,
-      "calories": 380,
+      "protein": 38,
+      "calories": 420,
       "carbs": 25,
-      "fat": 14,
+      "fat": 16,
       "sodium": 450,
       "fiber": 4,
       "sugar": 3,
@@ -213,14 +245,14 @@ Return ONLY valid JSON:
   "suggestedAddOn": null
 }`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'google/gemini-2.5-flash',
           messages: [{ role: 'user', content: generatePrompt }],
           max_tokens: 2000,
           temperature: 0.7
@@ -228,26 +260,51 @@ Return ONLY valid JSON:
       });
 
       if (!response.ok) {
-        console.error('OpenAI error:', await response.text());
+        const errorText = await response.text();
+        console.error('AI gateway error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later' }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: 'AI credits exhausted' }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
         throw new Error('Meal generation failed');
       }
 
       const data = await response.json();
-      const content = data.choices[0].message.content;
+      const content = data.choices[0]?.message?.content || '';
 
       // Parse JSON from response
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
-      const result = JSON.parse(jsonStr);
+      
+      try {
+        const result = JSON.parse(jsonStr);
+        
+        // Ensure max 3 meals
+        if (result.meals && result.meals.length > 3) {
+          result.meals = result.meals.slice(0, 3);
+        }
 
-      // Ensure max 3 meals
-      if (result.meals && result.meals.length > 3) {
-        result.meals = result.meals.slice(0, 3);
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError, 'Content:', jsonStr);
+        return new Response(JSON.stringify({ 
+          meals: [],
+          error: 'Failed to parse AI response'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
-
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action' }), {

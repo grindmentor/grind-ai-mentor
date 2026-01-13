@@ -57,24 +57,31 @@ serve(async (req) => {
         });
       }
 
-      const detectPrompt = `You are a precise ingredient detection AI. Analyze this photo of a fridge, pantry, or freezer and identify all visible food ingredients.
+      const detectPrompt = `You are an expert ingredient detection AI with computer vision capabilities. Carefully analyze this photo and identify ONLY the specific food items you can actually see.
 
-RULES:
-1. Only identify actual food ingredients (not containers, bottles with unclear labels, non-food items)
-2. Be specific (e.g., "chicken breast" not just "chicken", "red bell pepper" not just "pepper")
-3. Include quantity estimates when visible (e.g., "3 eggs", "1 pack of bacon")
-4. Rate confidence: high (clearly visible), medium (partially visible), low (guessing based on shape/color)
-5. Focus on ingredients useful for cooking meals
-6. Look carefully at EVERY shelf, drawer, and door compartment
-7. Do NOT make up or assume ingredients that are not visible in the photo
+CRITICAL RULES - READ CAREFULLY:
+1. ONLY list ingredients you can CLEARLY IDENTIFY in the image. If you cannot see something clearly, DO NOT include it.
+2. NEVER use vague terms like "various vegetables", "assorted items", "some produce", or "mixed ingredients". Each item must be specifically named.
+3. Be as specific as possible: "romaine lettuce" not "lettuce", "cherry tomatoes" not "tomatoes", "boneless skinless chicken breast" not "chicken"
+4. If you can read labels or packaging, include the product name (e.g., "Chobani Greek yogurt", "Heinz ketchup")
+5. Include quantity when visible: "4 eggs", "1 gallon milk", "half block of cheddar cheese"
+6. Confidence ratings:
+   - "high": Clearly visible and identifiable
+   - "medium": Partially visible but reasonably certain
+   - "low": Only use if shape/color strongly suggests the item - but if too uncertain, OMIT entirely
+7. Examine EVERY visible shelf, drawer, door compartment
+8. Common pantry items to look for: pasta types (spaghetti, penne, etc.), rice varieties, canned goods (read labels!), sauces, oils, spices, cereals, bread
+9. If the photo is blurry or items are not identifiable, return FEWER ingredients rather than guessing
+10. NEVER fabricate or assume ingredients that are not visible
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON:
 {
   "ingredients": [
-    {"name": "chicken breast", "confidence": "high"},
-    {"name": "eggs (6 count)", "confidence": "high"},
-    {"name": "spinach", "confidence": "medium"},
-    {"name": "greek yogurt", "confidence": "high"}
+    {"name": "boneless chicken breast (2 pieces)", "confidence": "high"},
+    {"name": "large brown eggs (about 6)", "confidence": "high"},
+    {"name": "baby spinach bag", "confidence": "high"},
+    {"name": "Barilla spaghetti box", "confidence": "medium"},
+    {"name": "yellow onion", "confidence": "high"}
   ]
 }`;
 

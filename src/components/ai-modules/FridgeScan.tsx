@@ -553,11 +553,11 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         </div>
         
         {photoPreview ? (
-          <div className="relative">
+          <div className="relative rounded-xl overflow-hidden border border-border bg-muted/30">
             <img
               src={photoPreview}
               alt="Fridge contents"
-              className="w-full h-40 object-cover rounded-xl border border-border"
+              className="w-full max-h-64 object-contain"
             />
             <Button
               onClick={() => setPhotoPreview(null)}
@@ -606,11 +606,11 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         <p className="text-xs text-muted-foreground -mt-1">Pasta, rice, sauces, spices, condiments...</p>
         
         {pantryPreview ? (
-          <div className="relative">
+          <div className="relative rounded-xl overflow-hidden border border-border bg-muted/30">
             <img
               src={pantryPreview}
               alt="Pantry contents"
-              className="w-full h-40 object-cover rounded-xl border border-border"
+              className="w-full max-h-64 object-contain"
             />
             <Button
               onClick={() => setPantryPreview(null)}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package } from 'lucide-react';
+import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package, WifiOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,7 +15,9 @@ import { cn } from '@/lib/utils';
 import { useDietaryPreferences, dietTypeConfig, DietaryPreferences } from '@/hooks/useDietaryPreferences';
 import { useSavedRecipes } from '@/hooks/useSavedRecipes';
 import { useDailyTargets } from '@/hooks/useDietaryPreferences';
+import { useFridgeScanOfflineQueue } from '@/hooks/useFridgeScanOfflineQueue';
 import DietaryPreferencesSetup from './DietaryPreferencesSetup';
+import FridgeScanErrorState, { FridgeScanErrorCode } from './FridgeScanErrorState';
 import { format } from 'date-fns';
 
 // Types
@@ -51,6 +53,28 @@ interface FridgeScanProps {
   onBack: () => void;
 }
 
+// Helper to parse error code from Supabase function error
+const parseErrorCode = (error: any): FridgeScanErrorCode => {
+  if (!navigator.onLine) return 'offline';
+  
+  // Check for status in error context
+  const status = error?.context?.status || error?.status;
+  if (status === 401) return 401;
+  if (status === 402) return 402;
+  if (status === 429) return 429;
+  if (status === 503) return 503;
+  if (status >= 500) return 500;
+  
+  // Check error message for hints
+  const message = (error?.message || '').toLowerCase();
+  if (message.includes('unauthorized') || message.includes('authentication')) return 401;
+  if (message.includes('credits') || message.includes('payment')) return 402;
+  if (message.includes('rate limit') || message.includes('too many')) return 429;
+  if (message.includes('offline') || message.includes('network')) return 'offline';
+  
+  return 'unknown';
+};
+
 const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -61,6 +85,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const { preferences, isLoading: prefsLoading, needsSetup, getProteinMinimum } = useDietaryPreferences();
   const { saveRecipe } = useSavedRecipes();
   const dailyTargets = useDailyTargets();
+  
+  // Offline queue
+  const { isOnline, queuedItems, enqueue, processQueue } = useFridgeScanOfflineQueue();
 
   // State
   const [showSetup, setShowSetup] = useState(false);
@@ -79,6 +106,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [loggingMealId, setLoggingMealId] = useState<string | null>(null);
   const [todayConsumed, setTodayConsumed] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
   const pantryInputRef = useRef<HTMLInputElement>(null);
+  
+  // Error state
+  const [errorState, setErrorState] = useState<{ code: FridgeScanErrorCode; context: 'detect' | 'generate' } | null>(null);
 
   // Fetch today's consumed macros from food log
   useEffect(() => {
@@ -120,6 +150,17 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       setSelectedIntent(preferences.diet_type as MealIntent);
     }
   }, [preferences.diet_type, selectedIntent]);
+  
+  // Clear error when coming back online
+  useEffect(() => {
+    if (isOnline && errorState?.code === 'offline') {
+      setErrorState(null);
+      // Auto-retry if we have queued items
+      if (queuedItems.length > 0) {
+        processQueue();
+      }
+    }
+  }, [isOnline, errorState, queuedItems.length, processQueue]);
 
   // Calculate actual remaining macros based on today's consumption
   const dailyCaloriesTarget = dailyTargets.calories || userData.tdee || 2000;
@@ -169,21 +210,30 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   // Analyze photos (at least one required)
   const analyzePhotos = async () => {
     if (!photoPreview && !pantryPreview) return;
+    
+    // Handle offline state
     if (!navigator.onLine) {
+      setErrorState({ code: 'offline', context: 'detect' });
+      // Queue for later if we have photos
+      if (photoPreview) {
+        enqueue('detect', { image: photoPreview, action: 'detect' });
+      }
       toast({
-        title: 'Offline',
-        description: 'Connect to the internet to analyze photos.',
-        variant: 'destructive',
+        title: 'Request Queued',
+        description: 'Your photo will be analyzed when you reconnect.',
       });
       return;
     }
 
     setIsAnalyzing(true);
+    setErrorState(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        throw new Error('Not authenticated');
+        setErrorState({ code: 401, context: 'detect' });
+        setIsAnalyzing(false);
+        return;
       }
 
       let allIngredients: DetectedIngredient[] = [];
@@ -194,7 +244,12 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           body: { image: photoPreview, action: 'detect' },
         });
 
-        if (fridgeError) throw fridgeError;
+        if (fridgeError) {
+          const code = parseErrorCode(fridgeError);
+          setErrorState({ code, context: 'detect' });
+          setIsAnalyzing(false);
+          return;
+        }
 
         allIngredients = (fridgeData.ingredients || []).map((ing: any, idx: number) => ({
           id: `fridge-${idx}`,
@@ -242,12 +297,8 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       setStep('ingredients');
     } catch (error) {
       console.error('Photo analysis error:', error);
-      toast({
-        title: 'Analysis failed',
-        description: 'Could not analyze the photo. Please try again.',
-        variant: 'destructive',
-      });
-      setStep('photo');
+      const code = parseErrorCode(error);
+      setErrorState({ code, context: 'detect' });
     } finally {
       setIsAnalyzing(false);
     }
@@ -324,34 +375,50 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       return;
     }
 
+    const payload = {
+      action: 'generate',
+      ingredients: selectedIngredients.map(i => i.name),
+      mealIntent: selectedIntent,
+      quickMeals,
+      remainingMacros,
+      proteinMinimum,
+      userGoal: userData.goal,
+      allergies: preferences.allergies,
+      dislikes: preferences.dislikes,
+    };
+
+    // Handle offline state
+    if (!navigator.onLine) {
+      setErrorState({ code: 'offline', context: 'generate' });
+      enqueue('generate', payload);
+      toast({
+        title: 'Request Queued',
+        description: 'Meals will be generated when you reconnect.',
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setStep('meals');
+    setErrorState(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('fridge-scan-ai', {
-        body: {
-          action: 'generate',
-          ingredients: selectedIngredients.map(i => i.name),
-          mealIntent: selectedIntent,
-          quickMeals,
-          remainingMacros,
-          proteinMinimum,
-          userGoal: userData.goal,
-          allergies: preferences.allergies,
-          dislikes: preferences.dislikes,
-        },
+        body: payload,
       });
 
-      if (error) throw error;
+      if (error) {
+        const code = parseErrorCode(error);
+        setErrorState({ code, context: 'generate' });
+        setIsGenerating(false);
+        return;
+      }
 
       setMeals((data.meals || []).map((m: MealCard) => ({ ...m, saved: false })));
     } catch (error) {
       console.error('Meal generation error:', error);
-      toast({
-        title: 'Generation failed',
-        description: 'Could not generate meals. Please try again.',
-        variant: 'destructive',
-      });
+      const code = parseErrorCode(error);
+      setErrorState({ code, context: 'generate' });
     } finally {
       setIsGenerating(false);
     }
@@ -922,6 +989,16 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     </div>
   );
 
+  // Handle retry from error state
+  const handleRetry = () => {
+    setErrorState(null);
+    if (errorState?.context === 'detect') {
+      analyzePhotos();
+    } else if (errorState?.context === 'generate') {
+      generateMeals();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -936,9 +1013,17 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
               <p className="text-xs text-muted-foreground">Photo → Meals</p>
             </div>
           </div>
-          {selectedIntent && step !== 'intent' && (
-            <Badge variant="outline">{dietTypeConfig[selectedIntent].label}</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {!isOnline && (
+              <Badge variant="outline" className="flex items-center gap-1 border-amber-500/50 text-amber-500">
+                <WifiOff className="w-3 h-3" />
+                Offline
+              </Badge>
+            )}
+            {selectedIntent && step !== 'intent' && (
+              <Badge variant="outline">{dietTypeConfig[selectedIntent].label}</Badge>
+            )}
+          </div>
         </div>
 
         {/* Remaining macros bar */}
@@ -954,14 +1039,47 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
             <span className="text-yellow-400">{remainingMacros.fat}g F</span>
           </div>
         </div>
+        
+        {/* Queued items indicator */}
+        {queuedItems.length > 0 && (
+          <div className="px-4 pb-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              <span className="text-xs text-blue-400">
+                {queuedItems.length} request{queuedItems.length !== 1 ? 's' : ''} queued — will retry when online
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main content */}
       <div className="p-4">
-        {step === 'intent' && renderIntentStep()}
-        {step === 'photo' && renderPhotoStep()}
-        {step === 'ingredients' && renderIngredientsStep()}
-        {step === 'meals' && renderMealsStep()}
+        {/* Show error state if present */}
+        {errorState && (
+          <div className="mb-4">
+            <FridgeScanErrorState
+              errorCode={errorState.code}
+              onRetry={handleRetry}
+              onBack={() => {
+                setErrorState(null);
+                if (errorState.context === 'detect') setStep('photo');
+                else setStep('ingredients');
+              }}
+              queuedCount={queuedItems.length}
+            />
+          </div>
+        )}
+        
+        {/* Only show steps if no blocking error */}
+        {!errorState && (
+          <>
+            {step === 'intent' && renderIntentStep()}
+            {step === 'photo' && renderPhotoStep()}
+            {step === 'ingredients' && renderIngredientsStep()}
+            {step === 'meals' && renderMealsStep()}
+          </>
+        )}
       </div>
     </div>
   );

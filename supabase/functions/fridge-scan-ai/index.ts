@@ -139,12 +139,47 @@ Return ONLY valid JSON:
       
       try {
         const result = JSON.parse(jsonStr);
+
+        // Post-process to remove vague/non-food items and reduce hallucinations
+        if (Array.isArray(result.ingredients)) {
+          const bannedTokens = [
+            'various', 'assorted', 'some ', 'misc', 'multiple',
+            'container', 'containers', 'bowl', 'bowls', 'cup', 'cups',
+            'plastic', 'package', 'packages', 'bag', 'bags',
+            'unidentifiable', 'possibly', 'unclear',
+          ];
+
+          const looksLikeSpecificFood = (name: string) => {
+            const n = name.toLowerCase();
+            if (!n.trim()) return false;
+            if (bannedTokens.some(t => n.includes(t))) return false;
+            // Reject obviously non-food objects
+            if (/(plate|lid|jar\s*with\s*unclear|glass\s*bowl|red\s*plastic|white\s*bowls)/i.test(name)) return false;
+            return true;
+          };
+
+          result.ingredients = result.ingredients
+            .map((i: any) => ({
+              name: (i?.name ?? i)?.toString?.()?.trim?.() ?? '',
+              confidence: (i?.confidence ?? 'medium') as 'high' | 'medium' | 'low',
+            }))
+            // Drop low-confidence guesses entirely
+            .filter((i: any) => i.name && i.confidence !== 'low')
+            // Drop vague/non-food
+            .filter((i: any) => looksLikeSpecificFood(i.name))
+            // De-duplicate
+            .filter((i: any, idx: number, arr: any[]) =>
+              arr.findIndex(x => x.name.toLowerCase() === i.name.toLowerCase()) === idx
+            )
+            .slice(0, 40);
+        }
+
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (parseError) {
         console.error('JSON parse error:', parseError, 'Content:', jsonStr);
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
           ingredients: [],
           error: 'Failed to parse AI response'
         }), {

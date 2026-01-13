@@ -169,9 +169,16 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   // Analyze both photos (fridge required, pantry optional)
   const analyzePhotos = async () => {
     if (!photoPreview) return;
-    
+    if (!navigator.onLine) {
+      toast({
+        title: 'Offline',
+        description: 'Connect to the internet to analyze photos.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
-    setStep('ingredients');
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -228,6 +235,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       });
 
       setIngredients(filteredIngredients);
+      setStep('ingredients');
     } catch (error) {
       console.error('Photo analysis error:', error);
       toast({

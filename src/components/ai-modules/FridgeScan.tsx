@@ -166,9 +166,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     reader.readAsDataURL(file);
   }, []);
 
-  // Analyze both photos (fridge required, pantry optional)
+  // Analyze photos (at least one required)
   const analyzePhotos = async () => {
-    if (!photoPreview) return;
+    if (!photoPreview && !pantryPreview) return;
     if (!navigator.onLine) {
       toast({
         title: 'Offline',
@@ -186,21 +186,25 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         throw new Error('Not authenticated');
       }
 
-      // Analyze fridge photo
-      const { data: fridgeData, error: fridgeError } = await supabase.functions.invoke('fridge-scan-ai', {
-        body: { image: photoPreview, action: 'detect' },
-      });
+      let allIngredients: DetectedIngredient[] = [];
 
-      if (fridgeError) throw fridgeError;
+      // Analyze fridge photo if present
+      if (photoPreview) {
+        const { data: fridgeData, error: fridgeError } = await supabase.functions.invoke('fridge-scan-ai', {
+          body: { image: photoPreview, action: 'detect' },
+        });
 
-      let allIngredients: DetectedIngredient[] = (fridgeData.ingredients || []).map((ing: any, idx: number) => ({
-        id: `fridge-${idx}`,
-        name: ing.name || ing,
-        selected: true,
-        confidence: ing.confidence || 'medium',
-      }));
+        if (fridgeError) throw fridgeError;
 
-      // If pantry photo exists, analyze it too
+        allIngredients = (fridgeData.ingredients || []).map((ing: any, idx: number) => ({
+          id: `fridge-${idx}`,
+          name: ing.name || ing,
+          selected: true,
+          confidence: ing.confidence || 'medium',
+        }));
+      }
+
+      // Analyze pantry photo if present
       if (pantryPreview) {
         const { data: pantryData, error: pantryError } = await supabase.functions.invoke('fridge-scan-ai', {
           body: { image: pantryPreview, action: 'detect' },
@@ -529,153 +533,155 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   );
 
   // Render photo capture step
-  const renderPhotoStep = () => (
-    <div className="space-y-4">
-      <div className="text-center mb-4">
-        <h2 className="text-xl font-semibold text-foreground">Scan Your Kitchen</h2>
-        <p className="text-sm text-muted-foreground mt-1">Add photos of your fridge and pantry</p>
-      </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={(e) => e.target.files?.[0] && handlePhotoSelect(e.target.files[0])}
-        className="hidden"
-      />
-      <input
-        ref={pantryInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={(e) => e.target.files?.[0] && handlePantrySelect(e.target.files[0])}
-        className="hidden"
-      />
-
-      {/* Fridge Photo - Required */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">🧊 Fridge Photo</span>
-          <Badge variant="outline" className="text-xs">Required</Badge>
+  const renderPhotoStep = () => {
+    const hasAnyPhoto = photoPreview || pantryPreview;
+    
+    return (
+      <div className="space-y-4">
+        <div className="text-center mb-4">
+          <h2 className="text-xl font-semibold text-foreground">Scan Your Kitchen</h2>
+          <p className="text-sm text-muted-foreground mt-1">Add at least one photo — fridge, pantry, or both</p>
         </div>
-        
-        {photoPreview ? (
-          <div className="relative rounded-xl overflow-hidden border border-border bg-muted/30">
-            <img
-              src={photoPreview}
-              alt="Fridge contents"
-              className="w-full max-h-64 object-contain"
-            />
-            <Button
-              onClick={() => setPhotoPreview(null)}
-              variant="secondary"
-              size="sm"
-              className="absolute bottom-2 right-2"
-            >
-              <RefreshCw className="w-3 h-3 mr-1" /> Change
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-colors"
-            >
-              <Camera className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium text-primary">Take Photo</span>
-            </button>
-            <button
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) handlePhotoSelect(file);
-                };
-                input.click();
-              }}
-              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
-            >
-              <Upload className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Upload</span>
-            </button>
-          </div>
-        )}
-      </div>
 
-      {/* Pantry Photo - Optional */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">📦 Pantry / Shelves</span>
-          <Badge variant="secondary" className="text-xs">Optional</Badge>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => e.target.files?.[0] && handlePhotoSelect(e.target.files[0])}
+          className="hidden"
+        />
+        <input
+          ref={pantryInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => e.target.files?.[0] && handlePantrySelect(e.target.files[0])}
+          className="hidden"
+        />
+
+        {/* Fridge Photo */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">🧊 Fridge</span>
+          </div>
+          
+          {photoPreview ? (
+            <div className="relative rounded-xl overflow-hidden border border-border bg-muted/30">
+              <img
+                src={photoPreview}
+                alt="Fridge contents"
+                className="w-full max-h-64 object-contain"
+              />
+              <Button
+                onClick={() => setPhotoPreview(null)}
+                variant="secondary"
+                size="sm"
+                className="absolute bottom-2 right-2"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" /> Change
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10 transition-colors"
+              >
+                <Camera className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium text-primary">Take Photo</span>
+              </button>
+              <button
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) handlePhotoSelect(file);
+                  };
+                  input.click();
+                }}
+                className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
+              >
+                <Upload className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Upload</span>
+              </button>
+            </div>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground -mt-1">Pasta, rice, sauces, spices, condiments...</p>
-        
-        {pantryPreview ? (
-          <div className="relative rounded-xl overflow-hidden border border-border bg-muted/30">
-            <img
-              src={pantryPreview}
-              alt="Pantry contents"
-              className="w-full max-h-64 object-contain"
-            />
-            <Button
-              onClick={() => setPantryPreview(null)}
-              variant="secondary"
-              size="sm"
-              className="absolute bottom-2 right-2"
-            >
-              <RefreshCw className="w-3 h-3 mr-1" /> Change
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => pantryInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
-            >
-              <Camera className="w-5 h-5 text-amber-500" />
-              <span className="text-sm font-medium text-amber-500">Take Photo</span>
-            </button>
-            <button
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) handlePantrySelect(file);
-                };
-                input.click();
-              }}
-              className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
-            >
-              <Upload className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm font-medium text-muted-foreground">Upload</span>
-            </button>
-          </div>
-        )}
-      </div>
 
-      {/* Actions */}
-      <div className="pt-4 space-y-2">
-        <Button 
-          onClick={analyzePhotos} 
-          disabled={!photoPreview}
-          className="w-full"
-          size="lg"
-        >
-          <Sparkles className="w-4 h-4 mr-2" />
-          Analyze {pantryPreview ? 'Photos' : 'Photo'}
-        </Button>
-        
-        <Button variant="ghost" onClick={() => setStep('intent')} className="w-full">
-          <ChevronLeft className="w-4 h-4 mr-1" /> Back
-        </Button>
+        {/* Pantry Photo */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">📦 Pantry / Shelves</span>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-1">Pasta, rice, sauces, spices, condiments...</p>
+          
+          {pantryPreview ? (
+            <div className="relative rounded-xl overflow-hidden border border-border bg-muted/30">
+              <img
+                src={pantryPreview}
+                alt="Pantry contents"
+                className="w-full max-h-64 object-contain"
+              />
+              <Button
+                onClick={() => setPantryPreview(null)}
+                variant="secondary"
+                size="sm"
+                className="absolute bottom-2 right-2"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" /> Change
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => pantryInputRef.current?.click()}
+                className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 transition-colors"
+              >
+                <Camera className="w-5 h-5 text-amber-500" />
+                <span className="text-sm font-medium text-amber-500">Take Photo</span>
+              </button>
+              <button
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) handlePantrySelect(file);
+                  };
+                  input.click();
+                }}
+                className="flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
+              >
+                <Upload className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Upload</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="pt-4 space-y-2">
+          <Button 
+            onClick={analyzePhotos} 
+            disabled={!hasAnyPhoto}
+            className="w-full"
+            size="lg"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Analyze {photoPreview && pantryPreview ? 'Photos' : 'Photo'}
+          </Button>
+          
+          <Button variant="ghost" onClick={() => setStep('intent')} className="w-full">
+            <ChevronLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Render ingredients editing step
   const renderIngredientsStep = () => (

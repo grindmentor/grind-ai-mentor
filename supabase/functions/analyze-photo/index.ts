@@ -1,7 +1,6 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,14 +9,13 @@ const corsHeaders = {
 
 // IP-based rate limiting
 const rateLimiter = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 10; // requests per minute (stricter for image analysis)
-const RATE_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60 * 1000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const record = rateLimiter.get(ip);
 
-  // Clean up old entries periodically
   if (rateLimiter.size > 5000) {
     for (const [key, value] of rateLimiter.entries()) {
       if (value.resetTime < now) {
@@ -45,12 +43,11 @@ function getClientIP(req: Request): string {
          'unknown';
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Check rate limit
   const clientIP = getClientIP(req);
   if (!checkRateLimit(clientIP)) {
     console.log(`Rate limit exceeded for IP: ${clientIP}`);
@@ -63,18 +60,16 @@ serve(async (req) => {
     });
   }
 
-  // Check for OpenAI API key first
-  if (!openAIApiKey) {
-    console.error('OPENAI_API_KEY environment variable is not set');
+  if (!LOVABLE_API_KEY) {
+    console.error('LOVABLE_API_KEY environment variable is not set');
     return new Response(JSON.stringify({ 
-      error: 'AI analysis service not configured. Please contact support.' 
+      error: 'AI analysis service not configured.' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
 
-  // Get the Authorization header
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
     console.error('Missing Authorization header');
@@ -96,8 +91,7 @@ serve(async (req) => {
       });
     }
 
-    // EVIDENCE-BASED Physique AI analysis using 2020-2025 research
-    const analysisPrompt = `You are an expert exercise physiologist specializing in evidence-based body composition analysis using the latest research from 2020-2025.
+    const analysisPrompt = `You are an expert exercise physiologist specializing in evidence-based body composition analysis.
 
 USER CONTEXT:
 - Height: ${height || 'Not specified'}
@@ -108,14 +102,7 @@ USER CONTEXT:
 EVIDENCE-BASED ANALYSIS PRINCIPLES:
 - Body fat assessment: Use validated visual methods, acknowledge ±3-5% accuracy limitation
 - Muscle development: Assess symmetry and proportional development
-- Recommendations: ONLY evidence-based advice from peer-reviewed research 2020-2025
-
-MANDATORY - REJECT THESE OUTDATED MYTHS:
-❌ "Train light weights for muscle definition" - load progression drives adaptations regardless of body fat
-❌ "Do cardio for spot reduction" - localized fat loss is physiologically impossible  
-❌ "Eat 6 small meals to boost metabolism" - meal frequency has minimal metabolic impact
-❌ "Avoid carbs to get shredded" - caloric deficit drives fat loss, not macronutrient restriction
-❌ "High reps for cutting, low reps for bulking" - rep ranges should match training goals
+- Recommendations: ONLY evidence-based advice from peer-reviewed research
 
 CRITICAL RULES:
 1. Return ONLY valid JSON - no additional text
@@ -146,8 +133,7 @@ Example response format:
   "overallRating": 7,
   "improvements": [
     "Focus on compound leg exercises",
-    "Add more back training volume",
-    "Consider slight caloric deficit for fat loss"
+    "Add more back training volume"
   ],
   "confidence": "high"
 }
@@ -158,37 +144,51 @@ If you cannot clearly assess the physique, return:
   "error": "Unable to clearly assess physique from image"
 }`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'user',
             content: [
               { type: 'text', text: analysisPrompt },
-              { 
-                type: 'image_url', 
-                image_url: { 
-                  url: image,
-                  detail: 'high'
-                } 
-              }
+              { type: 'image_url', image_url: { url: image } }
             ]
           }
         ],
-        max_completion_tokens: 1000
-        // Note: temperature parameter is NOT supported for GPT-4.1+ models
+        max_tokens: 1000,
+        temperature: 0.5
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
+      console.error('AI gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again later.',
+          confidence: 'low'
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ 
+          error: 'AI credits exhausted.',
+          confidence: 'low'
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       return new Response(JSON.stringify({ 
         error: 'AI analysis service temporarily unavailable',
         confidence: 'low'
@@ -199,18 +199,17 @@ If you cannot clearly assess the physique, return:
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    const aiResponse = data.choices?.[0]?.message?.content || '';
 
     try {
-      // Parse and validate the JSON response
-      const analysisResult = JSON.parse(aiResponse);
+      const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/) || aiResponse.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : aiResponse;
+      const analysisResult = JSON.parse(jsonStr);
       
-      // Validate response structure
       if (!analysisResult.confidence) {
         throw new Error('Invalid response structure');
       }
 
-      // Ensure we have required fields or set defaults
       const structuredResult = {
         bodyFatPercentage: analysisResult.bodyFatPercentage || null,
         muscleMass: analysisResult.muscleMass || 'average',
@@ -244,7 +243,7 @@ If you cannot clearly assess the physique, return:
   } catch (error) {
     console.error('Error in analyze-photo function:', error);
     return new Response(JSON.stringify({ 
-      error: 'Analysis failed - please try again or ensure image is clear and well-lit',
+      error: 'Analysis failed - please try again',
       confidence: 'low'
     }), {
       status: 500,

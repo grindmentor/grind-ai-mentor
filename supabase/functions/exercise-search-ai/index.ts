@@ -1,24 +1,21 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// User-based rate limiting (more secure than IP-based)
+// User-based rate limiting
 const rateLimiter = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 15; // requests per minute per user
-const RATE_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT = 15;
+const RATE_WINDOW_MS = 60 * 1000;
 
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const record = rateLimiter.get(userId);
 
-  // Clean up old entries periodically
   if (rateLimiter.size > 5000) {
     for (const [key, value] of rateLimiter.entries()) {
       if (value.resetTime < now) {
@@ -40,17 +37,16 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-// Enhanced in-memory cache for exercise searches
+// Enhanced in-memory cache
 const exerciseCache = new Map<string, any>();
-const CACHE_DURATION = 45 * 60 * 1000; // 45 minutes - longer cache for better cost efficiency
+const CACHE_DURATION = 45 * 60 * 1000;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Authentication check - require valid JWT token
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.log('No authorization header provided');
@@ -63,7 +59,6 @@ serve(async (req) => {
       });
     }
 
-    // Verify the JWT token
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -83,7 +78,6 @@ serve(async (req) => {
       });
     }
 
-    // User-based rate limiting
     if (!checkRateLimit(user.id)) {
       console.log(`Rate limit exceeded for user: ${user.id}`);
       return new Response(JSON.stringify({
@@ -95,9 +89,20 @@ serve(async (req) => {
       });
     }
 
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY environment variable is not set');
+      return new Response(JSON.stringify({
+        error: 'AI service not configured',
+        exercises: []
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const { query } = await req.json();
     
-    // Enhanced cache check with normalization
+    // Enhanced cache check
     const cacheKey = query.toLowerCase().trim().replace(/\s+/g, ' ');
     const cached = exerciseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -109,14 +114,14 @@ serve(async (req) => {
 
     console.log('Making API call for exercise search:', query);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // Cost-optimized model
+        model: 'google/gemini-3-flash-preview',
         messages: [
           {
             role: 'system',
@@ -124,55 +129,73 @@ serve(async (req) => {
 
 STRICT FILTERING REQUIREMENTS:
 - ONLY strength training exercises performed in a gym with weights/machines
-- EXCLUDE ALL: cardio (running, cycling, swimming), stretching, yoga, mobility work
-- EXCLUDE: bodyweight-only exercises unless they use gym equipment (pull-ups, dips on equipment)
-- Equipment must be: barbell, dumbbell, cable machine, weight machine, bench, rack, or gym-based bodyweight apparatus
-- Focus on compound and isolation movements for muscle building and strength
-- Category must be "Strength" or "Full Workout" (NEVER "Cardio")
+- EXCLUDE ALL: cardio, stretching, yoga, mobility work
+- Equipment must be: barbell, dumbbell, cable machine, weight machine, bench, rack
+- Focus on compound and isolation movements for muscle building
 
-ENHANCED RESPONSE REQUIREMENTS:
-- Include detailed form tips for proper execution
-- Specify primary muscle focus and secondary muscles worked  
-- Emphasize progressive overload potential
-- Provide equipment-specific guidance
-
-Popular strength exercises: bench press, squat, deadlift, overhead press, rows, pull-ups, lateral raises, tricep pushdowns, bicep curls, Romanian deadlifts, leg press, lat pulldowns, etc.`
+Return ONLY valid JSON with this structure:
+{
+  "exercises": [
+    {
+      "name": "Exercise Name",
+      "category": "Strength",
+      "muscle_groups": ["Primary", "Secondary"],
+      "equipment": "Specific equipment needed",
+      "difficulty": "Beginner/Intermediate/Advanced",
+      "description": "Brief exercise description",
+      "estimated_duration": "X minutes per set",
+      "form_tips": "Form cues for safety",
+      "muscle_focus": "Primary and secondary muscle activation"
+    }
+  ]
+}`
           },
           {
             role: 'user',
-            content: `Search query: "${query}". Return gym strength exercises with enhanced details in this JSON format: 
-            {
-              "exercises": [
-                {
-                  "name": "Exercise Name",
-                  "category": "Strength",
-                  "muscle_groups": ["Primary", "Secondary"],
-                  "equipment": "Specific equipment needed",
-                  "difficulty": "Beginner/Intermediate/Advanced",
-                  "description": "Brief exercise description with progressive overload emphasis",
-                  "estimated_duration": "X minutes per set",
-                  "form_tips": "Specific form cues and technique points for safety and effectiveness",
-                  "muscle_focus": "Detailed explanation of primary and secondary muscle activation"
-                }
-              ]
-            }`
+            content: `Search query: "${query}". Return gym strength exercises.`
           }
         ],
         temperature: 0.7,
-        max_tokens: 1200, // Increased for enhanced details
+        max_tokens: 1200,
       }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AI gateway error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({
+          error: 'Rate limit exceeded. Please try again later.',
+          exercises: []
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({
+          error: 'AI credits exhausted.',
+          exercises: []
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      throw new Error('AI service error');
+    }
+
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    const aiResponse = data.choices?.[0]?.message?.content || '';
     
-    // Enhanced JSON parsing with robust fallback
     let exerciseData;
     try {
-      exerciseData = JSON.parse(aiResponse);
+      const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/) || aiResponse.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : aiResponse;
+      exerciseData = JSON.parse(jsonStr);
     } catch (parseError) {
-      console.log('JSON parsing failed, using enhanced fallback exercises');
-      // Enhanced fallback with form tips and muscle focus
+      console.log('JSON parsing failed, using fallback exercises');
       exerciseData = {
         exercises: [
           {
@@ -181,21 +204,10 @@ Popular strength exercises: bench press, squat, deadlift, overhead press, rows, 
             muscle_groups: ["Chest", "Triceps", "Front Deltoids"],
             equipment: "Barbell, Bench, Rack",
             difficulty: "Intermediate",
-            description: "Classic compound movement for upper body strength and muscle building. Excellent for progressive overload tracking.",
+            description: "Classic compound movement for upper body strength.",
             estimated_duration: "3-4 minutes per set",
-            form_tips: "Retract shoulder blades, maintain arch in lower back, controlled descent to chest, drive through feet, full lockout at top",
-            muscle_focus: "Primary: Pectoralis major (chest). Secondary: Triceps brachii, anterior deltoids. Stabilizers: Core, lats, rear delts"
-          },
-          {
-            name: "Romanian Deadlift",
-            category: "Strength", 
-            muscle_groups: ["Hamstrings", "Glutes", "Lower Back"],
-            equipment: "Barbell or Dumbbells",
-            difficulty: "Intermediate",
-            description: "Hip-hinge movement targeting posterior chain. Perfect for progressive overload in hamstring and glute development.",
-            estimated_duration: "3-4 minutes per set",
-            form_tips: "Start with bar at hip level, push hips back, keep knees slightly bent, lower bar close to legs, feel stretch in hamstrings",
-            muscle_focus: "Primary: Hamstrings (biceps femoris, semitendinosus, semimembranosus), glutes. Secondary: Erector spinae, traps"
+            form_tips: "Retract shoulder blades, controlled descent to chest",
+            muscle_focus: "Primary: Chest. Secondary: Triceps, anterior deltoids"
           },
           {
             name: "Barbell Back Squat",
@@ -203,16 +215,16 @@ Popular strength exercises: bench press, squat, deadlift, overhead press, rows, 
             muscle_groups: ["Quadriceps", "Glutes", "Core"],
             equipment: "Barbell, Squat Rack", 
             difficulty: "Intermediate",
-            description: "King of compound exercises for lower body strength and mass. Essential for progressive overload in leg development.",
+            description: "King of compound exercises for lower body.",
             estimated_duration: "4-5 minutes per set",
-            form_tips: "High bar or low bar position, brace core, sit back and down, knees track over toes, drive through heels to stand",
-            muscle_focus: "Primary: Quadriceps (vastus lateralis, medialis, intermedius, rectus femoris), glutes. Secondary: Hamstrings, calves, core"
+            form_tips: "Brace core, sit back and down, knees track over toes",
+            muscle_focus: "Primary: Quadriceps, glutes. Secondary: Hamstrings, core"
           }
         ]
       };
     }
 
-    // Strict filtering for gym-only strength exercises
+    // Filter for gym-only strength exercises
     const filteredExercises = (exerciseData.exercises || []).filter((exercise: any) => {
       const isStrengthExercise = exercise.category === 'Strength' || exercise.category === 'Full Workout';
       const hasGymEquipment = exercise.equipment && 
@@ -221,40 +233,31 @@ Popular strength exercises: bench press, squat, deadlift, overhead press, rows, 
          exercise.equipment.toLowerCase().includes('cable') ||
          exercise.equipment.toLowerCase().includes('machine') ||
          exercise.equipment.toLowerCase().includes('bench') ||
-         exercise.equipment.toLowerCase().includes('rack') ||
-         (exercise.equipment.toLowerCase() === 'bodyweight' && 
-          (exercise.name.toLowerCase().includes('pull-up') || 
-           exercise.name.toLowerCase().includes('dip'))));
+         exercise.equipment.toLowerCase().includes('rack'));
       
-      // Exclude cardio and stretching
       const exerciseName = exercise.name.toLowerCase();
-      const excludedTerms = ['running', 'cycling', 'treadmill', 'elliptical', 'rowing machine', 
-                           'jump', 'stretch', 'yoga', 'mobility', 'cardio', 'hiit'];
-      const isExcluded = excludedTerms.some(term => exerciseName.includes(term)) || 
-                        exercise.category === 'Cardio';
+      const excludedTerms = ['running', 'cycling', 'treadmill', 'stretch', 'yoga', 'cardio'];
+      const isExcluded = excludedTerms.some(term => exerciseName.includes(term));
       
       return isStrengthExercise && hasGymEquipment && !isExcluded;
     });
 
     const finalData = { exercises: filteredExercises };
 
-    // Enhanced caching with better cleanup
+    // Cache the result
     exerciseCache.set(cacheKey, {
       data: finalData,
       timestamp: Date.now()
     });
 
-    // Improved cache cleanup - remove expired entries
+    // Cleanup old cache entries
     if (exerciseCache.size > 150) {
       const now = Date.now();
-      const keysToDelete: string[] = [];
       for (const [key, value] of exerciseCache.entries()) {
         if (now - value.timestamp > CACHE_DURATION) {
-          keysToDelete.push(key);
+          exerciseCache.delete(key);
         }
       }
-      keysToDelete.forEach(key => exerciseCache.delete(key));
-      console.log(`Cleaned up ${keysToDelete.length} expired cache entries`);
     }
 
     return new Response(JSON.stringify(finalData), {

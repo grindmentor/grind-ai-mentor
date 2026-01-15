@@ -59,11 +59,43 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    console.log('[FRIDGE-SCAN] Action:', action);
+
     if (action === 'detect') {
       // Ingredient detection from photo
       const { image } = body;
+      
+      // Debug image data
+      const imageInfo = {
+        hasImage: !!image,
+        imageType: typeof image,
+        imageLength: image?.length || 0,
+        imageSizeMB: image ? (image.length / 1024 / 1024).toFixed(2) : 0,
+        startsWithData: image?.startsWith?.('data:') || false,
+        mimeType: image?.substring?.(0, 30) || 'N/A',
+      };
+      console.log('[FRIDGE-SCAN] Image info:', JSON.stringify(imageInfo));
+
       if (!image) {
+        console.error('[FRIDGE-SCAN] No image in request body');
         return new Response(JSON.stringify({ error: 'No image provided' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Validate image format
+      if (typeof image !== 'string') {
+        console.error('[FRIDGE-SCAN] Image is not a string:', typeof image);
+        return new Response(JSON.stringify({ error: 'Invalid image format - expected base64 string' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (!image.startsWith('data:image/')) {
+        console.error('[FRIDGE-SCAN] Image does not start with data:image/', image.substring(0, 50));
+        return new Response(JSON.stringify({ error: 'Invalid image format - expected data URL' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -97,33 +129,39 @@ Return ONLY valid JSON:
   ]
 }`;
 
-      console.log('Analyzing image for ingredients...');
+      console.log('[FRIDGE-SCAN] Calling AI gateway for ingredient detection...');
       
+      const requestBody = {
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: detectPrompt },
+              { type: 'image_url', image_url: { url: image } }
+            ]
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.3
+      };
+
+      console.log('[FRIDGE-SCAN] Request payload size:', JSON.stringify(requestBody).length, 'bytes');
+
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: detectPrompt },
-                { type: 'image_url', image_url: { url: image } }
-              ]
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 0.3
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('[FRIDGE-SCAN] AI gateway response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('AI gateway error:', response.status, errorText);
+        console.error('[FRIDGE-SCAN] AI gateway error:', response.status, errorText);
         
         if (response.status === 429) {
           return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later' }), {

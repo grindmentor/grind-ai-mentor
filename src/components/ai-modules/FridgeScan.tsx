@@ -177,44 +177,104 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
   const proteinMinimum = getProteinMinimum();
 
+  // Max image size for API (5MB base64 ≈ 3.75MB raw)
+  const MAX_IMAGE_SIZE_MB = 4;
+
   // Handle photo capture/upload for fridge
   const handlePhotoSelect = useCallback(async (file: File) => {
+    console.log('[FridgeScan] Photo selected:', { 
+      name: file.name, 
+      type: file.type, 
+      size: `${(file.size / 1024 / 1024).toFixed(2)}MB` 
+    });
+
     if (!file.type.startsWith('image/')) {
+      console.error('[FridgeScan] Invalid file type:', file.type);
       toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
       return;
     }
 
+    // Check file size
+    if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+      console.warn('[FridgeScan] Image too large, will compress:', file.size);
+    }
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      console.error('[FridgeScan] FileReader error:', reader.error);
+      toast({ title: 'Failed to read image', description: 'Could not load the selected image', variant: 'destructive' });
+    };
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
+      console.log('[FridgeScan] Fridge photo loaded:', { 
+        base64Length: base64.length,
+        base64SizeMB: (base64.length / 1024 / 1024).toFixed(2),
+        startsWithData: base64.startsWith('data:image/'),
+        mimeFromBase64: base64.substring(0, 30)
+      });
+      
+      // Warn if base64 is very large
+      if (base64.length > 10 * 1024 * 1024) {
+        console.warn('[FridgeScan] Base64 very large, may fail API call');
+        toast({ 
+          title: 'Large image', 
+          description: 'Image is large and may take longer to process',
+        });
+      }
+      
       setPhotoPreview(base64);
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [toast]);
 
   // Handle pantry photo capture/upload
   const handlePantrySelect = useCallback(async (file: File) => {
+    console.log('[FridgeScan] Pantry photo selected:', { 
+      name: file.name, 
+      type: file.type, 
+      size: `${(file.size / 1024 / 1024).toFixed(2)}MB` 
+    });
+
     if (!file.type.startsWith('image/')) {
+      console.error('[FridgeScan] Invalid pantry file type:', file.type);
       toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
       return;
     }
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      console.error('[FridgeScan] FileReader error (pantry):', reader.error);
+      toast({ title: 'Failed to read image', description: 'Could not load the selected image', variant: 'destructive' });
+    };
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
+      console.log('[FridgeScan] Pantry photo loaded:', { 
+        base64Length: base64.length,
+        base64SizeMB: (base64.length / 1024 / 1024).toFixed(2),
+      });
       setPantryPreview(base64);
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [toast]);
 
   // Analyze photos (at least one required)
   const analyzePhotos = async () => {
-    if (!photoPreview && !pantryPreview) return;
+    console.log('[FridgeScan] analyzePhotos called:', {
+      hasFridgePhoto: !!photoPreview,
+      hasPantryPhoto: !!pantryPreview,
+      fridgePhotoSize: photoPreview ? `${(photoPreview.length / 1024 / 1024).toFixed(2)}MB` : null,
+      pantryPhotoSize: pantryPreview ? `${(pantryPreview.length / 1024 / 1024).toFixed(2)}MB` : null,
+    });
+
+    if (!photoPreview && !pantryPreview) {
+      console.warn('[FridgeScan] No photos to analyze');
+      return;
+    }
     
     // Handle offline state
     if (!navigator.onLine) {
+      console.log('[FridgeScan] Offline, queueing request');
       setErrorState({ code: 'offline', context: 'detect' });
-      // Queue for later if we have photos
       if (photoPreview) {
         enqueue('detect', { image: photoPreview, action: 'detect' });
       }
@@ -230,7 +290,10 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[FridgeScan] Session check:', { hasSession: !!session, hasToken: !!session?.access_token });
+      
       if (!session?.access_token) {
+        console.error('[FridgeScan] No session/token');
         setErrorState({ code: 401, context: 'detect' });
         setIsAnalyzing(false);
         return;
@@ -240,11 +303,24 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
       // Analyze fridge photo if present
       if (photoPreview) {
+        console.log('[FridgeScan] Calling fridge-scan-ai for fridge photo...');
+        const startTime = Date.now();
+        
         const { data: fridgeData, error: fridgeError } = await supabase.functions.invoke('fridge-scan-ai', {
           body: { image: photoPreview, action: 'detect' },
         });
 
+        console.log('[FridgeScan] Fridge photo response:', {
+          duration: `${Date.now() - startTime}ms`,
+          hasData: !!fridgeData,
+          hasError: !!fridgeError,
+          errorDetails: fridgeError,
+          ingredientsCount: fridgeData?.ingredients?.length,
+          rawError: fridgeError?.message || fridgeError?.context,
+        });
+
         if (fridgeError) {
+          console.error('[FridgeScan] Fridge analysis failed:', fridgeError);
           const code = parseErrorCode(fridgeError);
           setErrorState({ code, context: 'detect' });
           setIsAnalyzing(false);
@@ -257,6 +333,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           selected: true,
           confidence: ing.confidence || 'medium',
         }));
+        console.log('[FridgeScan] Fridge ingredients parsed:', allIngredients.length);
       }
 
       // Analyze pantry photo if present

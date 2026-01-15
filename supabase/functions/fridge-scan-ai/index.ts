@@ -101,38 +101,58 @@ Deno.serve(async (req) => {
         });
       }
 
-      const detectPrompt = `You are an expert ingredient detection AI with computer vision capabilities. Carefully analyze this photo and identify ONLY the specific food items you can actually see.
+      const detectPrompt = `You are an expert food identification AI with OCR and image recognition. Analyze this photo to identify food products and ingredients.
 
-CRITICAL RULES - READ CAREFULLY:
-1. ONLY list ingredients you can CLEARLY IDENTIFY in the image. If you cannot see something clearly, DO NOT include it.
-2. NEVER use vague terms like "various vegetables", "assorted items", "some produce", or "mixed ingredients". Each item must be specifically named.
-3. Be as specific as possible: "romaine lettuce" not "lettuce", "cherry tomatoes" not "tomatoes", "boneless skinless chicken breast" not "chicken"
-4. If you can read labels or packaging, include the product name (e.g., "Chobani Greek yogurt", "Heinz ketchup")
-5. Include quantity when visible: "4 eggs", "1 gallon milk", "half block of cheddar cheese"
-6. Confidence ratings:
-   - "high": Clearly visible and identifiable
-   - "medium": Partially visible but reasonably certain
-   - "low": Only use if shape/color strongly suggests the item - but if too uncertain, OMIT entirely
-7. Examine EVERY visible shelf, drawer, door compartment
-8. Common pantry items to look for: pasta types (spaghetti, penne, etc.), rice varieties, canned goods (read labels!), sauces, oils, spices, cereals, bread
-9. If the photo is blurry or items are not identifiable, return FEWER ingredients rather than guessing
-10. NEVER fabricate or assume ingredients that are not visible
+## PRIORITY ORDER - Follow this STRICTLY:
+
+### 1. TEXT/LABELS FIRST (HIGHEST PRIORITY)
+- Read ALL visible text, brand names, and product labels
+- Examples: "Chobani Greek Yogurt", "Heinz Ketchup", "Barilla Spaghetti", "Tropicana Orange Juice"
+- Read nutrition labels, product descriptions, expiration dates for clues
+- If you can read a brand name, ALWAYS include it
+
+### 2. RECOGNIZABLE PACKAGING (SECOND PRIORITY)
+- Identify products by distinctive packaging shapes, colors, logos
+- Milk cartons, egg cartons, butter boxes, cheese blocks
+- Condiment bottles (ketchup, mustard, mayo shapes)
+- Yogurt cups, soda cans, juice bottles
+
+### 3. FRESH PRODUCE & UNPACKAGED ITEMS (THIRD PRIORITY)
+- Fruits: apples, oranges, bananas, lemons, berries (specify color/variety if visible)
+- Vegetables: lettuce, tomatoes, carrots, onions, peppers (specify type)
+- Meats: chicken breast, ground beef, bacon (visible through packaging)
+- Dairy: cheese blocks, butter, eggs (count if visible)
+
+## OUTPUT RULES:
+- Be SPECIFIC: "Dannon Vanilla Greek Yogurt" NOT "yogurt"
+- Include quantities when visible: "6 large eggs", "1 gallon milk", "3 red apples"
+- NEVER use vague terms: "various items", "some vegetables", "multiple containers"
+- If a container has no readable label and contents aren't clear, SKIP IT
+- Include confidence based on visibility: "high" for readable text, "medium" for recognizable items
+
+## IMPORTANT:
+- Examine EVERY shelf, drawer, and door compartment
+- Look at BOTH front and side of items for text
+- Check for items partially hidden behind others
+- Better to list fewer ACCURATE items than many guesses
 
 Return ONLY valid JSON:
 {
   "ingredients": [
-    {"name": "boneless chicken breast (2 pieces)", "confidence": "high"},
-    {"name": "large brown eggs (about 6)", "confidence": "high"},
-    {"name": "baby spinach bag", "confidence": "high"},
-    {"name": "Barilla spaghetti box", "confidence": "medium"},
-    {"name": "yellow onion", "confidence": "high"}
+    {"name": "Organic Valley 2% Milk (1 gallon)", "confidence": "high"},
+    {"name": "large brown eggs (about 8)", "confidence": "high"},
+    {"name": "Chobani Strawberry Greek Yogurt (4 cups)", "confidence": "high"},
+    {"name": "Dole baby spinach bag", "confidence": "high"},
+    {"name": "red bell peppers (2)", "confidence": "medium"},
+    {"name": "Kraft American cheese slices", "confidence": "medium"}
   ]
 }`;
 
       console.log('[FRIDGE-SCAN] Calling AI gateway for ingredient detection...');
       
+      // Use gemini-2.5-pro for better OCR and vision accuracy
       const requestBody = {
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
         messages: [
           {
             role: 'user',
@@ -142,8 +162,8 @@ Return ONLY valid JSON:
             ]
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.3
+        max_tokens: 2000,
+        temperature: 0.2
       };
 
       console.log('[FRIDGE-SCAN] Request payload size:', JSON.stringify(requestBody).length, 'bytes');

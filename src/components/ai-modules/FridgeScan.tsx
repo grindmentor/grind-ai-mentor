@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package, WifiOff } from 'lucide-react';
+import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package, WifiOff, ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,6 +16,7 @@ import { useDietaryPreferences, dietTypeConfig, DietaryPreferences } from '@/hoo
 import { useSavedRecipes } from '@/hooks/useSavedRecipes';
 import { useDailyTargets } from '@/hooks/useDietaryPreferences';
 import { useFridgeScanOfflineQueue } from '@/hooks/useFridgeScanOfflineQueue';
+import { compressImage } from '@/utils/imageCompression';
 import DietaryPreferencesSetup from './DietaryPreferencesSetup';
 import FridgeScanErrorState, { FridgeScanErrorCode } from './FridgeScanErrorState';
 import { format } from 'date-fns';
@@ -177,84 +178,81 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
   const proteinMinimum = getProteinMinimum();
 
-  // Max image size for API (5MB base64 ≈ 3.75MB raw)
-  const MAX_IMAGE_SIZE_MB = 4;
+  // Max image size for API (compress to ~2MB for reliability)
+  const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+  const [isCompressing, setIsCompressing] = useState(false);
 
-  // Handle photo capture/upload for fridge
-  const handlePhotoSelect = useCallback(async (file: File) => {
-    console.log('[FridgeScan] Photo selected:', { 
+  // Compress and convert image to base64
+  const processImage = async (file: File): Promise<string | null> => {
+    console.log('[FridgeScan] Processing image:', { 
       name: file.name, 
       type: file.type, 
       size: `${(file.size / 1024 / 1024).toFixed(2)}MB` 
     });
 
-    if (!file.type.startsWith('image/')) {
+    // Validate file type - accept common image formats
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    const isValidType = validTypes.some(t => file.type.toLowerCase().includes(t.split('/')[1])) || 
+                        file.type.startsWith('image/');
+    
+    if (!isValidType) {
       console.error('[FridgeScan] Invalid file type:', file.type);
-      toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
-      return;
+      toast({ title: 'Invalid file', description: 'Please select a JPG, PNG, or WebP image', variant: 'destructive' });
+      return null;
     }
 
-    // Check file size
-    if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-      console.warn('[FridgeScan] Image too large, will compress:', file.size);
-    }
-
-    const reader = new FileReader();
-    reader.onerror = () => {
-      console.error('[FridgeScan] FileReader error:', reader.error);
-      toast({ title: 'Failed to read image', description: 'Could not load the selected image', variant: 'destructive' });
-    };
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      console.log('[FridgeScan] Fridge photo loaded:', { 
-        base64Length: base64.length,
-        base64SizeMB: (base64.length / 1024 / 1024).toFixed(2),
-        startsWithData: base64.startsWith('data:image/'),
-        mimeFromBase64: base64.substring(0, 30)
-      });
-      
-      // Warn if base64 is very large
-      if (base64.length > 10 * 1024 * 1024) {
-        console.warn('[FridgeScan] Base64 very large, may fail API call');
-        toast({ 
-          title: 'Large image', 
-          description: 'Image is large and may take longer to process',
+    setIsCompressing(true);
+    
+    try {
+      // Compress if needed
+      let processedFile = file;
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        console.log('[FridgeScan] Compressing large image...');
+        processedFile = await compressImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 0.7,
+          outputFormat: 'jpeg'
         });
+        console.log('[FridgeScan] Compressed:', `${(file.size / 1024 / 1024).toFixed(2)}MB → ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
       }
-      
-      setPhotoPreview(base64);
-    };
-    reader.readAsDataURL(file);
+
+      // Convert to base64
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onerror = () => {
+          console.error('[FridgeScan] FileReader error:', reader.error);
+          toast({ title: 'Failed to read image', description: 'Could not load the selected image', variant: 'destructive' });
+          resolve(null);
+        };
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          console.log('[FridgeScan] Image loaded:', { 
+            base64SizeMB: (base64.length / 1024 / 1024).toFixed(2),
+          });
+          resolve(base64);
+        };
+        reader.readAsDataURL(processedFile);
+      });
+    } catch (error) {
+      console.error('[FridgeScan] Image processing error:', error);
+      toast({ title: 'Image error', description: 'Could not process the image', variant: 'destructive' });
+      return null;
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  // Handle photo capture/upload for fridge
+  const handlePhotoSelect = useCallback(async (file: File) => {
+    const base64 = await processImage(file);
+    if (base64) setPhotoPreview(base64);
   }, [toast]);
 
   // Handle pantry photo capture/upload
   const handlePantrySelect = useCallback(async (file: File) => {
-    console.log('[FridgeScan] Pantry photo selected:', { 
-      name: file.name, 
-      type: file.type, 
-      size: `${(file.size / 1024 / 1024).toFixed(2)}MB` 
-    });
-
-    if (!file.type.startsWith('image/')) {
-      console.error('[FridgeScan] Invalid pantry file type:', file.type);
-      toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onerror = () => {
-      console.error('[FridgeScan] FileReader error (pantry):', reader.error);
-      toast({ title: 'Failed to read image', description: 'Could not load the selected image', variant: 'destructive' });
-    };
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      console.log('[FridgeScan] Pantry photo loaded:', { 
-        base64Length: base64.length,
-        base64SizeMB: (base64.length / 1024 / 1024).toFixed(2),
-      });
-      setPantryPreview(base64);
-    };
-    reader.readAsDataURL(file);
+    const base64 = await processImage(file);
+    if (base64) setPantryPreview(base64);
   }, [toast]);
 
   // Analyze photos (at least one required)

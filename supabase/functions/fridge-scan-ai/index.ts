@@ -1,7 +1,7 @@
 // FridgeScan AI Edge Function
-// Uses ONLY npm: imports to avoid external ESM/CDN fetches that can fail in edge runtime.
+// NOTE: Use ESM import for supabase-js to avoid Node polyfill issues in edge runtime.
 
-import { createClient } from "npm:@supabase/supabase-js@2.50.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

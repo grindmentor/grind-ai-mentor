@@ -41,3 +41,7 @@ verify_jwt = true
 
 [functions.support-notification]
 verify_jwt = false
+
+[functions.fridge-scan-ai]
+verify_jwt = false
+

@@ -1,5 +1,5 @@
 // FridgeScan AI Edge Function
-// NOTE: Use ESM import for supabase-js to avoid Node polyfill issues in edge runtime.
+// Uses retry/backoff for transient errors and structured tool-calling for reliable output.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -10,6 +10,139 @@ const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Retry helper with exponential backoff + jitter
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 2,
+  baseDelayMs = 1000
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[FRIDGE-SCAN] API attempt ${attempt + 1}/${maxRetries + 1}`);
+      const response = await fetch(url, options);
+      
+      // Don't retry on client errors (4xx) except 429
+      if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 429)) {
+        return response;
+      }
+      
+      // Retry on 429 (rate limit) or 5xx (server errors)
+      if (response.status === 429 || response.status >= 500) {
+        const errorText = await response.text();
+        console.warn(`[FRIDGE-SCAN] Retryable error ${response.status}:`, errorText);
+        lastError = new Error(`HTTP ${response.status}: ${errorText}`);
+        
+        if (attempt < maxRetries) {
+          // Exponential backoff with jitter: base * 2^attempt + random(0-500ms)
+          const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+          console.log(`[FRIDGE-SCAN] Waiting ${Math.round(delay)}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // Return the response on final attempt so caller can handle status
+        return response;
+      }
+      
+      return response;
+    } catch (err) {
+      console.error(`[FRIDGE-SCAN] Network error on attempt ${attempt + 1}:`, err);
+      lastError = err instanceof Error ? err : new Error(String(err));
+      
+      if (attempt < maxRetries) {
+        const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+        console.log(`[FRIDGE-SCAN] Waiting ${Math.round(delay)}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError || new Error('All retry attempts failed');
+}
+
+// Tool definition for structured ingredient extraction
+const ingredientExtractionTool = {
+  type: "function",
+  function: {
+    name: "extract_ingredients",
+    description: "Extract detected food ingredients from the image with confidence levels",
+    parameters: {
+      type: "object",
+      properties: {
+        ingredients: {
+          type: "array",
+          description: "List of detected food items",
+          items: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description: "Specific name of the food item including brand if visible, quantity if countable"
+              },
+              confidence: {
+                type: "string",
+                enum: ["high", "medium"],
+                description: "high = readable text/label, medium = recognizable shape/packaging"
+              }
+            },
+            required: ["name", "confidence"],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ["ingredients"],
+      additionalProperties: false
+    }
+  }
+};
+
+// Tool definition for structured meal generation
+const mealGenerationTool = {
+  type: "function",
+  function: {
+    name: "generate_meals",
+    description: "Generate meal suggestions from available ingredients",
+    parameters: {
+      type: "object",
+      properties: {
+        meals: {
+          type: "array",
+          description: "List of meal suggestions (1-3 meals)",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              name: { type: "string" },
+              description: { type: "string" },
+              cookTime: { type: "string" },
+              protein: { type: "number" },
+              calories: { type: "number" },
+              carbs: { type: "number" },
+              fat: { type: "number" },
+              sodium: { type: "number" },
+              fiber: { type: "number" },
+              sugar: { type: "number" },
+              proteinMet: { type: "boolean" },
+              macroWarning: { type: "string", nullable: true },
+              ingredients: { type: "array", items: { type: "string" } },
+              instructions: { type: "array", items: { type: "string" } }
+            },
+            required: ["id", "name", "description", "cookTime", "protein", "calories", "carbs", "fat", "proteinMet", "ingredients", "instructions"],
+            additionalProperties: false
+          }
+        },
+        proteinAddOnNeeded: { type: "boolean" },
+        suggestedAddOn: { type: "string", nullable: true }
+      },
+      required: ["meals", "proteinAddOnNeeded"],
+      additionalProperties: false
+    }
+  }
 };
 
 Deno.serve(async (req) => {
@@ -62,10 +195,9 @@ Deno.serve(async (req) => {
     console.log('[FRIDGE-SCAN] Action:', action);
 
     if (action === 'detect') {
-      // Ingredient detection from photo
+      // Ingredient detection from photo using structured tool calling
       const { image } = body;
       
-      // Debug image data
       const imageInfo = {
         hasImage: !!image,
         imageType: typeof image,
@@ -77,80 +209,37 @@ Deno.serve(async (req) => {
       console.log('[FRIDGE-SCAN] Image info:', JSON.stringify(imageInfo));
 
       if (!image) {
-        console.error('[FRIDGE-SCAN] No image in request body');
         return new Response(JSON.stringify({ error: 'No image provided' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      // Validate image format
-      if (typeof image !== 'string') {
-        console.error('[FRIDGE-SCAN] Image is not a string:', typeof image);
-        return new Response(JSON.stringify({ error: 'Invalid image format - expected base64 string' }), {
+      if (typeof image !== 'string' || !image.startsWith('data:image/')) {
+        return new Response(JSON.stringify({ error: 'Invalid image format' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      if (!image.startsWith('data:image/')) {
-        console.error('[FRIDGE-SCAN] Image does not start with data:image/', image.substring(0, 50));
-        return new Response(JSON.stringify({ error: 'Invalid image format - expected data URL' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      const detectPrompt = `Analyze this fridge/pantry photo to identify food products and ingredients.
 
-      const detectPrompt = `You are an expert food identification AI with OCR and image recognition. Analyze this photo to identify food products and ingredients.
+PRIORITY ORDER:
+1. TEXT/LABELS FIRST: Read ALL visible brand names, product labels, text on packaging
+   - Examples: "Chobani Greek Yogurt", "Heinz Ketchup", "Tropicana Orange Juice"
+2. RECOGNIZABLE PACKAGING: Identify by distinctive shapes, colors, logos
+   - Milk cartons, egg cartons, condiment bottles, yogurt cups
+3. FRESH PRODUCE: Fruits, vegetables, meats (specify variety/color)
 
-## PRIORITY ORDER - Follow this STRICTLY:
+RULES:
+- Be SPECIFIC: Include brand names, quantities when visible
+- NO vague terms: "various items", "some vegetables"
+- Skip unclear/unidentifiable items
+- Maximum 40 ingredients
+- Only "high" (readable text) or "medium" (recognizable shape) confidence`;
 
-### 1. TEXT/LABELS FIRST (HIGHEST PRIORITY)
-- Read ALL visible text, brand names, and product labels
-- Examples: "Chobani Greek Yogurt", "Heinz Ketchup", "Barilla Spaghetti", "Tropicana Orange Juice"
-- Read nutrition labels, product descriptions, expiration dates for clues
-- If you can read a brand name, ALWAYS include it
-
-### 2. RECOGNIZABLE PACKAGING (SECOND PRIORITY)
-- Identify products by distinctive packaging shapes, colors, logos
-- Milk cartons, egg cartons, butter boxes, cheese blocks
-- Condiment bottles (ketchup, mustard, mayo shapes)
-- Yogurt cups, soda cans, juice bottles
-
-### 3. FRESH PRODUCE & UNPACKAGED ITEMS (THIRD PRIORITY)
-- Fruits: apples, oranges, bananas, lemons, berries (specify color/variety if visible)
-- Vegetables: lettuce, tomatoes, carrots, onions, peppers (specify type)
-- Meats: chicken breast, ground beef, bacon (visible through packaging)
-- Dairy: cheese blocks, butter, eggs (count if visible)
-
-## OUTPUT RULES:
-- Be SPECIFIC: "Dannon Vanilla Greek Yogurt" NOT "yogurt"
-- Include quantities when visible: "6 large eggs", "1 gallon milk", "3 red apples"
-- NEVER use vague terms: "various items", "some vegetables", "multiple containers"
-- If a container has no readable label and contents aren't clear, SKIP IT
-- Include confidence based on visibility: "high" for readable text, "medium" for recognizable items
-
-## IMPORTANT:
-- Examine EVERY shelf, drawer, and door compartment
-- Look at BOTH front and side of items for text
-- Check for items partially hidden behind others
-- Better to list fewer ACCURATE items than many guesses
-
-Return ONLY valid JSON:
-{
-  "ingredients": [
-    {"name": "Organic Valley 2% Milk (1 gallon)", "confidence": "high"},
-    {"name": "large brown eggs (about 8)", "confidence": "high"},
-    {"name": "Chobani Strawberry Greek Yogurt (4 cups)", "confidence": "high"},
-    {"name": "Dole baby spinach bag", "confidence": "high"},
-    {"name": "red bell peppers (2)", "confidence": "medium"},
-    {"name": "Kraft American cheese slices", "confidence": "medium"}
-  ]
-}`;
-
-      console.log('[FRIDGE-SCAN] Calling AI gateway for ingredient detection...');
+      console.log('[FRIDGE-SCAN] Calling AI gateway with tool calling...');
       
-      // Use gemini-2.5-pro for better OCR and vision accuracy
       const requestBody = {
         model: 'google/gemini-2.5-pro',
         messages: [
@@ -162,20 +251,25 @@ Return ONLY valid JSON:
             ]
           }
         ],
+        tools: [ingredientExtractionTool],
+        tool_choice: { type: "function", function: { name: "extract_ingredients" } },
         max_tokens: 2000,
         temperature: 0.2
       };
 
       console.log('[FRIDGE-SCAN] Request payload size:', JSON.stringify(requestBody).length, 'bytes');
 
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const response = await fetchWithRetry(
+        'https://ai.gateway.lovable.dev/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       console.log('[FRIDGE-SCAN] AI gateway response status:', response.status);
 
@@ -184,14 +278,20 @@ Return ONLY valid JSON:
         console.error('[FRIDGE-SCAN] AI gateway error:', response.status, errorText);
         
         if (response.status === 429) {
-          return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later' }), {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later', retryable: true }), {
             status: 429,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: 'AI credits exhausted' }), {
+          return new Response(JSON.stringify({ error: 'AI credits exhausted', retryable: false }), {
             status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (response.status >= 500) {
+          return new Response(JSON.stringify({ error: 'AI service temporarily unavailable', retryable: true }), {
+            status: 503,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
@@ -199,66 +299,70 @@ Return ONLY valid JSON:
       }
 
       const data = await response.json();
-      const content = data.choices[0]?.message?.content || '';
+      console.log('[FRIDGE-SCAN] AI response received');
+
+      // Extract from tool call response
+      let result: { ingredients: Array<{ name: string; confidence: string }> } = { ingredients: [] };
       
-      console.log('AI response:', content);
-
-      // Parse JSON from response
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
-      
-      try {
-        const result = JSON.parse(jsonStr);
-
-        // Post-process to remove vague/non-food items and reduce hallucinations
-        if (Array.isArray(result.ingredients)) {
-          const bannedTokens = [
-            'various', 'assorted', 'some ', 'misc', 'multiple',
-            'container', 'containers', 'bowl', 'bowls', 'cup', 'cups',
-            'plastic', 'package', 'packages', 'bag', 'bags',
-            'unidentifiable', 'possibly', 'unclear',
-          ];
-
-          const looksLikeSpecificFood = (name: string) => {
-            const n = name.toLowerCase();
-            if (!n.trim()) return false;
-            if (bannedTokens.some(t => n.includes(t))) return false;
-            // Reject obviously non-food objects
-            if (/(plate|lid|jar\s*with\s*unclear|glass\s*bowl|red\s*plastic|white\s*bowls)/i.test(name)) return false;
-            return true;
-          };
-
-          result.ingredients = result.ingredients
-            .map((i: any) => ({
-              name: (i?.name ?? i)?.toString?.()?.trim?.() ?? '',
-              confidence: (i?.confidence ?? 'medium') as 'high' | 'medium' | 'low',
-            }))
-            // Drop low-confidence guesses entirely
-            .filter((i: any) => i.name && i.confidence !== 'low')
-            // Drop vague/non-food
-            .filter((i: any) => looksLikeSpecificFood(i.name))
-            // De-duplicate
-            .filter((i: any, idx: number, arr: any[]) =>
-              arr.findIndex(x => x.name.toLowerCase() === i.name.toLowerCase()) === idx
-            )
-            .slice(0, 40);
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        try {
+          result = JSON.parse(toolCall.function.arguments);
+          console.log('[FRIDGE-SCAN] Parsed from tool call:', result.ingredients?.length, 'ingredients');
+        } catch (e) {
+          console.error('[FRIDGE-SCAN] Tool call parse error:', e);
         }
-
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError, 'Content:', jsonStr);
-        return new Response(JSON.stringify({
-          ingredients: [],
-          error: 'Failed to parse AI response'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      }
+      
+      // Fallback: try parsing from content if tool call failed
+      if (result.ingredients.length === 0) {
+        const content = data.choices?.[0]?.message?.content || '';
+        console.log('[FRIDGE-SCAN] Fallback: parsing from content');
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+            result = parsed;
+          } catch (e) {
+            console.error('[FRIDGE-SCAN] Content parse error:', e);
+          }
+        }
       }
 
+      // Post-process to remove vague/non-food items
+      if (Array.isArray(result.ingredients)) {
+        const bannedTokens = [
+          'various', 'assorted', 'some ', 'misc', 'multiple',
+          'container', 'containers', 'bowl', 'bowls', 'cup', 'cups',
+          'plastic', 'unidentifiable', 'possibly', 'unclear',
+        ];
+
+        const looksLikeSpecificFood = (name: string) => {
+          const n = name.toLowerCase();
+          if (!n.trim()) return false;
+          if (bannedTokens.some(t => n.includes(t))) return false;
+          if (/(plate|lid|jar\s*with\s*unclear|glass\s*bowl|red\s*plastic|white\s*bowls)/i.test(name)) return false;
+          return true;
+        };
+
+        result.ingredients = result.ingredients
+          .map((i: any) => ({
+            name: (i?.name ?? i)?.toString?.()?.trim?.() ?? '',
+            confidence: (i?.confidence ?? 'medium') as 'high' | 'medium',
+          }))
+          .filter((i: any) => i.name && looksLikeSpecificFood(i.name))
+          .filter((i: any, idx: number, arr: any[]) =>
+            arr.findIndex(x => x.name.toLowerCase() === i.name.toLowerCase()) === idx
+          )
+          .slice(0, 40);
+      }
+
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
     } else if (action === 'generate') {
-      // Meal generation
+      // Meal generation using structured tool calling
       const { ingredients, mealIntent, quickMeals, remainingMacros, proteinMinimum, userGoal, allergies, dislikes } = body;
 
       if (!ingredients || ingredients.length === 0) {
@@ -268,7 +372,6 @@ Return ONLY valid JSON:
         });
       }
 
-      // Build allergy/dislike instructions
       const allergyInstructions = allergies?.length > 0 
         ? `\nCRITICAL - NEVER include these allergens: ${allergies.join(', ')}` 
         : '';
@@ -276,114 +379,71 @@ Return ONLY valid JSON:
         ? `\nAvoid these disliked foods: ${dislikes.join(', ')}` 
         : '';
 
-      // Build intent-specific instructions
       const intentInstructions: Record<string, string> = {
-        'protein-focused': `
-- PRIORITIZE protein content above all else
-- Target 35-55g protein per meal (varies based on ingredients available)
-- Moderate carbs (20-40g) and fats (10-20g)
-- Use lean proteins as the base of each meal`,
-        'post-workout': `
-- HIGH carbs (50-80g) + sufficient protein (25-40g)
-- LOW fat priority (under 15g)
-- Prefer fast-digesting carbs when available (rice, potatoes, fruit)
-- Quick glycogen replenishment focus`,
-        'balanced': `
-- Even macro distribution: ~30% protein, ~40% carbs, ~30% fat
-- Aim for 25-45g protein, 40-60g carbs, 15-25g fat
-- Include variety of food groups
-- Natural portion sizes based on meal type`,
-        'low-cal': `
-STRICT LOW-CALORIE CUTTING MEAL REQUIREMENTS:
-- MAXIMUM 350 calories per meal - this is a HARD LIMIT
-- Protein: 30-50g (prioritize lean sources: chicken breast, white fish, egg whites, turkey)
-- Fat: MAXIMUM 8g - use cooking spray, NO oil, no butter, no high-fat ingredients
-- Carbs: 15-30g max, prefer fibrous vegetables
-- Volume: Use HIGH-VOLUME, LOW-CALORIE foods to maximize satiety:
-  * Leafy greens, zucchini, cucumber, bell peppers, mushrooms, tomatoes
-  * Cauliflower rice instead of regular rice
-  * Shirataki noodles if noodles needed
-- Cooking: Grill, steam, air-fry, or poach. NO frying or sautéing in oil.
-- NO sauces with hidden calories (use mustard, hot sauce, lemon, herbs, spices)
-- If the user's ingredients include high-fat items, MINIMIZE or EXCLUDE them`
+        'protein-focused': 'PRIORITIZE protein (35-55g). Moderate carbs (20-40g), low fat (10-20g).',
+        'post-workout': 'HIGH carbs (50-80g), good protein (25-40g), LOW fat (<15g). Fast glycogen replenishment.',
+        'balanced': 'Even macros: ~30% protein, ~40% carbs, ~30% fat. Aim 25-45g protein.',
+        'low-cal': 'STRICT <350 cal. Protein 30-50g, fat <8g, carbs 15-30g. High-volume low-cal foods.'
       };
 
-      const generatePrompt = `You are a science-based meal planning AI. Generate 1-3 practical meals using ONLY these available ingredients: ${ingredients.join(', ')}
+      const generatePrompt = `Generate 1-3 practical meals using ONLY these ingredients: ${ingredients.join(', ')}
 
 USER CONTEXT:
 - Goal: ${userGoal || 'general fitness'}
-- Remaining daily macros: ${remainingMacros.calories} cal, ${remainingMacros.protein}g protein, ${remainingMacros.carbs}g carbs, ${remainingMacros.fat}g fat
-- Protein target per meal: around ${proteinMinimum}g (can vary +/- 15g based on ingredients)
-- Time constraint: ${quickMeals ? 'Under 10 minutes only' : 'No time limit'}
+- Remaining macros: ${remainingMacros.calories} cal, ${remainingMacros.protein}g P, ${remainingMacros.carbs}g C, ${remainingMacros.fat}g F
+- Protein target/meal: ~${proteinMinimum}g (+/- 15g)
+- Time: ${quickMeals ? 'Under 10 min only' : 'No limit'}
 ${allergyInstructions}${dislikeInstructions}
 
-MEAL INTENT: ${mealIntent}
+INTENT: ${mealIntent}
 ${intentInstructions[mealIntent] || ''}
 
-CRITICAL RULES:
-1. Generate 1-3 DIFFERENT meals with VARIED protein amounts (not all the same).
-2. Be REALISTIC about portions and macros - calculate based on actual ingredient weights.
-3. Use NATURAL portion sizes - not every meal needs exactly the same macros.
-4. Auto-adjust portions to best fit remaining macros.
-5. If a meal can't hit protein target with available ingredients, that's okay - note it in macroWarning.
-6. Use ONLY the provided ingredients. You may suggest ONE protein add-on if needed.
-7. Keep instructions simple and practical.
-${quickMeals ? '8. ALL meals must be under 10 minutes prep+cook time.' : ''}
-9. NEVER use any ingredients from the allergy list.
-10. Each meal should have DIFFERENT macro profiles based on what makes sense for that dish.
+RULES:
+1. Generate 1-3 DIFFERENT meals with varied macro profiles
+2. Realistic portions and calculated macros
+3. Use ONLY provided ingredients
+4. Simple, practical instructions
+${quickMeals ? '5. ALL meals under 10 min prep+cook' : ''}
+6. NEVER use allergen ingredients`;
 
-Return ONLY valid JSON:
-{
-  "meals": [
-    {
-      "id": "meal-1",
-      "name": "Meal name",
-      "description": "Brief 1-line description",
-      "cookTime": "8 min",
-      "protein": 38,
-      "calories": 420,
-      "carbs": 25,
-      "fat": 16,
-      "sodium": 450,
-      "fiber": 4,
-      "sugar": 3,
-      "proteinMet": true,
-      "macroWarning": null,
-      "ingredients": ["200g chicken breast", "1 cup spinach", "2 eggs"],
-      "instructions": ["Step 1", "Step 2", "Step 3"]
-    }
-  ],
-  "proteinAddOnNeeded": false,
-  "suggestedAddOn": null
-}`;
-
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [{ role: 'user', content: generatePrompt }],
-          max_tokens: 2000,
-          temperature: 0.7
-        }),
-      });
+      const response = await fetchWithRetry(
+        'https://ai.gateway.lovable.dev/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [{ role: 'user', content: generatePrompt }],
+            tools: [mealGenerationTool],
+            tool_choice: { type: "function", function: { name: "generate_meals" } },
+            max_tokens: 2000,
+            temperature: 0.7
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('AI gateway error:', response.status, errorText);
+        console.error('[FRIDGE-SCAN] AI gateway error:', response.status, errorText);
         
         if (response.status === 429) {
-          return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later' }), {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded', retryable: true }), {
             status: 429,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: 'AI credits exhausted' }), {
+          return new Response(JSON.stringify({ error: 'AI credits exhausted', retryable: false }), {
             status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (response.status >= 500) {
+          return new Response(JSON.stringify({ error: 'AI service temporarily unavailable', retryable: true }), {
+            status: 503,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
@@ -391,32 +451,44 @@ Return ONLY valid JSON:
       }
 
       const data = await response.json();
-      const content = data.choices[0]?.message?.content || '';
-
-      // Parse JSON from response
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
       
-      try {
-        const result = JSON.parse(jsonStr);
-        
-        // Ensure max 3 meals
-        if (result.meals && result.meals.length > 3) {
-          result.meals = result.meals.slice(0, 3);
+      // Extract from tool call
+      let result: { meals: any[]; proteinAddOnNeeded: boolean; suggestedAddOn?: string } = { 
+        meals: [], 
+        proteinAddOnNeeded: false 
+      };
+      
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        try {
+          result = JSON.parse(toolCall.function.arguments);
+          console.log('[FRIDGE-SCAN] Parsed meals from tool call:', result.meals?.length);
+        } catch (e) {
+          console.error('[FRIDGE-SCAN] Tool call parse error:', e);
         }
-
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError, 'Content:', jsonStr);
-        return new Response(JSON.stringify({ 
-          meals: [],
-          error: 'Failed to parse AI response'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
       }
+      
+      // Fallback to content parsing
+      if (result.meals.length === 0) {
+        const content = data.choices?.[0]?.message?.content || '';
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            result = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+          } catch (e) {
+            console.error('[FRIDGE-SCAN] Content parse error:', e);
+          }
+        }
+      }
+      
+      // Limit to 3 meals
+      if (result.meals && result.meals.length > 3) {
+        result.meals = result.meals.slice(0, 3);
+      }
+
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
@@ -425,9 +497,10 @@ Return ONLY valid JSON:
     });
 
   } catch (error) {
-    console.error('FridgeScan error:', error);
+    console.error('[FRIDGE-SCAN] Error:', error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An error occurred'
+      error: error instanceof Error ? error.message : 'An error occurred',
+      retryable: true
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

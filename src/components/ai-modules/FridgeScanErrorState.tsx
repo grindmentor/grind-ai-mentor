@@ -1,5 +1,5 @@
 import React from 'react';
-import { WifiOff, CreditCard, Clock, ShieldAlert, ServerCrash, RefreshCw, AlertTriangle } from 'lucide-react';
+import { WifiOff, CreditCard, Clock, ShieldAlert, ServerCrash, RefreshCw, AlertTriangle, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -12,12 +12,14 @@ interface FridgeScanErrorStateProps {
   onBack?: () => void;
   queuedCount?: number;
   className?: string;
+  isRetrying?: boolean;
 }
 
 const errorConfig: Record<FridgeScanErrorCode, {
   icon: React.ReactNode;
   title: string;
   description: string;
+  retryDescription?: string;
   actionLabel?: string;
   showRetry: boolean;
   color: string;
@@ -49,6 +51,7 @@ const errorConfig: Record<FridgeScanErrorCode, {
     icon: <Clock className="w-8 h-8" />,
     title: 'Too Many Requests',
     description: 'You\'re sending requests too quickly. Please wait a moment and try again.',
+    retryDescription: 'The system automatically retried but hit rate limits. Wait 30 seconds, then tap below.',
     actionLabel: 'Try Again',
     showRetry: true,
     color: 'text-orange-400',
@@ -56,24 +59,27 @@ const errorConfig: Record<FridgeScanErrorCode, {
   500: {
     icon: <ServerCrash className="w-8 h-8" />,
     title: 'Server Error',
-    description: 'Something went wrong on our end. Our team has been notified. Please try again shortly.',
-    actionLabel: 'Retry',
+    description: 'Something went wrong on our end. Our team has been notified.',
+    retryDescription: 'We automatically retried but the issue persists. Please try again in a moment.',
+    actionLabel: 'Try Again',
     showRetry: true,
     color: 'text-red-400',
   },
   503: {
     icon: <ServerCrash className="w-8 h-8" />,
-    title: 'Service Unavailable',
-    description: 'The AI service is temporarily unavailable. This usually resolves within a few minutes.',
-    actionLabel: 'Retry',
+    title: 'Service Temporarily Unavailable',
+    description: 'The AI service is experiencing issues.',
+    retryDescription: 'We automatically retried 2 times. The service should recover shortly.',
+    actionLabel: 'Try Again',
     showRetry: true,
     color: 'text-red-400',
   },
   unknown: {
     icon: <AlertTriangle className="w-8 h-8" />,
     title: 'Something Went Wrong',
-    description: 'An unexpected error occurred. Please try again.',
-    actionLabel: 'Retry',
+    description: 'An unexpected error occurred.',
+    retryDescription: 'The request was retried but failed. Please try again.',
+    actionLabel: 'Try Again',
     showRetry: true,
     color: 'text-muted-foreground',
   },
@@ -85,8 +91,10 @@ const FridgeScanErrorState: React.FC<FridgeScanErrorStateProps> = ({
   onBack,
   queuedCount = 0,
   className,
+  isRetrying = false,
 }) => {
   const config = errorConfig[errorCode] || errorConfig.unknown;
+  const isRetryableError = [429, 500, 503, 'unknown'].includes(errorCode);
 
   return (
     <Card className={cn("bg-card/60 border-border/50", className)}>
@@ -99,9 +107,17 @@ const FridgeScanErrorState: React.FC<FridgeScanErrorStateProps> = ({
           {config.title}
         </h3>
         
-        <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+        <p className="text-sm text-muted-foreground mb-2 max-w-xs">
           {config.description}
         </p>
+        
+        {isRetryableError && config.retryDescription && (
+          <p className="text-xs text-muted-foreground/70 mb-6 max-w-xs">
+            {config.retryDescription}
+          </p>
+        )}
+        
+        {!isRetryableError && <div className="mb-4" />}
 
         {errorCode === 'offline' && queuedCount > 0 && (
           <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
@@ -114,15 +130,24 @@ const FridgeScanErrorState: React.FC<FridgeScanErrorStateProps> = ({
 
         <div className="flex gap-3">
           {onBack && (
-            <Button variant="outline" onClick={onBack}>
+            <Button variant="outline" onClick={onBack} disabled={isRetrying}>
               Go Back
             </Button>
           )}
           
-          {config.showRetry && onRetry && (
-            <Button onClick={onRetry}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              {config.actionLabel || 'Retry'}
+          {config.showRetry && onRetry && errorCode !== 401 && errorCode !== 402 && (
+            <Button onClick={onRetry} disabled={isRetrying} className="min-w-[120px]">
+              {isRetrying ? (
+                <>
+                  <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                  Retrying...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  {config.actionLabel || 'Try Again'}
+                </>
+              )}
             </Button>
           )}
 

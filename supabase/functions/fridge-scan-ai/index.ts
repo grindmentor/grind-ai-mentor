@@ -194,6 +194,45 @@ Deno.serve(async (req) => {
 
     console.log('[FRIDGE-SCAN] Action:', action);
 
+    // Health check endpoint - no AI dependency, immediate response
+    if (action === 'health') {
+      console.log('[FRIDGE-SCAN][HEALTH] Health check requested');
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        function: 'fridge-scan-ai', 
+        version: '2.1.0', 
+        ts: Date.now(),
+        userId: userId 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Echo endpoint - validates payload sizes without calling AI
+    if (action === 'echo') {
+      console.log('[FRIDGE-SCAN][ECHO] Echo check requested');
+      const { image, ingredients } = body;
+      const imageSize = image?.length || 0;
+      const ingredientsCount = Array.isArray(ingredients) ? ingredients.length : 0;
+      
+      return new Response(JSON.stringify({ 
+        ok: true,
+        function: 'fridge-scan-ai',
+        echo: {
+          hasImage: !!image,
+          imageSizeBytes: imageSize,
+          imageSizeMB: (imageSize / 1024 / 1024).toFixed(2),
+          ingredientsCount,
+          ingredientsPreview: Array.isArray(ingredients) ? ingredients.slice(0, 5) : [],
+        },
+        ts: Date.now()
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'detect') {
       // Ingredient detection from photo using structured tool calling
       const { image } = body;

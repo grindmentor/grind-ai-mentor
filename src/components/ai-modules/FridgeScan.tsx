@@ -110,6 +110,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   
   // Error state
   const [errorState, setErrorState] = useState<{ code: FridgeScanErrorCode; context: 'detect' | 'generate' } | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [healthChecked, setHealthChecked] = useState(false);
+  const [healthCheckFailed, setHealthCheckFailed] = useState(false);
 
   // Fetch today's consumed macros from food log
   useEffect(() => {
@@ -162,6 +165,58 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       }
     }
   }, [isOnline, errorState, queuedItems.length, processQueue]);
+
+  // Health check function - validates edge function is reachable before expensive operations
+  const performHealthCheck = useCallback(async (): Promise<boolean> => {
+    if (healthChecked) return !healthCheckFailed;
+    
+    console.log('[FridgeScan] Running health check...');
+    try {
+      const { data, error } = await supabase.functions.invoke('fridge-scan-ai', {
+        body: { action: 'health' },
+      });
+      
+      if (error || !data?.ok) {
+        console.error('[FridgeScan] Health check failed:', error || data);
+        setHealthCheckFailed(true);
+        setHealthChecked(true);
+        return false;
+      }
+      
+      console.log('[FridgeScan] Health check passed:', data);
+      setHealthChecked(true);
+      setHealthCheckFailed(false);
+      return true;
+    } catch (err) {
+      console.error('[FridgeScan] Health check exception:', err);
+      setHealthCheckFailed(true);
+      setHealthChecked(true);
+      return false;
+    }
+  }, [healthChecked, healthCheckFailed]);
+
+  // Unified retry handler - retries the last failed action
+  const handleRetry = useCallback(async () => {
+    if (!errorState) return;
+    
+    setIsRetrying(true);
+    console.log('[FridgeScan] Retrying action:', errorState.context);
+    
+    try {
+      if (errorState.context === 'detect') {
+        setErrorState(null);
+        await analyzePhotos();
+      } else if (errorState.context === 'generate') {
+        setErrorState(null);
+        await generateMeals();
+      }
+    } catch (err) {
+      console.error('[FridgeScan] Retry failed:', err);
+      // Error state will be set by the called function
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [errorState]);
 
   // Calculate actual remaining macros based on today's consumption
   const dailyCaloriesTarget = dailyTargets.calories || userData.tdee || 2000;
@@ -1064,15 +1119,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     </div>
   );
 
-  // Handle retry from error state
-  const handleRetry = () => {
-    setErrorState(null);
-    if (errorState?.context === 'detect') {
-      analyzePhotos();
-    } else if (errorState?.context === 'generate') {
-      generateMeals();
-    }
-  };
+  // handleRetry is defined above using useCallback
 
   return (
     <div className="min-h-screen bg-background">
@@ -1142,6 +1189,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
                 else setStep('ingredients');
               }}
               queuedCount={queuedItems.length}
+              isRetrying={isRetrying}
             />
           </div>
         )}

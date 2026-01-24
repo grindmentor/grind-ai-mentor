@@ -477,7 +477,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       return;
     }
 
+    // IMMEDIATELY show loading screen - don't wait for health check
     setIsAnalyzing(true);
+    setStep('ingredients');
     setErrorState(null);
 
     try {
@@ -603,7 +605,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       });
 
       setIngredients(filteredIngredients);
-      setStep('ingredients');
+      // Step already set to 'ingredients' at start of analyzePhotos
     } catch (error) {
       console.error('Photo analysis error:', error);
       const code = parseErrorCode(error);

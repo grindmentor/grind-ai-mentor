@@ -270,24 +270,36 @@ Deno.serve(async (req) => {
 
     if (action === 'detect') {
       // Ingredient detection from photo using structured tool calling
-      const { image } = body;
+      const { image, imageUrl } = body;
+      const imageInput: unknown = imageUrl ?? image;
       
       const imageInfo = {
-        hasImage: !!image,
-        imageType: typeof image,
-        imageLength: image?.length || 0,
-        imageSizeMB: image ? (image.length / 1024 / 1024).toFixed(2) : 0,
-        startsWithData: image?.startsWith?.('data:') || false,
-        mimeType: image?.substring?.(0, 30) || 'N/A',
+        hasImage: !!imageInput,
+        imageType: typeof imageInput,
+        imageLength: typeof imageInput === 'string' ? imageInput.length : 0,
+        imageSizeMB: typeof imageInput === 'string' ? (imageInput.length / 1024 / 1024).toFixed(2) : 0,
+        startsWithData: typeof imageInput === 'string' ? imageInput.startsWith('data:') : false,
+        startsWithHttp: typeof imageInput === 'string' ? imageInput.startsWith('http') : false,
+        prefix: typeof imageInput === 'string' ? imageInput.substring(0, 40) : 'N/A',
       };
       console.log('[FRIDGE-SCAN] Image info:', JSON.stringify(imageInfo));
 
-      if (!image) {
+      if (!imageInput) {
         return errorResponse(400, 'No image provided', 'NO_IMAGE', false);
       }
 
-      if (typeof image !== 'string' || !image.startsWith('data:image/')) {
-        return errorResponse(400, 'Invalid image format', 'INVALID_IMAGE_FORMAT', false);
+      if (typeof imageInput !== 'string') {
+        return errorResponse(400, 'Invalid image input', 'INVALID_IMAGE_FORMAT', false);
+      }
+
+      // Accept either:
+      // 1) data URL (small images)
+      // 2) signed/public Supabase Storage URL (preferred for reliability)
+      const isDataUrl = imageInput.startsWith('data:image/');
+      const isStorageUrl = imageInput.startsWith(`${supabaseUrl}/storage/v1/`);
+
+      if (!isDataUrl && !isStorageUrl) {
+        return errorResponse(400, 'Invalid image URL (must be data:image/* or Supabase Storage URL)', 'INVALID_IMAGE_FORMAT', false);
       }
 
       const detectPrompt = `Analyze this fridge/pantry photo to identify food products and ingredients.
@@ -315,7 +327,7 @@ RULES:
             role: 'user',
             content: [
               { type: 'text', text: detectPrompt },
-              { type: 'image_url', image_url: { url: image } }
+               { type: 'image_url', image_url: { url: imageInput } }
             ]
           }
         ],

@@ -1,113 +1,234 @@
-import { createClient } from "npm:@supabase/supabase-js@2.50.0";
+// Physique AI Edge Function v2.0.0
+// Two-phase analysis with structured tool-calling and retry logic
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const FUNCTION_VERSION = '2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// IP-based rate limiting
-const rateLimiter = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60 * 1000;
+// Structured error response helper
+function errorResponse(
+  status: number,
+  error: string,
+  errorCode: string,
+  retryable: boolean,
+  upstreamStatus?: number
+) {
+  console.log(`[PHYSIQUE-AI] Error response: ${status} ${errorCode} - ${error}`);
+  return new Response(JSON.stringify({ 
+    error, 
+    error_code: errorCode, 
+    retryable,
+    upstream_status: upstreamStatus,
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimiter.get(ip);
-
-  if (rateLimiter.size > 5000) {
-    for (const [key, value] of rateLimiter.entries()) {
-      if (value.resetTime < now) {
-        rateLimiter.delete(key);
+// Retry helper with exponential backoff + jitter
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 2,
+  baseDelayMs = 1000
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[PHYSIQUE-AI] API attempt ${attempt + 1}/${maxRetries + 1}`);
+      const response = await fetch(url, options);
+      
+      // Don't retry on client errors (4xx) except 429
+      if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 429)) {
+        return response;
+      }
+      
+      // Retry on 429 (rate limit) or 5xx (server errors)
+      if (response.status === 429 || response.status >= 500) {
+        const errorText = await response.text();
+        console.warn(`[PHYSIQUE-AI] Retryable error ${response.status}:`, errorText);
+        lastError = new Error(`HTTP ${response.status}: ${errorText}`);
+        
+        if (attempt < maxRetries) {
+          const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+          console.log(`[PHYSIQUE-AI] Waiting ${Math.round(delay)}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        return response;
+      }
+      
+      return response;
+    } catch (err) {
+      console.error(`[PHYSIQUE-AI] Network error on attempt ${attempt + 1}:`, err);
+      lastError = err instanceof Error ? err : new Error(String(err));
+      
+      if (attempt < maxRetries) {
+        const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+        console.log(`[PHYSIQUE-AI] Waiting ${Math.round(delay)}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
-
-  if (!record || record.resetTime < now) {
-    rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
-    return true;
-  }
-
-  if (record.count >= RATE_LIMIT) {
-    return false;
-  }
-
-  record.count++;
-  return true;
+  
+  throw lastError || new Error('All retry attempts failed');
 }
 
-function getClientIP(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-         req.headers.get('x-real-ip') ||
-         'unknown';
-}
+// Tool definition for structured physique analysis
+const physiqueAnalysisTool = {
+  type: "function",
+  function: {
+    name: "analyze_physique",
+    description: "Provide detailed physique analysis with scores and recommendations",
+    parameters: {
+      type: "object",
+      properties: {
+        overall_score: {
+          type: "number",
+          description: "Overall physique score from 0-100"
+        },
+        confidence: {
+          type: "string",
+          enum: ["high", "medium", "low"],
+          description: "Confidence in the analysis based on image quality"
+        },
+        notes: {
+          type: "string",
+          description: "Notes about image quality or analysis limitations"
+        },
+        attributes: {
+          type: "object",
+          properties: {
+            muscle_development: { type: "number", description: "Score 0-100 for overall muscle development" },
+            symmetry: { type: "number", description: "Score 0-100 for left-right muscle symmetry" },
+            definition: { type: "number", description: "Score 0-100 for muscle separation and striations" },
+            mass: { type: "number", description: "Score 0-100 for overall muscle size" },
+            conditioning: { type: "number", description: "Score 0-100 for body fat level and vascularity" }
+          },
+          required: ["muscle_development", "symmetry", "definition", "mass", "conditioning"]
+        },
+        muscle_groups: {
+          type: "object",
+          properties: {
+            chest: { type: "number", description: "Score 0-100" },
+            shoulders: { type: "number", description: "Score 0-100" },
+            arms: { type: "number", description: "Score 0-100" },
+            back: { type: "number", description: "Score 0-100" },
+            core: { type: "number", description: "Score 0-100" },
+            legs: { type: "number", description: "Score 0-100" }
+          },
+          required: ["chest", "shoulders", "arms", "back", "core", "legs"]
+        },
+        recommendations: {
+          type: "array",
+          items: { type: "string" },
+          description: "3-5 specific, actionable training recommendations"
+        },
+        strengths: {
+          type: "array",
+          items: { type: "string" },
+          description: "2-3 notable strengths in the physique"
+        },
+        areas_to_improve: {
+          type: "array",
+          items: { type: "string" },
+          description: "2-3 areas that need the most work"
+        }
+      },
+      required: ["overall_score", "confidence", "attributes", "muscle_groups", "recommendations", "strengths", "areas_to_improve"],
+      additionalProperties: false
+    }
+  }
+};
 
 Deno.serve(async (req) => {
+  console.log('[PHYSIQUE-AI] start', { method: req.method, version: FUNCTION_VERSION });
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const clientIP = getClientIP(req);
-  if (!checkRateLimit(clientIP)) {
-    console.log(`Rate limit exceeded for IP: ${clientIP}`);
-    return new Response(JSON.stringify({
-      error: 'Rate limit exceeded. Please try again later.'
-    }), {
-      status: 429,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
-  if (!LOVABLE_API_KEY) {
-    console.error('LOVABLE_API_KEY environment variable is not set');
-    return new Response(JSON.stringify({ 
-      error: 'AI analysis service not configured.' 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
-  }
-
   try {
+    // Parse body
+    let body: Record<string, any> = {};
+    try {
+      body = await req.json();
+    } catch {
+      return errorResponse(400, 'Invalid request body', 'INVALID_BODY', false);
+    }
+
+    const { action } = body;
+
+    // Health check endpoint (no auth required)
+    if (action === 'health') {
+      return new Response(JSON.stringify({
+        ok: true,
+        function: 'analyze-physique',
+        version: FUNCTION_VERSION,
+        ts: Date.now(),
+        hasApiKey: !!LOVABLE_API_KEY,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Auth check
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return errorResponse(401, 'Authentication required', 'AUTH_REQUIRED', false);
     }
 
+    // Validate JWT
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+
+    const token = authHeader.slice('Bearer '.length);
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error('[PHYSIQUE-AI] auth failed', claimsError);
+      return errorResponse(401, 'Unauthorized', 'AUTH_INVALID', false);
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log('[PHYSIQUE-AI] authed', { userId });
+
+    if (!LOVABLE_API_KEY) {
+      return errorResponse(500, 'AI service not configured', 'AI_NOT_CONFIGURED', false);
+    }
+
+    // Use service role for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      throw new Error('Unauthorized');
-    }
 
-    const { data: roleData } = await supabase.rpc('get_user_role', { _user_id: user.id });
+    // Check user role (premium only)
+    const { data: roleData } = await supabase.rpc('get_user_role', { _user_id: userId });
     const tier = roleData || 'free';
-    
-    console.log(`[ANALYZE-PHYSIQUE] User ${user.id} has role: ${tier}`);
+    console.log(`[PHYSIQUE-AI] User role: ${tier}`);
 
     if (tier === 'free') {
-      return new Response(
-        JSON.stringify({ 
-          error: 'This feature is locked for free users. Upgrade to premium to unlock physique analysis.' 
-        }), 
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      return errorResponse(403, 'Upgrade to premium to unlock physique analysis', 'PREMIUM_REQUIRED', false);
     }
 
+    // Check weekly limit
     const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usage } = await supabase
       .from('user_usage')
       .select('physique_analyses, last_physique_analysis')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('month_year', currentMonth)
       .maybeSingle();
 
@@ -118,130 +239,175 @@ Deno.serve(async (req) => {
 
       if (lastAnalysis > weekAgo) {
         const daysUntilNext = Math.ceil((7 - (Date.now() - lastAnalysis.getTime()) / (1000 * 60 * 60 * 24)));
-        return new Response(
-          JSON.stringify({ 
-            error: `You can only analyze your physique once per week. Try again in ${daysUntilNext} day(s).` 
-          }), 
-          { 
-            status: 429, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
+        return errorResponse(429, `You can analyze your physique once per week. Try again in ${daysUntilNext} day(s).`, 'WEEKLY_LIMIT', false);
       }
     }
 
-    const { imageUrl, height, weight, bodyFat, goals } = await req.json();
+    // Get image from request
+    const { imageUrl, image, height, weight, bodyFat, goals } = body;
+    const imageData = image || imageUrl;
 
-    if (!imageUrl) {
-      throw new Error('Image URL is required');
+    if (!imageData) {
+      return errorResponse(400, 'Image is required', 'NO_IMAGE', false);
     }
 
-    console.log('Analyzing physique with Lovable AI Vision...');
+    // Validate image size if base64
+    if (typeof imageData === 'string' && imageData.startsWith('data:image/')) {
+      const MAX_BASE64_SIZE = 2.0 * 1024 * 1024; // 2MB for physique photos (need detail)
+      if (imageData.length > MAX_BASE64_SIZE) {
+        return errorResponse(413, 'Image too large. Please use a smaller image.', 'PAYLOAD_TOO_LARGE', false);
+      }
+    }
 
-    const prompt = `You are an expert fitness coach analyzing a physique photo. Provide a detailed, evidence-based analysis.
+    console.log('[PHYSIQUE-AI] Starting analysis...');
 
-IMPORTANT: ALWAYS attempt to provide analysis, even if the image quality is not ideal.
+    // Two-phase analysis prompt
+    const analyzePrompt = `You are an expert exercise physiologist and bodybuilding judge providing evidence-based physique analysis.
 
-USER CONTEXT:
-${height ? `Height: ${height}` : ''}
-${weight ? `Weight: ${weight}` : ''}
-${bodyFat ? `Estimated Body Fat: ${bodyFat}%` : ''}
-${goals ? `Goals: ${goals}` : ''}
+=== PHASE 1: STRUCTURAL ASSESSMENT ===
+First, evaluate the foundational aspects:
+- Overall muscle mass relative to frame size
+- Proportionality between upper and lower body
+- Left-right symmetry and balance
+- Posture and structural alignment
+- Frame type (ectomorph/mesomorph/endomorph tendencies)
 
-Analyze this physique photo and return a JSON object with the following structure:
-{
-  "overall_score": <number 0-100>,
-  "confidence": "<high/medium/low>",
-  "notes": "<any notes about image quality>",
-  "attributes": {
-    "muscle_development": <number 0-100>,
-    "symmetry": <number 0-100>,
-    "definition": <number 0-100>,
-    "mass": <number 0-100>,
-    "conditioning": <number 0-100>
-  },
-  "muscle_groups": {
-    "chest": <number 0-100>,
-    "shoulders": <number 0-100>,
-    "arms": <number 0-100>,
-    "back": <number 0-100>,
-    "core": <number 0-100>,
-    "legs": <number 0-100>
-  },
-  "recommendations": [
-    "Priority 1: <specific advice>",
-    "Priority 2: <specific advice>",
-    "Priority 3: <specific advice>"
-  ],
-  "strengths": ["<strength 1>", "<strength 2>"],
-  "areas_to_improve": ["<area 1>", "<area 2>"]
-}
+=== PHASE 2: DETAILED MUSCLE GROUP ANALYSIS ===
+Systematically evaluate each visible muscle group:
 
-RULES:
-- NEVER refuse to analyze. Always provide your best estimate.
-- If certain muscle groups are not visible, estimate based on what IS visible.
-- Return ONLY valid JSON, no additional text.`;
+UPPER BODY:
+- Chest: Size, shape, upper/lower development, inner chest definition
+- Shoulders: Cap development, front/side/rear deltoid balance, width
+- Arms: Bicep peak, tricep horseshoe, forearm development
+- Back (if visible): Lat width, upper back thickness, lower back detail
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageUrl } }
-            ]
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.7
-      }),
-    });
+CORE:
+- Abdominal development and visibility
+- Oblique definition
+- Serratus visibility
+- Overall midsection conditioning
+
+LOWER BODY:
+- Quadriceps sweep and separation
+- Hamstring development
+- Calf size and shape
+- Glute development (if visible)
+
+=== PHASE 3: CONDITIONING ASSESSMENT ===
+- Body fat estimation based on visible definition
+- Vascularity level
+- Muscle separation and striations
+- Skin quality and fullness
+
+=== USER CONTEXT ===
+${height ? `Height: ${height}` : 'Height: Not provided'}
+${weight ? `Weight: ${weight}` : 'Weight: Not provided'}
+${bodyFat ? `Self-reported Body Fat: ${bodyFat}%` : ''}
+${goals ? `Training Goals: ${goals}` : ''}
+
+=== SCORING GUIDELINES ===
+Use this scale consistently:
+- 90-100: Elite/Professional level
+- 80-89: Advanced, competition-ready
+- 70-79: Intermediate, well-developed
+- 60-69: Developing, solid foundation
+- 50-59: Beginner, room for improvement
+- Below 50: Early stage or specific limitations
+
+=== CRITICAL RULES ===
+- ALWAYS provide analysis, never refuse. Estimate based on visible areas.
+- Be SPECIFIC in recommendations: Include exercise names, rep ranges, techniques.
+- Be HONEST but ENCOURAGING. Identify genuine strengths.
+- For non-visible muscle groups, provide reasonable estimates based on overall development.
+- Base body fat estimates on visible markers (ab visibility, vascularity, muscle separation).
+- Recommendations should be prioritized by impact on overall physique.`;
+
+    const requestBody = {
+      model: 'google/gemini-2.5-pro',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: analyzePrompt },
+            { type: 'image_url', image_url: { url: imageData } }
+          ]
+        }
+      ],
+      tools: [physiqueAnalysisTool],
+      tool_choice: { type: "function", function: { name: "analyze_physique" } },
+      max_tokens: 2500,
+      temperature: 0.1
+    };
+
+    let response: Response;
+    try {
+      response = await fetchWithRetry(
+        'https://ai.gateway.lovable.dev/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+    } catch (fetchErr) {
+      console.error('[PHYSIQUE-AI] Fetch failed after retries:', fetchErr);
+      return errorResponse(503, 'AI gateway unreachable', 'GATEWAY_UNREACHABLE', true);
+    }
+
+    console.log('[PHYSIQUE-AI] AI gateway response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
+      console.error('[PHYSIQUE-AI] AI gateway error:', response.status, errorText);
       
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse(429, 'Rate limit exceeded, please try again later', 'RATE_LIMITED', true, 429);
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits exhausted.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse(402, 'AI credits exhausted', 'CREDITS_EXHAUSTED', false, 402);
       }
-      
-      return new Response(
-        JSON.stringify({ error: 'Physique analysis service is temporarily unavailable.' }), 
-        {
-          status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      if (response.status >= 500) {
+        return errorResponse(503, 'AI service temporarily unavailable', 'GATEWAY_ERROR', true, response.status);
+      }
+      return errorResponse(500, 'AI analysis failed', 'AI_FAILED', true, response.status);
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    console.log('[PHYSIQUE-AI] AI response received');
 
-    console.log('Raw AI response:', content);
+    // Extract from tool call response
+    let analysis: any = null;
+    
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      try {
+        analysis = JSON.parse(toolCall.function.arguments);
+        console.log('[PHYSIQUE-AI] Parsed from tool call successfully');
+      } catch (e) {
+        console.error('[PHYSIQUE-AI] Tool call parse error:', e);
+      }
+    }
 
-    let analysis;
-    try {
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
-      analysis = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', content);
+    // Fallback: try parsing from content if tool call failed
+    if (!analysis) {
+      const content = data.choices?.[0]?.message?.content || '';
+      console.log('[PHYSIQUE-AI] Fallback: parsing from content');
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          analysis = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        } catch (e) {
+          console.error('[PHYSIQUE-AI] Content parse error:', e);
+        }
+      }
+    }
+
+    // Default fallback if parsing completely failed
+    if (!analysis) {
+      console.log('[PHYSIQUE-AI] Using default fallback analysis');
       analysis = {
         overall_score: 50,
         confidence: "low",
@@ -271,10 +437,31 @@ RULES:
       };
     }
 
+    // Validate and clamp scores
+    const clampScore = (score: any) => Math.max(0, Math.min(100, Number(score) || 50));
+    
+    analysis.overall_score = clampScore(analysis.overall_score);
+    if (analysis.attributes) {
+      analysis.attributes.muscle_development = clampScore(analysis.attributes.muscle_development);
+      analysis.attributes.symmetry = clampScore(analysis.attributes.symmetry);
+      analysis.attributes.definition = clampScore(analysis.attributes.definition);
+      analysis.attributes.mass = clampScore(analysis.attributes.mass);
+      analysis.attributes.conditioning = clampScore(analysis.attributes.conditioning);
+    }
+    if (analysis.muscle_groups) {
+      analysis.muscle_groups.chest = clampScore(analysis.muscle_groups.chest);
+      analysis.muscle_groups.shoulders = clampScore(analysis.muscle_groups.shoulders);
+      analysis.muscle_groups.arms = clampScore(analysis.muscle_groups.arms);
+      analysis.muscle_groups.back = clampScore(analysis.muscle_groups.back);
+      analysis.muscle_groups.core = clampScore(analysis.muscle_groups.core);
+      analysis.muscle_groups.legs = clampScore(analysis.muscle_groups.legs);
+    }
+
+    // Update usage
     await supabase
       .from('user_usage')
       .upsert({
-        user_id: user.id,
+        user_id: userId,
         month_year: currentMonth,
         physique_analyses: (usage?.physique_analyses || 0) + 1,
         last_physique_analysis: new Date().toISOString()
@@ -282,7 +469,7 @@ RULES:
         onConflict: 'user_id,month_year'
       });
 
-    console.log('Physique analysis completed successfully');
+    console.log('[PHYSIQUE-AI] Analysis completed successfully');
 
     return new Response(
       JSON.stringify({
@@ -297,13 +484,7 @@ RULES:
     );
 
   } catch (error) {
-    console.error('Error in analyze-physique:', error instanceof Error ? error.message : error);
-    return new Response(
-      JSON.stringify({ error: 'Physique analysis failed. Please try again.' }), 
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    console.error('[PHYSIQUE-AI] Unexpected error:', error instanceof Error ? error.message : error);
+    return errorResponse(500, 'Physique analysis failed. Please try again.', 'UNEXPECTED_ERROR', true);
   }
 });

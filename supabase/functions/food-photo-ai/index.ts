@@ -1,5 +1,5 @@
-// Food Photo AI Edge Function v2.0.0
-// Two-phase analysis with structured tool-calling and retry logic
+// Food Photo AI Edge Function v2.1.0
+// Systematic scan methodology with structured tool-calling and retry logic
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -7,7 +7,7 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const FUNCTION_VERSION = '2.0.0';
+const FUNCTION_VERSION = '2.1.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -258,58 +258,83 @@ Deno.serve(async (req) => {
 
     console.log('[FOOD-PHOTO-AI] Starting analysis...', { imageSizeKB: Math.round(image.length / 1024) });
 
-    // Two-phase food analysis prompt
-    const analyzePrompt = `You are an expert nutritionist AI analyzing a food photo. Use a TWO-PHASE approach for accurate identification and nutrition estimation.
+    // Systematic scan methodology with FridgeScan-style structure
+    const analyzePrompt = `You are an expert nutritionist AI analyzing a food photo. Use SYSTEMATIC SCANNING for complete, accurate identification.
+
+=== SYSTEMATIC SCAN METHOD ===
+Analyze the image in this EXACT order:
+1. Start at PLATE CENTER: Identify main protein/carb items first
+2. Scan CLOCKWISE around plate: sides, vegetables, garnishes
+3. Check PLATE EDGES: sauces, dressings, butter, condiments
+4. Look for DRINKS: glasses, cups, bottles, cans near the plate
+5. Identify SIDES: bread basket, salad bowl, soup in separate containers
+6. Check UTENSILS for scale reference (fork ~7 inches, spoon ~6 inches)
+7. Read any VISIBLE TEXT: restaurant menus, packaging, receipts, labels
+8. Final pass: TALLY all items against what was already detected - ensure nothing missed
 
 === PHASE 1: FOOD IDENTIFICATION ===
-Systematically identify ALL food items visible:
+For each item found:
 
-TEXT/LABELS:
-- Read any visible packaging, restaurant menus, or labels
-- Note brand names that help identify specific products
-- Check for nutrition labels if visible
+TEXT/LABELS (highest priority):
+- Read any visible packaging or restaurant menu items
+- Note brand names that identify specific products (e.g., "Chipotle burrito bowl")
+- Check nutrition labels if visible
 
 VISUAL IDENTIFICATION:
-- Identify each distinct food item on the plate/in the image
-- Note cooking method (grilled, fried, steamed, raw)
-- Estimate portion sizes using visual cues (plate size, utensils for scale)
+- Identify SPECIFIC food name: "Grilled Salmon Fillet" not "Fish"
+- Note cooking method: grilled, fried, steamed, raw, baked, sautéed
+- Note preparation: skinless, bone-in, with sauce, plain
 
-=== PHASE 2: NUTRITIONAL ANALYSIS ===
-For each identified food:
+=== CONFIDENCE CALIBRATION ===
+- HIGH: Food clearly visible + packaging/label readable OR very distinctive (e.g., pizza slice, sunny-side egg)
+- MEDIUM: Food identifiable by appearance but no label/text confirmation
+- LOW: Partially obscured, mixed dishes, or sauces where composition is uncertain
 
-PORTION ESTIMATION:
-- Use standard serving sizes as reference
-- Consider plate size (typical dinner plate ~10 inches)
-- Use any visible utensils for scale comparison
-- When uncertain, use CONSERVATIVE estimates
+=== PORTION SIZE REFERENCES ===
+Visual estimation guides:
+- 1 fist = ~1 cup cooked grains/pasta
+- 1 palm (thickness and size) = ~4 oz protein (chicken, fish, steak)
+- 1 thumb = ~1 tbsp (butter, oil, nut butter)
+- 1 cupped hand = ~1 oz nuts/chips
+- Standard dinner plate = ~10 inches diameter
+- Restaurant plate = often 12-14 inches (portions 20-30% larger)
+- Salad bowl = typically 2-3 cups
 
-NUTRITION CALCULATION:
-- Use USDA database values as baseline
-- Adjust for cooking method (fried adds fat, grilled is leaner)
-- Account for visible sauces, dressings, oils
-- Round to reasonable precision (whole numbers for calories, 1 decimal for macros)
+Common restaurant portion inflation:
+- Restaurant steak: Usually 8-12 oz (double home portion)
+- Restaurant pasta: Usually 2-3 cups (3× home portion)
+- Restaurant rice: Usually 1.5-2 cups
+- Dressings/sauces: Often 3-4 tbsp vs standard 2 tbsp
+
+=== NUTRITION REFERENCES ===
+Standard per-serving values:
+- 1 cup cooked white rice = 205 cal, 4g P, 45g C, 0g F
+- 1 cup cooked pasta = 220 cal, 8g P, 43g C, 1g F
+- 4 oz chicken breast (grilled) = 185 cal, 35g P, 0g C, 4g F
+- 4 oz salmon (grilled) = 233 cal, 25g P, 0g C, 14g F
+- 4 oz ribeye steak = 310 cal, 24g P, 0g C, 23g F
+- 1 cup steamed broccoli = 55 cal, 4g P, 11g C, 0g F
+- 1 cup mixed salad greens = 10 cal, 1g P, 2g C, 0g F
+- 2 tbsp ranch dressing = 145 cal, 0g P, 2g C, 15g F
+- 2 tbsp olive oil = 240 cal, 0g P, 0g C, 28g F
+- 1 medium egg = 72 cal, 6g P, 0g C, 5g F
+- 1 slice bread = 80 cal, 3g P, 15g C, 1g F
 
 === MEAL CONTEXT ===
 ${mealType ? `Meal Type: ${mealType}` : ''}
 ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
 
-=== ESTIMATION GUIDELINES ===
-Standard reference portions:
-- 1 cup cooked rice = 200 cal, 4g protein, 45g carbs
-- 1 cup cooked pasta = 220 cal, 8g protein, 43g carbs
-- 4 oz chicken breast = 185 cal, 35g protein, 0g carbs, 4g fat
-- 4 oz steak = 250 cal, 26g protein, 0g carbs, 16g fat
-- 1 cup vegetables = 25-50 cal
-- 1 tbsp oil/butter = 120 cal, 14g fat
-- 1 medium egg = 70 cal, 6g protein, 5g fat
-
 === CRITICAL RULES ===
-- ALWAYS identify foods - never refuse to analyze
-- Be SPECIFIC: "Grilled Chicken Breast" not "Chicken"
-- Include ALL visible items including sauces, drinks, sides
-- When uncertain, provide best estimate with "medium" or "low" confidence
-- Total all items to provide combined nutrition
-- Use "high" confidence only when food is clearly identifiable`;
+- ALWAYS identify foods - NEVER refuse or say "unable to determine"
+- Be SPECIFIC: "Grilled Salmon Fillet" not "Fish", "Jasmine Rice" not "Rice"
+- Include ALL visible items: main dish + sides + drinks + sauces + garnishes
+- QUANTIFY everything: "2 slices", "1/2 cup", "3 tbsp" - never just "some"
+- When uncertain, provide CONSERVATIVE calorie estimate with "medium" confidence
+- Sauces/dressings: Default to 2 tbsp unless clearly more/less visible
+- Fried foods: Add 50-100 cal for oil absorption vs grilled equivalent
+- DO NOT round to convenient numbers - be precise (e.g., 347 cal, not 350)
+- Restaurants typically serve 1.5-2× standard portions - adjust accordingly
+- ALWAYS provide totalNutrition as sum of all detected items`;
 
     const requestBody = {
       model: 'google/gemini-2.5-pro',

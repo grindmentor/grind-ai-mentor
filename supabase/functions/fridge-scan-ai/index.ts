@@ -6,7 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-const FUNCTION_VERSION = '2.2.0';
+const FUNCTION_VERSION = '2.3.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -296,40 +296,49 @@ Deno.serve(async (req) => {
         return errorResponse(400, 'Invalid image format (must be base64 data:image/*)', 'INVALID_IMAGE_FORMAT', false);
       }
 
-      // Size limit: ~1.5MB base64 (represents ~1.1MB raw image)
-      const MAX_BASE64_SIZE = 1.5 * 1024 * 1024;
+      // Size limit: ~1.8MB base64 (represents ~1.35MB raw image after higher quality compression)
+      const MAX_BASE64_SIZE = 1.8 * 1024 * 1024;
       if (image.length > MAX_BASE64_SIZE) {
         console.log('[FRIDGE-SCAN] Image too large:', image.length, 'bytes, max:', MAX_BASE64_SIZE);
         return errorResponse(413, 'Image too large. Please compress or use a smaller image.', 'PAYLOAD_TOO_LARGE', false);
       }
 
-      const detectPrompt = `You are a food recognition AI. Systematically analyze this fridge/pantry photo to detect ALL edible items.
+      // Two-phase detection prompt for comprehensive ingredient extraction
+      const detectPrompt = `You are a precision food recognition AI. Analyze this fridge/pantry photo using a TWO-PHASE approach for maximum detection accuracy.
 
-SYSTEMATIC SCAN APPROACH:
-1. DIVIDE the image into sections (top-left, top-right, center, bottom-left, bottom-right, door shelves)
-2. For EACH section, scan left-to-right, top-to-bottom
-3. Identify EVERY food item, no matter how small or partially visible
+=== PHASE 1: TEXT & LABELS (Primary Pass) ===
+First, scan the ENTIRE image for readable text. This is your most reliable source:
+- Product names on boxes, bottles, jars, bags, cartons
+- Brand names and logos with text (e.g., "Chobani", "Heinz", "Fairlife")
+- Nutritional labels if readable
+- Expiration dates that indicate product type
+- Store/deli labels on wrapped items
+- Any printed text that identifies a food item
 
-DETECTION PRIORITY:
-1. TEXT/LABELS (highest confidence): Read ALL visible brand names, product labels, text on packaging
-   - Examples: "Chobani Greek Yogurt", "Heinz Ketchup", "Tropicana Orange Juice", "Fairlife Milk"
-2. PACKAGED GOODS: Identify by distinctive shapes, colors, logos
-   - Milk cartons, egg cartons, condiment bottles, yogurt cups, cheese blocks, deli meats
-3. FRESH PRODUCE: Identify fruits, vegetables, herbs by color, shape, texture
-   - Be specific: "Red Bell Pepper", "Romaine Lettuce", "Granny Smith Apples (3)"
-4. PROTEINS: Meats, fish, tofu, eggs - specify type and approximate quantity
-5. DAIRY: Milk, cheese, butter, cream, yogurt
-6. CONDIMENTS & SAUCES: Ketchup, mustard, mayo, salad dressings, hot sauce
-7. BEVERAGES: Juices, sodas, water, milk alternatives
-8. LEFTOVERS: Describe containers with visible food if identifiable
+=== PHASE 2: VISUAL IDENTIFICATION (Secondary Pass) ===
+After text detection, identify items by visual appearance:
+- Fresh produce: fruits, vegetables, herbs (be specific: "Red Bell Pepper", "Roma Tomatoes (4)")
+- Unpackaged proteins: raw meat cuts, fish fillets, eggs
+- Dairy without visible labels: milk jugs, cheese blocks, butter
+- Prepared foods in containers: describe if identifiable
+- Condiments in unlabeled containers: describe by color/consistency
 
-RULES:
-- Be EXHAUSTIVE: List every edible item you can identify
-- Be SPECIFIC: Include brand names when visible, quantities when countable
-- NO vague terms: Never say "various items", "some vegetables", "assorted foods"
-- SKIP non-food: Ignore containers, shelves, ice, non-edible items
-- CONFIDENCE: "high" = readable text/label, "medium" = recognizable by shape/color
-- Maximum 50 ingredients (prioritize most clearly visible items)`;
+=== SYSTEMATIC SCAN METHOD ===
+1. Start at TOP-LEFT corner, scan right across each shelf
+2. Move DOWN to next shelf, repeat left-to-right scan
+3. Check DOOR SHELVES separately (typically condiments, beverages)
+4. Review CENTER of image for any missed items
+5. Check CRISPER DRAWERS if visible
+
+=== CRITICAL RULES ===
+- Include ALL items, even if partially visible or cut off at image edge
+- When uncertain, provide your best specific guess rather than skipping
+- Be SPECIFIC: "Whole Milk" not "Milk", "Baby Spinach" not "Greens"
+- Include quantities when countable: "Eggs (dozen)", "Apples (3)"
+- CONFIDENCE levels: "high" = text-based identification, "medium" = visual-based
+- NO vague terms: Never use "various", "some", "assorted", "miscellaneous"
+- SKIP non-food: Ignore containers, shelves, ice packs, non-edible items
+- Maximum 50 ingredients (prioritize clearest items if more are visible)`;
 
       console.log('[FRIDGE-SCAN] Calling AI gateway with tool calling...');
       
@@ -346,8 +355,8 @@ RULES:
         ],
         tools: [ingredientExtractionTool],
         tool_choice: { type: "function", function: { name: "extract_ingredients" } },
-        max_tokens: 2000,
-        temperature: 0.2
+        max_tokens: 2500,
+        temperature: 0.1
       };
 
       console.log('[FRIDGE-SCAN] Request payload size:', JSON.stringify(requestBody).length, 'bytes');

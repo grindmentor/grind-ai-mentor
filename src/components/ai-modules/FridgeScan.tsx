@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package, WifiOff, ImageIcon, ScanLine } from 'lucide-react';
+import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package, WifiOff, ImageIcon, ScanLine, Crown, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from '@/contexts/UserDataContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useDietaryPreferences, dietTypeConfig, DietaryPreferences } from '@/hooks/useDietaryPreferences';
@@ -21,6 +22,7 @@ import { compressImage } from '@/utils/imageCompression';
 import DietaryPreferencesSetup from './DietaryPreferencesSetup';
 import FridgeScanErrorState, { FridgeScanErrorCode } from './FridgeScanErrorState';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 // Types
 interface DetectedIngredient {
@@ -158,6 +160,8 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { userData } = useUserData();
+  const { currentTier, currentTierData, isSubscribed } = useSubscription();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fridgeFileRef = useRef<File | null>(null);
   const pantryFileRef = useRef<File | null>(null);
@@ -169,6 +173,11 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   
   // Offline queue
   const { isOnline, queuedItems, enqueue, processQueue } = useFridgeScanOfflineQueue();
+
+  // Daily usage tracking for FridgeScan (5/day limit for premium)
+  const [dailyUsageCount, setDailyUsageCount] = useState(0);
+  const [usageLoading, setUsageLoading] = useState(true);
+  const DAILY_LIMIT = 5;
 
   // State
   const [showSetup, setShowSetup] = useState(false);
@@ -199,6 +208,59 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [healthChecked, setHealthChecked] = useState(false);
   const [healthCheckFailed, setHealthCheckFailed] = useState(false);
+
+  // Check premium access - FridgeScan is premium-only
+  const isPremium = currentTier === 'premium' || isSubscribed;
+  const canUseFridgeScan = isPremium && dailyUsageCount < DAILY_LIMIT;
+  const remainingScans = Math.max(0, DAILY_LIMIT - dailyUsageCount);
+
+  // Fetch today's FridgeScan usage count
+  useEffect(() => {
+    const fetchDailyUsage = async () => {
+      if (!user) {
+        setUsageLoading(false);
+        return;
+      }
+      
+      try {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const { data, error } = await supabase
+          .from('interaction_logs')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('feature_used', 'fridge_scan')
+          .gte('timestamp', `${today}T00:00:00.000Z`)
+          .lte('timestamp', `${today}T23:59:59.999Z`);
+
+        if (!error && data) {
+          setDailyUsageCount(data.length);
+        }
+      } catch (err) {
+        console.error('[FridgeScan] Error fetching daily usage:', err);
+      } finally {
+        setUsageLoading(false);
+      }
+    };
+
+    fetchDailyUsage();
+  }, [user]);
+
+  // Log FridgeScan usage
+  const logFridgeScanUsage = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      await supabase.from('interaction_logs').insert({
+        user_id: user.id,
+        feature_used: 'fridge_scan',
+        interaction_type: 'scan',
+        metadata: { timestamp: new Date().toISOString() }
+      });
+      setDailyUsageCount(prev => prev + 1);
+    } catch (err) {
+      console.error('[FridgeScan] Error logging usage:', err);
+    }
+  }, [user]);
 
   // Fetch today's consumed macros from food log
   useEffect(() => {
@@ -456,7 +518,29 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       hasPantryPhoto: !!pantryPreview,
       fridgePhotoSize: photoPreview ? `${(photoPreview.length / 1024 / 1024).toFixed(2)}MB` : null,
       pantryPhotoSize: pantryPreview ? `${(pantryPreview.length / 1024 / 1024).toFixed(2)}MB` : null,
+      isPremium,
+      remainingScans,
     });
+
+    // Check premium access
+    if (!isPremium) {
+      toast({
+        title: 'Premium Feature',
+        description: 'FridgeScan is available for premium subscribers only.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check daily limit
+    if (dailyUsageCount >= DAILY_LIMIT) {
+      toast({
+        title: 'Daily Limit Reached',
+        description: `You've used all ${DAILY_LIMIT} FridgeScan uses for today. Try again tomorrow!`,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (!photoPreview && !pantryPreview) {
       console.warn('[FridgeScan] No photos to analyze');
@@ -476,6 +560,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       });
       return;
     }
+
+    // Log usage immediately (before the scan starts)
+    await logFridgeScanUsage();
 
     // IMMEDIATELY show loading screen - don't wait for health check
     setIsAnalyzing(true);
@@ -1408,8 +1495,83 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
       {/* Main content */}
       <div className="p-4">
+        {/* Premium Gate - Show for non-premium users */}
+        {!isPremium && !usageLoading && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center mb-6 border border-orange-500/30">
+              <Crown className="w-10 h-10 text-orange-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-3">Premium Feature</h2>
+            <p className="text-muted-foreground mb-6 max-w-sm">
+              FridgeScan AI uses advanced image recognition to detect ingredients and generate personalized meal ideas. Available exclusively for Premium members.
+            </p>
+            <div className="space-y-3 w-full max-w-xs">
+              <Button 
+                onClick={() => navigate('/pricing')}
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
+              >
+                <Crown className="w-4 h-4 mr-2" />
+                Upgrade to Premium
+              </Button>
+              <Button 
+                onClick={onBack}
+                variant="outline"
+                className="w-full border-border text-muted-foreground hover:bg-muted"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Back to Modules
+              </Button>
+            </div>
+            <div className="mt-8 p-4 bg-muted/50 rounded-lg border border-border max-w-sm">
+              <h3 className="text-sm font-semibold text-foreground mb-2">What you get with Premium:</h3>
+              <ul className="text-sm text-muted-foreground space-y-1 text-left">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  5 FridgeScan uses per day
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Advanced AI ingredient detection
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Personalized meal suggestions
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Macro-optimized recipes
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Daily limit reached */}
+        {isPremium && dailyUsageCount >= DAILY_LIMIT && !usageLoading && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mb-6 border border-amber-500/30">
+              <Lock className="w-10 h-10 text-amber-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-3">Daily Limit Reached</h2>
+            <p className="text-muted-foreground mb-6 max-w-sm">
+              You've used all {DAILY_LIMIT} FridgeScan scans for today. Your limit resets at midnight.
+            </p>
+            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 mb-6">
+              {dailyUsageCount} / {DAILY_LIMIT} scans used today
+            </Badge>
+            <Button 
+              onClick={onBack}
+              variant="outline"
+              className="border-border text-muted-foreground hover:bg-muted"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Back to Modules
+            </Button>
+          </div>
+        )}
+
         {/* Show error state if present */}
-        {errorState && (
+        {isPremium && canUseFridgeScan && errorState && (
           <div className="mb-4">
             <FridgeScanErrorState
               errorCode={errorState.code}
@@ -1428,9 +1590,21 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           </div>
         )}
         
-        {/* Only show steps if no blocking error */}
-        {!errorState && (
+        {/* Only show steps if premium, under limit, and no blocking error */}
+        {isPremium && canUseFridgeScan && !errorState && (
           <>
+            {/* Usage indicator */}
+            <div className="mb-4 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Daily scans remaining:</span>
+              <Badge className={cn(
+                "border",
+                remainingScans <= 1 
+                  ? "bg-amber-500/20 text-amber-400 border-amber-500/30" 
+                  : "bg-green-500/20 text-green-400 border-green-500/30"
+              )}>
+                {remainingScans} / {DAILY_LIMIT}
+              </Badge>
+            </div>
             {step === 'intent' && renderIntentStep()}
             {step === 'photo' && renderPhotoStep()}
             {step === 'ingredients' && renderIngredientsStep()}

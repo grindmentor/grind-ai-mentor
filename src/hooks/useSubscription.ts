@@ -18,6 +18,7 @@ export interface SubscriptionTier {
     cut_calc_uses: number;
     workout_timer_sessions: number;
     food_photo_analyses: number;
+    fridge_scan_uses: number; // Daily limit for FridgeScan (resets daily)
   };
 }
 
@@ -43,7 +44,8 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       progress_analyses: 1,
       cut_calc_uses: 2,
       workout_timer_sessions: 5,
-      food_photo_analyses: 0
+      food_photo_analyses: 0,
+      fridge_scan_uses: 0 // Free users don't get FridgeScan
     }
   },
   premium: {
@@ -55,6 +57,7 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       '30 photo uploads per month',
       'Exclusive access to Physique AI',
       'Smart Training & Meal Plans',
+      'FridgeScan AI (5 scans/day)',
       'Advanced progress tracking',
       'Priority support'
     ],
@@ -68,7 +71,8 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
       progress_analyses: -1,
       cut_calc_uses: -1,
       workout_timer_sessions: -1,
-      food_photo_analyses: 30
+      food_photo_analyses: 30,
+      fridge_scan_uses: 5 // 5 scans per day for premium
     }
   }
 };

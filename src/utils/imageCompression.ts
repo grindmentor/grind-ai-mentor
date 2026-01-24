@@ -21,6 +21,17 @@ const DEFAULT_OPTIONS: CompressionOptions = {
 };
 
 /**
+ * High-quality preset optimized for OCR and text recognition tasks.
+ * Higher resolution + quality preserves small text on labels.
+ */
+export const HIGH_QUALITY_OPTIONS: CompressionOptions = {
+  maxWidth: 2048,
+  maxHeight: 2048,
+  quality: 0.92,
+  outputFormat: 'webp'
+};
+
+/**
  * Compress an image file using Canvas API
  * Returns a new compressed File object
  */

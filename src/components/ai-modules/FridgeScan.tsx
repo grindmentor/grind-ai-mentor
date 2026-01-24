@@ -18,7 +18,7 @@ import { useDietaryPreferences, dietTypeConfig, DietaryPreferences } from '@/hoo
 import { useSavedRecipes } from '@/hooks/useSavedRecipes';
 import { useDailyTargets } from '@/hooks/useDietaryPreferences';
 import { useFridgeScanOfflineQueue } from '@/hooks/useFridgeScanOfflineQueue';
-import { compressImage } from '@/utils/imageCompression';
+import { compressImage, HIGH_QUALITY_OPTIONS } from '@/utils/imageCompression';
 import DietaryPreferencesSetup from './DietaryPreferencesSetup';
 import FridgeScanErrorState, { FridgeScanErrorCode } from './FridgeScanErrorState';
 import { format } from 'date-fns';
@@ -394,11 +394,11 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const proteinMinimum = getProteinMinimum();
 
   // =================================================================
-  // SIMPLIFIED IMAGE PROCESSING
-  // Compress aggressively and send base64 directly to edge function.
-  // Target ~800KB raw file which becomes ~1.1MB base64 - safe for Supabase.
+  // HIGH-QUALITY IMAGE PROCESSING FOR OCR
+  // Uses higher resolution (2048px) and quality (0.92) to preserve
+  // small text on labels. Target ~1200KB raw → ~1.6MB base64.
   // =================================================================
-  const MAX_RAW_SIZE_KB = 800;
+  const MAX_RAW_SIZE_KB = 1200;
   const [isCompressing, setIsCompressing] = useState(false);
 
   // Compress image to target size and return base64 data URL
@@ -426,29 +426,30 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     try {
       let processedFile = file;
 
-      // Always compress to ensure consistent sizing
-      // Start with high quality and reduce if still too large
-      let quality = 0.75;
+      // Use high-quality settings optimized for OCR
+      // Start at 0.92 quality, reduce in small steps (0.08) to preserve text clarity
+      let quality = HIGH_QUALITY_OPTIONS.quality!;
       let attempts = 0;
-      const maxAttempts = 3;
+      const maxAttempts = 4;
+      const minQuality = 0.80;
 
-      while (processedFile.size > MAX_RAW_SIZE_KB * 1024 && attempts < maxAttempts) {
-        console.log(`[FridgeScan] Compressing attempt ${attempts + 1}, quality=${quality}`);
+      while (processedFile.size > MAX_RAW_SIZE_KB * 1024 && attempts < maxAttempts && quality >= minQuality) {
+        console.log(`[FridgeScan] Compressing attempt ${attempts + 1}, quality=${quality.toFixed(2)}`);
         
         processedFile = await compressImage(file, {
-          maxWidth: 1280, // Reduced for faster processing
-          maxHeight: 1280,
+          maxWidth: HIGH_QUALITY_OPTIONS.maxWidth,
+          maxHeight: HIGH_QUALITY_OPTIONS.maxHeight,
           quality,
-          outputFormat: 'jpeg'
+          outputFormat: 'webp' // WebP has better compression ratio than JPEG
         });
         
         console.log(`[FridgeScan] After compression: ${Math.round(processedFile.size / 1024)}KB`);
-        quality -= 0.15;
+        quality -= 0.08;
         attempts++;
       }
 
       // Final size check
-      if (processedFile.size > 1.5 * 1024 * 1024) {
+      if (processedFile.size > 1.8 * 1024 * 1024) {
         console.error('[FridgeScan] Image still too large after compression');
         toast({ 
           title: 'Image too large', 

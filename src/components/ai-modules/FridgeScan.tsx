@@ -158,6 +158,8 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const { user } = useAuth();
   const { userData } = useUserData();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fridgeFileRef = useRef<File | null>(null);
+  const pantryFileRef = useRef<File | null>(null);
   
   // Hooks for dietary preferences and recipes
   const { preferences, isLoading: prefsLoading, needsSetup, getProteinMinimum } = useDietaryPreferences();
@@ -334,6 +336,35 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const MAX_IMAGE_SIZE_BYTES = Math.floor(1.2 * 1024 * 1024);
   const [isCompressing, setIsCompressing] = useState(false);
 
+  const uploadFridgeScanImage = useCallback(async (file: File, kind: 'fridge' | 'pantry') => {
+    if (!user) throw new Error('Not authenticated');
+
+    // Reuse existing private bucket (already used elsewhere in the app)
+    const bucket = 'food-photos';
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const path = `fridgescan/${user.id}/${kind}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    // Create a short-lived signed URL so the edge function can fetch the image reliably
+    const { data: signed, error: signedError } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 60 * 10); // 10 minutes
+
+    if (signedError || !signed?.signedUrl) {
+      throw new Error(signedError?.message || 'Failed to create signed URL');
+    }
+
+    return signed.signedUrl;
+  }, [user]);
+
   // Compress and convert image to base64
   const processImage = async (file: File): Promise<string | null> => {
     console.log('[FridgeScan] Processing image:', { 
@@ -398,13 +429,19 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   // Handle photo capture/upload for fridge
   const handlePhotoSelect = useCallback(async (file: File) => {
     const base64 = await processImage(file);
-    if (base64) setPhotoPreview(base64);
+    if (base64) {
+      fridgeFileRef.current = file;
+      setPhotoPreview(base64);
+    }
   }, [toast]);
 
   // Handle pantry photo capture/upload
   const handlePantrySelect = useCallback(async (file: File) => {
     const base64 = await processImage(file);
-    if (base64) setPantryPreview(base64);
+    if (base64) {
+      pantryFileRef.current = file;
+      setPantryPreview(base64);
+    }
   }, [toast]);
 
   // Analyze photos (at least one required)
@@ -468,10 +505,31 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       if (photoPreview) {
         console.log('[FridgeScan] Calling fridge-scan-ai for fridge photo...');
         const startTime = Date.now();
+
+        // Avoid huge base64 POST payloads (can be rejected with 503 before hitting the function).
+        // Upload the image to Storage and send a signed URL instead.
+        let fridgeImageUrl: string | null = null;
+        try {
+          if (fridgeFileRef.current) {
+            fridgeImageUrl = await uploadFridgeScanImage(fridgeFileRef.current, 'fridge');
+          }
+        } catch (e) {
+          console.error('[FridgeScan] Upload failed:', e);
+        }
+        if (!fridgeImageUrl) {
+          setErrorState({
+            code: 503,
+            context: 'detect',
+            errorCode: 'UPLOAD_FAILED',
+            errorMessage: 'Could not upload image for analysis. Please try again.',
+          });
+          setIsAnalyzing(false);
+          return;
+        }
         
         // First try supabase.functions.invoke
         const { data: fridgeData, error: fridgeError } = await supabase.functions.invoke('fridge-scan-ai', {
-          body: { image: photoPreview, action: 'detect' },
+          body: { imageUrl: fridgeImageUrl, action: 'detect' },
         });
 
         console.log('[FridgeScan] Fridge photo response:', {
@@ -487,7 +545,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           console.error('[FridgeScan] Fridge analysis failed, trying diagnostic fetch...');
           
           // Use diagnostic fetch to get real HTTP status
-          const diagResult = await diagnosticFetch('detect', { image: photoPreview });
+           const diagResult = await diagnosticFetch('detect', { imageUrl: fridgeImageUrl });
           
           if (!diagResult.ok) {
             const code = parseErrorCode(fridgeError, diagResult.status);
@@ -524,18 +582,29 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
       // Analyze pantry photo if present
       if (pantryPreview) {
-        const { data: pantryData, error: pantryError } = await supabase.functions.invoke('fridge-scan-ai', {
-          body: { image: pantryPreview, action: 'detect' },
-        });
+        let pantryImageUrl: string | null = null;
+        try {
+          if (pantryFileRef.current) {
+            pantryImageUrl = await uploadFridgeScanImage(pantryFileRef.current, 'pantry');
+          }
+        } catch (e) {
+          console.error('[FridgeScan] Pantry upload failed:', e);
+        }
 
-        if (!pantryError && pantryData.ingredients) {
-          const pantryIngredients: DetectedIngredient[] = pantryData.ingredients.map((ing: any, idx: number) => ({
-            id: `pantry-${idx}`,
-            name: ing.name || ing,
-            selected: true,
-            confidence: ing.confidence || 'medium',
-          }));
-          allIngredients = [...allIngredients, ...pantryIngredients];
+        if (pantryImageUrl) {
+          const { data: pantryData, error: pantryError } = await supabase.functions.invoke('fridge-scan-ai', {
+            body: { imageUrl: pantryImageUrl, action: 'detect' },
+          });
+
+          if (!pantryError && pantryData.ingredients) {
+            const pantryIngredients: DetectedIngredient[] = pantryData.ingredients.map((ing: any, idx: number) => ({
+              id: `pantry-${idx}`,
+              name: ing.name || ing,
+              selected: true,
+              confidence: ing.confidence || 'medium',
+            }));
+            allIngredients = [...allIngredients, ...pantryIngredients];
+          }
         }
       }
 

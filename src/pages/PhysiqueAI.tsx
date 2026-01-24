@@ -1,20 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RealisticMuscleMap } from '@/components/ui/realistic-muscle-map';
-import { Camera, Upload, TrendingUp, Target, Activity, Eye, Brain, CheckCircle2 } from 'lucide-react';
+import { Upload, TrendingUp, Brain, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { MobileHeader } from '@/components/MobileHeader';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
-
+import { compressImage, HIGH_QUALITY_OPTIONS } from '@/utils/imageCompression';
 interface PhysiqueAnalysis {
   muscle_development: number;
   symmetry: number;
@@ -32,30 +29,22 @@ interface PhysiqueAnalysis {
 }
 
 const PhysiqueAI = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { uploadPhoto, isUploading, uploadProgress } = usePhotoUpload();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PhysiqueAnalysis | null>(null);
   const [viewMode, setViewMode] = useState<'front' | 'back'>('front');
 
-  // MobileHeader will use location.state.returnTo if present; no need to override
-  // Only used as fallback for inline rendering (which PhysiqueAI doesn't do)
-  
-
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // More lenient validation
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
       return;
     }
 
-    // Increased size limit
     if (file.size > 25 * 1024 * 1024) {
       toast.error('File size must be less than 25MB');
       return;
@@ -67,10 +56,27 @@ const PhysiqueAI = () => {
   };
 
   const handleRefresh = async () => {
-    // Reset state for new analysis
     setSelectedFile(null);
     setPreviewUrl(null);
     setAnalysis(null);
+  };
+
+  // Convert file to high-quality base64 with compression
+  const fileToBase64 = async (file: File): Promise<string> => {
+    // Apply high-quality compression for better analysis
+    const compressedFile = await compressImage(file, {
+      ...HIGH_QUALITY_OPTIONS,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      quality: 0.92,
+    });
+    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(compressedFile);
+    });
   };
 
   const analyzePhysique = async () => {
@@ -79,25 +85,31 @@ const PhysiqueAI = () => {
     setIsAnalyzing(true);
     
     try {
-      const photoUrl = await uploadPhoto(selectedFile, {
-        bucket: 'physique-photos',
-        maxSizeMB: 50,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
-      });
+      // Convert to high-quality base64 (no upload needed - send directly to AI)
+      console.log('[PhysiqueAI] Compressing image...');
+      const base64Image = await fileToBase64(selectedFile);
+      console.log('[PhysiqueAI] Image compressed, size:', Math.round(base64Image.length / 1024), 'KB');
 
-      if (!photoUrl) {
-        setIsAnalyzing(false);
-        return;
-      }
+      // Get user profile for context
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('height, weight, body_fat_percentage, goal')
+        .eq('id', user.id)
+        .maybeSingle();
 
+      console.log('[PhysiqueAI] Calling analyze-physique...');
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-physique', {
         body: { 
-          imageUrl: photoUrl,
-          userId: user.id 
+          image: base64Image,
+          height: profile?.height,
+          weight: profile?.weight,
+          bodyFat: profile?.body_fat_percentage,
+          goals: profile?.goal
         }
       });
 
       if (analysisError) {
+        console.error('[PhysiqueAI] Function error:', analysisError);
         throw new Error(analysisError.message || 'Analysis failed');
       }
       
@@ -112,12 +124,13 @@ const PhysiqueAI = () => {
       }
 
       const result = analysisData.analysis;
+      console.log('[PhysiqueAI] Analysis received:', result.confidence);
 
+      // Save to progress_photos for history
       await supabase
         .from('progress_photos')
         .insert({
           user_id: user.id,
-          file_url: photoUrl,
           file_name: selectedFile.name,
           analysis_result: JSON.stringify(result),
           photo_type: 'physique_analysis',
@@ -143,7 +156,7 @@ const PhysiqueAI = () => {
       toast.success('Physique analysis completed!');
       
     } catch (error) {
-      console.error('Analysis error:', error);
+      console.error('[PhysiqueAI] Analysis error:', error);
       const message = error instanceof Error ? error.message : 'Failed to analyze physique. Please try again.';
       toast.error(message);
     } finally {
@@ -237,16 +250,11 @@ const PhysiqueAI = () => {
                 {selectedFile && (
                   <Button 
                     onClick={analyzePhysique}
-                    disabled={isAnalyzing || isUploading}
+                    disabled={isAnalyzing}
                     className="w-full mt-4 h-14 min-h-[48px] rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-base font-semibold focus-visible:ring-2 focus-visible:ring-rose-500/50 focus-visible:ring-offset-2"
                     aria-label="Analyze physique"
                   >
-                    {isUploading ? (
-                      <>
-                        <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Uploading {uploadProgress}%...
-                      </>
-                    ) : isAnalyzing ? (
+                    {isAnalyzing ? (
                       <>
                         <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         Analyzing...

@@ -94,13 +94,19 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
 
     try {
       const { data, error } = await supabase
-        .from('habit_logs')
-        .select('*')
+        .from('habit_completions')
+        .select('id, habit_id, completed_date')
         .eq('user_id', user.id)
-        .eq('date', selectedDate);
+        .eq('completed_date', selectedDate);
 
       if (error) throw error;
-      setHabitLogs(data || []);
+      // Map to expected HabitLog structure
+      setHabitLogs((data || []).map(d => ({
+        id: d.id,
+        habit_id: d.habit_id,
+        date: d.completed_date,
+        completed: true
+      })));
     } catch (error) {
       console.error('Error loading habit logs:', error);
     }
@@ -143,39 +149,37 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
 
     try {
       if (existingLog) {
-        // Update existing log
+        // Delete existing completion (toggle off)
         const { error } = await supabase
-          .from('habit_logs')
-          .update({ completed: !existingLog.completed })
+          .from('habit_completions')
+          .delete()
           .eq('id', existingLog.id);
 
         if (error) throw error;
 
-        setHabitLogs(prev => 
-          prev.map(log => 
-            log.id === existingLog.id 
-              ? { ...log, completed: !log.completed }
-              : log
-          )
-        );
+        setHabitLogs(prev => prev.filter(log => log.id !== existingLog.id));
+        toast.success('Habit unmarked!');
       } else {
-        // Create new log
+        // Create new completion
         const { data, error } = await supabase
-          .from('habit_logs')
+          .from('habit_completions')
           .insert({
             user_id: user.id,
             habit_id: habitId,
-            date: selectedDate,
-            completed: true
+            completed_date: selectedDate
           })
           .select()
           .single();
 
         if (error) throw error;
-        setHabitLogs(prev => [...prev, data]);
+        setHabitLogs(prev => [...prev, {
+          id: data.id,
+          habit_id: data.habit_id,
+          date: data.completed_date,
+          completed: true
+        }]);
+        toast.success('Habit completed!');
       }
-
-      toast.success('Habit updated!');
     } catch (error) {
       console.error('Error toggling habit:', error);
       toast.error('Failed to update habit');

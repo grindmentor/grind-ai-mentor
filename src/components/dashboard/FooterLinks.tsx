@@ -57,7 +57,7 @@ export const FooterLinks: React.FC = () => {
         </SmoothButton>
       </div>
       <div className={`text-center mt-4 text-xs text-gray-500 ${isMobile ? 'pb-4' : ''}`}>
-        © 2025 Myotopia. All rights reserved.
+        © 2025 Myotopia. All rights reserved. • <button onClick={() => handleNavigation('/privacy')} className="hover:text-orange-400 underline underline-offset-2">Privacy Policy</button> • <button onClick={() => handleNavigation('/terms')} className="hover:text-orange-400 underline underline-offset-2">Terms</button>
       </div>
     </div>
   );

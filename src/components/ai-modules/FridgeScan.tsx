@@ -132,12 +132,15 @@ const diagnosticFetch = async (
     
     console.log(`[FridgeScan] Diagnostic result:`, { status, ok: response.ok, data: data ? JSON.stringify(data).slice(0, 200) : errorText });
     
+    const derivedErrorCode =
+      !response.ok && data?.offline === true ? 'SUPABASE_NETWORK_UNAVAILABLE' : data?.error_code;
+
     return {
       ok: response.ok,
       status,
       data: response.ok ? data : undefined,
       error: !response.ok ? (data?.error || errorText || `HTTP ${status}`) : undefined,
-      errorCode: data?.error_code,
+      errorCode: derivedErrorCode,
     };
   } catch (err) {
     console.error('[FridgeScan] Diagnostic fetch error:', err);
@@ -326,7 +329,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const proteinMinimum = getProteinMinimum();
 
   // Max image size for API (compress to ~2MB for reliability)
-  const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+  // Note: base64 expands payload size ~33%. Keep the source image smaller to avoid
+  // platform/proxy issues on Edge Function requests.
+  const MAX_IMAGE_SIZE_BYTES = Math.floor(1.2 * 1024 * 1024);
   const [isCompressing, setIsCompressing] = useState(false);
 
   // Compress and convert image to base64
@@ -434,6 +439,19 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     setErrorState(null);
 
     try {
+      // Pre-flight health check (small request) to distinguish service/platform issues
+      // before sending a large image payload.
+      const healthy = await performHealthCheck();
+      if (!healthy) {
+        setErrorState({
+          code: 503,
+          context: 'detect',
+          errorMessage: 'Service health check failed',
+        });
+        setIsAnalyzing(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       console.log('[FridgeScan] Session check:', { hasSession: !!session, hasToken: !!session?.access_token });
       
@@ -648,14 +666,41 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     setErrorState(null);
 
     try {
+      // Pre-flight health check before any generate call
+      const healthy = await performHealthCheck();
+      if (!healthy) {
+        setErrorState({
+          code: 503,
+          context: 'generate',
+          errorMessage: 'Service health check failed',
+        });
+        setIsGenerating(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('fridge-scan-ai', {
         body: payload,
       });
 
       if (error) {
-        const code = parseErrorCode(error);
-        setErrorState({ code, context: 'generate' });
-        setIsGenerating(false);
+        console.error('[FridgeScan] Meal generation failed, trying diagnostic fetch...');
+        const diagResult = await diagnosticFetch('generate', payload);
+
+        if (!diagResult.ok) {
+          const code = parseErrorCode(error, diagResult.status);
+          setErrorState({
+            code,
+            context: 'generate',
+            httpStatus: diagResult.status,
+            errorCode: diagResult.errorCode,
+            errorMessage: diagResult.error,
+          });
+          setIsGenerating(false);
+          return;
+        }
+
+        // Diagnostic fetch succeeded - use its data
+        setMeals((diagResult.data?.meals || []).map((m: MealCard) => ({ ...m, saved: false })));
         return;
       }
 

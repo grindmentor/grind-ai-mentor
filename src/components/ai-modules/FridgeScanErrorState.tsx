@@ -13,6 +13,10 @@ interface FridgeScanErrorStateProps {
   queuedCount?: number;
   className?: string;
   isRetrying?: boolean;
+  // Extended diagnostics
+  httpStatus?: number;
+  errorCodeDetail?: string;
+  errorMessage?: string;
 }
 
 const errorConfig: Record<FridgeScanErrorCode, {
@@ -92,9 +96,16 @@ const FridgeScanErrorState: React.FC<FridgeScanErrorStateProps> = ({
   queuedCount = 0,
   className,
   isRetrying = false,
+  httpStatus,
+  errorCodeDetail,
+  errorMessage,
 }) => {
+  const [showDetails, setShowDetails] = React.useState(false);
   const config = errorConfig[errorCode] || errorConfig.unknown;
   const isRetryableError = [429, 500, 503, 'unknown'].includes(errorCode);
+  
+  // Show details section if we have diagnostic info
+  const hasDetails = httpStatus || errorCodeDetail || errorMessage;
 
   return (
     <Card className={cn("bg-card/60 border-border/50", className)}>
@@ -112,7 +123,7 @@ const FridgeScanErrorState: React.FC<FridgeScanErrorStateProps> = ({
         </p>
         
         {isRetryableError && config.retryDescription && (
-          <p className="text-xs text-muted-foreground/70 mb-6 max-w-xs">
+          <p className="text-xs text-muted-foreground/70 mb-4 max-w-xs">
             {config.retryDescription}
           </p>
         )}
@@ -125,6 +136,25 @@ const FridgeScanErrorState: React.FC<FridgeScanErrorStateProps> = ({
             <span className="text-xs text-blue-400">
               {queuedCount} request{queuedCount !== 1 ? 's' : ''} queued
             </span>
+          </div>
+        )}
+
+        {/* Details disclosure for diagnostics */}
+        {hasDetails && (
+          <div className="w-full mb-4">
+            <button 
+              onClick={() => setShowDetails(!showDetails)}
+              className="text-xs text-muted-foreground/60 hover:text-muted-foreground underline"
+            >
+              {showDetails ? 'Hide details' : 'Show details'}
+            </button>
+            {showDetails && (
+              <div className="mt-2 p-3 rounded-lg bg-muted/30 text-left text-xs font-mono">
+                {httpStatus && <div><span className="text-muted-foreground">Status:</span> {httpStatus}</div>}
+                {errorCodeDetail && <div><span className="text-muted-foreground">Code:</span> {errorCodeDetail}</div>}
+                {errorMessage && <div className="mt-1 text-muted-foreground/80 break-words">{errorMessage.slice(0, 150)}</div>}
+              </div>
+            )}
           </div>
         )}
 

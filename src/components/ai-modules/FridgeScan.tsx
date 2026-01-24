@@ -54,9 +54,26 @@ interface FridgeScanProps {
   onBack: () => void;
 }
 
+// Extended error info for diagnostics
+interface ErrorDetails {
+  code: FridgeScanErrorCode;
+  httpStatus?: number;
+  errorCode?: string;
+  message?: string;
+}
+
 // Helper to parse error code from Supabase function error
-const parseErrorCode = (error: any): FridgeScanErrorCode => {
+const parseErrorCode = (error: any, httpStatus?: number): FridgeScanErrorCode => {
   if (!navigator.onLine) return 'offline';
+  
+  // Use explicit HTTP status if available
+  if (httpStatus) {
+    if (httpStatus === 401) return 401;
+    if (httpStatus === 402) return 402;
+    if (httpStatus === 429) return 429;
+    if (httpStatus === 503) return 503;
+    if (httpStatus >= 500) return 500;
+  }
   
   // Check for status in error context
   const status = error?.context?.status || error?.status;
@@ -74,6 +91,63 @@ const parseErrorCode = (error: any): FridgeScanErrorCode => {
   if (message.includes('offline') || message.includes('network')) return 'offline';
   
   return 'unknown';
+};
+
+// Diagnostic fetch to capture real HTTP status/body when supabase.functions.invoke fails
+const diagnosticFetch = async (
+  action: string, 
+  payload: Record<string, any>
+): Promise<{ ok: boolean; status: number; data?: any; error?: string; errorCode?: string }> => {
+  const url = 'https://druwytttcxnfpwgyrvmt.supabase.co/functions/v1/fridge-scan-ai';
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRydXd5dHR0Y3huZnB3Z3lydm10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ2MjYsImV4cCI6MjA2NjE3MDYyNn0.qyAfq9sl1jimQEnKDbV90zlDloZFoHqboDHUzJeLP6I',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    console.log(`[FridgeScan] Diagnostic fetch: ${action}`);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ action, ...payload }),
+    });
+    
+    const status = response.status;
+    let data: any = null;
+    let errorText = '';
+    
+    try {
+      const text = await response.text();
+      data = JSON.parse(text);
+    } catch {
+      errorText = 'Non-JSON response';
+    }
+    
+    console.log(`[FridgeScan] Diagnostic result:`, { status, ok: response.ok, data: data ? JSON.stringify(data).slice(0, 200) : errorText });
+    
+    return {
+      ok: response.ok,
+      status,
+      data: response.ok ? data : undefined,
+      error: !response.ok ? (data?.error || errorText || `HTTP ${status}`) : undefined,
+      errorCode: data?.error_code,
+    };
+  } catch (err) {
+    console.error('[FridgeScan] Diagnostic fetch error:', err);
+    return { 
+      ok: false, 
+      status: 0, 
+      error: err instanceof Error ? err.message : 'Network error',
+      errorCode: 'NETWORK_ERROR'
+    };
+  }
 };
 
 const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
@@ -108,8 +182,14 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [todayConsumed, setTodayConsumed] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
   const pantryInputRef = useRef<HTMLInputElement>(null);
   
-  // Error state
-  const [errorState, setErrorState] = useState<{ code: FridgeScanErrorCode; context: 'detect' | 'generate' } | null>(null);
+  // Error state with extended diagnostics
+  const [errorState, setErrorState] = useState<{ 
+    code: FridgeScanErrorCode; 
+    context: 'detect' | 'generate';
+    httpStatus?: number;
+    errorCode?: string;
+    errorMessage?: string;
+  } | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const [healthChecked, setHealthChecked] = useState(false);
   const [healthCheckFailed, setHealthCheckFailed] = useState(false);
@@ -167,23 +247,22 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   }, [isOnline, errorState, queuedItems.length, processQueue]);
 
   // Health check function - validates edge function is reachable before expensive operations
+  // Uses diagnostic fetch (no auth required) to distinguish platform issues from auth issues
   const performHealthCheck = useCallback(async (): Promise<boolean> => {
-    if (healthChecked) return !healthCheckFailed;
+    if (healthChecked && !healthCheckFailed) return true;
     
-    console.log('[FridgeScan] Running health check...');
+    console.log('[FridgeScan] Running health check (pre-auth diagnostic)...');
     try {
-      const { data, error } = await supabase.functions.invoke('fridge-scan-ai', {
-        body: { action: 'health' },
-      });
+      const result = await diagnosticFetch('health', {});
       
-      if (error || !data?.ok) {
-        console.error('[FridgeScan] Health check failed:', error || data);
+      if (!result.ok || !result.data?.ok) {
+        console.error('[FridgeScan] Health check failed:', result);
         setHealthCheckFailed(true);
         setHealthChecked(true);
         return false;
       }
       
-      console.log('[FridgeScan] Health check passed:', data);
+      console.log('[FridgeScan] Health check passed:', result.data);
       setHealthChecked(true);
       setHealthCheckFailed(false);
       return true;
@@ -200,9 +279,22 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     if (!errorState) return;
     
     setIsRetrying(true);
+    setHealthChecked(false); // Reset health check to re-validate
     console.log('[FridgeScan] Retrying action:', errorState.context);
     
     try {
+      // First verify service is reachable
+      const healthy = await performHealthCheck();
+      if (!healthy) {
+        setErrorState({ 
+          code: 503, 
+          context: errorState.context,
+          errorMessage: 'Service health check failed'
+        });
+        setIsRetrying(false);
+        return;
+      }
+      
       if (errorState.context === 'detect') {
         setErrorState(null);
         await analyzePhotos();
@@ -216,7 +308,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     } finally {
       setIsRetrying(false);
     }
-  }, [errorState]);
+  }, [errorState, performHealthCheck]);
 
   // Calculate actual remaining macros based on today's consumption
   const dailyCaloriesTarget = dailyTargets.calories || userData.tdee || 2000;
@@ -359,6 +451,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         console.log('[FridgeScan] Calling fridge-scan-ai for fridge photo...');
         const startTime = Date.now();
         
+        // First try supabase.functions.invoke
         const { data: fridgeData, error: fridgeError } = await supabase.functions.invoke('fridge-scan-ai', {
           body: { image: photoPreview, action: 'detect' },
         });
@@ -373,19 +466,41 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         });
 
         if (fridgeError) {
-          console.error('[FridgeScan] Fridge analysis failed:', fridgeError);
-          const code = parseErrorCode(fridgeError);
-          setErrorState({ code, context: 'detect' });
-          setIsAnalyzing(false);
-          return;
+          console.error('[FridgeScan] Fridge analysis failed, trying diagnostic fetch...');
+          
+          // Use diagnostic fetch to get real HTTP status
+          const diagResult = await diagnosticFetch('detect', { image: photoPreview });
+          
+          if (!diagResult.ok) {
+            const code = parseErrorCode(fridgeError, diagResult.status);
+            setErrorState({ 
+              code, 
+              context: 'detect',
+              httpStatus: diagResult.status,
+              errorCode: diagResult.errorCode,
+              errorMessage: diagResult.error,
+            });
+            setIsAnalyzing(false);
+            return;
+          }
+          
+          // Diagnostic fetch succeeded - use its data
+          if (diagResult.data?.ingredients) {
+            allIngredients = diagResult.data.ingredients.map((ing: any, idx: number) => ({
+              id: `fridge-${idx}`,
+              name: ing.name || ing,
+              selected: true,
+              confidence: ing.confidence || 'medium',
+            }));
+          }
+        } else {
+          allIngredients = (fridgeData.ingredients || []).map((ing: any, idx: number) => ({
+            id: `fridge-${idx}`,
+            name: ing.name || ing,
+            selected: true,
+            confidence: ing.confidence || 'medium',
+          }));
         }
-
-        allIngredients = (fridgeData.ingredients || []).map((ing: any, idx: number) => ({
-          id: `fridge-${idx}`,
-          name: ing.name || ing,
-          selected: true,
-          confidence: ing.confidence || 'medium',
-        }));
         console.log('[FridgeScan] Fridge ingredients parsed:', allIngredients.length);
       }
 
@@ -1190,6 +1305,9 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
               }}
               queuedCount={queuedItems.length}
               isRetrying={isRetrying}
+              httpStatus={errorState.httpStatus}
+              errorCodeDetail={errorState.errorCode}
+              errorMessage={errorState.errorMessage}
             />
           </div>
         )}

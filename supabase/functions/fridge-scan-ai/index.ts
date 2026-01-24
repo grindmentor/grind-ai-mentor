@@ -6,11 +6,32 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+const FUNCTION_VERSION = '2.2.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Structured error response helper
+function errorResponse(
+  status: number,
+  error: string,
+  errorCode: string,
+  retryable: boolean,
+  upstreamStatus?: number
+) {
+  console.log(`[FRIDGE-SCAN] Error response: ${status} ${errorCode} - ${error}`);
+  return new Response(JSON.stringify({ 
+    error, 
+    error_code: errorCode, 
+    retryable,
+    upstream_status: upstreamStatus,
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 // Retry helper with exponential backoff + jitter
 async function fetchWithRetry(
@@ -146,20 +167,84 @@ const mealGenerationTool = {
 };
 
 Deno.serve(async (req) => {
-  console.log('[FRIDGE-SCAN] start');
+  console.log('[FRIDGE-SCAN] start', { method: req.method });
 
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Parse body early for action routing
+    let body: Record<string, any> = {};
+    try {
+      body = await req.json();
+    } catch {
+      // Empty or invalid JSON - will be caught by action check
+    }
+    
+    const { action } = body;
+    console.log('[FRIDGE-SCAN] action:', action);
+
+    // ==========================================
+    // PRE-AUTH ENDPOINTS (health, echo)
+    // These do NOT require authentication
+    // ==========================================
+    
+    if (action === 'health') {
+      console.log('[FRIDGE-SCAN][HEALTH] Health check - no auth required');
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        function: 'fridge-scan-ai', 
+        version: FUNCTION_VERSION, 
+        ts: Date.now(),
+        hasApiKey: !!LOVABLE_API_KEY,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'echo') {
+      console.log('[FRIDGE-SCAN][ECHO] Echo check - no auth required');
+      const { image, ingredients } = body;
+      const imageSize = image?.length || 0;
+      const ingredientsCount = Array.isArray(ingredients) ? ingredients.length : 0;
+      
+      // Reject very large payloads to prevent abuse
+      const MAX_ECHO_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+      if (imageSize > MAX_ECHO_IMAGE_SIZE) {
+        return errorResponse(413, 'Image too large for echo', 'PAYLOAD_TOO_LARGE', false);
+      }
+      
+      return new Response(JSON.stringify({ 
+        ok: true,
+        function: 'fridge-scan-ai',
+        version: FUNCTION_VERSION,
+        echo: {
+          hasImage: !!image,
+          imageSizeBytes: imageSize,
+          imageSizeMB: (imageSize / 1024 / 1024).toFixed(2),
+          ingredientsCount,
+          ingredientsPreview: Array.isArray(ingredients) ? ingredients.slice(0, 5) : [],
+        },
+        ts: Date.now()
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ==========================================
+    // AUTHENTICATED ENDPOINTS (detect, generate)
+    // These require valid JWT
+    // ==========================================
+    
     // Check auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Authentication required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.log('[FRIDGE-SCAN] No auth header');
+      return errorResponse(401, 'Authentication required', 'AUTH_REQUIRED', false);
     }
 
     // Signing-keys compatible validation
@@ -173,64 +258,14 @@ Deno.serve(async (req) => {
 
     if (claimsError || !claimsData?.claims?.sub) {
       console.error('[FRIDGE-SCAN] auth failed', claimsError);
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse(401, 'Unauthorized', 'AUTH_INVALID', false);
     }
 
     const userId = claimsData.claims.sub;
-    console.log('[FRIDGE-SCAN] authed', { userId });
+    console.log('[FRIDGE-SCAN] authed', { userId, action });
 
     if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: 'AI service not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const body = await req.json();
-    const { action } = body;
-
-    console.log('[FRIDGE-SCAN] Action:', action);
-
-    // Health check endpoint - no AI dependency, immediate response
-    if (action === 'health') {
-      console.log('[FRIDGE-SCAN][HEALTH] Health check requested');
-      return new Response(JSON.stringify({ 
-        ok: true, 
-        function: 'fridge-scan-ai', 
-        version: '2.1.0', 
-        ts: Date.now(),
-        userId: userId 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Echo endpoint - validates payload sizes without calling AI
-    if (action === 'echo') {
-      console.log('[FRIDGE-SCAN][ECHO] Echo check requested');
-      const { image, ingredients } = body;
-      const imageSize = image?.length || 0;
-      const ingredientsCount = Array.isArray(ingredients) ? ingredients.length : 0;
-      
-      return new Response(JSON.stringify({ 
-        ok: true,
-        function: 'fridge-scan-ai',
-        echo: {
-          hasImage: !!image,
-          imageSizeBytes: imageSize,
-          imageSizeMB: (imageSize / 1024 / 1024).toFixed(2),
-          ingredientsCount,
-          ingredientsPreview: Array.isArray(ingredients) ? ingredients.slice(0, 5) : [],
-        },
-        ts: Date.now()
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse(500, 'AI service not configured', 'AI_NOT_CONFIGURED', false);
     }
 
     if (action === 'detect') {
@@ -248,17 +283,11 @@ Deno.serve(async (req) => {
       console.log('[FRIDGE-SCAN] Image info:', JSON.stringify(imageInfo));
 
       if (!image) {
-        return new Response(JSON.stringify({ error: 'No image provided' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse(400, 'No image provided', 'NO_IMAGE', false);
       }
 
       if (typeof image !== 'string' || !image.startsWith('data:image/')) {
-        return new Response(JSON.stringify({ error: 'Invalid image format' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse(400, 'Invalid image format', 'INVALID_IMAGE_FORMAT', false);
       }
 
       const detectPrompt = `Analyze this fridge/pantry photo to identify food products and ingredients.
@@ -298,17 +327,23 @@ RULES:
 
       console.log('[FRIDGE-SCAN] Request payload size:', JSON.stringify(requestBody).length, 'bytes');
 
-      const response = await fetchWithRetry(
-        'https://ai.gateway.lovable.dev/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+      let response: Response;
+      try {
+        response = await fetchWithRetry(
+          'https://ai.gateway.lovable.dev/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+          }
+        );
+      } catch (fetchErr) {
+        console.error('[FRIDGE-SCAN] Fetch failed after retries:', fetchErr);
+        return errorResponse(503, 'AI gateway unreachable', 'GATEWAY_UNREACHABLE', true);
+      }
 
       console.log('[FRIDGE-SCAN] AI gateway response status:', response.status);
 
@@ -317,24 +352,15 @@ RULES:
         console.error('[FRIDGE-SCAN] AI gateway error:', response.status, errorText);
         
         if (response.status === 429) {
-          return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later', retryable: true }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return errorResponse(429, 'Rate limit exceeded, please try again later', 'RATE_LIMITED', true, 429);
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: 'AI credits exhausted', retryable: false }), {
-            status: 402,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return errorResponse(402, 'AI credits exhausted', 'CREDITS_EXHAUSTED', false, 402);
         }
         if (response.status >= 500) {
-          return new Response(JSON.stringify({ error: 'AI service temporarily unavailable', retryable: true }), {
-            status: 503,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return errorResponse(503, 'AI service temporarily unavailable', 'GATEWAY_ERROR', true, response.status);
         }
-        throw new Error('AI analysis failed');
+        return errorResponse(500, 'AI analysis failed', 'AI_FAILED', true, response.status);
       }
 
       const data = await response.json();
@@ -396,6 +422,18 @@ RULES:
           .slice(0, 40);
       }
 
+      // Warn if no ingredients detected
+      if (result.ingredients.length === 0) {
+        console.log('[FRIDGE-SCAN] No ingredients detected');
+        return new Response(JSON.stringify({ 
+          ingredients: [], 
+          warning: 'NO_INGREDIENTS_DETECTED',
+          hint: 'Try a clearer photo with better lighting'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -405,10 +443,7 @@ RULES:
       const { ingredients, mealIntent, quickMeals, remainingMacros, proteinMinimum, userGoal, allergies, dislikes } = body;
 
       if (!ingredients || ingredients.length === 0) {
-        return new Response(JSON.stringify({ error: 'No ingredients provided' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return errorResponse(400, 'No ingredients provided', 'NO_INGREDIENTS', false);
       }
 
       const allergyInstructions = allergies?.length > 0 
@@ -445,48 +480,45 @@ RULES:
 ${quickMeals ? '5. ALL meals under 10 min prep+cook' : ''}
 6. NEVER use allergen ingredients`;
 
-      const response = await fetchWithRetry(
-        'https://ai.gateway.lovable.dev/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            messages: [{ role: 'user', content: generatePrompt }],
-            tools: [mealGenerationTool],
-            tool_choice: { type: "function", function: { name: "generate_meals" } },
-            max_tokens: 2000,
-            temperature: 0.7
-          }),
-        }
-      );
+      let response: Response;
+      try {
+        response = await fetchWithRetry(
+          'https://ai.gateway.lovable.dev/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'google/gemini-2.5-flash',
+              messages: [{ role: 'user', content: generatePrompt }],
+              tools: [mealGenerationTool],
+              tool_choice: { type: "function", function: { name: "generate_meals" } },
+              max_tokens: 2000,
+              temperature: 0.7
+            }),
+          }
+        );
+      } catch (fetchErr) {
+        console.error('[FRIDGE-SCAN] Generate fetch failed:', fetchErr);
+        return errorResponse(503, 'AI gateway unreachable', 'GATEWAY_UNREACHABLE', true);
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[FRIDGE-SCAN] AI gateway error:', response.status, errorText);
         
         if (response.status === 429) {
-          return new Response(JSON.stringify({ error: 'Rate limit exceeded', retryable: true }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return errorResponse(429, 'Rate limit exceeded', 'RATE_LIMITED', true, 429);
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: 'AI credits exhausted', retryable: false }), {
-            status: 402,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return errorResponse(402, 'AI credits exhausted', 'CREDITS_EXHAUSTED', false, 402);
         }
         if (response.status >= 500) {
-          return new Response(JSON.stringify({ error: 'AI service temporarily unavailable', retryable: true }), {
-            status: 503,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+          return errorResponse(503, 'AI service temporarily unavailable', 'GATEWAY_ERROR', true, response.status);
         }
-        throw new Error('Meal generation failed');
+        return errorResponse(500, 'Meal generation failed', 'GENERATE_FAILED', true, response.status);
       }
 
       const data = await response.json();
@@ -530,19 +562,15 @@ ${quickMeals ? '5. ALL meals under 10 min prep+cook' : ''}
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return errorResponse(400, 'Invalid action', 'INVALID_ACTION', false);
 
   } catch (error) {
-    console.error('[FRIDGE-SCAN] Error:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An error occurred',
-      retryable: true
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('[FRIDGE-SCAN] Unhandled error:', error);
+    return errorResponse(
+      500, 
+      error instanceof Error ? error.message : 'An error occurred',
+      'INTERNAL_ERROR',
+      true
+    );
   }
 });

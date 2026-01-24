@@ -330,119 +330,123 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
   const proteinMinimum = getProteinMinimum();
 
-  // Max image size for API (compress to ~2MB for reliability)
-  // Note: base64 expands payload size ~33%. Keep the source image smaller to avoid
-  // platform/proxy issues on Edge Function requests.
-  const MAX_IMAGE_SIZE_BYTES = Math.floor(1.2 * 1024 * 1024);
+  // =================================================================
+  // SIMPLIFIED IMAGE PROCESSING
+  // Compress aggressively and send base64 directly to edge function.
+  // Target ~800KB raw file which becomes ~1.1MB base64 - safe for Supabase.
+  // =================================================================
+  const MAX_RAW_SIZE_KB = 800;
   const [isCompressing, setIsCompressing] = useState(false);
 
-  const uploadFridgeScanImage = useCallback(async (file: File, kind: 'fridge' | 'pantry') => {
-    if (!user) throw new Error('Not authenticated');
-
-    // Reuse existing private bucket (already used elsewhere in the app)
-    const bucket = 'food-photos';
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const path = `fridgescan/${user.id}/${kind}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
-
-    if (uploadError) {
-      throw new Error(uploadError.message);
-    }
-
-    // Create a short-lived signed URL so the edge function can fetch the image reliably
-    const { data: signed, error: signedError } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(path, 60 * 10); // 10 minutes
-
-    if (signedError || !signed?.signedUrl) {
-      throw new Error(signedError?.message || 'Failed to create signed URL');
-    }
-
-    return signed.signedUrl;
-  }, [user]);
-
-  // Compress and convert image to base64
-  const processImage = async (file: File): Promise<string | null> => {
-    console.log('[FridgeScan] Processing image:', { 
+  // Compress image to target size and return base64 data URL
+  const prepareImageForAI = useCallback(async (file: File): Promise<string | null> => {
+    console.log('[FridgeScan] prepareImageForAI:', { 
       name: file.name, 
       type: file.type, 
-      size: `${(file.size / 1024 / 1024).toFixed(2)}MB` 
+      sizeKB: Math.round(file.size / 1024) 
     });
 
-    // Validate file type - accept common image formats
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-    const isValidType = validTypes.some(t => file.type.toLowerCase().includes(t.split('/')[1])) || 
-                        file.type.startsWith('image/');
-    
-    if (!isValidType) {
-      console.error('[FridgeScan] Invalid file type:', file.type);
-      toast({ title: 'Invalid file', description: 'Please select a JPG, PNG, or WebP image', variant: 'destructive' });
+    // Validate file type
+    const isImage = file.type.startsWith('image/') || 
+                    /\.(jpg|jpeg|png|webp|heic|heif)$/i.test(file.name);
+    if (!isImage) {
+      toast({ 
+        title: 'Invalid file', 
+        description: 'Please select a JPG, PNG, or WebP image', 
+        variant: 'destructive' 
+      });
       return null;
     }
 
     setIsCompressing(true);
-    
+
     try {
-      // Compress if needed
       let processedFile = file;
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        console.log('[FridgeScan] Compressing large image...');
+
+      // Always compress to ensure consistent sizing
+      // Start with high quality and reduce if still too large
+      let quality = 0.75;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (processedFile.size > MAX_RAW_SIZE_KB * 1024 && attempts < maxAttempts) {
+        console.log(`[FridgeScan] Compressing attempt ${attempts + 1}, quality=${quality}`);
+        
         processedFile = await compressImage(file, {
-          maxWidth: 1920,
-          maxHeight: 1920,
-          quality: 0.7,
+          maxWidth: 1280, // Reduced for faster processing
+          maxHeight: 1280,
+          quality,
           outputFormat: 'jpeg'
         });
-        console.log('[FridgeScan] Compressed:', `${(file.size / 1024 / 1024).toFixed(2)}MB → ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`);
+        
+        console.log(`[FridgeScan] After compression: ${Math.round(processedFile.size / 1024)}KB`);
+        quality -= 0.15;
+        attempts++;
+      }
+
+      // Final size check
+      if (processedFile.size > 1.5 * 1024 * 1024) {
+        console.error('[FridgeScan] Image still too large after compression');
+        toast({ 
+          title: 'Image too large', 
+          description: 'Please use a smaller or lower-resolution image', 
+          variant: 'destructive' 
+        });
+        return null;
       }
 
       // Convert to base64
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onerror = () => {
-          console.error('[FridgeScan] FileReader error:', reader.error);
-          toast({ title: 'Failed to read image', description: 'Could not load the selected image', variant: 'destructive' });
-          resolve(null);
+          console.error('[FridgeScan] FileReader error');
+          toast({ 
+            title: 'Failed to read image', 
+            description: 'Could not load the selected image', 
+            variant: 'destructive' 
+          });
+          reject(new Error('FileReader failed'));
         };
         reader.onload = (e) => {
           const base64 = e.target?.result as string;
-          console.log('[FridgeScan] Image loaded:', { 
-            base64SizeMB: (base64.length / 1024 / 1024).toFixed(2),
+          console.log('[FridgeScan] Image ready:', { 
+            base64Length: base64.length,
+            base64SizeKB: Math.round(base64.length / 1024),
           });
           resolve(base64);
         };
         reader.readAsDataURL(processedFile);
       });
     } catch (error) {
-      console.error('[FridgeScan] Image processing error:', error);
-      toast({ title: 'Image error', description: 'Could not process the image', variant: 'destructive' });
+      console.error('[FridgeScan] prepareImageForAI error:', error);
+      toast({ 
+        title: 'Image error', 
+        description: 'Could not process the image. Try a different photo.', 
+        variant: 'destructive' 
+      });
       return null;
     } finally {
       setIsCompressing(false);
     }
-  };
+  }, [toast]);
 
   // Handle photo capture/upload for fridge
   const handlePhotoSelect = useCallback(async (file: File) => {
-    const base64 = await processImage(file);
+    const base64 = await prepareImageForAI(file);
     if (base64) {
       fridgeFileRef.current = file;
       setPhotoPreview(base64);
     }
-  }, [toast]);
+  }, [prepareImageForAI]);
 
   // Handle pantry photo capture/upload
   const handlePantrySelect = useCallback(async (file: File) => {
-    const base64 = await processImage(file);
+    const base64 = await prepareImageForAI(file);
     if (base64) {
       pantryFileRef.current = file;
       setPantryPreview(base64);
     }
-  }, [toast]);
+  }, [prepareImageForAI]);
 
   // Analyze photos (at least one required)
   const analyzePhotos = async () => {
@@ -501,42 +505,21 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
       let allIngredients: DetectedIngredient[] = [];
 
-      // Analyze fridge photo if present
+      // Analyze fridge photo if present (send base64 directly)
       if (photoPreview) {
         console.log('[FridgeScan] Calling fridge-scan-ai for fridge photo...');
         const startTime = Date.now();
-
-        // Avoid huge base64 POST payloads (can be rejected with 503 before hitting the function).
-        // Upload the image to Storage and send a signed URL instead.
-        let fridgeImageUrl: string | null = null;
-        try {
-          if (fridgeFileRef.current) {
-            fridgeImageUrl = await uploadFridgeScanImage(fridgeFileRef.current, 'fridge');
-          }
-        } catch (e) {
-          console.error('[FridgeScan] Upload failed:', e);
-        }
-        if (!fridgeImageUrl) {
-          setErrorState({
-            code: 503,
-            context: 'detect',
-            errorCode: 'UPLOAD_FAILED',
-            errorMessage: 'Could not upload image for analysis. Please try again.',
-          });
-          setIsAnalyzing(false);
-          return;
-        }
         
-        // First try supabase.functions.invoke
+        console.log('[FridgeScan] Sending base64 directly, size:', Math.round(photoPreview.length / 1024), 'KB');
+        
         const { data: fridgeData, error: fridgeError } = await supabase.functions.invoke('fridge-scan-ai', {
-          body: { imageUrl: fridgeImageUrl, action: 'detect' },
+          body: { image: photoPreview, action: 'detect' },
         });
 
         console.log('[FridgeScan] Fridge photo response:', {
           duration: `${Date.now() - startTime}ms`,
           hasData: !!fridgeData,
           hasError: !!fridgeError,
-          errorDetails: fridgeError,
           ingredientsCount: fridgeData?.ingredients?.length,
           rawError: fridgeError?.message || fridgeError?.context,
         });
@@ -545,7 +528,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           console.error('[FridgeScan] Fridge analysis failed, trying diagnostic fetch...');
           
           // Use diagnostic fetch to get real HTTP status
-           const diagResult = await diagnosticFetch('detect', { imageUrl: fridgeImageUrl });
+          const diagResult = await diagnosticFetch('detect', { image: photoPreview });
           
           if (!diagResult.ok) {
             const code = parseErrorCode(fridgeError, diagResult.status);
@@ -580,31 +563,24 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
         console.log('[FridgeScan] Fridge ingredients parsed:', allIngredients.length);
       }
 
-      // Analyze pantry photo if present
+      // Analyze pantry photo if present (send base64 directly)
       if (pantryPreview) {
-        let pantryImageUrl: string | null = null;
-        try {
-          if (pantryFileRef.current) {
-            pantryImageUrl = await uploadFridgeScanImage(pantryFileRef.current, 'pantry');
-          }
-        } catch (e) {
-          console.error('[FridgeScan] Pantry upload failed:', e);
-        }
+        console.log('[FridgeScan] Sending pantry base64 directly, size:', Math.round(pantryPreview.length / 1024), 'KB');
+        
+        const { data: pantryData, error: pantryError } = await supabase.functions.invoke('fridge-scan-ai', {
+          body: { image: pantryPreview, action: 'detect' },
+        });
 
-        if (pantryImageUrl) {
-          const { data: pantryData, error: pantryError } = await supabase.functions.invoke('fridge-scan-ai', {
-            body: { imageUrl: pantryImageUrl, action: 'detect' },
-          });
-
-          if (!pantryError && pantryData.ingredients) {
-            const pantryIngredients: DetectedIngredient[] = pantryData.ingredients.map((ing: any, idx: number) => ({
-              id: `pantry-${idx}`,
-              name: ing.name || ing,
-              selected: true,
-              confidence: ing.confidence || 'medium',
-            }));
-            allIngredients = [...allIngredients, ...pantryIngredients];
-          }
+        if (!pantryError && pantryData?.ingredients) {
+          const pantryIngredients: DetectedIngredient[] = pantryData.ingredients.map((ing: any, idx: number) => ({
+            id: `pantry-${idx}`,
+            name: ing.name || ing,
+            selected: true,
+            confidence: ing.confidence || 'medium',
+          }));
+          allIngredients = [...allIngredients, ...pantryIngredients];
+        } else if (pantryError) {
+          console.warn('[FridgeScan] Pantry analysis failed (non-blocking):', pantryError);
         }
       }
 
@@ -636,50 +612,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     }
   };
 
-  const analyzePhoto = async (imageData: string) => {
-    setIsAnalyzing(true);
-    setStep('ingredients');
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('Not authenticated');
-      }
-
-      const { data, error } = await supabase.functions.invoke('fridge-scan-ai', {
-        body: { image: imageData, action: 'detect' },
-      });
-
-      if (error) throw error;
-
-      const detected: DetectedIngredient[] = (data.ingredients || []).map((ing: any, idx: number) => ({
-        id: `ing-${idx}`,
-        name: ing.name || ing,
-        selected: true,
-        confidence: ing.confidence || 'medium',
-      }));
-
-      // Filter out allergies automatically
-      const filteredIngredients = detected.filter(ing => {
-        const ingLower = ing.name.toLowerCase();
-        return !preferences.allergies.some(allergy => 
-          ingLower.includes(allergy.toLowerCase())
-        );
-      });
-
-      setIngredients(filteredIngredients);
-    } catch (error) {
-      console.error('Photo analysis error:', error);
-      toast({
-        title: 'Analysis failed',
-        description: 'Could not analyze the photo. Please try again.',
-        variant: 'destructive',
-      });
-      setStep('photo');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  // Note: analyzePhoto removed - analyzePhotos handles all photo analysis now
 
   const handleAddIngredient = () => {
     if (!newIngredient.trim()) return;

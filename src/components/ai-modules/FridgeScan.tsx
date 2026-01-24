@@ -21,6 +21,7 @@ import { useFridgeScanOfflineQueue } from '@/hooks/useFridgeScanOfflineQueue';
 import { compressImage, HIGH_QUALITY_OPTIONS } from '@/utils/imageCompression';
 import DietaryPreferencesSetup from './DietaryPreferencesSetup';
 import FridgeScanErrorState, { FridgeScanErrorCode } from './FridgeScanErrorState';
+import { MobileHeader } from '@/components/MobileHeader';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -889,17 +890,10 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   if (showSetup) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
-          <div className="flex items-center gap-3 p-4">
-            <Button variant="ghost" size="icon" onClick={onBack}>
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-lg font-semibold">Quick Setup</h1>
-              <p className="text-xs text-muted-foreground">One-time preferences</p>
-            </div>
-          </div>
-        </div>
+        <MobileHeader 
+          title="Quick Setup" 
+          onBack={() => setShowSetup(false)} 
+        />
         <div className="p-4">
           <DietaryPreferencesSetup onComplete={() => setShowSetup(false)} />
         </div>
@@ -1442,18 +1436,11 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={onBack}>
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-lg font-semibold">FridgeScan</h1>
-              <p className="text-xs text-muted-foreground">Photo → Meals</p>
-            </div>
-          </div>
+      {/* Header - Using standardized MobileHeader for consistent back navigation */}
+      <MobileHeader 
+        title="FridgeScan" 
+        onBack={onBack}
+        rightElement={
           <div className="flex items-center gap-2">
             {!isOnline && (
               <Badge variant="outline" className="flex items-center gap-1 border-amber-500/50 text-amber-500">
@@ -1465,34 +1452,34 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
               <Badge variant="outline">{dietTypeConfig[selectedIntent].label}</Badge>
             )}
           </div>
-        </div>
+        }
+      />
 
-        {/* Remaining macros bar */}
-        <div className="px-4 pb-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Remaining:</span>
-            <span className="text-green-400">{remainingMacros.protein}g P</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-orange-400">{remainingMacros.calories} cal</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-blue-400">{remainingMacros.carbs}g C</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-yellow-400">{remainingMacros.fat}g F</span>
+      {/* Remaining macros bar */}
+      <div className="px-4 py-2 border-b border-border/50 bg-background/95">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Remaining:</span>
+          <span className="text-green-400">{remainingMacros.protein}g P</span>
+          <span className="text-muted-foreground">•</span>
+          <span className="text-orange-400">{remainingMacros.calories} cal</span>
+          <span className="text-muted-foreground">•</span>
+          <span className="text-blue-400">{remainingMacros.carbs}g C</span>
+          <span className="text-muted-foreground">•</span>
+          <span className="text-yellow-400">{remainingMacros.fat}g F</span>
+        </div>
+      </div>
+      
+      {/* Queued items indicator */}
+      {queuedItems.length > 0 && (
+        <div className="px-4 py-2 border-b border-border/50">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+            <span className="text-xs text-blue-400">
+              {queuedItems.length} request{queuedItems.length !== 1 ? 's' : ''} queued — will retry when online
+            </span>
           </div>
         </div>
-        
-        {/* Queued items indicator */}
-        {queuedItems.length > 0 && (
-          <div className="px-4 pb-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-              <span className="text-xs text-blue-400">
-                {queuedItems.length} request{queuedItems.length !== 1 ? 's' : ''} queued — will retry when online
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Main content */}
       <div className="p-4">

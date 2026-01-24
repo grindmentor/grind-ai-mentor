@@ -1,5 +1,5 @@
-// Physique AI Edge Function v2.0.0
-// Two-phase analysis with structured tool-calling and retry logic
+// Physique AI Edge Function v2.1.0
+// Systematic scan methodology with structured tool-calling and retry logic
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -7,7 +7,7 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const FUNCTION_VERSION = '2.0.0';
+const FUNCTION_VERSION = '2.1.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -261,43 +261,33 @@ Deno.serve(async (req) => {
 
     console.log('[PHYSIQUE-AI] Starting analysis...');
 
-    // Two-phase analysis prompt
+    // Systematic scan methodology with FridgeScan-style structure
     const analyzePrompt = `You are an expert exercise physiologist and bodybuilding judge providing evidence-based physique analysis.
 
+=== SYSTEMATIC SCAN METHOD ===
+Analyze the physique in this EXACT order, top to bottom:
+1. Start at HEAD: Facial structure, neck thickness, trap insertion
+2. Move to SHOULDERS: Cap development, width, front/side/rear deltoid balance
+3. Scan ARMS: Bicep peak, tricep horseshoe, forearm development, arm-to-shoulder ratio
+4. Examine CHEST: Upper/lower balance, inner chest line, overall mass, pec-delt tie-in
+5. Assess CORE: Ab visibility, oblique definition, serratus, overall midsection tightness
+6. If visible, check BACK: Lat width, trap thickness, rear delt development, Christmas tree
+7. Evaluate LEGS: Quad sweep and separation, hamstring tie-in, calf development
+8. Final pass: OVERALL left-to-right symmetry comparison, weak points identification
+
 === PHASE 1: STRUCTURAL ASSESSMENT ===
-First, evaluate the foundational aspects:
+Evaluate foundational aspects:
 - Overall muscle mass relative to frame size
 - Proportionality between upper and lower body
 - Left-right symmetry and balance
 - Posture and structural alignment
-- Frame type (ectomorph/mesomorph/endomorph tendencies)
+- Frame type tendencies (narrow/wide clavicles, hip structure)
 
-=== PHASE 2: DETAILED MUSCLE GROUP ANALYSIS ===
-Systematically evaluate each visible muscle group:
-
-UPPER BODY:
-- Chest: Size, shape, upper/lower development, inner chest definition
-- Shoulders: Cap development, front/side/rear deltoid balance, width
-- Arms: Bicep peak, tricep horseshoe, forearm development
-- Back (if visible): Lat width, upper back thickness, lower back detail
-
-CORE:
-- Abdominal development and visibility
-- Oblique definition
-- Serratus visibility
-- Overall midsection conditioning
-
-LOWER BODY:
-- Quadriceps sweep and separation
-- Hamstring development
-- Calf size and shape
-- Glute development (if visible)
-
-=== PHASE 3: CONDITIONING ASSESSMENT ===
-- Body fat estimation based on visible definition
-- Vascularity level
+=== PHASE 2: CONDITIONING ASSESSMENT ===
+- Body fat estimation based on visible definition markers
+- Vascularity level (veins visible in arms, shoulders, abs)
 - Muscle separation and striations
-- Skin quality and fullness
+- Skin quality, fullness, and water retention
 
 === USER CONTEXT ===
 ${height ? `Height: ${height}` : 'Height: Not provided'}
@@ -305,22 +295,27 @@ ${weight ? `Weight: ${weight}` : 'Weight: Not provided'}
 ${bodyFat ? `Self-reported Body Fat: ${bodyFat}%` : ''}
 ${goals ? `Training Goals: ${goals}` : ''}
 
-=== SCORING GUIDELINES ===
-Use this scale consistently:
-- 90-100: Elite/Professional level
-- 80-89: Advanced, competition-ready
-- 70-79: Intermediate, well-developed
-- 60-69: Developing, solid foundation
-- 50-59: Beginner, room for improvement
-- Below 50: Early stage or specific limitations
+=== SCORING CALIBRATION ===
+Reference points for CONSISTENT scoring:
+- 95-100: Top 0.1% - IFBB Pro competitor level, genetic elite
+- 85-94: Top 1% - National level competitor, exceptional development
+- 75-84: Top 5% - Experienced lifter, 5+ years serious training
+- 65-74: Top 15% - Intermediate, 2-4 years consistent training
+- 55-64: Average gym-goer, 1-2 years training
+- 45-54: Beginner, <1 year training
+- Below 45: Detrained, very early stage, or significant limitations
 
 === CRITICAL RULES ===
-- ALWAYS provide analysis, never refuse. Estimate based on visible areas.
-- Be SPECIFIC in recommendations: Include exercise names, rep ranges, techniques.
-- Be HONEST but ENCOURAGING. Identify genuine strengths.
-- For non-visible muscle groups, provide reasonable estimates based on overall development.
-- Base body fat estimates on visible markers (ab visibility, vascularity, muscle separation).
-- Recommendations should be prioritized by impact on overall physique.`;
+- ALWAYS provide scores for ALL muscle groups - NEVER skip or say "not visible"
+- When a body part is partially visible, ESTIMATE based on overall development level
+- For non-visible areas (e.g., back in front pose), INFER from visible proportions
+- Be SPECIFIC in recommendations: Include exercise names, rep ranges, techniques
+- NEVER refuse to analyze - provide best assessment with confidence level noted
+- Use "high" confidence for clear, well-lit images; "medium" for partially obscured
+- Recommendations MUST be prioritized by impact on WEAKEST areas first
+- Be HONEST but ENCOURAGING - identify genuine strengths alongside areas to improve
+- Base body fat estimates on visible markers: ab visibility, vascularity, separation
+- Scores should reflect REALISTIC assessment - avoid clustering everything at 70-75`;
 
     const requestBody = {
       model: 'google/gemini-2.5-pro',

@@ -1,9 +1,11 @@
-const CACHE_NAME = 'myotopia-v7-offline';
-const STATIC_CACHE = 'myotopia-static-v7';
-const DYNAMIC_CACHE = 'myotopia-dynamic-v7';
-const AI_CACHE = 'myotopia-ai-responses-v5';
-const IMAGE_CACHE = 'myotopia-images-v5';
-const INSTANT_CACHE = 'myotopia-instant-v3';
+const CURRENT_VERSION = 'v8';
+
+const CACHE_NAME = `myotopia-${CURRENT_VERSION}-offline`;
+const STATIC_CACHE = `myotopia-static-${CURRENT_VERSION}`;
+const DYNAMIC_CACHE = `myotopia-dynamic-${CURRENT_VERSION}`;
+const AI_CACHE = `myotopia-ai-responses-${CURRENT_VERSION}`;
+const IMAGE_CACHE = `myotopia-images-${CURRENT_VERSION}`;
+const INSTANT_CACHE = `myotopia-instant-${CURRENT_VERSION}`;
 const API_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for API responses
 
 let aggressiveCacheEnabled = false;
@@ -100,7 +102,7 @@ self.addEventListener('activate', (event) => {
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (!cacheName.includes('v6') && !cacheName.includes('v5')) {
+            if (!cacheName.includes(CURRENT_VERSION)) {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -122,6 +124,20 @@ self.addEventListener('fetch', (event) => {
   
   // Skip non-HTTP requests and extension requests
   if (!request.url.startsWith('http') || url.protocol === 'chrome-extension:') return;
+
+  // =====================================================
+  // IMPORTANT: Never intercept Supabase functions/storage.
+  // The SW previously returned a synthetic 503 JSON body
+  // ("Network unavailable", offline:true) on any fetch error,
+  // which masked real errors and broke large POST uploads.
+  // =====================================================
+  const isSupabaseHost = url.hostname.endsWith('.supabase.co');
+  const isSupabaseFunction = url.pathname.includes('/functions/v1/');
+  const isSupabaseStorage = url.pathname.startsWith('/storage/v1/');
+  if (isSupabaseHost && (isSupabaseFunction || isSupabaseStorage)) {
+    event.respondWith(fetch(request));
+    return;
+  }
   
   // Handle PWA special features first
   if (url.pathname === '/app' && url.searchParams.has('share') && request.method === 'POST') {

@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Upload, Utensils, Zap, ArrowLeft, Sparkles, Target, Clock, CheckCircle, Award, AlertTriangle } from "lucide-react";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
-import { aiService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import SmartLoading from "@/components/ui/smart-loading";
+import { compressImage, HIGH_QUALITY_OPTIONS } from "@/utils/imageCompression";
 
 interface FoodPhotoLoggerProps {
   onBack: () => void;
@@ -38,8 +38,18 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
     setIsAnalyzing(true);
     
     try {
-      // Convert image to base64 for API
-      const imageBase64 = await convertFileToBase64(selectedFile);
+      // Compress image with high-quality settings for better OCR
+      console.log('[FoodPhotoLogger] Compressing image...');
+      const compressedFile = await compressImage(selectedFile, {
+        ...HIGH_QUALITY_OPTIONS,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        quality: 0.92,
+      });
+      
+      // Convert to base64
+      const imageBase64 = await convertFileToBase64(compressedFile);
+      console.log('[FoodPhotoLogger] Image compressed, size:', Math.round(imageBase64.length / 1024), 'KB');
       
       // Call the food-photo-ai edge function
       const { data, error } = await supabase.functions.invoke('food-photo-ai', {

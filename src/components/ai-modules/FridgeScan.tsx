@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package, WifiOff, ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Camera, Upload, RefreshCw, Plus, Trash2, Clock, ChevronDown, AlertTriangle, Check, Sparkles, ChevronLeft, Bookmark, Heart, UtensilsCrossed, Package, WifiOff, ImageIcon, ScanLine } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -1045,75 +1046,141 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   // Render ingredients editing step
   const renderIngredientsStep = () => (
     <div className="space-y-4">
-      <div className="text-center mb-4">
-        <h2 className="text-xl font-semibold text-foreground">
-          {isAnalyzing ? 'Analyzing...' : 'Detected Ingredients'}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {isAnalyzing ? 'Scanning your photo' : 'Select ingredients to use'}
-        </p>
-      </div>
-
-      {isAnalyzing ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-muted-foreground">Identifying ingredients...</p>
-        </div>
-      ) : (
-        <>
-          <ScrollArea className="h-64 rounded-xl border border-border/50 bg-card/30 p-3">
-            <div className="space-y-2">
-              {ingredients.map((ing) => (
-                <div
-                  key={ing.id}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg transition-colors",
-                    ing.selected ? "bg-primary/10" : "bg-muted/30"
-                  )}
+      <AnimatePresence mode="wait">
+        {isAnalyzing ? (
+          <motion.div
+            key="analyzing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center py-16 px-4"
+          >
+            {/* Animated scanning icon */}
+            <div className="relative mb-6">
+              <motion.div
+                className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 >
-                  <Checkbox
-                    checked={ing.selected}
-                    onCheckedChange={() => toggleIngredient(ing.id)}
-                  />
-                  <span className={cn("flex-1", !ing.selected && "text-muted-foreground line-through")}>
-                    {ing.name}
-                  </span>
-                  {ing.confidence === 'low' && (
-                    <Badge variant="outline" className="text-xs">unsure</Badge>
-                  )}
-                  <button
-                    onClick={() => removeIngredient(ing.id)}
-                    className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                  <ScanLine className="w-12 h-12 text-primary" />
+                </motion.div>
+              </motion.div>
+              
+              {/* Pulsing ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-primary/30"
+                animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
+              />
+            </div>
+            
+            {/* Text */}
+            <motion.h3
+              className="text-xl font-semibold text-foreground mb-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              Gathering Ingredients
+            </motion.h3>
+            
+            <motion.p
+              className="text-sm text-muted-foreground text-center max-w-xs"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              {isCompressing ? 'Optimizing image...' : 'Scanning your photo for food items...'}
+            </motion.p>
+            
+            {/* Animated dots */}
+            <div className="flex gap-1.5 mt-4">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-2 h-2 rounded-full bg-primary"
+                  animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                  transition={{ 
+                    duration: 1, 
+                    repeat: Infinity, 
+                    delay: i * 0.2,
+                    ease: "easeInOut"
+                  }}
+                />
               ))}
             </div>
-          </ScrollArea>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="ingredients"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+          >
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Detected Ingredients</h2>
+              <p className="text-sm text-muted-foreground mt-1">Select ingredients to use</p>
+            </div>
 
-          <div className="flex gap-2">
-            <Input
-              value={newIngredient}
-              onChange={(e) => setNewIngredient(e.target.value)}
-              placeholder="Add ingredient..."
-              onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()}
-            />
-            <Button onClick={handleAddIngredient} size="icon" variant="secondary">
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
+            <ScrollArea className="h-64 rounded-xl border border-border/50 bg-card/30 p-3">
+              <div className="space-y-2">
+                {ingredients.map((ing) => (
+                  <div
+                    key={ing.id}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-lg transition-colors",
+                      ing.selected ? "bg-primary/10" : "bg-muted/30"
+                    )}
+                  >
+                    <Checkbox
+                      checked={ing.selected}
+                      onCheckedChange={() => toggleIngredient(ing.id)}
+                    />
+                    <span className={cn("flex-1", !ing.selected && "text-muted-foreground line-through")}>
+                      {ing.name}
+                    </span>
+                    {ing.confidence === 'low' && (
+                      <Badge variant="outline" className="text-xs">unsure</Badge>
+                    )}
+                    <button
+                      onClick={() => removeIngredient(ing.id)}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={rescan} className="flex-1">
-              <RefreshCw className="w-4 h-4 mr-1" /> Rescan
-            </Button>
-            <Button onClick={generateMeals} disabled={ingredients.filter(i => i.selected).length === 0} className="flex-1">
-              <Sparkles className="w-4 h-4 mr-1" /> Generate Meals
-            </Button>
-          </div>
-        </>
-      )}
+            <div className="flex gap-2">
+              <Input
+                value={newIngredient}
+                onChange={(e) => setNewIngredient(e.target.value)}
+                placeholder="Add ingredient..."
+                onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()}
+              />
+              <Button onClick={handleAddIngredient} size="icon" variant="secondary">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={rescan} className="flex-1">
+                <RefreshCw className="w-4 h-4 mr-1" /> Rescan
+              </Button>
+              <Button onClick={generateMeals} disabled={ingredients.filter(i => i.selected).length === 0} className="flex-1">
+                <Sparkles className="w-4 h-4 mr-1" /> Generate Meals
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 

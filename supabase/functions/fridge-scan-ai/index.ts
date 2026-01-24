@@ -270,36 +270,37 @@ Deno.serve(async (req) => {
 
     if (action === 'detect') {
       // Ingredient detection from photo using structured tool calling
-      const { image, imageUrl } = body;
-      const imageInput: unknown = imageUrl ?? image;
+      // Accepts base64 data URL (data:image/*) directly
+      const { image } = body;
       
       const imageInfo = {
-        hasImage: !!imageInput,
-        imageType: typeof imageInput,
-        imageLength: typeof imageInput === 'string' ? imageInput.length : 0,
-        imageSizeMB: typeof imageInput === 'string' ? (imageInput.length / 1024 / 1024).toFixed(2) : 0,
-        startsWithData: typeof imageInput === 'string' ? imageInput.startsWith('data:') : false,
-        startsWithHttp: typeof imageInput === 'string' ? imageInput.startsWith('http') : false,
-        prefix: typeof imageInput === 'string' ? imageInput.substring(0, 40) : 'N/A',
+        hasImage: !!image,
+        imageType: typeof image,
+        imageLength: typeof image === 'string' ? image.length : 0,
+        imageSizeKB: typeof image === 'string' ? Math.round(image.length / 1024) : 0,
+        startsWithData: typeof image === 'string' ? image.startsWith('data:') : false,
+        prefix: typeof image === 'string' ? image.substring(0, 50) : 'N/A',
       };
       console.log('[FRIDGE-SCAN] Image info:', JSON.stringify(imageInfo));
 
-      if (!imageInput) {
+      if (!image) {
         return errorResponse(400, 'No image provided', 'NO_IMAGE', false);
       }
 
-      if (typeof imageInput !== 'string') {
+      if (typeof image !== 'string') {
         return errorResponse(400, 'Invalid image input', 'INVALID_IMAGE_FORMAT', false);
       }
 
-      // Accept either:
-      // 1) data URL (small images)
-      // 2) signed/public Supabase Storage URL (preferred for reliability)
-      const isDataUrl = imageInput.startsWith('data:image/');
-      const isStorageUrl = imageInput.startsWith(`${supabaseUrl}/storage/v1/`);
+      // Accept base64 data URLs only (no external URLs for security)
+      if (!image.startsWith('data:image/')) {
+        return errorResponse(400, 'Invalid image format (must be base64 data:image/*)', 'INVALID_IMAGE_FORMAT', false);
+      }
 
-      if (!isDataUrl && !isStorageUrl) {
-        return errorResponse(400, 'Invalid image URL (must be data:image/* or Supabase Storage URL)', 'INVALID_IMAGE_FORMAT', false);
+      // Size limit: ~1.5MB base64 (represents ~1.1MB raw image)
+      const MAX_BASE64_SIZE = 1.5 * 1024 * 1024;
+      if (image.length > MAX_BASE64_SIZE) {
+        console.log('[FRIDGE-SCAN] Image too large:', image.length, 'bytes, max:', MAX_BASE64_SIZE);
+        return errorResponse(413, 'Image too large. Please compress or use a smaller image.', 'PAYLOAD_TOO_LARGE', false);
       }
 
       const detectPrompt = `Analyze this fridge/pantry photo to identify food products and ingredients.
@@ -327,7 +328,7 @@ RULES:
             role: 'user',
             content: [
               { type: 'text', text: detectPrompt },
-               { type: 'image_url', image_url: { url: imageInput } }
+               { type: 'image_url', image_url: { url: image } }
             ]
           }
         ],

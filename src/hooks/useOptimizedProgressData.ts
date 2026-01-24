@@ -17,9 +17,17 @@ export const useOptimizedProgressData = (userId: string | null) => {
       
       try {
         // Optimized queries - fetch concurrently with timeout protection
-        const [workoutData, recoveryData, goalsData, profileData, foodLogData] = await withTimeout(
+        const [workoutData, progressEntriesData, recoveryData, goalsData, profileData, foodLogData] = await withTimeout(
           Promise.all([
-            // Only fetch last 20 workouts for better calculations
+            // Fetch recent workout sessions
+            supabase
+              .from('workout_sessions')
+              .select('id, workout_name, session_date, duration_minutes')
+              .eq('user_id', userId)
+              .order('session_date', { ascending: false })
+              .limit(20),
+            
+            // Also fetch progressive_overload_entries for workout data
             supabase
               .from('progressive_overload_entries')
               .select('exercise_name, weight, sets, reps, workout_date, rpe, created_at')
@@ -62,13 +70,30 @@ export const useOptimizedProgressData = (userId: string | null) => {
 
         // Handle errors gracefully - don't throw, just log
         if (workoutData.error) console.warn('Workout data error:', workoutData.error);
+        if (progressEntriesData.error) console.warn('Progress entries error:', progressEntriesData.error);
         if (recoveryData.error) console.warn('Recovery data error:', recoveryData.error);
         if (goalsData.error) console.warn('Goals data error:', goalsData.error);
         if (profileData.error) console.warn('Profile data error:', profileData.error);
         if (foodLogData.error) console.warn('Food log data error:', foodLogData.error);
 
+        // Combine workouts from both sources
+        const progressEntries = progressEntriesData.data || [];
+        const workoutSessions = workoutData.data || [];
+        
+        // Map workout sessions to a compatible format if needed
+        const combinedWorkouts = progressEntries.length > 0 ? progressEntries : 
+          workoutSessions.map(s => ({
+            exercise_name: s.workout_name,
+            weight: 0,
+            sets: 1,
+            reps: 1,
+            workout_date: s.session_date,
+            rpe: null,
+            created_at: s.session_date
+          }));
+
         return {
-          workouts: workoutData.data || [],
+          workouts: combinedWorkouts,
           recovery: recoveryData.data || [],
           goals: goalsData.data || [],
           profile: profileData.data || null,

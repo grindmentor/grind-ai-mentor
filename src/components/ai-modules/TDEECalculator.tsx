@@ -98,6 +98,14 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     const calculatedTDEE = bmrValue * activityMultipliers[activityLevel];
     setTDEE(calculatedTDEE);
     setBMR(bmrValue);
+    
+    // Scroll to results after brief delay for render
+    setTimeout(() => {
+      const resultsSection = document.getElementById('tdee-results');
+      if (resultsSection) {
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   return (
@@ -227,7 +235,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
             {/* Results */}
             {tdee !== null && bmr !== null && (
-              <div className="space-y-4 animate-fade-in">
+              <div id="tdee-results" className="space-y-4 animate-fade-in">
                 {/* Main Results */}
                 <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
                   <CardContent className="p-4">

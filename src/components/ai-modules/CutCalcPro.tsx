@@ -35,76 +35,95 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
     }
 
     setIsCalculating(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Small delay for UX (shows loading state)
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    let current = parseFloat(currentWeight);
-    let target = targetWeight ? parseFloat(targetWeight) : current * 0.9;
-    const durationWeeks = parseFloat(duration);
-    let parsedAge = parseFloat(age);
-    let parsedHeight = parseFloat(height);
-    
-    // Convert to metric for calculation if needed
-    if (units.weightUnit === 'lbs') {
-      current = current / 2.20462;
-      target = target / 2.20462;
+    try {
+      let current = parseFloat(currentWeight);
+      let target = targetWeight ? parseFloat(targetWeight) : current * 0.9;
+      const durationWeeks = parseFloat(duration) || 12;
+      let parsedAge = parseFloat(age);
+      let parsedHeight = parseFloat(height);
+      
+      // Validate inputs
+      if (isNaN(current) || isNaN(parsedAge) || isNaN(parsedHeight)) {
+        setIsCalculating(false);
+        return;
+      }
+      
+      // Convert to metric for calculation if needed
+      if (units.weightUnit === 'lbs') {
+        current = current / 2.20462;
+        target = target / 2.20462;
+      }
+      // Handle both 'in' and 'ft-in' height units (user enters inches in both cases)
+      if (units.heightUnit === 'in' || units.heightUnit === 'ft-in') {
+        parsedHeight = parsedHeight * 2.54;
+      }
+      
+      const totalWeightLoss = current - target;
+      const weeklyDeficit = totalWeightLoss / durationWeeks;
+      
+      // Enhanced BMR calculation using Mifflin-St Jeor equation
+      let bmr: number;
+      if (gender === 'male') {
+        bmr = (10 * current) + (6.25 * parsedHeight) - (5 * parsedAge) + 5;
+      } else {
+        bmr = (10 * current) + (6.25 * parsedHeight) - (5 * parsedAge) - 161;
+      }
+      
+      const activityMultipliers: { [key: string]: number } = {
+        "sedentary": 1.2,
+        "light": 1.375,
+        "moderate": 1.55,
+        "active": 1.725,
+        "very_active": 1.9
+      };
+      
+      const estimatedTDEE = bmr * activityMultipliers[activityLevel];
+      const dailyDeficit = (weeklyDeficit * 3500) / 7;
+      const targetCalories = Math.round(estimatedTDEE - dailyDeficit);
+      
+      // Convert back to display units
+      let displayCurrent = parseFloat(currentWeight);
+      let displayTarget = targetWeight ? parseFloat(targetWeight) : displayCurrent * 0.9;
+      let displayLoss = displayCurrent - displayTarget;
+      
+      // Calculate macro recommendations
+      const proteinGrams = Math.round(current * 2.2); // 1g per lb lean mass approx
+      const fatGrams = Math.round(targetCalories * 0.25 / 9);
+      const carbGrams = Math.round((targetCalories - (proteinGrams * 4) - (fatGrams * 9)) / 4);
+      
+      const calculatedResults = {
+        currentWeight: displayCurrent,
+        targetWeight: displayTarget,
+        totalLoss: displayLoss,
+        weeksToGoal: durationWeeks,
+        estimatedTDEE: Math.round(estimatedTDEE),
+        targetCalories,
+        dailyDeficit: Math.round(dailyDeficit),
+        weeklyDeficit: weeklyDeficit,
+        targetDate: new Date(Date.now() + durationWeeks * 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        weightUnit: units.weightUnit,
+        bmr: Math.round(bmr),
+        protein: proteinGrams,
+        fat: fatGrams,
+        carbs: carbGrams
+      };
+      
+      setResults(calculatedResults);
+      
+      // Scroll to results
+      setTimeout(() => {
+        const resultsSection = document.getElementById('cut-results');
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    } finally {
+      setIsCalculating(false);
     }
-    // Handle both 'in' and 'ft-in' height units (user enters inches in both cases)
-    if (units.heightUnit === 'in' || units.heightUnit === 'ft-in') {
-      parsedHeight = parsedHeight * 2.54;
-    }
-    
-    const totalWeightLoss = current - target;
-    const weeklyDeficit = totalWeightLoss / durationWeeks;
-    
-    // Enhanced BMR calculation using Mifflin-St Jeor equation
-    let bmr: number;
-    if (gender === 'male') {
-      bmr = (10 * current) + (6.25 * parsedHeight) - (5 * parsedAge) + 5;
-    } else {
-      bmr = (10 * current) + (6.25 * parsedHeight) - (5 * parsedAge) - 161;
-    }
-    
-    const activityMultipliers: { [key: string]: number } = {
-      "sedentary": 1.2,
-      "light": 1.375,
-      "moderate": 1.55,
-      "active": 1.725,
-      "very_active": 1.9
-    };
-    
-    const estimatedTDEE = bmr * activityMultipliers[activityLevel];
-    const dailyDeficit = (weeklyDeficit * 3500) / 7;
-    const targetCalories = Math.round(estimatedTDEE - dailyDeficit);
-    
-    // Convert back to display units
-    let displayCurrent = parseFloat(currentWeight);
-    let displayTarget = targetWeight ? parseFloat(targetWeight) : displayCurrent * 0.9;
-    let displayLoss = displayCurrent - displayTarget;
-    
-    // Calculate macro recommendations
-    const proteinGrams = Math.round(current * 2.2); // 1g per lb lean mass approx
-    const fatGrams = Math.round(targetCalories * 0.25 / 9);
-    const carbGrams = Math.round((targetCalories - (proteinGrams * 4) - (fatGrams * 9)) / 4);
-    
-    const calculatedResults = {
-      currentWeight: displayCurrent,
-      targetWeight: displayTarget,
-      totalLoss: displayLoss,
-      weeksToGoal: durationWeeks,
-      estimatedTDEE: Math.round(estimatedTDEE),
-      targetCalories,
-      dailyDeficit: Math.round(dailyDeficit),
-      weeklyDeficit: weeklyDeficit,
-      targetDate: new Date(Date.now() + durationWeeks * 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      weightUnit: units.weightUnit,
-      bmr: Math.round(bmr),
-      protein: proteinGrams,
-      fat: fatGrams,
-      carbs: carbGrams
-    };
-    
-    setResults(calculatedResults);
-    setIsCalculating(false);
   };
 
   const MetricCard = ({ icon: Icon, label, value, unit, color }: { icon: any; label: string; value: string | number; unit?: string; color: string }) => (
@@ -265,7 +284,7 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div id="cut-results" className="space-y-4">
             {/* Results Header */}
             <div className="bg-gradient-to-br from-rose-500/10 to-orange-500/10 rounded-2xl p-4 border border-rose-500/20">
               <div className="flex items-center justify-between mb-4">

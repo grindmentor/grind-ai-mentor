@@ -71,40 +71,53 @@ export const SmartTraining: React.FC<SmartTrainingProps> = ({ onBack }) => {
     }
 
     setIsGenerating(true);
+    
+    // Add timeout for long-running requests
+    const timeoutId = setTimeout(() => {
+      if (isGenerating) {
+        toast({
+          title: 'Still Working...',
+          description: 'This is taking longer than expected. Using fallback program.',
+        });
+      }
+    }, 15000);
+    
     try {
       const isMinimalist = programData.trainingApproach === 'minimalist';
       
-      const prompt = `Create a comprehensive ${programData.daysPerWeek || 4} day per week training program for ${programData.duration || 8} weeks based on the LATEST 2023-2025 research findings.
+      const prompt = `Create a ${programData.daysPerWeek || 4} day per week training program for ${programData.duration || 8} weeks.
 
 PROGRAM DETAILS:
 - Name: ${programData.name}
-- Primary Goal: ${programData.goal}
-- Experience Level: ${programData.experienceLevel}
-- Training Approach: ${isMinimalist ? 'Evidence-Based Minimalist' : 'Evidence-Based Standard'}
-- Available Equipment: ${programData.equipment || 'Full gym access'}
-- Additional Notes: ${programData.notes}
+- Goal: ${programData.goal}
+- Experience: ${programData.experienceLevel || 'intermediate'}
+- Approach: ${isMinimalist ? 'Minimalist (2-3 sets, high effort)' : 'Standard volume'}
+- Equipment: ${programData.equipment || 'Full gym'}
 
-${isMinimalist ? `
-MINIMALIST APPROACH (2023-2025 Research):
-- 2-3 sets of 4-6 reps for compound movements
-- REST: 3-5 minutes between compound sets
-- FREQUENCY: 2-3x per week per movement pattern
-- VOLUME: Lower total volume, higher effort per set (RIR 1-3)
-` : `
-EVIDENCE-BASED STANDARD:
-- SETS: 2-4 sets per exercise
-- REPS: 4-8 for strength, 6-12 for hypertrophy
-- REST: 3-5 minutes compounds, 2-3 minutes isolation
-- FREQUENCY: 2-3x per week per muscle group
-`}
+${isMinimalist ? 'Use 2-3 sets of 4-6 reps for compounds with 3-5 min rest.' : 'Use 2-4 sets per exercise, 4-12 reps.'}
 
-Include complete program structure with all workouts, exercises, sets, reps, rest periods.`;
+Include workout structure with exercises, sets, reps, rest periods.`;
 
-      const response = await aiService.getTrainingAdvice(prompt, {
-        maxTokens: 3000,
-        priority: 'high',
-        useCache: true
-      });
+      // Use Promise.race with timeout
+      const timeoutPromise = new Promise<string>((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 25000)
+      );
+      
+      const response = await Promise.race([
+        aiService.getTrainingAdvice(prompt, {
+          maxTokens: 1500,
+          priority: 'high',
+          useCache: true
+        }),
+        timeoutPromise
+      ]);
+      
+      clearTimeout(timeoutId);
+      
+      // Check if the response indicates an error
+      if (response.includes("having trouble")) {
+        throw new Error('AI service unavailable');
+      }
       
       setGeneratedProgram({
         name: programData.name,
@@ -119,7 +132,10 @@ Include complete program structure with all workouts, exercises, sets, reps, res
         description: `Your ${isMinimalist ? 'minimalist' : 'standard'} training program is ready!`
       });
     } catch (error) {
-      handleError(error, { customMessage: 'Failed to generate program.' });
+      clearTimeout(timeoutId);
+      console.error('SmartTraining error:', error);
+      
+      // Always provide fallback program so user isn't stuck
       setGeneratedProgram({
         name: programData.name,
         goal: programData.goal,
@@ -127,6 +143,11 @@ Include complete program structure with all workouts, exercises, sets, reps, res
         daysPerWeek: parseInt(programData.daysPerWeek) || 4,
         approach: programData.trainingApproach,
         content: generateFallbackProgram(programData)
+      });
+      
+      toast({
+        title: 'Using Fallback Program',
+        description: 'AI was slow to respond. Here\'s a science-based template instead.',
       });
     } finally {
       setIsGenerating(false);

@@ -85,10 +85,15 @@ const ProgressHubDashboard = () => {
       setIsLoading(true);
 
       // Run queries in parallel for better performance
-      const [workoutsResult, foodResult, recoveryResult] = await Promise.all([
+      const [workoutsResult, progressEntriesResult, foodResult, recoveryResult] = await Promise.all([
         supabase
           .from('workout_sessions')
           .select('id, session_date')
+          .eq('user_id', user.id),
+        // Also check progressive_overload_entries for workout count
+        supabase
+          .from('progressive_overload_entries')
+          .select('id, workout_date')
           .eq('user_id', user.id),
         supabase
           .from('food_log_entries')
@@ -102,7 +107,18 @@ const ProgressHubDashboard = () => {
           .limit(7)
       ]);
 
-      const workouts = workoutsResult.data || [];
+      const workoutSessions = workoutsResult.data || [];
+      const progressEntries = progressEntriesResult.data || [];
+      
+      // Combine workout dates from both sources
+      const allWorkoutDates = [
+        ...workoutSessions.map(w => w.session_date),
+        ...progressEntries.map(e => e.workout_date)
+      ];
+      const uniqueWorkoutDates = [...new Set(allWorkoutDates)];
+      
+      // Create a unified workouts array for streak calculation
+      const workouts = uniqueWorkoutDates.map(date => ({ session_date: date }));
       const foodEntries = foodResult.data || [];
       const recoveryData = recoveryResult.data || [];
 
@@ -152,7 +168,7 @@ const ProgressHubDashboard = () => {
       const weeklyProgress = Math.min((weeklyWorkouts / 5) * 100, 100);
 
       setStats({
-        totalWorkouts: workouts.length,
+        totalWorkouts: uniqueWorkoutDates.length,
         totalFoodEntries: foodEntries.length,
         weeklyProgress,
         currentStreak: calculateStreak(),

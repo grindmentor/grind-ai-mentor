@@ -67,7 +67,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   };
 
   const calculateTDEE = () => {
-    if (!age || !weight || !height) {
+    // Validate all required fields
+    if (!age?.trim() || !weight?.trim() || !height?.trim()) {
       return;
     }
 
@@ -75,7 +76,9 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     let parsedWeight = parseFloat(weight);
     let parsedHeight = parseFloat(height);
 
-    if (isNaN(parsedAge) || isNaN(parsedWeight) || isNaN(parsedHeight)) {
+    // Validate parsed values
+    if (isNaN(parsedAge) || isNaN(parsedWeight) || isNaN(parsedHeight) ||
+        parsedAge <= 0 || parsedWeight <= 0 || parsedHeight <= 0) {
       return;
     }
 
@@ -96,16 +99,20 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     }
 
     const calculatedTDEE = bmrValue * activityMultipliers[activityLevel];
+    
+    // Set results - this will trigger the results section to render
     setTDEE(calculatedTDEE);
     setBMR(bmrValue);
     
-    // Scroll to results after brief delay for render
-    setTimeout(() => {
-      const resultsSection = document.getElementById('tdee-results');
-      if (resultsSection) {
-        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+    // Scroll to results after render completes
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const resultsSection = document.getElementById('tdee-results');
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
+    });
   };
 
   return (

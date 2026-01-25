@@ -120,26 +120,41 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
     if (!success) return;
 
     try {
+      // Note: 'habits' table only has name, category, color, user_id - no description column
       const { data, error } = await supabase
         .from('habits')
         .insert({
           user_id: user.id,
           name: newHabit.name.trim(),
-          description: newHabit.description.trim() || null,
-          category: newHabit.category
+          category: newHabit.category,
+          color: getCategoryDefaultColor(newHabit.category)
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Habit insert error:', error);
+        throw error;
+      }
 
       setHabits(prev => [data, ...prev]);
       setNewHabit({ name: '', description: '', category: 'fitness' });
       toast.success('Habit added successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding habit:', error);
-      toast.error('Failed to add habit');
+      toast.error(error?.message || 'Failed to add habit');
     }
+  };
+
+  const getCategoryDefaultColor = (category: string) => {
+    const colors: Record<string, string> = {
+      fitness: 'bg-blue-500',
+      nutrition: 'bg-green-500',
+      sleep: 'bg-purple-500',
+      mindfulness: 'bg-pink-500',
+      productivity: 'bg-orange-500'
+    };
+    return colors[category] || 'bg-blue-500';
   };
 
   const toggleHabit = async (habitId: string) => {

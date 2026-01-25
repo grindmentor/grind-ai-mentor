@@ -30,47 +30,51 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
   const [isCalculating, setIsCalculating] = useState(false);
 
   const calculateCut = async () => {
-    if (!age || !gender || !height || !currentWeight || !activityLevel) {
+    // Validate required fields
+    if (!age?.trim() || !gender || !height?.trim() || !currentWeight?.trim() || !activityLevel) {
+      return;
+    }
+
+    const parsedAge = parseFloat(age);
+    const parsedHeight = parseFloat(height);
+    let current = parseFloat(currentWeight);
+    
+    // Validate parsed values before proceeding
+    if (isNaN(current) || isNaN(parsedAge) || isNaN(parsedHeight) ||
+        current <= 0 || parsedAge <= 0 || parsedHeight <= 0) {
       return;
     }
 
     setIsCalculating(true);
     
     // Small delay for UX (shows loading state)
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     try {
-      let current = parseFloat(currentWeight);
       let target = targetWeight ? parseFloat(targetWeight) : current * 0.9;
       const durationWeeks = parseFloat(duration) || 12;
-      let parsedAge = parseFloat(age);
-      let parsedHeight = parseFloat(height);
-      
-      // Validate inputs
-      if (isNaN(current) || isNaN(parsedAge) || isNaN(parsedHeight)) {
-        setIsCalculating(false);
-        return;
-      }
+      let heightInCm = parsedHeight;
+      let weightInKg = current;
       
       // Convert to metric for calculation if needed
       if (units.weightUnit === 'lbs') {
-        current = current / 2.20462;
+        weightInKg = current / 2.20462;
         target = target / 2.20462;
       }
       // Handle both 'in' and 'ft-in' height units (user enters inches in both cases)
       if (units.heightUnit === 'in' || units.heightUnit === 'ft-in') {
-        parsedHeight = parsedHeight * 2.54;
+        heightInCm = parsedHeight * 2.54;
       }
       
-      const totalWeightLoss = current - target;
+      const totalWeightLoss = weightInKg - target;
       const weeklyDeficit = totalWeightLoss / durationWeeks;
       
       // Enhanced BMR calculation using Mifflin-St Jeor equation
       let bmr: number;
       if (gender === 'male') {
-        bmr = (10 * current) + (6.25 * parsedHeight) - (5 * parsedAge) + 5;
+        bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * parsedAge) + 5;
       } else {
-        bmr = (10 * current) + (6.25 * parsedHeight) - (5 * parsedAge) - 161;
+        bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * parsedAge) - 161;
       }
       
       const activityMultipliers: { [key: string]: number } = {
@@ -90,8 +94,8 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       let displayTarget = targetWeight ? parseFloat(targetWeight) : displayCurrent * 0.9;
       let displayLoss = displayCurrent - displayTarget;
       
-      // Calculate macro recommendations
-      const proteinGrams = Math.round(current * 2.2); // 1g per lb lean mass approx
+      // Calculate macro recommendations (use metric weight for calculations)
+      const proteinGrams = Math.round(weightInKg * 2.2); // 1g per lb lean mass approx
       const fatGrams = Math.round(targetCalories * 0.25 / 9);
       const carbGrams = Math.round((targetCalories - (proteinGrams * 4) - (fatGrams * 9)) / 4);
       
@@ -114,13 +118,15 @@ const CutCalcPro = ({ onBack }: CutCalcProProps) => {
       
       setResults(calculatedResults);
       
-      // Scroll to results
-      setTimeout(() => {
-        const resultsSection = document.getElementById('cut-results');
-        if (resultsSection) {
-          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
+      // Scroll to results after render
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const resultsSection = document.getElementById('cut-results');
+          if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 50);
+      });
     } finally {
       setIsCalculating(false);
     }

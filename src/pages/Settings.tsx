@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { useAppSync } from '@/utils/appSynchronization';
+import FooterLinks from '@/components/dashboard/FooterLinks';
 
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -206,6 +207,9 @@ const Settings = () => {
                     </div>
                   </CardContent>
                 </Card>
+                
+                {/* Legal & Info Links */}
+                <FooterLinks />
               </TabsContent>
           </Tabs>
         </div>

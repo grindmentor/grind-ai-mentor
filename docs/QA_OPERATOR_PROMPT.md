@@ -1,252 +1,160 @@
-# Myotopia QA Operator Test Prompt
+# Myotopia QA Operator Prompt - Critical & Buggy Areas Focus
 
-## Test Account
-- **Email:** operator.qa@myotopia.app
-- **Password:** [Use the configured test password]
-- **Role:** Premium (permanent)
-
-## Test URL
-- **Preview:** https://id-preview--81218661-24ca-47f1-bdc1-0449f8b1af91.lovable.app
-- **Production:** https://myotopia.lovable.app
+**Test Account:** `operator.qa@myotopia.app` (premium access)
+**App URL:** https://myotopia.lovable.app
 
 ---
 
-## Pre-Test Setup
-1. Navigate to the app URL
-2. Verify the landing page loads without errors
-3. Check browser console for any critical errors
+## Priority 1: Known Buggy Areas (Test These First)
+
+### 1. Blueprint AI Activation
+- Navigate to **Blueprint AI** from dashboard
+- Select any template (e.g., "Push Pull Legs – Beginner")
+- Select training days and press **"Start Plan"**
+- **Verify:** A toast confirmation appears saying the plan was activated
+- **Verify:** Modal closes AFTER the toast is visible
+
+### 2. Goal Creation Flow
+- Navigate to **Goals** → **Create New Goal**
+- Test the **date picker** - click it and verify the calendar opens and allows date selection
+- Create a goal WITHOUT a deadline (deadline should be optional)
+- Create a goal WITH a deadline using the date picker
+- **Verify:** Both submissions succeed and goals appear on dashboard
+
+### 3. Settings - Unit Conversion
+- Go to **Settings** → **Units & Profile**
+- Note the current weight/height values
+- Change weight unit (kg ↔ lbs) and height unit (cm ↔ ft/in)
+- **Verify:** Body metrics update with CORRECT converted values
+  - Example: 92 kg should show ~203 lbs (NOT 397 lbs)
+  - Example: 180 cm should show ~5'11" (NOT 28 inches)
+- Change units back and verify values restore correctly
+
+### 4. Display Name Update & AI Memory Reset Feedback
+- Go to **Settings** → **Profile**
+- Update display name and click save
+- **Verify:** Success toast appears confirming the update
+- Go to **Settings** → **Help** → **Reset AI Memory**
+- Confirm the reset
+- **Verify:** Success toast or clear confirmation appears
 
 ---
 
-## Test Suite 1: Authentication Flow
+## Priority 2: Incomplete/Non-Functional Features
 
-### 1.1 Sign In
-1. Click "Sign In" or navigate to `/signin`
-2. Enter test credentials
-3. Click "Sign In" button
-4. **Expected:** Redirect to `/app` dashboard within 3 seconds
-5. **Verify:** User avatar/name appears in header
+### 5. Progress Hub Metrics
+- Log a workout via **Workout Logger** (add exercises, sets, complete workout)
+- Log a meal via **Smart Food Log**
+- Navigate to **Progress Hub**
+- **Verify:** Metrics update to show logged workouts/meals (should NOT be stuck at 0)
 
-### 1.2 Session Persistence
-1. After successful login, refresh the page (F5)
-2. **Expected:** User remains logged in, no redirect to signin
-3. Navigate to different modules and return to dashboard
-4. **Expected:** Session maintained throughout
+### 6. Habit Tracker
+- Navigate to **Habit Tracker**
+- Attempt to add a new habit (e.g., "Drink Water", category: Health)
+- **Verify:** Habit is created and appears in the list
+- Toggle habit completion for today
+- **Verify:** Completion persists after navigating away and back
 
-### 1.3 Protected Routes
-1. While logged out, navigate directly to `/app`
-2. **Expected:** Redirect to `/signin`
-3. Navigate to `/settings`
-4. **Expected:** Redirect to `/signin`
+### 7. Calculators (TDEE, CutCalc Pro, Smart Training)
+- **TDEE Calculator:** 
+  - Enter: Age 30, Weight 180 lbs, Height 5'10", Activity: Moderate, Goal: Maintain
+  - Click Calculate
+  - **Verify:** Results appear with BMR (~1800) and TDEE (~2500) values
+  
+- **CutCalc Pro:** 
+  - Enter current weight, target weight, timeframe
+  - Click Calculate
+  - **Verify:** Cutting plan with calorie recommendations displays
+  
+- **Smart Training:** 
+  - Enter preferences and click Generate
+  - Wait up to 30 seconds
+  - **Verify:** Training program generates (may take time, should NOT hang indefinitely)
 
-### 1.4 Sign Out
-1. While logged in, click profile/settings
-2. Click "Sign Out" button
-3. **Expected:** Redirect to `/` (landing page)
-4. **Verify:** Attempting to access `/app` redirects to signin
-
----
-
-## Test Suite 2: Core Module Access (Premium Features)
-
-### 2.1 Dashboard Access
-1. Login and navigate to `/app`
-2. **Expected:** Dashboard loads with module grid
-3. **Verify:** All module cards are visible and clickable
-
-### 2.2 CoachGPT (AI Module)
-1. Click on "CoachGPT" module
-2. **Expected:** Chat interface loads
-3. Type a test message: "What's a good warmup routine?"
-4. **Expected:** AI response within 30 seconds
-5. **Verify:** No authentication errors in response
-
-### 2.3 Workout Logger
-1. Navigate to Workout Logger module
-2. Click "Start Workout" or equivalent
-3. Add an exercise (search for "Bench Press")
-4. **Expected:** Exercise appears in workout
-5. Add sets with weight/reps
-6. **Expected:** Data saves without errors
-
-### 2.4 Food Photo AI (Premium)
-1. Navigate to Smart Food Log or Food Photo module
-2. **Expected:** Photo upload interface available
-3. **Verify:** Premium user sees no usage limit warnings
-
-### 2.5 TDEE Calculator
-1. Navigate to TDEE Calculator
-2. Enter test values: Age 30, Weight 180lbs, Height 5'10", Activity: Moderate
-3. Click Calculate
-4. **Expected:** Results display BMR and TDEE values
-5. **Verify:** Results are numeric and reasonable (BMR ~1800, TDEE ~2500)
-
-### 2.6 Blueprint AI (Training Plans)
-1. Navigate to Blueprint AI
-2. View available templates
-3. Select any template
-4. **Expected:** Template details load
-5. **Verify:** "Follow Plan" button is accessible
+### 8. AI Photo Analysis
+- **Smart Food Log (Photo):**
+  - Upload a food photo
+  - **Verify:** Analysis completes with macro breakdown (not stuck on "Analyzing...")
+  
+- **Physique AI:**
+  - Upload a body silhouette image
+  - **Verify:** Analysis completes with body composition results
 
 ---
 
-## Test Suite 3: Profile & Settings
+## Priority 3: Security & Data Verification
 
-### 3.1 Profile Data
-1. Navigate to `/settings`
-2. **Expected:** Settings page loads with user data
-3. **Verify:** Display name, email shown correctly
+### 9. Authentication & Session
+- Sign in with test account
+- Refresh the page (F5)
+- **Verify:** Session persists, no redirect to login
+- Navigate to `/app`, `/settings`, `/progress-hub`
+- **Verify:** All protected routes accessible
+- Sign out
+- **Verify:** Accessing `/app` redirects to login
 
-### 3.2 Unit Preferences
-1. In Settings, find unit preferences
-2. Toggle weight unit (lbs ↔ kg)
-3. **Expected:** Unit changes persist after page refresh
-4. Toggle height unit (ft-in ↔ cm)
-5. **Expected:** Height displays in selected unit
-
-### 3.3 Profile Metrics Update
-1. Edit weight value
-2. Save changes
-3. **Expected:** Success toast appears
-4. Refresh page
-5. **Verify:** Updated value persists
+### 10. RLS Policy Verification
+- After logging in, access these pages and verify no errors:
+  - Profile data in Settings
+  - Goals list
+  - Workout history
+  - Food log entries
+- **Verify:** Only YOUR data is visible
 
 ---
 
-## Test Suite 4: Goals & Progress
+## Priority 4: Navigation & UX
 
-### 4.1 Create Goal
-1. Navigate to Goals section (from Dashboard or Settings)
-2. Click "Create Goal" or "+"
-3. Enter: Title "Test Goal", Category "Strength", Target 100, Unit "lbs"
-4. Save goal
-5. **Expected:** Goal appears in goals list immediately
-6. **Verify:** No page refresh required
+### 11. Bottom Navigation
+- On mobile view, tap each bottom nav item:
+  - Home → Dashboard loads
+  - Modules → Module library loads
+  - Progress → Progress Hub loads
+  - Settings → Settings page loads
 
-### 4.2 Log Progress
-1. Select the created test goal
-2. Click "Log Progress"
-3. Enter value: 25
-4. Save
-5. **Expected:** Progress bar updates to 25%
-6. **Verify:** Progress persists after refresh
+### 12. Back Navigation
+- From dashboard, enter any module (e.g., CoachGPT)
+- Use back button/gesture
+- **Verify:** Returns to dashboard correctly
 
-### 4.3 Delete Goal
-1. Find the test goal
-2. Delete it
-3. **Expected:** Goal removed from list
-4. **Verify:** Deletion persists after refresh
+### 13. Privacy & Terms Links
+- Navigate to **Settings** → **Help**
+- Click **Privacy Policy** link
+- **Verify:** Privacy page renders with content
+- Click **Terms of Service** link
+- **Verify:** Terms page renders with content
 
 ---
 
-## Test Suite 5: Navigation & UX
+## Test Report Format
 
-### 5.1 Bottom Navigation (Mobile)
-1. Resize browser to mobile width (<768px)
-2. **Expected:** Bottom tab bar appears
-3. Tap each tab (Home, Modules, Progress, Settings)
-4. **Expected:** Each navigates to correct section
+For each test area, report:
 
-### 5.2 Back Navigation
-1. From Dashboard, open any module
-2. Click back button
-3. **Expected:** Return to Dashboard
-4. **Verify:** No broken navigation loops
-
-### 5.3 Module Library
-1. Navigate to Module Library
-2. **Verify:** All modules display with icons
-3. Click any module card
-4. **Expected:** Module opens correctly
-5. Use back button
-6. **Expected:** Return to library
-
----
-
-## Test Suite 6: Data Security Verification
-
-### 6.1 Cross-User Data Isolation
-1. Create a workout session with unique name "QA-Test-Session-[timestamp]"
-2. Log out
-3. Log in with different account (if available)
-4. Navigate to workout history
-5. **Expected:** QA test session NOT visible to other users
-
-### 6.2 RLS Policy Verification
-1. Open browser DevTools → Network tab
-2. Perform any data fetch (load goals, workouts, etc.)
-3. **Expected:** Only user's own data returned
-4. **Verify:** No other user IDs visible in responses
-
-### 6.3 API Authentication
-1. Open DevTools → Network tab
-2. Trigger an AI request (CoachGPT message)
-3. Inspect request headers
-4. **Expected:** Authorization header present with Bearer token
-5. **Verify:** No API keys exposed in client requests
+| Test | Status | Notes |
+|------|--------|-------|
+| Blueprint AI Activation | ✅/❌/⚠️ | Description of result |
+| Goal Creation (no deadline) | ✅/❌/⚠️ | |
+| Goal Creation (with deadline) | ✅/❌/⚠️ | |
+| Date Picker Opens | ✅/❌/⚠️ | |
+| Unit Conversion Accuracy | ✅/❌/⚠️ | Actual values shown |
+| Display Name Feedback | ✅/❌/⚠️ | |
+| AI Memory Reset Feedback | ✅/❌/⚠️ | |
+| Progress Hub Updates | ✅/❌/⚠️ | |
+| Habit Creation | ✅/❌/⚠️ | |
+| TDEE Calculator Results | ✅/❌/⚠️ | |
+| CutCalc Pro Results | ✅/❌/⚠️ | |
+| Smart Training Generation | ✅/❌/⚠️ | |
+| Food Photo Analysis | ✅/❌/⚠️ | |
+| Physique AI Analysis | ✅/❌/⚠️ | |
 
 ---
 
-## Test Suite 7: Error Handling
+## Expected Test Duration
+15-25 minutes for complete flow
 
-### 7.1 Network Error Recovery
-1. Open DevTools → Network tab
-2. Throttle to "Offline"
-3. Attempt to load data
-4. **Expected:** Graceful error message, no crashes
-5. Restore network
-6. **Expected:** App recovers without refresh
-
-### 7.2 Invalid Input Handling
-1. In TDEE Calculator, enter negative weight
-2. **Expected:** Validation error shown
-3. In goal creation, submit with empty title
-4. **Expected:** Validation error, form not submitted
-
----
-
-## Test Suite 8: Performance
-
-### 8.1 Initial Load
-1. Clear cache and reload app
-2. **Expected:** Landing page loads < 3 seconds
-3. Login and navigate to dashboard
-4. **Expected:** Dashboard renders < 2 seconds
-
-### 8.2 Module Loading
-1. Open any AI module
-2. **Expected:** Module interface loads < 1.5 seconds
-3. **Verify:** Loading skeleton shown during fetch
-
----
-
-## Post-Test Cleanup
-
-1. Delete any test goals created during testing
-2. Delete any test workout sessions
-3. Sign out of test account
-
----
-
-## Pass/Fail Criteria
-
-- **PASS:** All expected behaviors occur, no console errors, no crashes
-- **FAIL:** Any authentication bypass, data leakage, or critical error
-
----
-
-## Security-Specific Checks (Post-Update)
-
-### Updated Dependencies Verification
-1. No vulnerabilities in react-router-dom navigation
-2. DOMPurify sanitization working (no XSS in rendered content)
-3. Capacitor CLI updates don't break mobile builds
-
-### RLS Verification Points
-- profiles table: Only own profile accessible
-- customer_profiles: Only own data accessible  
-- password_resets: Tokens never exposed to client
-- user_roles: Premium status correctly enforced
-
-### Manual Dashboard Check Required
-- [ ] Supabase Dashboard → Authentication → Policies → "Leaked Password Protection" ENABLED
+## Critical Issues to Flag
+- Any feature that hangs indefinitely
+- Incorrect data conversions
+- Missing success/error feedback
+- Data not persisting after actions
+- Features that produce no output

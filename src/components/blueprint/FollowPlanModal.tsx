@@ -176,7 +176,11 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
   const handleConfirm = () => {
     trigger('medium');
     followPlan({ template: workout, schedule });
-    onClose();
+    // Don't close immediately - let the mutation complete so the toast shows
+    // The hook's onSuccess will trigger the toast, then we close
+    setTimeout(() => {
+      onClose();
+    }, 100);
   };
 
   const getScheduleForDay = (dayId: number) => {

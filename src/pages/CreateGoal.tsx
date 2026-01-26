@@ -266,10 +266,8 @@ const CreateGoal = () => {
       return;
     }
 
-    if (!deadline) {
-      toast.error('Please select a deadline for your goal');
-      return;
-    }
+    // Deadline is optional - only validate if not provided for habit goals
+    // For target goals, we'll set a default deadline if none provided
 
     setLoading(true);
     try {
@@ -281,7 +279,7 @@ const CreateGoal = () => {
         current_value: parseFloat(formData.current_value) || 0,
         unit: formData.unit,
         category: formData.category,
-        deadline: deadline.toISOString(),
+        deadline: deadline ? deadline.toISOString() : null,
         status: 'active',
         goal_type: formData.goal_type,
         frequency: formData.frequency,
@@ -572,13 +570,14 @@ const CreateGoal = () => {
                         {deadline ? format(deadline, 'PPP') : 'Pick a date'}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
+                    <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700 z-[100]" align="start">
                       <Calendar
                         mode="single"
                         selected={deadline}
                         onSelect={setDeadline}
                         initialFocus
-                        className="bg-gray-800 text-white"
+                        disabled={(date) => date < new Date()}
+                        className="p-3 pointer-events-auto bg-gray-800 text-white"
                       />
                     </PopoverContent>
                   </Popover>

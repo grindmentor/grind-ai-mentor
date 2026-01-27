@@ -191,6 +191,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [ingredients, setIngredients] = useState<DetectedIngredient[]>([]);
   const [newIngredient, setNewIngredient] = useState('');
+  const [customRequest, setCustomRequest] = useState('');
   const [meals, setMeals] = useState<MealCard[]>([]);
   const [expandedMicronutrients, setExpandedMicronutrients] = useState<Record<string, boolean>>({});
   const [savingRecipeId, setSavingRecipeId] = useState<string | null>(null);
@@ -742,6 +743,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       userGoal: userData.goal,
       allergies: preferences.allergies,
       dislikes: preferences.dislikes,
+      customRequest: customRequest.trim() || undefined,
     };
 
     // Handle offline state
@@ -883,6 +885,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     setPantryPreview(null);
     setIngredients([]);
     setMeals([]);
+    setCustomRequest('');
     setStep('intent');
   };
 
@@ -1252,6 +1255,19 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
               <Button onClick={handleAddIngredient} size="icon" variant="secondary">
                 <Plus className="w-4 h-4" />
               </Button>
+            </div>
+
+            {/* Special request input - like Meal Plan Generator */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Special Request <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <Input
+                value={customRequest}
+                onChange={(e) => setCustomRequest(e.target.value)}
+                placeholder="e.g., high fiber, use the chicken first, no oil..."
+                className="text-sm"
+              />
             </div>
 
             <div className="flex gap-2">

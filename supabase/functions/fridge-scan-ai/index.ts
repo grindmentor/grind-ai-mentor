@@ -474,7 +474,7 @@ After text detection, identify items by visual appearance:
 
     } else if (action === 'generate') {
       // Meal generation using structured tool calling
-      const { ingredients, mealIntent, quickMeals, remainingMacros, proteinMinimum, userGoal, allergies, dislikes } = body;
+      const { ingredients, mealIntent, quickMeals, remainingMacros, proteinMinimum, userGoal, allergies, dislikes, customRequest } = body;
 
       if (!ingredients || ingredients.length === 0) {
         return errorResponse(400, 'No ingredients provided', 'NO_INGREDIENTS', false);
@@ -485,6 +485,9 @@ After text detection, identify items by visual appearance:
         : '';
       const dislikeInstructions = dislikes?.length > 0 
         ? `\nAvoid these disliked foods: ${dislikes.join(', ')}` 
+        : '';
+      const customInstructions = customRequest 
+        ? `\nSPECIAL USER REQUEST: ${customRequest}` 
         : '';
 
       const intentInstructions: Record<string, string> = {
@@ -501,7 +504,7 @@ USER CONTEXT:
 - Remaining macros: ${remainingMacros.calories} cal, ${remainingMacros.protein}g P, ${remainingMacros.carbs}g C, ${remainingMacros.fat}g F
 - Protein target/meal: ~${proteinMinimum}g (+/- 15g)
 - Time: ${quickMeals ? 'Under 10 min only' : 'No limit'}
-${allergyInstructions}${dislikeInstructions}
+${allergyInstructions}${dislikeInstructions}${customInstructions}
 
 INTENT: ${mealIntent}
 ${intentInstructions[mealIntent] || ''}
@@ -512,7 +515,8 @@ RULES:
 3. Use ONLY provided ingredients
 4. Simple, practical instructions
 ${quickMeals ? '5. ALL meals under 10 min prep+cook' : ''}
-6. NEVER use allergen ingredients`;
+6. NEVER use allergen ingredients
+${customRequest ? '7. Follow the special user request above' : ''}`;
 
       let response: Response;
       try {

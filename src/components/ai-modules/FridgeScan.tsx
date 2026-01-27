@@ -23,7 +23,7 @@ import DietaryPreferencesSetup from './DietaryPreferencesSetup';
 import FridgeScanErrorState, { FridgeScanErrorCode } from './FridgeScanErrorState';
 import { MobileHeader } from '@/components/MobileHeader';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Types
 interface DetectedIngredient {
@@ -163,6 +163,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const { userData } = useUserData();
   const { currentTier, currentTierData, isSubscribed, hasUnlimitedUsage } = useSubscription();
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fridgeFileRef = useRef<File | null>(null);
   const pantryFileRef = useRef<File | null>(null);
@@ -1458,7 +1459,24 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
       {/* Header - Using standardized MobileHeader for consistent back navigation */}
       <MobileHeader 
         title="FridgeScan" 
-        onBack={onBack}
+        onBack={() => {
+          // If FridgeScan was opened from another module (MealPlanAI/SmartFoodLog),
+          // preserve THAT module's original returnTo so the user doesn't get stuck
+          // bouncing between the two modules.
+          const state = location.state as
+            | { returnTo?: string; parentReturnTo?: string }
+            | null;
+
+          if (state?.returnTo && state?.parentReturnTo) {
+            navigate(state.returnTo, {
+              state: { returnTo: state.parentReturnTo },
+              replace: true,
+            });
+            return;
+          }
+
+          onBack();
+        }}
         rightElement={
           <div className="flex items-center gap-2">
             {!isOnline && (

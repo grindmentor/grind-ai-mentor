@@ -80,6 +80,25 @@
   - Upload a body silhouette image
   - **Verify:** Analysis completes with body composition results
 
+- **FridgeScan:**
+  - Navigate to **FridgeScan** from dashboard or Module Library
+  - If first time, complete dietary preferences setup (allergies, dislikes, diet type)
+  - Upload a photo of fridge/pantry contents
+  - Select a meal intent (e.g., "Low-Cal / Cutting", "Bulk / High Protein", "Balanced")
+  - Optionally set macro targets (protein, carbs, fat, calories)
+  - Click "Generate Meal"
+  - **Verify:** Loading animation appears ("Gathering Ingredients...")
+  - **Verify:** Meal suggestion generates with:
+    - Recipe name and description
+    - Ingredients list with portions
+    - Step-by-step instructions
+    - Full macro breakdown (calories, protein, carbs, fat)
+    - Cooking time estimate
+  - **Verify:** If cutting intent selected, meal respects ~350 cal / 8g fat limits
+  - **Verify:** Allergies and dislikes from preferences are excluded from suggestions
+  - Test "Save Recipe" button if available
+  - **Verify:** No indefinite "Analyzing..." state—should complete or show error within 30s
+
 ---
 
 ## Priority 3: Security & Data Verification

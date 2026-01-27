@@ -150,6 +150,7 @@ const ModuleLibrary = () => {
       'physique-ai': '/physique-ai',
       'exercise-database': '/exercise-database',
       'research': '/research',
+      'fridge-scan': '/fridge-scan',
     };
     
     const route = routeMap[module.id];

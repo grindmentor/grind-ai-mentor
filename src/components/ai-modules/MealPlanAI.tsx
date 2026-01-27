@@ -259,7 +259,7 @@ Return ONLY valid JSON:
                 >
                   {/* FridgeScan Promo */}
                   <motion.button
-                    onClick={() => navigate('/fridge-scan')}
+                    onClick={() => navigate('/fridge-scan', { state: { returnTo: '/meal-plan-ai' } })}
                     className="w-full p-4 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-teal-500/20 to-emerald-500/20 border-2 border-cyan-500/40 hover:border-cyan-400/60 transition-all relative overflow-hidden group"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}

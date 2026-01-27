@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Utensils, Clock, ChefHat, Bookmark, Heart, Trash2, ChevronRight, Sparkles, Settings2, Refrigerator, Camera, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
@@ -50,6 +50,7 @@ export const MealPlanAI: React.FC<MealPlanAIProps> = ({ onBack }) => {
   const { incrementUsage } = useUsageTracking();
   const { userData } = useUserData();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Hooks
   const { preferences, isLoading: prefsLoading, needsSetup, savePreferences, getProteinMinimum } = useDietaryPreferences();
@@ -259,7 +260,15 @@ Return ONLY valid JSON:
                 >
                   {/* FridgeScan Promo */}
                   <motion.button
-                    onClick={() => navigate('/fridge-scan', { state: { returnTo: '/meal-plan-ai' } })}
+                    onClick={() => {
+                      // Preserve the page that brought the user into MealPlanAI so
+                      // returning from FridgeScan doesn't create a back-loop.
+                      const state = location.state as { returnTo?: string } | null;
+                      const parentReturnTo = state?.returnTo || '/modules';
+                      navigate('/fridge-scan', {
+                        state: { returnTo: '/meal-plan-ai', parentReturnTo },
+                      });
+                    }}
                     className="w-full p-4 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-teal-500/20 to-emerald-500/20 border-2 border-cyan-500/40 hover:border-cyan-400/60 transition-all relative overflow-hidden group"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}

@@ -45,7 +45,7 @@ const DEFAULT_USAGE: CurrentUsage = {
 
 export const useUsageTracking = () => {
   const { user } = useAuth();
-  const { currentTierData, currentTier } = useSubscription();
+  const { currentTierData, currentTier, hasUnlimitedUsage } = useSubscription();
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage>(DEFAULT_USAGE);
   const [loading, setLoading] = useState(false);
   const cacheRef = useRef<CurrentUsage | null>(null);
@@ -96,6 +96,9 @@ export const useUsageTracking = () => {
   };
 
   const canUseFeature = (featureKey: keyof UsageLimits): boolean => {
+    // Users with unlimited_usage role bypass all limits
+    if (hasUnlimitedUsage) return true;
+    
     if (!currentTierData) return false;
     
     const limit = currentTierData.limits[featureKey];
@@ -148,6 +151,9 @@ export const useUsageTracking = () => {
   };
 
   const getRemainingUsage = (featureKey: keyof UsageLimits): number => {
+    // Users with unlimited_usage role have infinite remaining
+    if (hasUnlimitedUsage) return -1;
+    
     if (!currentTierData) return 0;
     
     const limit = currentTierData.limits[featureKey];
@@ -159,6 +165,9 @@ export const useUsageTracking = () => {
   };
 
   const getUsagePercentage = (featureKey: keyof UsageLimits): number => {
+    // Users with unlimited_usage role show 0% usage
+    if (hasUnlimitedUsage) return 0;
+    
     if (!currentTierData) return 0;
     
     const limit = currentTierData.limits[featureKey];

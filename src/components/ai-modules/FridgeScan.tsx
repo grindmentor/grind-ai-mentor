@@ -1110,6 +1110,19 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           )}
         </div>
 
+        {/* Special request input - under photo uploads */}
+        <div className="space-y-2 pt-2">
+          <label className="text-sm font-medium text-foreground">
+            Special Request <span className="text-muted-foreground font-normal">(optional)</span>
+          </label>
+          <Input
+            value={customRequest}
+            onChange={(e) => setCustomRequest(e.target.value)}
+            placeholder="e.g., high protein, use the chicken first, no oil..."
+            className="text-sm"
+          />
+        </div>
+
         {/* Actions */}
         <div className="pt-4 space-y-2">
           <Button 
@@ -1257,18 +1270,6 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
               </Button>
             </div>
 
-            {/* Special request input - like Meal Plan Generator */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Special Request <span className="text-muted-foreground font-normal">(optional)</span>
-              </label>
-              <Input
-                value={customRequest}
-                onChange={(e) => setCustomRequest(e.target.value)}
-                placeholder="e.g., high fiber, use the chicken first, no oil..."
-                className="text-sm"
-              />
-            </div>
 
             <div className="flex gap-2">
               <Button variant="outline" onClick={rescan} className="flex-1">

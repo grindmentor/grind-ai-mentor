@@ -68,19 +68,27 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
   const calculateTDEE = () => {
     // Validate all required fields
-    if (!age?.trim() || !weight?.trim() || !height?.trim()) {
+    const ageStr = age?.trim() || '';
+    const weightStr = weight?.trim() || '';
+    const heightStr = height?.trim() || '';
+    
+    if (!ageStr || !weightStr || !heightStr) {
+      console.log('[TDEE] Missing required fields:', { age: ageStr, weight: weightStr, height: heightStr });
       return;
     }
 
-    const parsedAge = parseFloat(age);
-    let parsedWeight = parseFloat(weight);
-    let parsedHeight = parseFloat(height);
+    const parsedAge = parseFloat(ageStr);
+    let parsedWeight = parseFloat(weightStr);
+    let parsedHeight = parseFloat(heightStr);
 
     // Validate parsed values
     if (isNaN(parsedAge) || isNaN(parsedWeight) || isNaN(parsedHeight) ||
         parsedAge <= 0 || parsedWeight <= 0 || parsedHeight <= 0) {
+      console.log('[TDEE] Invalid parsed values:', { parsedAge, parsedWeight, parsedHeight });
       return;
     }
+
+    console.log('[TDEE] Calculating with:', { parsedAge, parsedWeight, parsedHeight, gender, activityLevel });
 
     // Convert to metric for calculation if needed
     if (units.weightUnit === 'lbs') {
@@ -100,9 +108,11 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
 
     const calculatedTDEE = bmrValue * activityMultipliers[activityLevel];
     
-    // Set results - this will trigger the results section to render
-    setTDEE(calculatedTDEE);
-    setBMR(bmrValue);
+    console.log('[TDEE] Results:', { bmrValue, calculatedTDEE });
+    
+    // Set results - use functional updates to ensure state changes
+    setBMR(Math.round(bmrValue * 10) / 10);
+    setTDEE(Math.round(calculatedTDEE * 10) / 10);
     
     // Scroll to results after render completes
     requestAnimationFrame(() => {
@@ -111,7 +121,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
         if (resultsSection) {
           resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      }, 50);
+      }, 100);
     });
   };
 

@@ -173,14 +173,19 @@ const FollowPlanModalComponent: React.FC<FollowPlanModalProps> = ({ workout, isO
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     trigger('medium');
-    followPlan({ template: workout, schedule });
-    // Don't close immediately - let the mutation complete so the toast shows
-    // The hook's onSuccess will trigger the toast, then we close
-    setTimeout(() => {
-      onClose();
-    }, 100);
+    try {
+      await followPlan({ template: workout, schedule });
+      // Success toast is shown by the mutation's onSuccess
+      // Close modal after a short delay to ensure toast is visible
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    } catch (error) {
+      // Error toast is shown by the mutation's onError
+      console.error('[FollowPlanModal] Plan activation failed:', error);
+    }
   };
 
   const getScheduleForDay = (dayId: number) => {

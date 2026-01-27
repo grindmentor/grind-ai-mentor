@@ -611,9 +611,9 @@ export const useActivePlan = () => {
     isLoadingAllPlans: allPlansLoading,
     
     // Plan management
-    followPlan: followPlanMutation.mutate,
+    followPlan: followPlanMutation.mutateAsync,
     isFollowing: followPlanMutation.isPending,
-    switchPlan: switchPlanMutation.mutate,
+    switchPlan: switchPlanMutation.mutateAsync,
     isSwitching: switchPlanMutation.isPending,
     deletePlan: deletePlanMutation.mutate,
     stopPlan: stopPlanMutation.mutate,

@@ -266,25 +266,36 @@ const CreateGoal = () => {
       return;
     }
 
-    // Deadline is optional - only validate if not provided for habit goals
-    // For target goals, we'll set a default deadline if none provided
+    // Validate required fields manually since Radix Select doesn't support HTML validation
+    if (!formData.title.trim()) {
+      toast.error('Please enter a goal title');
+      return;
+    }
+    if (!formData.category) {
+      toast.error('Please select a category');
+      return;
+    }
+
+    // Deadline is optional
 
     setLoading(true);
     try {
       const goalData = {
         user_id: user.id,
-        title: formData.title,
-        description: formData.description,
+        title: formData.title.trim(),
+        description: formData.description?.trim() || null,
         target_value: parseFloat(formData.target_value) || 0,
         current_value: parseFloat(formData.current_value) || 0,
-        unit: formData.unit,
+        unit: formData.unit?.trim() || null,
         category: formData.category,
-        deadline: deadline ? deadline.toISOString() : null,
+        deadline: deadline ? deadline.toISOString().split('T')[0] : null,
         status: 'active',
-        goal_type: formData.goal_type,
-        frequency: formData.frequency,
-        tracking_unit: formData.tracking_unit
+        goal_type: formData.goal_type || 'target',
+        frequency: formData.frequency || 'once',
+        tracking_unit: formData.tracking_unit || 'number'
       };
+
+      console.log('[CreateGoal] Submitting goal:', goalData);
 
       let result;
       if (editingGoal) {
@@ -299,6 +310,7 @@ const CreateGoal = () => {
       }
 
       if (result.error) {
+        console.error('[CreateGoal] Database error:', result.error);
         throw result.error;
       }
 
@@ -504,7 +516,7 @@ const CreateGoal = () => {
               </div>
 
               <div>
-                <Label htmlFor="description" className="text-white">Description</Label>
+                <Label htmlFor="description" className="text-white">Description (optional)</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -512,7 +524,6 @@ const CreateGoal = () => {
                   className="bg-gray-800 border-gray-700 text-white"
                   placeholder="Describe your goal..."
                   rows={3}
-                  required
                 />
               </div>
 
@@ -559,26 +570,42 @@ const CreateGoal = () => {
                 </div>
 
                 <div>
-                  <Label className="text-white">Deadline</Label>
+                  <Label className="text-white">Deadline (optional)</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
+                        type="button"
                         variant="outline"
                         className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {deadline ? format(deadline, 'PPP') : 'Pick a date'}
+                        {deadline ? format(deadline, 'PPP') : 'No deadline set'}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700 z-[100]" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={deadline}
-                        onSelect={setDeadline}
-                        initialFocus
-                        disabled={(date) => date < new Date()}
-                        className="p-3 pointer-events-auto bg-gray-800 text-white"
-                      />
+                    <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700 z-[100] pointer-events-auto" align="start" sideOffset={4}>
+                      <div className="pointer-events-auto">
+                        <Calendar
+                          mode="single"
+                          selected={deadline}
+                          onSelect={setDeadline}
+                          initialFocus
+                          disabled={(date) => date < new Date()}
+                          className="p-3 pointer-events-auto bg-gray-800 text-white"
+                        />
+                        {deadline && (
+                          <div className="p-2 border-t border-gray-700">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeadline(undefined)}
+                              className="w-full text-gray-400 hover:text-white"
+                            >
+                              Clear deadline
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>

@@ -568,7 +568,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
 
         {/* FridgeScan Promo */}
         <button
-          onClick={() => navigate('/fridge-scan')}
+          onClick={() => navigate('/fridge-scan', { state: { returnTo: '/smart-food-log' } })}
           className="w-full mb-4 p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-xl flex items-center gap-3 hover:from-cyan-500/15 hover:to-blue-500/15 transition-colors text-left"
         >
           <div className="w-10 h-10 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">

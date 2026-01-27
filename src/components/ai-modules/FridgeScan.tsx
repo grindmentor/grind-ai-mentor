@@ -161,7 +161,7 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { userData } = useUserData();
-  const { currentTier, currentTierData, isSubscribed } = useSubscription();
+  const { currentTier, currentTierData, isSubscribed, hasUnlimitedUsage } = useSubscription();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fridgeFileRef = useRef<File | null>(null);
@@ -212,9 +212,10 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
   const [healthCheckFailed, setHealthCheckFailed] = useState(false);
 
   // Check premium access - FridgeScan is premium-only
-  const isPremium = currentTier === 'premium' || isSubscribed;
-  const canUseFridgeScan = isPremium && dailyUsageCount < DAILY_LIMIT;
-  const remainingScans = Math.max(0, DAILY_LIMIT - dailyUsageCount);
+  // Users with unlimited_usage role bypass all limits
+  const isPremium = currentTier === 'premium' || isSubscribed || hasUnlimitedUsage;
+  const canUseFridgeScan = isPremium && (hasUnlimitedUsage || dailyUsageCount < DAILY_LIMIT);
+  const remainingScans = hasUnlimitedUsage ? -1 : Math.max(0, DAILY_LIMIT - dailyUsageCount);
 
   // Fetch today's FridgeScan usage count
   useEffect(() => {
@@ -536,7 +537,8 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
     }
 
     // Check daily limit
-    if (dailyUsageCount >= DAILY_LIMIT) {
+    // Check daily limit (bypass for unlimited_usage users)
+    if (!hasUnlimitedUsage && dailyUsageCount >= DAILY_LIMIT) {
       toast({
         title: 'Daily Limit Reached',
         description: `You've used all ${DAILY_LIMIT} FridgeScan uses for today. Try again tomorrow!`,
@@ -1551,8 +1553,8 @@ const FridgeScan: React.FC<FridgeScanProps> = ({ onBack }) => {
           </div>
         )}
 
-        {/* Daily limit reached */}
-        {isPremium && dailyUsageCount >= DAILY_LIMIT && !usageLoading && (
+        {/* Daily limit reached (skip for unlimited_usage users) */}
+        {isPremium && !hasUnlimitedUsage && dailyUsageCount >= DAILY_LIMIT && !usageLoading && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mb-6 border border-amber-500/30">
               <Lock className="w-10 h-10 text-amber-400" />

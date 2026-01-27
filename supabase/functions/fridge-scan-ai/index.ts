@@ -399,18 +399,30 @@ After text detection, identify items by visual appearance:
 
       const data = await response.json();
       console.log('[FRIDGE-SCAN] AI response received');
+      
+      // Debug: log response structure
+      const message = data.choices?.[0]?.message;
+      console.log('[FRIDGE-SCAN] Response structure:', JSON.stringify({
+        hasToolCalls: !!message?.tool_calls,
+        toolCallsCount: message?.tool_calls?.length || 0,
+        hasContent: !!message?.content,
+        contentLength: message?.content?.length || 0,
+        finishReason: data.choices?.[0]?.finish_reason,
+      }));
 
       // Extract from tool call response
       let result: { ingredients: Array<{ name: string; confidence: string }> } = { ingredients: [] };
       
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      const toolCall = message?.tool_calls?.[0];
       if (toolCall?.function?.arguments) {
         try {
           result = JSON.parse(toolCall.function.arguments);
           console.log('[FRIDGE-SCAN] Parsed from tool call:', result.ingredients?.length, 'ingredients');
         } catch (e) {
-          console.error('[FRIDGE-SCAN] Tool call parse error:', e);
+          console.error('[FRIDGE-SCAN] Tool call parse error:', e, 'Raw args:', toolCall.function.arguments?.substring(0, 200));
         }
+      } else {
+        console.log('[FRIDGE-SCAN] No tool call found, toolCall object:', JSON.stringify(toolCall || 'undefined'));
       }
       
       // Fallback: try parsing from content if tool call failed

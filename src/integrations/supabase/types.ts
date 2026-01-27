@@ -1578,7 +1578,7 @@ export type Database = {
       verify_user_age: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "premium" | "free"
+      app_role: "admin" | "premium" | "free" | "unlimited_usage"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1706,7 +1706,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "premium", "free"],
+      app_role: ["admin", "premium", "free", "unlimited_usage"],
     },
   },
 } as const

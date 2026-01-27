@@ -90,17 +90,18 @@ export const useSubscription = () => {
         } catch { /* ignore */ }
       }
     }
-    return { tier: 'free', end: null, billing: null };
+    return { tier: 'free', end: null, billing: null, hasUnlimitedUsage: false };
   };
   
-  const initial = user ? getInitialState() : { tier: 'free', end: null, billing: null };
+  const initial = user ? getInitialState() : { tier: 'free', end: null, billing: null, hasUnlimitedUsage: false };
   
   const [currentTier, setCurrentTier] = useState<string>(initial.tier);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(initial.end);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual' | null>(null);
+  const [hasUnlimitedUsage, setHasUnlimitedUsage] = useState<boolean>(initial.hasUnlimitedUsage || false);
   const [isLoading, setIsLoading] = useState(false);
   const lastCheckRef = useRef<number>(0);
-  const cacheRef = useRef<{ tier: string; end: string | null; billing: 'monthly' | 'annual' | null } | null>(null);
+  const cacheRef = useRef<{ tier: string; end: string | null; billing: 'monthly' | 'annual' | null; hasUnlimitedUsage?: boolean } | null>(null);
   const initRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -113,6 +114,7 @@ export const useSubscription = () => {
         setCurrentTier(cached.tier);
         setSubscriptionEnd(cached.end);
         setBillingCycle(cached.billing);
+        setHasUnlimitedUsage(cached.hasUnlimitedUsage || false);
       }
       
       // Check subscription status from server
@@ -121,6 +123,7 @@ export const useSubscription = () => {
       setCurrentTier('free');
       setSubscriptionEnd(null);
       setBillingCycle(null);
+      setHasUnlimitedUsage(false);
       cacheRef.current = null;
       initRef.current = false;
     }
@@ -148,6 +151,7 @@ export const useSubscription = () => {
         setCurrentTier('free');
         setSubscriptionEnd(null);
         setBillingCycle(null);
+        setHasUnlimitedUsage(false);
         return;
       }
 
@@ -155,11 +159,13 @@ export const useSubscription = () => {
         const newTier = data.subscription_tier?.toLowerCase() || 'free';
         const newEnd = data.subscription_end;
         const newBilling = data.billing_cycle;
+        const newUnlimited = data.has_unlimited_usage || false;
 
         setCurrentTier(newTier);
         setSubscriptionEnd(newEnd);
         setBillingCycle(newBilling);
-        cacheRef.current = { tier: newTier, end: newEnd, billing: newBilling };
+        setHasUnlimitedUsage(newUnlimited);
+        cacheRef.current = { tier: newTier, end: newEnd, billing: newBilling, hasUnlimitedUsage: newUnlimited };
         lastCheckRef.current = now;
         
         // Save to localStorage for instant loading on next visit
@@ -168,7 +174,8 @@ export const useSubscription = () => {
             localStorage.setItem(`myotopia_sub_${user.id}`, JSON.stringify({ 
               tier: newTier, 
               end: newEnd, 
-              billing: newBilling 
+              billing: newBilling,
+              hasUnlimitedUsage: newUnlimited
             }));
           } catch { /* ignore storage errors */ }
         }
@@ -179,6 +186,7 @@ export const useSubscription = () => {
       setCurrentTier('free');
       setSubscriptionEnd(null);
       setBillingCycle(null);
+      setHasUnlimitedUsage(false);
     } finally {
       setIsLoading(false);
     }
@@ -194,8 +202,11 @@ export const useSubscription = () => {
     billingCycle,
     isSubscribed,
     isLoading,
+    hasUnlimitedUsage,
     refreshSubscription: checkSubscription,
     isUnlimited: (featureKey: keyof SubscriptionTier['limits']) => {
+      // Users with unlimited_usage role bypass all limits
+      if (hasUnlimitedUsage) return true;
       return currentTierData.limits[featureKey] === -1;
     }
   };

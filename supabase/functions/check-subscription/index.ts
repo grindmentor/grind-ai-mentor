@@ -43,21 +43,26 @@ serve(async (req) => {
     if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    // Check user role from database using the get_user_role function
-    const { data: roleData, error: roleError } = await supabaseClient.rpc('get_user_role', {
-      _user_id: user.id
-    });
+    // Check all user roles from database (user can have multiple roles)
+    const { data: rolesData, error: rolesError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
 
-    if (roleError) {
-      logStep("Error fetching role", { error: roleError });
-      throw new Error(`Failed to fetch user role: ${roleError.message}`);
+    if (rolesError) {
+      logStep("Error fetching roles", { error: rolesError });
+      throw new Error(`Failed to fetch user roles: ${rolesError.message}`);
     }
 
-    const role = roleData || 'free';
-    logStep("User role fetched", { role });
+    const roles = rolesData?.map(r => r.role) || [];
+    logStep("User roles fetched", { roles });
 
+    // Check for special roles
+    const hasUnlimitedUsage = roles.includes('unlimited_usage');
+    const hasPremiumRole = roles.includes('admin') || roles.includes('premium');
+    
     // Map role to subscription tier
-    const subscriptionTier = role === 'admin' || role === 'premium' ? 'premium' : 'free';
+    const subscriptionTier = hasPremiumRole ? 'premium' : 'free';
 
     // Get additional subscription info from subscribers table if exists
     const { data: subscriberData } = await supabaseClient
@@ -69,7 +74,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       subscription_tier: subscriptionTier,
       subscription_end: subscriberData?.subscription_end || null,
-      billing_cycle: subscriberData?.billing_cycle || null
+      billing_cycle: subscriberData?.billing_cycle || null,
+      has_unlimited_usage: hasUnlimitedUsage
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

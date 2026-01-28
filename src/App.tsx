@@ -1,10 +1,11 @@
+import { memo, useEffect, useState, lazy, Suspense, useCallback } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense } from "react";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { useRoutePerformance } from "@/hooks/useRoutePerformance";
 
 // Eager load critical routes for instant navigation (no loading flash)
 import Index from "./pages/Index";
@@ -24,7 +25,7 @@ import SmartFoodLog from "./pages/SmartFoodLog";
 import ExerciseDatabase from "./pages/ExerciseDatabase";
 import Research from "./pages/Research";
 
-// Lazy load less frequently accessed routes
+// Lazy load less frequently accessed routes with prefetch hints
 const BlueprintAI = lazy(() => import("./components/ai-modules/BlueprintAI"));
 const ProgressHub = lazy(() => import("./components/ai-modules/ProgressHub"));
 const CutCalcPro = lazy(() => import("./components/ai-modules/CutCalcPro"));
@@ -64,6 +65,13 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { preloadCriticalRoutes, setupLinkPreloading } from "@/utils/routePreloader";
 import "@/utils/prefetch"; // Initialize prefetching
+
+// Route performance tracker component
+const RoutePerformanceTracker = memo(() => {
+  useRoutePerformance();
+  return null;
+});
+RoutePerformanceTracker.displayName = 'RoutePerformanceTracker';
 
 // Optimized QueryClient with aggressive caching and error handling
 const queryClient = new QueryClient({
@@ -147,6 +155,7 @@ function App() {
                   <Sonner />
                   <OfflineIndicator />
                   <BrowserRouter>
+                    <RoutePerformanceTracker />
                     <ScrollToTop />
                     <AppShell>
                       {/* PWA Titlebar area */}

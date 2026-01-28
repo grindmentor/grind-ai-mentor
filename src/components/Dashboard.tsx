@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense, memo, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModules } from '@/contexts/ModulesContext';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +21,7 @@ import { useNativeHaptics } from '@/hooks/useNativeHaptics';
 import PersonalizedFeed from '@/components/home/PersonalizedFeed';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { perfMetrics } from '@/utils/performanceMetrics';
 
 // Memoized premium header component
 const DashboardHeader = memo<{
@@ -85,6 +86,9 @@ interface ComputedModules {
 }
 
 const Dashboard = () => {
+  // Performance tracking ref
+  const mountTime = useRef(performance.now());
+  
   const { user, loading: authLoading } = useAuth();
   const { modules } = useModules();
   const navigate = useNavigate();
@@ -97,6 +101,14 @@ const Dashboard = () => {
   const { currentTier } = useSubscription();
   const queryClient = useQueryClient();
   const { trigger } = useNativeHaptics();
+  
+  // Track dashboard render performance
+  useEffect(() => {
+    const renderTime = performance.now() - mountTime.current;
+    if (renderTime > 100) {
+      console.log(`[PERF] Dashboard mounted: ${renderTime.toFixed(0)}ms`);
+    }
+  }, []);
 
   // Fetch display name from profile with real-time subscription
   useEffect(() => {

@@ -7,7 +7,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.analyze-physique]
-verify_jwt = true
+verify_jwt = false
 
 [functions.check-subscription]
 verify_jwt = true
@@ -28,7 +28,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.food-photo-ai]
-verify_jwt = true
+verify_jwt = false
 
 [functions.food-photo-ai-test]
 verify_jwt = false

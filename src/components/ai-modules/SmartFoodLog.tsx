@@ -21,6 +21,7 @@ import { useGlobalState } from '@/contexts/GlobalStateContext';
 import { handleAsync } from '@/utils/errorHandler';
 import { useAppSync } from '@/utils/appSynchronization';
 import { triggerHapticFeedback } from '@/hooks/useOptimisticUpdate';
+import { compressImage, HIGH_QUALITY_OPTIONS } from '@/utils/imageCompression';
 
 interface FoodEntry {
   id: string;
@@ -327,49 +328,21 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     }
   };
 
-  const compressImage = (file: File, maxSizeMB: number = 2): Promise<string> => {
+  // High-quality image compression for AI analysis
+  const compressAndConvertToBase64 = async (file: File): Promise<string> => {
+    // Use shared high-quality compression settings for better OCR
+    const compressedFile = await compressImage(file, {
+      ...HIGH_QUALITY_OPTIONS,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      quality: 0.92,
+    });
+    
     return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions (max 1024px)
-        let { width, height } = img;
-        const maxSize = 1024;
-        
-        if (width > height && width > maxSize) {
-          height = (height * maxSize) / width;
-          width = maxSize;
-        } else if (height > maxSize) {
-          width = (width * maxSize) / height;
-          height = maxSize;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Try different quality levels until under size limit
-        let quality = 0.8;
-        const tryCompress = () => {
-          const base64 = canvas.toDataURL('image/jpeg', quality);
-          const sizeInMB = (base64.length * 0.75) / (1024 * 1024);
-          
-          if (sizeInMB <= maxSizeMB || quality <= 0.1) {
-            resolve(base64);
-          } else {
-            quality -= 0.1;
-            tryCompress();
-          }
-        };
-        
-        tryCompress();
-      };
-      
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(compressedFile);
     });
   };
 
@@ -380,9 +353,10 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     setSearchError(null);
     
     try {
-      // Compress image if needed
-      const base64Image = await compressImage(selectedPhoto, 2);
-      
+      // Compress with high-quality settings for better AI analysis
+      console.log('[SmartFoodLog] Compressing image...');
+      const base64Image = await compressAndConvertToBase64(selectedPhoto);
+      console.log('[SmartFoodLog] Image compressed, size:', Math.round(base64Image.length / 1024), 'KB');
       const { data, error } = await supabase.functions.invoke('food-photo-ai', {
         body: {
           image: base64Image,

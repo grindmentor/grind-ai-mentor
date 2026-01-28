@@ -577,7 +577,7 @@ const RealGoalsAchievements = () => {
                             <div className="flex items-center justify-between mt-3 text-[10px] text-muted-foreground">
                               <span className="flex items-center">
                                 <Calendar className="w-3 h-3 mr-1" />
-                                Due: {new Date(goal.deadline).toLocaleDateString()}
+                                {goal.deadline ? `Due: ${new Date(goal.deadline).toLocaleDateString()}` : 'No deadline'}
                               </span>
                               <Badge variant="outline" className={cn(
                                 "text-[10px]",

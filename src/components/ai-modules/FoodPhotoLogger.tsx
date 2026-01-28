@@ -170,22 +170,6 @@ const FoodPhotoLogger = ({ onBack, onFoodLogged }: FoodPhotoLoggerProps) => {
     });
   };
 
-  const extractNutrientValue = (text: string, nutrient: string): number | null => {
-    const patterns = [
-      new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)`, 'i'),
-      new RegExp(`([0-9]+(?:\\.[0-9]+)?)\\s*g?\\s*${nutrient}`, 'i'),
-      new RegExp(`${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)\\s*g`, 'i'),
-      new RegExp(`total\\s+${nutrient}[:\\s]*([0-9]+(?:\\.[0-9]+)?)`, 'i')
-    ];
-
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        return parseFloat(match[1]);
-      }
-    }
-    return null;
-  };
 
   const features = [
     {

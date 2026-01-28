@@ -1,4 +1,4 @@
-const CURRENT_VERSION = 'v8';
+const CURRENT_VERSION = 'v9';
 
 const CACHE_NAME = `myotopia-${CURRENT_VERSION}-offline`;
 const STATIC_CACHE = `myotopia-static-${CURRENT_VERSION}`;
@@ -319,9 +319,10 @@ async function handleAPIRequestFast(request) {
 async function handleNavigationFast(request) {
   try {
     // Try network first for navigation (fresher content)
+    // Increased timeout to 8 seconds to avoid false offline errors
     const networkResponse = await Promise.race([
       fetch(request),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), 3000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), 8000))
     ]);
     
     // Cache successful navigation responses
@@ -331,12 +332,13 @@ async function handleNavigationFast(request) {
     }
     return networkResponse;
   } catch (error) {
+    console.log('[SW] Navigation fetch failed, using cache:', error.message);
     // Try cached version first
     const cache = await caches.open(STATIC_CACHE);
     const cachedResponse = await cache.match(request);
     if (cachedResponse) return cachedResponse;
     
-    // Fallback to app shell
+    // Fallback to app shell - most SPA navigations should work from here
     const appShell = await cache.match('/');
     if (appShell) return appShell;
     

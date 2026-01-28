@@ -262,11 +262,6 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
       return;
     }
 
-    if (!deadline) {
-      toast.error('Please select a deadline for your goal');
-      return;
-    }
-
     setLoading(true);
     try {
       const goalData = {
@@ -277,7 +272,7 @@ export const GoalCreationModal = ({ isOpen, onClose, onGoalCreated, editingGoal 
         current_value: parseFloat(formData.current_value) || 0,
         unit: formData.unit,
         category: formData.category,
-        deadline: deadline.toISOString(),
+        deadline: deadline ? deadline.toISOString() : null,
         status: 'active',
         goal_type: formData.goal_type,
         frequency: formData.frequency,

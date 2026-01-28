@@ -223,7 +223,18 @@ Deno.serve(async (req) => {
       return errorResponse(403, 'Upgrade to premium to unlock physique analysis', 'PREMIUM_REQUIRED', false);
     }
 
-    // Check weekly limit
+    // Check for unlimited_usage role (test users bypass weekly limit)
+    const { data: unlimitedRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'unlimited_usage')
+      .maybeSingle();
+    
+    const hasUnlimitedUsage = !!unlimitedRole;
+    console.log(`[PHYSIQUE-AI] Unlimited usage: ${hasUnlimitedUsage}`);
+
+    // Check weekly limit (skip for unlimited_usage users)
     const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usage } = await supabase
       .from('user_usage')
@@ -232,7 +243,7 @@ Deno.serve(async (req) => {
       .eq('month_year', currentMonth)
       .maybeSingle();
 
-    if (usage?.last_physique_analysis) {
+    if (!hasUnlimitedUsage && usage?.last_physique_analysis) {
       const lastAnalysis = new Date(usage.last_physique_analysis);
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);

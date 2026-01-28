@@ -1,5 +1,5 @@
-// Minimal performance tracking
-const appStart = performance.now();
+// Performance instrumentation
+import { perfMetrics } from '@/utils/performanceMetrics';
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -44,6 +44,13 @@ root.render(
   </StrictMode>,
 );
 
+// Mark app ready after first render
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    perfMetrics.markAppReady();
+  });
+});
+
 // Post-render optimizations (non-blocking)
 if ('requestIdleCallback' in window) {
   requestIdleCallback(() => {
@@ -59,10 +66,10 @@ if ('requestIdleCallback' in window) {
   }, 100);
 }
 
-// Log performance in development
+// Development performance logging
 if (import.meta.env.DEV) {
-  window.addEventListener('load', () => {
-    const loadTime = performance.now() - appStart;
-    console.log(`App ready in ${loadTime.toFixed(0)}ms`);
-  });
+  // Print performance report after 10 seconds
+  setTimeout(() => {
+    perfMetrics.printReport();
+  }, 10000);
 }

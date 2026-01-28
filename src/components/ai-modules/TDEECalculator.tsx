@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { RateLimitBadge } from '@/components/ui/rate-limit-badge';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { perfMetrics } from '@/utils/performanceMetrics';
 
 interface TDEECalculatorProps {
   onBack?: () => void;
@@ -27,6 +28,15 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   const [activityLevel, setActivityLevel] = useState('sedentary');
   const [tdee, setTDEE] = useState<number | null>(null);
   const [bmr, setBMR] = useState<number | null>(null);
+  const mountTime = useRef(performance.now());
+  
+  // Track component mount performance
+  useEffect(() => {
+    const renderTime = performance.now() - mountTime.current;
+    if (renderTime > 50) {
+      console.log(`[PERF] TDEECalculator mounted: ${renderTime.toFixed(0)}ms`);
+    }
+  }, []);
 
   const activityMultipliers: Record<string, number> = {
     sedentary: 1.2,
@@ -67,6 +77,8 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
   };
 
   const calculateTDEE = () => {
+    perfMetrics.startMeasure('api:tdee-calculation');
+    
     // Validate all required fields
     const ageStr = age?.trim() || '';
     const weightStr = weight?.trim() || '';
@@ -74,6 +86,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     
     if (!ageStr || !weightStr || !heightStr) {
       console.log('[TDEE] Missing required fields:', { age: ageStr, weight: weightStr, height: heightStr });
+      perfMetrics.endMeasure('api:tdee-calculation');
       return;
     }
 
@@ -85,6 +98,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     if (isNaN(parsedAge) || isNaN(parsedWeight) || isNaN(parsedHeight) ||
         parsedAge <= 0 || parsedWeight <= 0 || parsedHeight <= 0) {
       console.log('[TDEE] Invalid parsed values:', { parsedAge, parsedWeight, parsedHeight });
+      perfMetrics.endMeasure('api:tdee-calculation');
       return;
     }
 
@@ -109,6 +123,7 @@ const TDEECalculator = ({ onBack }: TDEECalculatorProps) => {
     const calculatedTDEE = bmrValue * activityMultipliers[activityLevel];
     
     console.log('[TDEE] Results:', { bmrValue, calculatedTDEE });
+    perfMetrics.endMeasure('api:tdee-calculation');
     
     // Set results - use functional updates to ensure state changes
     setBMR(Math.round(bmrValue * 10) / 10);

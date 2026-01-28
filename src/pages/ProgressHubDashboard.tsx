@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useModuleNavigation } from '@/hooks/useModuleNavigation';
+import { perfMetrics } from '@/utils/performanceMetrics';
 
 interface DashboardStats {
   totalWorkouts: number;
@@ -75,7 +76,7 @@ const ProgressHubDashboard = () => {
     return () => clearTimeout(safetyTimeout);
   }, [user, authLoading]);
 
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
       return;
@@ -83,8 +84,7 @@ const ProgressHubDashboard = () => {
 
     try {
       setIsLoading(true);
-
-      // Run queries in parallel for better performance
+      perfMetrics.startMeasure('api:progress-hub-stats');
       const [workoutsResult, progressEntriesResult, foodResult, recoveryResult] = await Promise.all([
         supabase
           .from('workout_sessions')
@@ -181,9 +181,10 @@ const ProgressHubDashboard = () => {
       console.error('Error loading dashboard stats:', error);
       setLoadError('Failed to load some stats. Pull to refresh.');
     } finally {
+      perfMetrics.endMeasure('api:progress-hub-stats');
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   const quickActions = useMemo(() => [
     {

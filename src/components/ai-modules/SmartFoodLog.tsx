@@ -57,6 +57,8 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [portionSize, setPortionSize] = useState('100');
   const [searchError, setSearchError] = useState<string | null>(null);
   const [noResultsMessage, setNoResultsMessage] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any[] | null>(null);
+  const [pendingAnalysis, setPendingAnalysis] = useState<any | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -401,31 +403,20 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
         return;
       }
 
-      // Process detected foods
-      const entries = analysis.foodsDetected.map((food: any) => ({
-        user_id: user.id,
-        food_name: `📸 ${food.name}`,
-        portion_size: food.quantity || '1 serving',
-        meal_type: mealType,
-        logged_date: selectedDate,
+      // Store analysis result for display - don't auto-save yet
+      const detectedFoods = analysis.foodsDetected.map((food: any) => ({
+        name: food.name,
+        quantity: food.quantity || '1 serving',
         calories: Math.round(food.calories || 0),
         protein: Math.round((food.protein || 0) * 10) / 10,
         carbs: Math.round((food.carbs || 0) * 10) / 10,
         fat: Math.round((food.fat || 0) * 10) / 10,
         fiber: Math.round((food.fiber || 0) * 10) / 10,
       }));
-
-      const { data: savedEntries, error: saveError } = await supabase
-        .from('food_log_entries')
-        .insert(entries)
-        .select();
-
-      if (saveError) throw saveError;
-
-      setFoodEntries(prev => [...prev, ...savedEntries]);
-      setSelectedPhoto(null);
       
-      toast.success(`Added ${entries.length} foods to your log 📸`);
+      setAnalysisResult(detectedFoods);
+      setPendingAnalysis({ foods: detectedFoods, confidence: analysis.confidence });
+      toast.success(`Detected ${detectedFoods.length} items! Review and confirm below.`);
       
     } catch (error) {
       console.error('Photo analysis error:', error);
@@ -441,6 +432,52 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const confirmAnalysisResults = async () => {
+    if (!pendingAnalysis || !user) return;
+    
+    const entries = pendingAnalysis.foods.map((food: any) => ({
+      user_id: user.id,
+      food_name: `📸 ${food.name}`,
+      portion_size: food.quantity,
+      meal_type: mealType,
+      logged_date: selectedDate,
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+      fiber: food.fiber,
+    }));
+
+    try {
+      const { data: savedEntries, error: saveError } = await supabase
+        .from('food_log_entries')
+        .insert(entries)
+        .select();
+
+      if (saveError) throw saveError;
+
+      setFoodEntries(prev => [...prev, ...savedEntries]);
+      setSelectedPhoto(null);
+      setAnalysisResult(null);
+      setPendingAnalysis(null);
+      
+      toast.success(`Added ${entries.length} foods to your log 📸`);
+      
+      // Invalidate related caches
+      invalidateCache(`food-log-${user.id}`);
+      emit('nutrition:updated', user.id);
+    } catch (error) {
+      console.error('Error saving analyzed foods:', error);
+      toast.error('Failed to save foods');
+    }
+  };
+
+  const dismissAnalysisResults = () => {
+    setAnalysisResult(null);
+    setPendingAnalysis(null);
+    setSelectedPhoto(null);
   };
 
   const getTotalNutrition = () => {
@@ -741,6 +778,70 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
             )}
           </CardContent>
         </Card>
+
+        {/* Analysis Results Display */}
+        {analysisResult && analysisResult.length > 0 && (
+          <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30 mb-4">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-green-400" />
+                  <span className="font-semibold text-foreground text-sm">
+                    Detected Foods ({analysisResult.length})
+                  </span>
+                </div>
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">
+                  Ready to add
+                </Badge>
+              </div>
+              
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {analysisResult.map((food, idx) => (
+                  <div 
+                    key={idx} 
+                    className="p-3 bg-background/60 rounded-xl border border-border/50"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-foreground text-sm truncate">
+                          📸 {food.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {food.quantity}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <div className="font-semibold text-foreground text-sm">
+                          {food.calories} cal
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          P: {food.protein}g • C: {food.carbs}g • F: {food.fat}g
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={dismissAnalysisResults}
+                  variant="outline"
+                  className="flex-1 h-11 rounded-xl border-border"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmAnalysisResults}
+                  className="flex-1 h-11 bg-green-600 hover:bg-green-700 rounded-xl"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add All to Log
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Food Entries List */}
         <div className="space-y-2">

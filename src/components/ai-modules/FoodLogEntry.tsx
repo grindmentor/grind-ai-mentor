@@ -166,8 +166,8 @@ const FoodLogEntry = ({ entry, onDelete, onRestore }: FoodLogEntryProps) => {
                 }}
                 disabled={isDeleting}
                 variant="ghost"
-                size="sm"
-                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 hidden sm:flex"
+                size="icon"
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>

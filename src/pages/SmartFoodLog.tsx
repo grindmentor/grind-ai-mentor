@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { AppShell } from '@/components/ui/app-shell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import FoodEntryModal from '@/components/ai-modules/FoodEntryModal';
 
 interface FoodItem {
   id: string;
@@ -118,6 +119,7 @@ const SmartFoodLog = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showAddFoodModal, setShowAddFoodModal] = useState(false);
 
   const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -379,7 +381,53 @@ const SmartFoodLog = () => {
     }
   };
 
-  // Confirm and save all pending foods
+  // Add manually entered food to pending list
+  const handleAddManualFood = (foodData: {
+    food_name: string;
+    portion_size: string;
+    meal_type: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+  }) => {
+    const newFood: DetectedFood = {
+      name: foodData.food_name.replace('📝 ', ''), // Remove emoji if present
+      quantity: foodData.portion_size,
+      grams: parseInt(foodData.portion_size) || 100,
+      calories: foodData.calories,
+      protein: foodData.protein,
+      carbs: foodData.carbs,
+      fat: foodData.fat,
+      fiber: foodData.fiber,
+      confidence: 'high', // Manual entry = high confidence
+      originalGrams: parseInt(foodData.portion_size) || 100,
+      originalCalories: foodData.calories,
+      originalProtein: foodData.protein,
+      originalCarbs: foodData.carbs,
+      originalFat: foodData.fat,
+      originalFiber: foodData.fiber,
+    };
+
+    if (pendingAnalysis) {
+      // Add to existing pending analysis
+      setPendingAnalysis({
+        ...pendingAnalysis,
+        foods: [...pendingAnalysis.foods, newFood]
+      });
+    } else {
+      // Create new pending analysis with just this food
+      setPendingAnalysis({
+        foods: [newFood],
+        confidence: 'high'
+      });
+    }
+
+    setShowAddFoodModal(false);
+    toast.success('Food added to pending list');
+  };
+
   const confirmAndSaveAll = async () => {
     if (!pendingAnalysis || !user) return;
     
@@ -892,32 +940,44 @@ const SmartFoodLog = () => {
                             )}
 
                             {/* Action Buttons */}
-                            <div className="p-4 border-t border-border/50 flex gap-3">
-                              <Button
-                                onClick={confirmAndSaveAll}
-                                disabled={isSaving || pendingAnalysis.foods.length === 0}
-                                className="flex-1 bg-gradient-to-r from-green-500 to-orange-500 hover:from-green-600 hover:to-orange-600"
-                              >
-                                {isSaving ? (
-                                  <>
-                                    <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                                    Saving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Check className="h-4 w-4 mr-2" />
-                                    Add to Log
-                                  </>
-                                )}
-                              </Button>
+                            <div className="p-4 border-t border-border/50 space-y-3">
+                              {/* Add missing food button */}
                               <Button
                                 variant="outline"
-                                onClick={dismissAnalysis}
-                                disabled={isSaving}
+                                onClick={() => setShowAddFoodModal(true)}
+                                className="w-full border-dashed border-green-500/50 text-green-400 hover:bg-green-500/10"
                               >
-                                <X className="h-4 w-4 mr-2" />
-                                Cancel
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Missing Food
                               </Button>
+                              
+                              <div className="flex gap-3">
+                                <Button
+                                  onClick={confirmAndSaveAll}
+                                  disabled={isSaving || pendingAnalysis.foods.length === 0}
+                                  className="flex-1 bg-gradient-to-r from-green-500 to-orange-500 hover:from-green-600 hover:to-orange-600"
+                                >
+                                  {isSaving ? (
+                                    <>
+                                      <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                                      Saving...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-4 w-4 mr-2" />
+                                      Add to Log
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={dismissAnalysis}
+                                  disabled={isSaving}
+                                >
+                                  <X className="h-4 w-4 mr-2" />
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </CollapsibleContent>
@@ -1150,6 +1210,14 @@ const SmartFoodLog = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal for adding missing food */}
+      <FoodEntryModal
+        isOpen={showAddFoodModal}
+        onClose={() => setShowAddFoodModal(false)}
+        onAddFood={handleAddManualFood}
+        mealType={selectedMealType}
+      />
     </AppShell>
   );
 };

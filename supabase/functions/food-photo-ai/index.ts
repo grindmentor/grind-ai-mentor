@@ -338,9 +338,9 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
 - Restaurants typically serve 1.5-2× standard portions - adjust accordingly
 - ALWAYS provide totalNutrition as sum of all detected items`;
 
-    // Try with primary model first
-    const models = ['google/gemini-2.5-pro', 'google/gemini-2.5-flash'];
-    let response: Response | null = null;
+    // Try models in order - includes fallback for finish_reason: error
+    const models = ['google/gemini-3-flash-preview', 'google/gemini-2.5-pro', 'google/gemini-2.5-flash'];
+    let successfulData: any = null;
     let lastModelError: string | null = null;
 
     for (const model of models) {
@@ -364,7 +364,7 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
       };
 
       try {
-        response = await fetchWithRetry(
+        const response = await fetchWithRetry(
           'https://ai.gateway.lovable.dev/v1/chat/completions',
           {
             method: 'POST',
@@ -376,62 +376,53 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
           }
         );
 
-        if (response.ok) {
-          console.log(`[FOOD-PHOTO-AI] Success with model: ${model}`);
-          break;
-        } else {
-          lastModelError = await response.text();
-          console.warn(`[FOOD-PHOTO-AI] Model ${model} failed:`, response.status, lastModelError);
-          response = null; // Reset to try next model
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.warn(`[FOOD-PHOTO-AI] Model ${model} HTTP failed:`, response.status, errorText);
+          lastModelError = `HTTP ${response.status}: ${errorText}`;
+          
+          // Handle fatal errors - don't retry
+          if (response.status === 429) {
+            return errorResponse(429, 'Rate limit exceeded, please try again later', 'RATE_LIMITED', true, 429);
+          }
+          if (response.status === 402) {
+            return errorResponse(402, 'AI credits exhausted', 'CREDITS_EXHAUSTED', false, 402);
+          }
+          continue; // Try next model
         }
+
+        const data = await response.json();
+        const finishReason = data.choices?.[0]?.finish_reason;
+        const hasToolCalls = !!data.choices?.[0]?.message?.tool_calls?.length;
+        
+        console.log(`[FOOD-PHOTO-AI] Model ${model} response:`, {
+          finishReason,
+          hasToolCalls,
+          hasContent: !!data.choices?.[0]?.message?.content
+        });
+
+        // Check if model returned an error or no tool calls
+        if (finishReason === 'error' || (!hasToolCalls && !data.choices?.[0]?.message?.content)) {
+          console.warn(`[FOOD-PHOTO-AI] Model ${model} returned error/empty, trying next...`);
+          lastModelError = `Model returned finish_reason: ${finishReason}, no usable output`;
+          continue; // Try next model
+        }
+
+        // Success - we have usable data
+        console.log(`[FOOD-PHOTO-AI] Success with model: ${model}`);
+        successfulData = data;
+        break;
+
       } catch (fetchErr) {
         console.error(`[FOOD-PHOTO-AI] Fetch failed for ${model}:`, fetchErr);
         lastModelError = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+        continue; // Try next model
       }
     }
 
-    if (!response) {
+    // All models failed
+    if (!successfulData) {
       console.error('[FOOD-PHOTO-AI] All models failed:', lastModelError);
-      return errorResponse(503, 'AI gateway unreachable. Please try again.', 'GATEWAY_UNREACHABLE', true);
-    }
-
-    console.log('[FOOD-PHOTO-AI] AI gateway response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[FOOD-PHOTO-AI] AI gateway error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return errorResponse(429, 'Rate limit exceeded, please try again later', 'RATE_LIMITED', true, 429);
-      }
-      if (response.status === 402) {
-        return errorResponse(402, 'AI credits exhausted', 'CREDITS_EXHAUSTED', false, 402);
-      }
-      if (response.status >= 500) {
-        return errorResponse(503, 'AI service temporarily unavailable', 'GATEWAY_ERROR', true, response.status);
-      }
-      return errorResponse(500, 'AI analysis failed', 'AI_FAILED', true, response.status);
-    }
-
-    const data = await response.json();
-    console.log('[FOOD-PHOTO-AI] AI response received');
-    
-    // Debug: log response structure
-    const finishReason = data.choices?.[0]?.finish_reason;
-    console.log('[FOOD-PHOTO-AI] Response structure:', {
-      hasChoices: !!data.choices,
-      choicesLength: data.choices?.length,
-      hasMessage: !!data.choices?.[0]?.message,
-      hasToolCalls: !!data.choices?.[0]?.message?.tool_calls,
-      toolCallsLength: data.choices?.[0]?.message?.tool_calls?.length,
-      hasContent: !!data.choices?.[0]?.message?.content,
-      contentLength: data.choices?.[0]?.message?.content?.length,
-      finishReason
-    });
-
-    // CRITICAL: Check for AI error in finish_reason
-    if (finishReason === 'error') {
-      console.error('[FOOD-PHOTO-AI] AI returned error finish_reason');
       return errorResponse(
         422, 
         'Could not analyze this image. Try a clearer photo or add foods manually.', 
@@ -443,7 +434,7 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
     // Extract from tool call response
     let analysis: any = null;
     
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    const toolCall = successfulData.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       try {
         analysis = JSON.parse(toolCall.function.arguments);
@@ -456,9 +447,8 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
       console.log('[FOOD-PHOTO-AI] No tool_calls found in response');
     }
 
-    // Fallback: try parsing from content if tool call failed
     if (!analysis) {
-      const content = data.choices?.[0]?.message?.content || '';
+      const content = successfulData.choices?.[0]?.message?.content || '';
       console.log('[FOOD-PHOTO-AI] Fallback: parsing from content, length:', content.length);
       
       // Try multiple JSON extraction patterns

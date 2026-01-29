@@ -727,8 +727,17 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
             />
             
             {selectedPhoto && (
-              <div className="space-y-2">
-                <div className="text-xs text-muted-foreground">
+              <div className="space-y-3">
+                {/* Image Preview - shows full image without cropping */}
+                <div className="relative w-full rounded-xl overflow-hidden border border-border/50 bg-muted/20">
+                  <img 
+                    src={URL.createObjectURL(selectedPhoto)}
+                    alt="Food preview"
+                    className="w-full max-h-64 object-contain"
+                    onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground text-center">
                   📸 {selectedPhoto.name} ({(selectedPhoto.size / 1024 / 1024).toFixed(2)} MB)
                 </div>
                 <Button

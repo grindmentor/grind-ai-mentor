@@ -13,7 +13,8 @@ import {
   Zap,
   Target,
   TrendingUp,
-  Calendar
+  Calendar,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -121,6 +122,32 @@ const SmartFoodLog = () => {
       { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
     );
     setDailyNutrition(totals);
+  };
+
+  const removeFoodEntry = async (entryId: string) => {
+    if (!user) return;
+
+    const previousEntries = dailyEntries;
+    const nextEntries = dailyEntries.filter(e => e.id !== entryId);
+
+    // Optimistic UI
+    setDailyEntries(nextEntries);
+    calculateDailyNutrition(nextEntries);
+
+    try {
+      const { error } = await supabase
+        .from('food_log_entries')
+        .delete()
+        .eq('id', entryId);
+
+      if (error) throw error;
+      toast.success('Food removed');
+    } catch (error) {
+      console.error('Error removing food entry:', error);
+      setDailyEntries(previousEntries);
+      calculateDailyNutrition(previousEntries);
+      toast.error('Failed to remove food');
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -715,9 +742,21 @@ const SmartFoodLog = () => {
                       <div key={entry.id} className="p-4 border rounded-lg bg-muted/30">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-semibold">{entry.food_name}</h3>
-                          <Badge variant="secondary">
-                            {entry.meal_type}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">
+                              {entry.meal_type}
+                            </Badge>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeFoodEntry(entry.id)}
+                              className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
+                              aria-label={`Remove ${entry.food_name}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
                           {entry.portion_size}

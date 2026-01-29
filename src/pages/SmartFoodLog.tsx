@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Camera, 
   Search, 
@@ -12,9 +13,13 @@ import {
   Utensils, 
   Zap,
   Target,
-  TrendingUp,
   Calendar,
-  Trash2
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  X,
+  Check
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +41,25 @@ interface FoodItem {
   logged_date: string;
 }
 
+interface DetectedFood {
+  name: string;
+  quantity: string;
+  grams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  confidence: string;
+  // Store original values for proportional recalculation
+  originalGrams: number;
+  originalCalories: number;
+  originalProtein: number;
+  originalCarbs: number;
+  originalFat: number;
+  originalFiber: number;
+}
+
 interface NutritionGoals {
   calories: number;
   protein: number;
@@ -49,6 +73,12 @@ interface DailyNutrition {
   carbs: number;
   fat: number;
   fiber: number;
+}
+
+interface PendingAnalysis {
+  foods: DetectedFood[];
+  confidence: string;
+  notes?: string;
 }
 
 const SmartFoodLog = () => {
@@ -82,6 +112,12 @@ const SmartFoodLog = () => {
     carbs: 250,
     fat: 67
   });
+
+  // NEW: Pending analysis state for preview/confirm flow
+  const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -123,6 +159,21 @@ const SmartFoodLog = () => {
     );
     setDailyNutrition(totals);
   };
+
+  // Calculate pending analysis totals
+  const pendingTotals = useMemo(() => {
+    if (!pendingAnalysis) return null;
+    return pendingAnalysis.foods.reduce(
+      (acc, food) => ({
+        calories: acc.calories + food.calories,
+        protein: acc.protein + food.protein,
+        carbs: acc.carbs + food.carbs,
+        fat: acc.fat + food.fat,
+        fiber: acc.fiber + food.fiber
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+    );
+  }, [pendingAnalysis]);
 
   const removeFoodEntry = async (entryId: string) => {
     if (!user) return;
@@ -167,21 +218,46 @@ const SmartFoodLog = () => {
     setSelectedFile(file);
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+    // Clear any previous analysis
+    setPendingAnalysis(null);
+    setAnalysisError(null);
+  };
+
+  // Parse grams from quantity string (e.g., "150g", "1 cup (240g)", "2 slices")
+  const parseGramsFromQuantity = (quantity: string): number => {
+    // Try to find grams in parentheses or as suffix
+    const gramsMatch = quantity.match(/(\d+(?:\.\d+)?)\s*g(?:rams?)?/i);
+    if (gramsMatch) return parseFloat(gramsMatch[1]);
+    
+    // Common serving estimates
+    const lowerQ = quantity.toLowerCase();
+    if (lowerQ.includes('cup')) return 240;
+    if (lowerQ.includes('slice')) return 30;
+    if (lowerQ.includes('piece')) return 50;
+    if (lowerQ.includes('tbsp') || lowerQ.includes('tablespoon')) return 15;
+    if (lowerQ.includes('tsp') || lowerQ.includes('teaspoon')) return 5;
+    if (lowerQ.includes('oz')) {
+      const ozMatch = quantity.match(/(\d+(?:\.\d+)?)\s*oz/i);
+      if (ozMatch) return parseFloat(ozMatch[1]) * 28.35;
+    }
+    
+    // Default to 100g for "1 serving" or unknown
+    return 100;
   };
 
   const analyzeFood = async () => {
     if (!selectedFile || !user) return;
 
     setIsAnalyzing(true);
+    setAnalysisError(null);
+    setPendingAnalysis(null);
     
     try {
-      // Convert image to base64
       const reader = new FileReader();
       reader.onload = async () => {
         try {
           const base64 = reader.result as string;
           
-          // Call AI analysis function
           const { data: analysisData, error: analysisError } = await supabase.functions.invoke('food-photo-ai', {
             body: { 
               image: base64,
@@ -196,6 +272,12 @@ const SmartFoodLog = () => {
           
           // Check for error in response (403 premium required, 429 rate limit, etc.)
           if (analysisData?.error) {
+            // Handle specific error codes
+            if (analysisData.error_code === 'ANALYSIS_FAILED' || analysisData.error_code === 'AI_FAILED') {
+              setAnalysisError(analysisData.error);
+              setIsAnalyzing(false);
+              return;
+            }
             toast.error(analysisData.error);
             setIsAnalyzing(false);
             return;
@@ -205,41 +287,46 @@ const SmartFoodLog = () => {
           const foodsDetected = analysisData?.foodsDetected || [];
           
           if (foodsDetected.length === 0) {
-            toast.error('No food detected. Try a clearer photo or add manually.');
+            setAnalysisError('Could not detect any foods in this photo. Try a clearer image or add foods manually.');
             setIsAnalyzing(false);
             return;
           }
 
-          // Add each detected food to entries
-          for (const food of foodsDetected) {
-            const foodEntry = {
-              user_id: user.id,
-              food_name: `📸 ${food.name}`,
+          // Transform to DetectedFood with editable grams
+          const detectedFoods: DetectedFood[] = foodsDetected.map((food: any) => {
+            const grams = parseGramsFromQuantity(food.quantity || '100g');
+            return {
+              name: food.name,
+              quantity: food.quantity || '1 serving',
+              grams: Math.round(grams),
               calories: Math.round(food.calories || 0),
               protein: Math.round((food.protein || 0) * 10) / 10,
               carbs: Math.round((food.carbs || 0) * 10) / 10,
               fat: Math.round((food.fat || 0) * 10) / 10,
               fiber: Math.round((food.fiber || 0) * 10) / 10,
-              portion_size: food.quantity || '1 serving',
-              meal_type: selectedMealType,
-              logged_date: new Date().toISOString().split('T')[0]
+              confidence: food.confidence || 'medium',
+              // Store originals for proportional recalculation
+              originalGrams: Math.round(grams),
+              originalCalories: Math.round(food.calories || 0),
+              originalProtein: Math.round((food.protein || 0) * 10) / 10,
+              originalCarbs: Math.round((food.carbs || 0) * 10) / 10,
+              originalFat: Math.round((food.fat || 0) * 10) / 10,
+              originalFiber: Math.round((food.fiber || 0) * 10) / 10
             };
+          });
 
-            const { error: dbError } = await supabase
-              .from('food_log_entries')
-              .insert(foodEntry);
-
-            if (dbError) throw dbError;
-          }
-
-          toast.success(`Added ${foodsDetected.length} food(s) to your log! 📸`);
-          loadTodayEntries();
-          setSelectedFile(null);
-          setPreviewUrl(null);
+          // Set pending analysis for user review
+          setPendingAnalysis({
+            foods: detectedFoods,
+            confidence: analysisData?.confidence || 'medium',
+            notes: analysisData?.notes
+          });
+          setIsExpanded(true);
+          
         } catch (err) {
           console.error('Analysis error:', err);
-          const message = err instanceof Error ? err.message : 'Failed to analyze food. Please try again.';
-          toast.error(message);
+          const message = err instanceof Error ? err.message : 'Failed to analyze food';
+          setAnalysisError(message);
         } finally {
           setIsAnalyzing(false);
         }
@@ -248,9 +335,103 @@ const SmartFoodLog = () => {
       reader.readAsDataURL(selectedFile);
     } catch (error) {
       console.error('Analysis error:', error);
-      toast.error('Failed to analyze food. Please try again.');
+      setAnalysisError('Failed to analyze food. Please try again.');
       setIsAnalyzing(false);
     }
+  };
+
+  // Update grams and recalculate macros proportionally
+  const updateIngredientGrams = (index: number, newGrams: number) => {
+    if (!pendingAnalysis) return;
+    
+    const updatedFoods = [...pendingAnalysis.foods];
+    const food = updatedFoods[index];
+    
+    if (food.originalGrams === 0) return;
+    
+    const ratio = newGrams / food.originalGrams;
+    
+    updatedFoods[index] = {
+      ...food,
+      grams: newGrams,
+      calories: Math.round(food.originalCalories * ratio),
+      protein: Math.round(food.originalProtein * ratio * 10) / 10,
+      carbs: Math.round(food.originalCarbs * ratio * 10) / 10,
+      fat: Math.round(food.originalFat * ratio * 10) / 10,
+      fiber: Math.round(food.originalFiber * ratio * 10) / 10
+    };
+    
+    setPendingAnalysis({ ...pendingAnalysis, foods: updatedFoods });
+  };
+
+  // Remove ingredient from pending list
+  const removeIngredient = (index: number) => {
+    if (!pendingAnalysis) return;
+    
+    const updatedFoods = pendingAnalysis.foods.filter((_, i) => i !== index);
+    
+    if (updatedFoods.length === 0) {
+      // All items removed, clear analysis
+      setPendingAnalysis(null);
+      toast.info('All items removed. Upload another photo or add manually.');
+    } else {
+      setPendingAnalysis({ ...pendingAnalysis, foods: updatedFoods });
+    }
+  };
+
+  // Confirm and save all pending foods
+  const confirmAndSaveAll = async () => {
+    if (!pendingAnalysis || !user) return;
+    
+    setIsSaving(true);
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      for (const food of pendingAnalysis.foods) {
+        const foodEntry = {
+          user_id: user.id,
+          food_name: `📸 ${food.name}`,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          fiber: food.fiber,
+          portion_size: `${food.grams}g`,
+          meal_type: selectedMealType,
+          logged_date: today
+        };
+
+        const { error: dbError } = await supabase
+          .from('food_log_entries')
+          .insert(foodEntry);
+
+        if (dbError) throw dbError;
+      }
+
+      toast.success(`Added ${pendingAnalysis.foods.length} food(s) to your log! 📸`);
+      loadTodayEntries();
+      
+      // Clear state
+      setPendingAnalysis(null);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setAnalysisError(null);
+      
+    } catch (error) {
+      console.error('Error saving foods:', error);
+      toast.error('Failed to save foods. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Dismiss pending analysis without saving
+  const dismissAnalysis = () => {
+    setPendingAnalysis(null);
+    setAnalysisError(null);
+    setSelectedFile(null);
+    setPreviewUrl(null);
   };
 
   const addCustomFood = async () => {
@@ -304,7 +485,6 @@ const SmartFoodLog = () => {
 
       if (error) throw error;
 
-      // Format USDA foods
       const foods = data?.foods || [];
       const formatted = foods.map((food: any) => {
         const nutrients = food.foodNutrients || [];
@@ -384,7 +564,16 @@ const SmartFoodLog = () => {
       case 'protein': return 'text-blue-400';
       case 'carbs': return 'text-green-400';
       case 'fat': return 'text-yellow-400';
-      default: return 'text-gray-400';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const getConfidenceBadge = (confidence: string) => {
+    switch (confidence) {
+      case 'high': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">High</Badge>;
+      case 'medium': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Medium</Badge>;
+      case 'low': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Low</Badge>;
+      default: return null;
     }
   };
 
@@ -530,7 +719,7 @@ const SmartFoodLog = () => {
                         </label>
                       </div>
                       
-                      {selectedFile && (
+                      {selectedFile && !pendingAnalysis && !analysisError && (
                         <Button 
                           onClick={analyzeFood}
                           disabled={isAnalyzing}
@@ -551,17 +740,190 @@ const SmartFoodLog = () => {
                       )}
                     </div>
                     
+                    {/* Image Preview - FIXED: object-contain instead of object-cover */}
                     {previewUrl && (
                       <div className="space-y-2">
                         <p className="font-medium">Preview</p>
-                        <img 
-                          src={previewUrl} 
-                          alt="Food preview" 
-                          className="w-full h-64 object-cover rounded-lg border border-green-500/20"
-                        />
+                        <div className="relative bg-muted/30 rounded-lg border border-green-500/20 overflow-hidden">
+                          <img 
+                            src={previewUrl} 
+                            alt="Food preview" 
+                            className="w-full max-h-72 object-contain mx-auto"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
+
+                  {/* Error State */}
+                  {analysisError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-destructive/10 border border-destructive/30 rounded-lg p-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 space-y-3">
+                          <p className="text-sm text-destructive font-medium">{analysisError}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setAnalysisError(null);
+                                setSelectedFile(null);
+                                setPreviewUrl(null);
+                                document.getElementById('food-photo-upload')?.click();
+                              }}
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              Try Another Photo
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setAnalysisError(null);
+                                setSelectedFile(null);
+                                setPreviewUrl(null);
+                                // Switch to manual tab
+                                const manualTab = document.querySelector('[data-state="inactive"][value="manual"]') as HTMLElement;
+                                manualTab?.click();
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Manually
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Pending Analysis Preview - Collapsible Meal Card */}
+                  {pendingAnalysis && pendingTotals && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="border border-green-500/30 rounded-lg overflow-hidden bg-card/50"
+                    >
+                      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-full bg-green-500/20">
+                                <Utensils className="h-5 w-5 text-green-400" />
+                              </div>
+                              <div className="text-left">
+                                <div className="font-semibold flex items-center gap-2">
+                                  Detected Meal
+                                  {getConfidenceBadge(pendingAnalysis.confidence)}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {pendingAnalysis.foods.length} item{pendingAnalysis.foods.length !== 1 ? 's' : ''} • 
+                                  {' '}{Math.round(pendingTotals.calories)} cal
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="hidden sm:flex gap-3 text-xs">
+                                <span className="text-blue-400">{Math.round(pendingTotals.protein)}g P</span>
+                                <span className="text-green-400">{Math.round(pendingTotals.carbs)}g C</span>
+                                <span className="text-yellow-400">{Math.round(pendingTotals.fat)}g F</span>
+                              </div>
+                              {isExpanded ? (
+                                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent>
+                          <div className="border-t border-border/50">
+                            {/* Ingredient List */}
+                            <div className="divide-y divide-border/50">
+                              {pendingAnalysis.foods.map((food, index) => (
+                                <div key={index} className="p-4 hover:bg-muted/20">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium truncate">{food.name}</div>
+                                      <div className="flex items-center gap-2 mt-2">
+                                        <Input
+                                          type="number"
+                                          value={food.grams}
+                                          onChange={(e) => updateIngredientGrams(index, parseInt(e.target.value) || 0)}
+                                          className="w-20 h-8 text-sm"
+                                          min={1}
+                                        />
+                                        <span className="text-sm text-muted-foreground">grams</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-right text-sm space-y-1">
+                                        <div className="font-medium text-orange-400">{food.calories} cal</div>
+                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                          <span className="text-blue-400">{food.protein}g P</span>
+                                          <span className="text-green-400">{food.carbs}g C</span>
+                                          <span className="text-yellow-400">{food.fat}g F</span>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeIngredient(index)}
+                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Notes from AI */}
+                            {pendingAnalysis.notes && (
+                              <div className="px-4 py-2 bg-muted/30 text-sm text-muted-foreground">
+                                <span className="font-medium">Note:</span> {pendingAnalysis.notes}
+                              </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="p-4 border-t border-border/50 flex gap-3">
+                              <Button
+                                onClick={confirmAndSaveAll}
+                                disabled={isSaving || pendingAnalysis.foods.length === 0}
+                                className="flex-1 bg-gradient-to-r from-green-500 to-orange-500 hover:from-green-600 hover:to-orange-600"
+                              >
+                                {isSaving ? (
+                                  <>
+                                    <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check className="h-4 w-4 mr-2" />
+                                    Add to Log
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={dismissAnalysis}
+                                disabled={isSaving}
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </motion.div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>

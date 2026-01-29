@@ -1,5 +1,5 @@
-// Food Photo AI Edge Function v2.1.0
-// Systematic scan methodology with structured tool-calling and retry logic
+// Food Photo AI Edge Function v2.2.0
+// Systematic scan methodology with structured tool-calling, retry logic, and proper error handling
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -7,7 +7,7 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const FUNCTION_VERSION = '2.1.0';
+const FUNCTION_VERSION = '2.2.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -112,7 +112,7 @@ const foodAnalysisTool = {
             type: "object",
             properties: {
               name: { type: "string", description: "Clear, specific food name" },
-              quantity: { type: "string", description: "Portion estimate with units" },
+              quantity: { type: "string", description: "Portion estimate with units (include grams, e.g., '150g' or '1 cup (240g)')" },
               calories: { type: "number", description: "Estimated calories" },
               protein: { type: "number", description: "Grams of protein" },
               carbs: { type: "number", description: "Grams of carbohydrates" },
@@ -292,13 +292,15 @@ VISUAL IDENTIFICATION:
 
 === PORTION SIZE REFERENCES ===
 Visual estimation guides:
-- 1 fist = ~1 cup cooked grains/pasta
-- 1 palm (thickness and size) = ~4 oz protein (chicken, fish, steak)
-- 1 thumb = ~1 tbsp (butter, oil, nut butter)
-- 1 cupped hand = ~1 oz nuts/chips
+- 1 fist = ~1 cup cooked grains/pasta (~240g)
+- 1 palm (thickness and size) = ~4 oz protein (~113g chicken, fish, steak)
+- 1 thumb = ~1 tbsp (butter, oil, nut butter) (~15g)
+- 1 cupped hand = ~1 oz nuts/chips (~28g)
 - Standard dinner plate = ~10 inches diameter
 - Restaurant plate = often 12-14 inches (portions 20-30% larger)
 - Salad bowl = typically 2-3 cups
+
+IMPORTANT: Always include grams in the quantity field, e.g., "150g", "1 cup (240g)", "4 oz (113g)"
 
 Common restaurant portion inflation:
 - Restaurant steak: Usually 8-12 oz (double home portion)
@@ -308,17 +310,17 @@ Common restaurant portion inflation:
 
 === NUTRITION REFERENCES ===
 Standard per-serving values:
-- 1 cup cooked white rice = 205 cal, 4g P, 45g C, 0g F
-- 1 cup cooked pasta = 220 cal, 8g P, 43g C, 1g F
-- 4 oz chicken breast (grilled) = 185 cal, 35g P, 0g C, 4g F
-- 4 oz salmon (grilled) = 233 cal, 25g P, 0g C, 14g F
-- 4 oz ribeye steak = 310 cal, 24g P, 0g C, 23g F
-- 1 cup steamed broccoli = 55 cal, 4g P, 11g C, 0g F
-- 1 cup mixed salad greens = 10 cal, 1g P, 2g C, 0g F
-- 2 tbsp ranch dressing = 145 cal, 0g P, 2g C, 15g F
-- 2 tbsp olive oil = 240 cal, 0g P, 0g C, 28g F
-- 1 medium egg = 72 cal, 6g P, 0g C, 5g F
-- 1 slice bread = 80 cal, 3g P, 15g C, 1g F
+- 1 cup cooked white rice (200g) = 205 cal, 4g P, 45g C, 0g F
+- 1 cup cooked pasta (200g) = 220 cal, 8g P, 43g C, 1g F
+- 4 oz chicken breast grilled (113g) = 185 cal, 35g P, 0g C, 4g F
+- 4 oz salmon grilled (113g) = 233 cal, 25g P, 0g C, 14g F
+- 4 oz ribeye steak (113g) = 310 cal, 24g P, 0g C, 23g F
+- 1 cup steamed broccoli (150g) = 55 cal, 4g P, 11g C, 0g F
+- 1 cup mixed salad greens (50g) = 10 cal, 1g P, 2g C, 0g F
+- 2 tbsp ranch dressing (30g) = 145 cal, 0g P, 2g C, 15g F
+- 2 tbsp olive oil (28g) = 240 cal, 0g P, 0g C, 28g F
+- 1 medium egg (50g) = 72 cal, 6g P, 0g C, 5g F
+- 1 slice bread (30g) = 80 cal, 3g P, 15g C, 1g F
 
 === MEAL CONTEXT ===
 ${mealType ? `Meal Type: ${mealType}` : ''}
@@ -328,47 +330,69 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
 - ALWAYS identify foods - NEVER refuse or say "unable to determine"
 - Be SPECIFIC: "Grilled Salmon Fillet" not "Fish", "Jasmine Rice" not "Rice"
 - Include ALL visible items: main dish + sides + drinks + sauces + garnishes
-- QUANTIFY everything: "2 slices", "1/2 cup", "3 tbsp" - never just "some"
+- QUANTIFY everything with GRAMS: "150g", "1 cup (240g)", never just "some"
 - When uncertain, provide CONSERVATIVE calorie estimate with "medium" confidence
-- Sauces/dressings: Default to 2 tbsp unless clearly more/less visible
+- Sauces/dressings: Default to 2 tbsp (30g) unless clearly more/less visible
 - Fried foods: Add 50-100 cal for oil absorption vs grilled equivalent
 - DO NOT round to convenient numbers - be precise (e.g., 347 cal, not 350)
 - Restaurants typically serve 1.5-2× standard portions - adjust accordingly
 - ALWAYS provide totalNutrition as sum of all detected items`;
 
-    const requestBody = {
-      model: 'google/gemini-2.5-pro',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: analyzePrompt },
-            { type: 'image_url', image_url: { url: image } }
-          ]
-        }
-      ],
-      tools: [foodAnalysisTool],
-      tool_choice: { type: "function", function: { name: "analyze_food" } },
-      max_tokens: 2500,
-      temperature: 0.1
-    };
+    // Try with primary model first
+    const models = ['google/gemini-2.5-pro', 'google/gemini-2.5-flash'];
+    let response: Response | null = null;
+    let lastModelError: string | null = null;
 
-    let response: Response;
-    try {
-      response = await fetchWithRetry(
-        'https://ai.gateway.lovable.dev/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
+    for (const model of models) {
+      console.log(`[FOOD-PHOTO-AI] Trying model: ${model}`);
+      
+      const requestBody = {
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: analyzePrompt },
+              { type: 'image_url', image_url: { url: image } }
+            ]
+          }
+        ],
+        tools: [foodAnalysisTool],
+        tool_choice: { type: "function", function: { name: "analyze_food" } },
+        max_tokens: 2500,
+        temperature: 0.1
+      };
+
+      try {
+        response = await fetchWithRetry(
+          'https://ai.gateway.lovable.dev/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+          }
+        );
+
+        if (response.ok) {
+          console.log(`[FOOD-PHOTO-AI] Success with model: ${model}`);
+          break;
+        } else {
+          lastModelError = await response.text();
+          console.warn(`[FOOD-PHOTO-AI] Model ${model} failed:`, response.status, lastModelError);
+          response = null; // Reset to try next model
         }
-      );
-    } catch (fetchErr) {
-      console.error('[FOOD-PHOTO-AI] Fetch failed after retries:', fetchErr);
-      return errorResponse(503, 'AI gateway unreachable', 'GATEWAY_UNREACHABLE', true);
+      } catch (fetchErr) {
+        console.error(`[FOOD-PHOTO-AI] Fetch failed for ${model}:`, fetchErr);
+        lastModelError = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+      }
+    }
+
+    if (!response) {
+      console.error('[FOOD-PHOTO-AI] All models failed:', lastModelError);
+      return errorResponse(503, 'AI gateway unreachable. Please try again.', 'GATEWAY_UNREACHABLE', true);
     }
 
     console.log('[FOOD-PHOTO-AI] AI gateway response status:', response.status);
@@ -393,6 +417,7 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
     console.log('[FOOD-PHOTO-AI] AI response received');
     
     // Debug: log response structure
+    const finishReason = data.choices?.[0]?.finish_reason;
     console.log('[FOOD-PHOTO-AI] Response structure:', {
       hasChoices: !!data.choices,
       choicesLength: data.choices?.length,
@@ -401,8 +426,19 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
       toolCallsLength: data.choices?.[0]?.message?.tool_calls?.length,
       hasContent: !!data.choices?.[0]?.message?.content,
       contentLength: data.choices?.[0]?.message?.content?.length,
-      finishReason: data.choices?.[0]?.finish_reason
+      finishReason
     });
+
+    // CRITICAL: Check for AI error in finish_reason
+    if (finishReason === 'error') {
+      console.error('[FOOD-PHOTO-AI] AI returned error finish_reason');
+      return errorResponse(
+        422, 
+        'Could not analyze this image. Try a clearer photo or add foods manually.', 
+        'ANALYSIS_FAILED', 
+        true
+      );
+    }
 
     // Extract from tool call response
     let analysis: any = null;
@@ -443,40 +479,24 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
       }
     }
 
-    // Default fallback if parsing completely failed
-    if (!analysis) {
-      console.log('[FOOD-PHOTO-AI] Using default fallback analysis');
-      analysis = {
-        confidence: 'low',
-        notes: 'Unable to fully analyze the image. Please try with a clearer photo.',
-        foodsDetected: [{
-          name: 'Unidentified food',
-          quantity: '1 serving',
-          calories: 200,
-          protein: 10,
-          carbs: 20,
-          fat: 10,
-          fiber: 2,
-          confidence: 'low'
-        }],
-        totalNutrition: {
-          calories: 200,
-          protein: 10,
-          carbs: 20,
-          fat: 10,
-          fiber: 2
-        }
-      };
+    // CRITICAL: If parsing completely failed, return error instead of fallback
+    if (!analysis || !analysis.foodsDetected || analysis.foodsDetected.length === 0) {
+      console.error('[FOOD-PHOTO-AI] No foods detected - returning error instead of fallback');
+      return errorResponse(
+        422, 
+        'Could not detect any foods in this photo. Try a clearer image with visible food, or add foods manually.', 
+        'ANALYSIS_FAILED', 
+        true
+      );
     }
 
     // Ensure required fields exist
     if (!analysis.confidence) analysis.confidence = 'medium';
-    if (!Array.isArray(analysis.foodsDetected)) analysis.foodsDetected = [];
     
     // Validate and sanitize food items
     analysis.foodsDetected = analysis.foodsDetected.map((food: any) => ({
       name: food.name || 'Unknown food',
-      quantity: food.quantity || '1 serving',
+      quantity: food.quantity || '100g',
       calories: Math.round(Number(food.calories) || 100),
       protein: Math.round((Number(food.protein) || 0) * 10) / 10,
       carbs: Math.round((Number(food.carbs) || 0) * 10) / 10,
@@ -508,7 +528,7 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
         onConflict: 'user_id,month_year'
       });
 
-    console.log(`[FOOD-PHOTO-AI] Analysis completed. Usage: ${currentUsage + 1}/${MONTHLY_LIMIT}`);
+    console.log(`[FOOD-PHOTO-AI] Analysis completed. ${analysis.foodsDetected.length} foods detected. Usage: ${currentUsage + 1}/${MONTHLY_LIMIT}`);
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

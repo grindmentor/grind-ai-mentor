@@ -53,6 +53,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [portionSize, setPortionSize] = useState('100');
@@ -60,6 +61,17 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
   const [noResultsMessage, setNoResultsMessage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any[] | null>(null);
   const [pendingAnalysis, setPendingAnalysis] = useState<any | null>(null);
+
+  // Create stable preview URL for selected photo
+  useEffect(() => {
+    if (selectedPhoto) {
+      const url = URL.createObjectURL(selectedPhoto);
+      setPhotoPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPhotoPreviewUrl(null);
+    }
+  }, [selectedPhoto]);
 
   useEffect(() => {
     if (user) {
@@ -721,110 +733,154 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setSelectedPhoto(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                setSelectedPhoto(e.target.files?.[0] || null);
+                // Reset analysis when new photo selected
+                setAnalysisResult(null);
+                setPendingAnalysis(null);
+              }}
               className="w-full text-sm bg-muted/30 border border-border rounded-xl p-2 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-primary file:text-primary-foreground"
               aria-label="Upload food photo"
             />
             
-            {selectedPhoto && (
+            {selectedPhoto && photoPreviewUrl && (
               <div className="space-y-3">
-                {/* Image Preview - shows full image without cropping */}
-                <div className="relative w-full rounded-xl overflow-hidden border border-border/50 bg-muted/20">
+                {/* Image Preview - uses stable URL, shows full image */}
+                <div className="relative w-full rounded-xl overflow-hidden border border-border/50 bg-black/20 flex items-center justify-center">
                   <img 
-                    src={URL.createObjectURL(selectedPhoto)}
+                    src={photoPreviewUrl}
                     alt="Food preview"
-                    className="w-full max-h-64 object-contain"
-                    onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                    className="max-w-full max-h-72 object-contain"
                   />
                 </div>
                 <div className="text-xs text-muted-foreground text-center">
                   📸 {selectedPhoto.name} ({(selectedPhoto.size / 1024 / 1024).toFixed(2)} MB)
                 </div>
-                <Button
-                  onClick={analyzePhotoIngredients}
-                  disabled={isAnalyzing}
-                  className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-xl"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-4 h-4 mr-2" />
-                      Analyze Photo
-                    </>
-                  )}
-                </Button>
+                
+                {/* Analysis Results - show macros/kcals right here on photo tab */}
+                {analysisResult && analysisResult.length > 0 ? (
+                  <div className="space-y-3 p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground text-sm">
+                          Detected Foods ({analysisResult.length})
+                        </span>
+                      </div>
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">
+                        Ready to add
+                      </Badge>
+                    </div>
+                    
+                    {/* Total Macros Summary */}
+                    <div className="grid grid-cols-5 gap-1 p-2 bg-background/50 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-foreground">
+                          {analysisResult.reduce((sum, f) => sum + (f.calories || 0), 0)}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">Cal</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-foreground">
+                          {analysisResult.reduce((sum, f) => sum + (f.protein || 0), 0).toFixed(0)}g
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">Protein</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-foreground">
+                          {analysisResult.reduce((sum, f) => sum + (f.carbs || 0), 0).toFixed(0)}g
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">Carbs</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-foreground">
+                          {analysisResult.reduce((sum, f) => sum + (f.fat || 0), 0).toFixed(0)}g
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">Fat</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-foreground">
+                          {analysisResult.reduce((sum, f) => sum + (f.fiber || 0), 0).toFixed(0)}g
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">Fiber</div>
+                      </div>
+                    </div>
+                    
+                    {/* Food Items List */}
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {analysisResult.map((food, idx) => (
+                        <div 
+                          key={idx} 
+                          className="p-2 bg-background/60 rounded-lg border border-border/50 flex justify-between items-center"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-foreground text-xs truncate">
+                              📸 {food.name}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {food.quantity} • {food.calories} cal
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setAnalysisResult(prev => prev?.filter((_, i) => i !== idx) || null);
+                              setPendingAnalysis((prev: any) => prev ? {
+                                ...prev,
+                                foods: prev.foods.filter((_: any, i: number) => i !== idx)
+                              } : null);
+                            }}
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                            aria-label={`Remove ${food.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        onClick={dismissAnalysisResults}
+                        variant="outline"
+                        className="flex-1 h-10 rounded-xl border-border text-sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={confirmAnalysisResults}
+                        className="flex-1 h-10 bg-green-600 hover:bg-green-700 rounded-xl text-sm"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add to Log
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={analyzePhotoIngredients}
+                    disabled={isAnalyzing}
+                    className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-xl"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-4 h-4 mr-2" />
+                        Analyze Photo
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Analysis Results Display */}
-        {analysisResult && analysisResult.length > 0 && (
-          <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30 mb-4">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-green-400" />
-                  <span className="font-semibold text-foreground text-sm">
-                    Detected Foods ({analysisResult.length})
-                  </span>
-                </div>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">
-                  Ready to add
-                </Badge>
-              </div>
-              
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {analysisResult.map((food, idx) => (
-                  <div 
-                    key={idx} 
-                    className="p-3 bg-background/60 rounded-xl border border-border/50"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-foreground text-sm truncate">
-                          📸 {food.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {food.quantity}
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0 ml-2">
-                        <div className="font-semibold text-foreground text-sm">
-                          {food.calories} cal
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          P: {food.protein}g • C: {food.carbs}g • F: {food.fat}g
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex gap-2 pt-2">
-                <Button
-                  onClick={dismissAnalysisResults}
-                  variant="outline"
-                  className="flex-1 h-11 rounded-xl border-border"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={confirmAnalysisResults}
-                  className="flex-1 h-11 bg-green-600 hover:bg-green-700 rounded-xl"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add All to Log
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Food Entries List */}
         <div className="space-y-2">
@@ -877,7 +933,7 @@ export const SmartFoodLog: React.FC<SmartFoodLogProps> = ({ onBack }) => {
                           e.stopPropagation();
                           removeFoodEntry(entry.id);
                         }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0 rounded-lg"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0 rounded-lg"
                         aria-label={`Remove ${entry.food_name}`}
                       >
                         <Trash2 className="w-4 h-4" />

@@ -391,6 +391,18 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
 
     const data = await response.json();
     console.log('[FOOD-PHOTO-AI] AI response received');
+    
+    // Debug: log response structure
+    console.log('[FOOD-PHOTO-AI] Response structure:', {
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length,
+      hasMessage: !!data.choices?.[0]?.message,
+      hasToolCalls: !!data.choices?.[0]?.message?.tool_calls,
+      toolCallsLength: data.choices?.[0]?.message?.tool_calls?.length,
+      hasContent: !!data.choices?.[0]?.message?.content,
+      contentLength: data.choices?.[0]?.message?.content?.length,
+      finishReason: data.choices?.[0]?.finish_reason
+    });
 
     // Extract from tool call response
     let analysis: any = null;
@@ -402,20 +414,32 @@ ${additionalNotes ? `User Notes: ${additionalNotes}` : ''}
         console.log('[FOOD-PHOTO-AI] Parsed from tool call:', analysis.foodsDetected?.length, 'items');
       } catch (e) {
         console.error('[FOOD-PHOTO-AI] Tool call parse error:', e);
+        console.error('[FOOD-PHOTO-AI] Tool call raw:', toolCall.function.arguments?.substring(0, 500));
       }
+    } else {
+      console.log('[FOOD-PHOTO-AI] No tool_calls found in response');
     }
 
     // Fallback: try parsing from content if tool call failed
     if (!analysis) {
       const content = data.choices?.[0]?.message?.content || '';
-      console.log('[FOOD-PHOTO-AI] Fallback: parsing from content');
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/\{[\s\S]*\}/);
+      console.log('[FOOD-PHOTO-AI] Fallback: parsing from content, length:', content.length);
+      
+      // Try multiple JSON extraction patterns
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
+                        content.match(/```\s*([\s\S]*?)\s*```/) ||
+                        content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
-          analysis = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+          const jsonStr = jsonMatch[1] || jsonMatch[0];
+          analysis = JSON.parse(jsonStr);
+          console.log('[FOOD-PHOTO-AI] Parsed from content:', analysis.foodsDetected?.length, 'items');
         } catch (e) {
           console.error('[FOOD-PHOTO-AI] Content parse error:', e);
+          console.error('[FOOD-PHOTO-AI] Content raw:', content.substring(0, 500));
         }
+      } else {
+        console.log('[FOOD-PHOTO-AI] No JSON found in content');
       }
     }
 

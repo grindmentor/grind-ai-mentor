@@ -314,21 +314,21 @@ const Dashboard = () => {
               >
                 <Button
                   onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
-                  className="w-full h-14 min-h-[56px] px-6 rounded-2xl flex items-center justify-center gap-3 touch-manipulation shadow-none text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="w-full h-14 min-h-[56px] px-6 rounded-2xl relative flex items-center justify-center touch-manipulation shadow-none text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
                   aria-label="Open Progress Hub"
                 >
-                  <Star className="w-5 h-5 flex-shrink-0" />
-                  <span>Progress Hub</span>
+                  <Star className="absolute left-5 w-5 h-5" aria-hidden="true" />
+                  <span className="pointer-events-none">Progress Hub</span>
                 </Button>
                 
                 {/* Module Library Button - Colorful */}
                 <Button
                   onClick={handleModuleLibraryPress}
-                  className="w-full h-14 min-h-[56px] px-6 rounded-2xl flex items-center justify-center gap-3 touch-manipulation shadow-none text-base font-semibold bg-violet-600 text-white hover:bg-violet-700"
+                  className="w-full h-14 min-h-[56px] px-6 rounded-2xl relative flex items-center justify-center touch-manipulation shadow-none text-base font-semibold btn-module-purple"
                   aria-label="Open Module Library"
                 >
-                  <LayoutGrid className="w-5 h-5 flex-shrink-0" />
-                  <span>Module Library</span>
+                  <LayoutGrid className="absolute left-5 w-5 h-5" aria-hidden="true" />
+                  <span className="pointer-events-none">Module Library</span>
                 </Button>
               </motion.div>
 

@@ -120,6 +120,20 @@
   opacity: 0.9;
 }
 
+/* ============================================
+   DASHBOARD CTA BUTTON STYLES
+   (Token-based, no optical drift)
+   ============================================ */
+
+.btn-module-purple {
+  background: hsl(var(--module-purple));
+  color: hsl(0 0% 100%);
+}
+
+.btn-module-purple:hover {
+  background: hsl(var(--module-purple) / 0.92);
+}
+
 /* iOS-style button highlight */
 .ios-button {
   position: relative;

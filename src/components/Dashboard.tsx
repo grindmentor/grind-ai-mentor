@@ -310,26 +310,27 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05, duration: 0.25 }}
-                className="mb-6 flex flex-col gap-3"
+                className="mb-6 space-y-3"
               >
-                <Button
+                <button
                   onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
-                  className="w-full h-14 min-h-[56px] px-6 rounded-2xl relative flex items-center justify-center touch-manipulation shadow-none text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="w-full h-14 rounded-2xl flex items-center justify-center gap-2.5 text-base font-semibold text-white touch-manipulation active:scale-[0.98] transition-transform"
+                  style={{ background: 'hsl(210 100% 50%)' }}
                   aria-label="Open Progress Hub"
                 >
-                  <Star className="absolute left-5 w-5 h-5" aria-hidden="true" />
-                  <span className="pointer-events-none">Progress Hub</span>
-                </Button>
+                  <Star className="w-5 h-5" />
+                  Progress Hub
+                </button>
                 
-                {/* Module Library Button - Colorful */}
-                <Button
+                <button
                   onClick={handleModuleLibraryPress}
-                  className="w-full h-14 min-h-[56px] px-6 rounded-2xl relative flex items-center justify-center touch-manipulation shadow-none text-base font-semibold btn-module-purple"
+                  className="w-full h-14 rounded-2xl flex items-center justify-center gap-2.5 text-base font-semibold text-white touch-manipulation active:scale-[0.98] transition-transform"
+                  style={{ background: 'hsl(262 83% 58%)' }}
                   aria-label="Open Module Library"
                 >
-                  <LayoutGrid className="absolute left-5 w-5 h-5" aria-hidden="true" />
-                  <span className="pointer-events-none">Module Library</span>
-                </Button>
+                  <LayoutGrid className="w-5 h-5" />
+                  Module Library
+                </button>
               </motion.div>
 
               {/* Personalized Feed */}

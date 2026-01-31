@@ -314,7 +314,7 @@ const Dashboard = () => {
               >
                 <Button
                   onClick={() => navigate('/progress-hub-dashboard', { state: { returnTo: '/app' } })}
-                  className="w-full h-14 min-h-[56px] bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation"
+                  className="w-full h-14 min-h-[56px] bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation shadow-none"
                   aria-label="Open Progress Hub"
                 >
                   <Star className="w-5 h-5 flex-shrink-0" />
@@ -324,7 +324,7 @@ const Dashboard = () => {
                 {/* Module Library Button - Colorful */}
                 <Button
                   onClick={handleModuleLibraryPress}
-                  className="w-full h-14 min-h-[56px] bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation"
+                  className="w-full h-14 min-h-[56px] bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation shadow-none"
                   aria-label="Open Module Library"
                 >
                   <LayoutGrid className="w-5 h-5 flex-shrink-0" />

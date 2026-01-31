@@ -324,7 +324,7 @@ const Dashboard = () => {
                 {/* Module Library Button - Colorful */}
                 <Button
                   onClick={handleModuleLibraryPress}
-                  className="w-full h-14 min-h-[56px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation"
+                  className="w-full h-14 min-h-[56px] bg-gradient-to-b from-violet-500 to-violet-700 hover:from-violet-600 hover:to-violet-800 text-white font-semibold rounded-2xl flex items-center justify-center gap-3 touch-manipulation"
                   aria-label="Open Module Library"
                 >
                   <LayoutGrid className="w-5 h-5 flex-shrink-0" />
